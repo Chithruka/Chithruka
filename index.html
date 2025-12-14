@@ -661,6 +661,9 @@
     let loadedGenreType = null;
     let heroInterval;
     let deferredPrompt; 
+    
+    // --- NEW: Store label for dynamic titles ---
+    let activeFilterLabel = "";
 
     const requestCache = new Map();
 
@@ -946,6 +949,7 @@
     window.openFilterModal = () => {
         filterModal.classList.remove('hidden');
         loadGenres();
+        loadCountries(); // Ensure countries are loaded
     };
     window.closeFilterModal = () => filterModal.classList.add('hidden');
     filterModal.addEventListener('click', e => { if(e.target === filterModal) closeFilterModal(); });
@@ -967,10 +971,8 @@
         } catch(e) { console.error("Genre fetch error", e); }
     }
 
-    // --- Load Countries for Filter ---
     async function loadCountries() {
         const select = document.getElementById('filter-country');
-        // Only load if empty (default has 1 child)
         if (select.children.length > 1) return;
         
         try {
@@ -986,8 +988,10 @@
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
-    // --- NEW: Quick Filter Function ---
-    window.quickFilter = function(type, value) {
+    // --- UPDATED: Quick Filter with Label Support ---
+    window.quickFilter = function(type, value, label = "") {
+        activeFilterLabel = label; // Store label
+        
         // Ensure we are filtering for the correct media type first
         document.getElementById('filter-type').value = mediaType;
         
@@ -1007,6 +1011,7 @@
         applyFilter();
     }
 
+    // --- UPDATED: Apply Filter with Dynamic Titles ---
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
@@ -1020,6 +1025,32 @@
         heroSection.style.display = 'none'; 
         document.getElementById('top10-section').style.display = 'none';
         
+        // --- Dynamic Header Logic ---
+        let titleText = "Filtered Results";
+        let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
+
+        if (year) {
+            titleText = `Released in ${year}`;
+            activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
+        } else if (genre) {
+            const select = document.getElementById('filter-genre');
+            const selectedText = select.options[select.selectedIndex]?.text;
+            titleText = activeFilterLabel || selectedText || "Genre";
+            activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
+        } else if (rating) {
+            titleText = `Rated higher than ${rating}`;
+            activeIcon = '<i class="fas fa-star text-yellow-500 mr-3"></i>';
+        } else if (country) {
+            const select = document.getElementById('filter-country');
+            const selectedText = select.options[select.selectedIndex]?.text;
+            const name = activeFilterLabel || selectedText || country;
+            titleText = `Released in ${name}`;
+            activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
+        }
+
+        document.getElementById('trending-header').innerHTML = `${activeIcon} ${titleText}`;
+        // ---------------------------
+
         let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=1`;
         
         if (year) {
@@ -1037,15 +1068,16 @@
         try {
             const data = await fetchCached(url);
             const results = data.results.map(i => ({...i, media_type: type}));
-            document.getElementById('trending-header').innerHTML = `<i class="fas fa-filter text-green-500 mr-3"></i> Filtered Results`;
+            
             if (results.length === 0) {
                 trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No results found matching your criteria.</div>';
             } else {
                 renderCards(results, trendingContainer, true);
             }
-            // --- FIX: Auto Scroll to Results ---
             document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
         } catch (e) { showMessage("Filter failed", true); }
+
+        activeFilterLabel = ""; // Reset label
     }
 
     // --- PWA INSTALL LOGIC ---
@@ -1233,7 +1265,7 @@
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
         
-        // --- Smart Country Name with Tooltip ---
+        // --- Smart Country Name with Tooltip and Click Action ---
         if (data.production_countries && data.production_countries.length > 0) {
             const code = data.production_countries[0].iso_3166_1;
             let fullName = code;
@@ -1246,21 +1278,20 @@
             span.textContent = code; 
             
             countryEl.title = fullName;
-            countryEl.onclick = () => quickFilter('country', code);
+            countryEl.onclick = () => quickFilter('country', code, fullName); // Pass fullName as label
             
             countryEl.classList.remove('hidden');
         } else {
             countryEl.classList.add('hidden');
         }
 
-        // Add onclick handlers for filters
         const dateEl = document.getElementById('detail-date');
         const dateSpan = dateEl.querySelector('span');
         const dateVal = data.release_date || data.first_air_date;
         const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
         dateSpan.textContent = year;
         if(year !== "N/A") {
-            dateEl.onclick = () => quickFilter('year', year);
+            dateEl.onclick = () => quickFilter('year', year, year);
         }
 
         const ratingEl = document.getElementById('detail-rating');
@@ -1268,7 +1299,6 @@
         const ratingVal = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
         ratingSpan.textContent = ratingVal;
         if(ratingVal !== "N/A") {
-            // --- FIX: Pass precise decimal rating ---
             ratingEl.onclick = () => quickFilter('rating', data.vote_average);
         }
 
@@ -1315,13 +1345,14 @@
         const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
         document.getElementById('detail-poster').src = poster;
         
+        // --- Genre Clicks with Names ---
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
         (data.genres || []).forEach(g => {
             const tag = document.createElement('span');
             tag.className = 'px-3 py-1 bg-white/10 text-gray-200 text-xs rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition';
             tag.textContent = g.name;
-            tag.onclick = () => quickFilter('genre', g.id);
+            tag.onclick = () => quickFilter('genre', g.id, g.name); // Pass g.name as label
             genreContainer.appendChild(tag);
         });
 
