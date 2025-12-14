@@ -17,7 +17,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* --- Import Custom Variable Font for Footer --- */
         @font-face {
             font-family: 'TheFont';
             src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2") format('woff2');
@@ -25,7 +24,8 @@
 
         :root {
             --accent: #e50914; /* Netflix Red */
-            --text-muted: #bfbfbf;
+            --card-width: 150px;
+            --card-height: 225px;
         }
 
         body {
@@ -37,11 +37,10 @@
             overflow-x: hidden; 
             display: flex;
             flex-direction: column;
+            background-color: #000;
         }
 
-        .container {
-            flex: 1; /* Pushes footer to bottom */
-        }
+        .container { flex: 1; }
 
         /* --- Dynamic Background --- */
         #page-background {
@@ -72,10 +71,7 @@
         .glass-input:focus, .glass-select:focus {
             border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
         }
-        .glass-select option {
-            background-color: #222;
-            color: white;
-        }
+        .glass-select option { background-color: #222; color: white; }
 
         /* --- Logo --- */
         .logo-text {
@@ -88,17 +84,10 @@
 
         /* --- Footer Animation --- */
         .footer-container {
-            width: 100%;
-            padding: 40px 20px;
+            width: 100%; padding: 40px 20px;
             background: linear-gradient(to top, #000 20%, transparent);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin-top: auto;
-            overflow: hidden;
-            text-align: center;
-            gap: 15px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            margin-top: auto; overflow: hidden; text-align: center; gap: 15px;
         }
 
         .footer-name {
@@ -107,43 +96,24 @@
             max-width: 90vw;
             background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
             background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
         }
 
-        .footer-disclaimer {
-            font-size: 12px;
-            color: #888;
-            max-width: 600px;
-            line-height: 1.5;
-        }
+        .footer-disclaimer { font-size: 12px; color: #888; max-width: 600px; line-height: 1.5; }
 
         #install-app-btn {
-            display: none; /* Hidden by default, shown via JS */
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s;
-            cursor: pointer;
+            display: none; background: rgba(255, 255, 255, 0.1); color: #fff;
+            padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s; cursor: pointer;
         }
-        #install-app-btn:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
+        #install-app-btn:hover { background: var(--accent); border-color: var(--accent); }
 
         @keyframes letter-breathe {
             from, to { font-variation-settings: 'wght' 100; }
             50% { font-variation-settings: 'wght' 900; }
         }
-
-        @keyframes gradient-move {
-            to { background-position: 200% center; }
-        }
+        @keyframes gradient-move { to { background-position: 200% center; } }
 
         /* --- Header / Nav --- */
         .navbar {
@@ -190,8 +160,7 @@
 
         /* --- Hero Slider --- */
         #hero-section {
-            position: relative; width: 100%; 
-            height: 60vh;
+            position: relative; width: 100%; height: 60vh;
             border-radius: 20px; overflow: hidden; margin-bottom: 40px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: none; 
             background: #000;
@@ -241,14 +210,107 @@
         }
         .indicator.active { background: var(--accent); transform: scale(1.2); }
 
-        /* --- TOP 10 --- */
+        /* --- NEW: High Performance Cards (BoredFlix Style) --- */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .scroll-card {
+            width: var(--card-width);
+            flex-shrink: 0;
+            position: relative;
+            cursor: pointer;
+            transition: none; /* Removed layout transition for performance */
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+        @media (min-width: 768px) { 
+            :root { --card-width: 170px; --card-height: 255px; } 
+        }
+
+        .poster-wrapper {
+            width: 100%;
+            aspect-ratio: 2/3;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            background: #222;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .poster-img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+        }
+
+        /* Hover Effect: Zoom Image Internal + Play Overlay */
+        .scroll-card:hover .poster-wrapper {
+            box-shadow: 0 12px 24px rgba(0,0,0,0.7);
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+        .scroll-card:hover .poster-img {
+            transform: scale(1.1);
+        }
+        
+        /* Play Icon Overlay */
+        .play-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .scroll-card:hover .play-overlay { opacity: 1; }
+        .play-icon-circle {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: rgba(229, 9, 20, 0.9); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .scroll-card:hover .play-icon-circle { transform: scale(1); }
+
+        .card-body { padding: 10px 4px; }
+        .card-title {
+            font-size: 0.9rem; font-weight: 600; color: #eee;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        .card-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; }
+        .rating-badge { color: #46d369; font-weight: 700; } /* Netflix green for match */
+
+        /* Remove Button Style */
+        .remove-btn {
+            position: absolute; top: 8px; right: 8px;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3);
+            color: white; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: all 0.2s; z-index: 20;
+            backdrop-filter: blur(4px);
+        }
+        .poster-wrapper:hover .remove-btn { opacity: 1; }
+        .remove-btn:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
+
+        /* --- Scroll Buttons --- */
+        .scroll-btn {
+            position: absolute; top: 40%; transform: translateY(-50%); z-index: 20;
+            background: rgba(20, 20, 20, 0.8); color: white; border-radius: 50%;
+            width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(4px); opacity: 0; /* Hidden by default, show on hover */
+        }
+        .group:hover .scroll-btn { opacity: 1; }
+        .scroll-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-50%) scale(1.1); }
+
+
+        /* --- Top 10 Styling --- */
         .top-10-card {
             min-width: 160px; width: 160px; flex-shrink: 0;
             position: relative; margin-left: 25px; 
             cursor: pointer; transition: transform 0.3s;
         }
         .top-10-card:hover { transform: scale(1.05); z-index: 10; }
-        
         .rank-number {
             position: absolute; bottom: -15px; left: -25px;
             font-size: 100px; font-weight: 900; line-height: 1;
@@ -258,165 +320,43 @@
             text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
             z-index: -1;
         }
-        @media (max-width: 640px) {
-            .top-10-card { min-width: 130px; width: 130px; margin-left: 15px; }
-            .rank-number { font-size: 80px; left: -15px; bottom: -10px; }
-        }
-        .top-poster {
-            width: 100%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            background: #222; object-fit: cover; aspect-ratio: 2/3;
-        }
+        .top-poster { width: 100%; border-radius: 8px; object-fit: cover; aspect-ratio: 2/3; }
 
-        /* --- Player Styles --- */
-        #player-iframe {
-            width: 100%; aspect-ratio: 16 / 9; border: none;
-            border-radius: 12px; background-color: #000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
-        /* --- Buttons --- */
-        .server-btn {
-            background: rgba(255, 255, 255, 0.05); color: #ccc;
-            padding: 8px 16px; border-radius: 8px; cursor: pointer;
-            transition: all 0.2s; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05);
-            flex-grow: 1;
-        }
+        /* --- Player & Details --- */
+        #player-iframe { width: 100%; aspect-ratio: 16 / 9; border: none; border-radius: 12px; background-color: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .server-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05); flex-grow: 1; }
         .server-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-        .server-btn.active {
-            background: var(--accent); color: white; border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
-        }
-        
-        .action-btn {
-            padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: inline-flex; align-items: center; justify-content: center;
-        }
+        .server-btn.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
+        .action-btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; justify-content: center; }
         .action-btn:active { transform: scale(0.96); }
         .btn-play { background: #fff; color: #000; }
-        .btn-play:hover { background: #ddd; }
         .btn-download { background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; }
         .btn-trailer { background: linear-gradient(135deg, #e50914, #b20710); color: white; }
         .btn-next { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
-
-        /* --- Details & Skeleton --- */
-        .title-logo {
-            max-width: 100%; max-height: 100px; width: auto;
-            object-fit: contain; object-position: left;
-            margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-            display: none; 
-        }
+        .title-logo { max-width: 100%; max-height: 100px; width: auto; object-fit: contain; object-position: left; margin-bottom: 0.5rem; display: none; }
         @media (min-width: 768px) { .title-logo { max-width: 350px; max-height: 120px; } }
-
-        /* Skeleton Loading for Poster */
-        .skeleton-poster {
-            min-height: 300px; width: 100%;
-            background: #222;
-            background-image: linear-gradient(to right, #222 0%, #333 20%, #222 40%, #222 100%);
-            background-repeat: no-repeat;
-            background-size: 800px 100%; 
-            animation: shimmer 1.5s infinite linear;
-            border-radius: 0.75rem;
-        }
-
         .cast-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
         .cast-card { min-width: 80px; text-align: center; cursor: pointer; transition: transform 0.2s; }
         .cast-card:hover { transform: scale(1.05); }
-        .cast-img {
-            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-            border: 2px solid #333; margin-bottom: 5px; background: #222;
-        }
+        .cast-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 5px; background: #222; }
         .cast-name { font-size: 0.75rem; color: #ddd; font-weight: 600; }
         .cast-char { font-size: 0.65rem; color: #888; }
         .crew-job { font-size: 0.65rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
-
-        /* --- Accordion --- */
-        .accordion-header {
-            background: rgba(255,255,255,0.05); color: #fff; padding: 16px;
-            border-radius: 12px; cursor: pointer; display: flex;
-            justify-content: space-between; align-items: center;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .accordion-content {
-            background: rgba(0,0,0,0.2); padding: 10px; margin-top: 5px;
-            border-radius: 12px; max-height: 0; overflow: hidden;
-            transition: max-height 0.3s ease-out; overflow-y: auto; 
-        }
-        .episode-rich-item {
-            display: flex; gap: 15px; padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer; transition: background 0.2s; border-radius: 8px;
-        }
+        .accordion-header { background: rgba(255,255,255,0.05); color: #fff; padding: 16px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+        .accordion-content { background: rgba(0,0,0,0.2); padding: 10px; margin-top: 5px; border-radius: 12px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; overflow-y: auto; }
+        .episode-rich-item { display: flex; gap: 15px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; border-radius: 8px; }
         .episode-rich-item:hover { background: rgba(255,255,255,0.05); }
         .episode-rich-item.active { background: rgba(229,9,20,0.15); border: 1px solid rgba(229,9,20,0.3); }
         .ep-still { width: 120px; height: 68px; flex-shrink: 0; border-radius: 6px; object-fit: cover; background: #222; }
         .ep-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .ep-title { font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
-        .ep-overview { font-size: 0.75rem; color: #aaa; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-        /* --- Scrolling Cards --- */
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .ep-overview { font-size: 0.75rem; color: #aaa; display: -webkit-box; -webkit-line-clamp: 2; }
         
-        .scroll-card {
-            min-width: 140px; width: 140px; flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;
-            display: flex; flex-direction: column;
-        }
-        @media (min-width: 768px) { .scroll-card { min-width: 160px; width: 160px; } }
-
-        .scroll-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2);
-            z-index: 10;
-        }
-        .poster-img { width: 100%; height: 200px; object-fit: cover; background-color: #222; }
-        @media (min-width: 768px) { .poster-img { height: 230px; } }
-        
-        .card-body { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-        .card-title { font-weight: 600; color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
-        .rating-badge { color: #ffd54d; font-weight: 700; }
-
-        .scroll-btn {
-            position: absolute; top: 50%; transform: translateY(-50%); z-index: 20;
-            background: rgba(0, 0, 0, 0.6); color: white; border-radius: 50%;
-            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-        }
-        .scroll-btn:hover { background: var(--accent); border-color: var(--accent); }
-
-        .shimmer {
-            animation: shimmer 1.5s linear infinite;
-            background: linear-gradient(90deg, #1f1f1f 25%, #2a2a2a 50%, #1f1f1f 75%);
-            background-size: 200% 100%;
-        }
-        @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-        
-        /* Loading Overlay for Player */
-        #server-loading-msg {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px;
-            pointer-events: none; z-index: 10; font-size: 0.9rem; color: #ccc;
-        }
-
-        /* --- Extended Details Styles --- */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); }
         .info-block h5 { font-weight: 700; color: #888; margin-bottom: 10px; font-size: 0.85rem; text-transform: uppercase; }
         .info-list { max-height: 150px; overflow-y: auto; padding-right: 5px; }
         .info-list::-webkit-scrollbar { width: 4px; }
         .info-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-        
         .release-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .release-country { font-weight: 600; color: #fff; }
         .release-date { color: #aaa; }
@@ -446,6 +386,21 @@
     <div id="hero-section">
         <div id="hero-slides"></div>
         <div id="hero-indicators" class="hero-indicators"></div>
+    </div>
+
+    <div id="continue-watching-section" class="mb-12 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2">
+            <i class="fas fa-history text-red-500 mr-3"></i> Continue Watching
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('continue-watching-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="continue-watching-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('continue-watching-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
     </div>
 
     <div class="mb-12 relative" id="top10-section">
@@ -490,8 +445,11 @@
 
                 <div id="cast-container" class="mt-4">
                     <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wide">Top Cast</h4>
-                    <div id="cast-list" class="cast-scroll scrollbar-hide relative group">
-                        </div>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('cast-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="cast-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('cast-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
                 </div>
 
                 <div id="crew-container" class="mt-6 hidden">
@@ -569,7 +527,7 @@
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('collection-container', -300)">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <div id="collection-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <div id="collection-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
             <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('collection-container', 300)">
                 <i class="fas fa-chevron-right"></i>
             </button>
@@ -584,7 +542,7 @@
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('recommendations-container', -300)">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <div id="recommendations-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <div id="recommendations-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
             <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('recommendations-container', 300)">
                 <i class="fas fa-chevron-right"></i>
             </button>
@@ -599,7 +557,7 @@
             <button id="scroll-left" class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
             <button id="scroll-right" class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
                 <i class="fas fa-chevron-right"></i>
             </button>
@@ -662,17 +620,6 @@
         <button onclick="closeTrailerModal()" class="absolute -top-10 right-0 text-white hover:text-red-500 text-2xl"><i class="fas fa-times"></i> Close</button>
         <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
             <iframe id="trailer-iframe" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        </div>
-    </div>
-</div>
-
-<div id="resume-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl text-center">
-        <h3 class="text-xl font-bold mb-2 text-white">Resume Watching?</h3>
-        <p id="resume-text" class="text-gray-300 text-sm mb-6">Continue where you left off?</p>
-        <div class="flex gap-3 justify-center">
-            <button id="btn-resume-no" class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition">No</button>
-            <button id="btn-resume-yes" class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition">Resume</button>
         </div>
     </div>
 </div>
@@ -897,6 +844,7 @@
         });
     }
 
+    // --- REFINED RENDER CARDS (NEW UI) ---
     function renderCards(items, container, trackIds) {
         items.forEach(item => {
             if (trackIds) {
@@ -915,7 +863,12 @@
             const card = document.createElement('div');
             card.className = 'scroll-card';
             card.innerHTML = `
-                <img src="${poster}" class="poster-img" loading="lazy" alt="${title}">
+                <div class="poster-wrapper">
+                    <img src="${poster}" class="poster-img" loading="lazy" alt="${title}">
+                    <div class="play-overlay">
+                        <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                    </div>
+                </div>
                 <div class="card-body">
                     <div class="card-title" title="${title}">${title}</div>
                     <div class="card-meta">
@@ -1083,6 +1036,10 @@
         heroSection.style.display = 'block';
         document.getElementById('top10-section').style.display = 'block';
         
+        // Show Continue Watching again if it has content
+        const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+        if(history.length > 0) document.getElementById('continue-watching-section').classList.remove('hidden');
+
         const header = document.getElementById('trending-header');
         header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
         
@@ -1105,6 +1062,9 @@
         heroSection.style.display = 'none'; 
         document.getElementById('top10-section').style.display = 'none';
         
+        // Hide continue watching when searching/filtering
+        document.getElementById('continue-watching-section').classList.add('hidden');
+
         const genreSelect = document.getElementById('filter-genre');
         let genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
         if ((!genreName || genreName === "Any Genre") && activeFilterLabel && genre) {
@@ -1215,6 +1175,9 @@
         searchInput.value = '';
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
+        
+        // --- HIDE CONTINUE WATCHING IMMEDIATELY ---
+        document.getElementById('continue-watching-section').classList.add('hidden');
 
         playerInterface.classList.add('hidden'); 
         detailsSection.classList.add('hidden');
@@ -1481,7 +1444,7 @@
             });
         }
 
-        // --- Render Extended Crew ---
+        // --- Render Extended Crew (Clickable) ---
         const crewContainer = document.getElementById('crew-container');
         const crewList = document.getElementById('crew-list');
         crewList.innerHTML = '';
@@ -1490,7 +1453,7 @@
             const keyJobs = ['Director', 'Writer', 'Screenplay', 'Director of Photography', 'Executive Producer'];
             const importantCrew = data.credits.crew.filter(c => keyJobs.includes(c.job));
             
-            // Remove duplicates (same person different job)
+            // Remove duplicates
             const uniqueCrew = [];
             const crewMap = new Map();
             importantCrew.forEach(c => {
@@ -1510,6 +1473,8 @@
                         <div class="cast-name">${c.name}</div>
                         <div class="crew-job">${c.job}</div>
                      `;
+                     // Added click handler for crew
+                     crewDiv.onclick = () => loadActorCredits(c.id, c.name);
                      crewList.appendChild(crewDiv);
                 });
                 crewContainer.classList.remove('hidden');
@@ -1540,12 +1505,11 @@
         relList.innerHTML = '';
         if(data.release_dates && data.release_dates.results) {
              data.release_dates.results.forEach(r => {
-                 // Try to get region name
                  let countryName = r.iso_3166_1;
                  try { countryName = new Intl.DisplayNames(['en'], { type: 'region' }).of(r.iso_3166_1); } catch(e){}
                  
                  r.release_dates.forEach(d => {
-                     if(d.type === 3 || d.type === 4) { // Theatrical or Digital
+                     if(d.type === 3 || d.type === 4) { 
                          const dateStr = new Date(d.release_date).toLocaleDateString();
                          const div = document.createElement('div');
                          div.className = "release-item";
@@ -1569,7 +1533,7 @@
             });
         }
 
-        // 4. Tech Specs (Budget, Revenue, Lang, Status)
+        // 4. Tech Specs
         const techList = document.getElementById('tech-specs-list');
         techList.innerHTML = '';
         const specs = [
@@ -1645,47 +1609,101 @@
         }
     }
 
+    // --- REFACTORED HISTORY / CONTINUE WATCHING LOGIC ---
     function saveProgress() {
         if (!TMDB_ID) return;
-        localStorage.setItem('stream_progress', JSON.stringify({
-            mediaType, tmdbId: TMDB_ID, title: currentTitle, 
-            season: currentSeason, episode: currentEpisode, timestamp: Date.now()
-        }));
+        
+        // Get current history
+        let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+        
+        // Remove existing entry for this ID to move it to the top
+        history = history.filter(h => h.tmdbId !== TMDB_ID);
+        
+        // Add new entry
+        history.unshift({
+            mediaType, 
+            tmdbId: TMDB_ID, 
+            title: currentTitle, 
+            season: currentSeason, 
+            episode: currentEpisode,
+            poster: document.getElementById('detail-poster').src, // Capture current poster
+            timestamp: Date.now()
+        });
+        
+        // Limit history to 20 items
+        if (history.length > 20) history.pop();
+        
+        localStorage.setItem('watch_history', JSON.stringify(history));
+        // Note: We do NOT call updateContinueWatchingUI() here because the user is currently watching content
+        // and we want the slider hidden. It will update when they return to home.
     }
 
-    async function loadProgress() {
-        const saved = localStorage.getItem('stream_progress');
-        if (!saved) return;
-        const p = JSON.parse(saved);
-        if (Date.now() - p.timestamp > 86400000) return; // 24h expiry
-        
-        showResumePrompt(p);
+    function updateContinueWatchingUI() {
+        const container = document.getElementById('continue-watching-container');
+        const section = document.getElementById('continue-watching-section');
+        const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+
+        if (history.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        container.innerHTML = '';
+
+        history.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'scroll-card'; // BoredFlix style base class
+            
+            const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
+            
+            card.innerHTML = `
+                <div class="poster-wrapper">
+                    <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)"><i class="fas fa-times text-xs"></i></div>
+                    <img src="${item.poster}" class="poster-img" loading="lazy">
+                    <div class="play-overlay">
+                        <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-meta">
+                        <span class="text-xs text-accent font-bold">${epInfo}</span>
+                        <span class="text-xs text-gray-500">Resume</span>
+                    </div>
+                </div>
+            `;
+            
+            // Resume Logic
+            card.onclick = async () => {
+                await selectContent(item.tmdbId, item.title, item.mediaType);
+                if (item.mediaType === 'tv') {
+                    // Slight delay to ensure seasons loaded
+                    setTimeout(() => {
+                        document.getElementById('season-select').value = item.season;
+                        changeSeason(item.season).then(() => {
+                            selectEpisode(item.season, item.episode, null);
+                        });
+                    }, 1000);
+                }
+            };
+            
+            container.appendChild(card);
+        });
     }
 
-    function showResumePrompt(p) {
-        const modal = document.getElementById('resume-modal');
-        const text = document.getElementById('resume-text');
-        const btnYes = document.getElementById('btn-resume-yes');
-        const btnNo = document.getElementById('btn-resume-no');
+    // Explicit global function for the onclick attribute
+    window.removeFromHistory = function(id, event) {
+        if(event) event.stopPropagation(); // Stop card click
+        let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+        history = history.filter(h => h.tmdbId !== id);
+        localStorage.setItem('watch_history', JSON.stringify(history));
+        updateContinueWatchingUI();
+    }
 
-        let msg = `Continue watching "${p.title}"?`;
-        if (p.mediaType === 'tv') msg = `Continue "${p.title}" (S${p.season}:E${p.episode})?`;
-        
-        text.textContent = msg;
-        modal.classList.remove('hidden');
-
-        btnYes.onclick = async () => {
-             modal.classList.add('hidden');
-             await selectContent(p.tmdbId, p.title, p.mediaType);
-             if (p.mediaType === 'tv') {
-                 setTimeout(() => { selectEpisode(p.season, p.episode, null); }, 1000);
-             }
-        };
-        
-        btnNo.onclick = () => {
-            localStorage.removeItem('stream_progress');
-            modal.classList.add('hidden');
-        };
+    // Deprecated the old single-item loader
+    function loadProgress() {
+        updateContinueWatchingUI();
     }
 
     window.nextEpisode = function() {
@@ -1751,7 +1769,7 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
-        loadProgress();
+        loadProgress(); // Now loads history slider
         loadTrending();
         loadGenres();
     });
