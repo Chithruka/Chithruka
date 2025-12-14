@@ -33,7 +33,6 @@
             min-height: 100vh;
             margin: 0;
             padding-bottom: 0; 
-            /* --- FIX: PREVENT HORIZONTAL SCROLL/BREATHING --- */
             overflow-x: hidden; 
             display: flex;
             flex-direction: column;
@@ -53,7 +52,7 @@
 
         #page-background::before {
             content: ''; position: absolute; inset: 0;
-            background: rgba(0, 0, 0, 0.85); /* Slightly darker for better contrast */
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         }
 
@@ -82,7 +81,7 @@
             cursor: pointer; z-index: 50;
         }
 
-        /* --- Footer Animation Styles --- */
+        /* --- Footer Animation --- */
         .footer-container {
             width: 100%;
             padding: 40px 0;
@@ -91,26 +90,18 @@
             justify-content: center;
             align-items: center;
             margin-top: auto;
-            overflow: hidden; /* Extra safety */
+            overflow: hidden;
         }
 
         .footer-name {
             font-family: 'TheFont', sans-serif;
-            
-            /* --- FIX: SMALLER FONT SIZE FOR MOBILE --- */
-            /* Min: 1.5rem (24px) for mobile, Max: 6rem (96px) for desktop */
             font-size: clamp(1.5rem, 10vw, 6rem); 
-            max-width: 90vw; /* Prevent hitting edges */
-            
+            max-width: 90vw;
             text-align: center;
-            
-            /* Gradient Text Color */
             background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            
-            /* Combined Animations: Breathe + Gradient Move */
             animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
         }
 
@@ -166,7 +157,7 @@
         .search-result-item:hover { background: rgba(50, 50, 50, 0.95); }
         .result-poster { width: 40px; height: 60px; border-radius: 4px; object-fit: cover; background: #333; }
 
-        /* --- Hero Slider (Responsive) --- */
+        /* --- Hero Slider --- */
         #hero-section {
             position: relative; width: 100%; 
             height: 60vh;
@@ -219,30 +210,27 @@
         }
         .indicator.active { background: var(--accent); transform: scale(1.2); }
 
-        /* --- TOP 10 NUMBERED SLIDER --- */
+        /* --- TOP 10 --- */
         .top-10-card {
             min-width: 160px; width: 160px; flex-shrink: 0;
-            position: relative; margin-left: 25px; /* Space for number */
+            position: relative; margin-left: 25px; 
             cursor: pointer; transition: transform 0.3s;
         }
         .top-10-card:hover { transform: scale(1.05); z-index: 10; }
         
-        /* The Big Number */
         .rank-number {
             position: absolute; bottom: -15px; left: -25px;
             font-size: 100px; font-weight: 900; line-height: 1;
             font-family: 'Inter', sans-serif;
             color: #000;
-            -webkit-text-stroke: 2px #555; /* Outline */
+            -webkit-text-stroke: 2px #555;
             text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-            z-index: -1; /* Behind card */
+            z-index: -1;
         }
-        /* Mobile adjustment */
         @media (max-width: 640px) {
             .top-10-card { min-width: 130px; width: 130px; margin-left: 15px; }
             .rank-number { font-size: 80px; left: -15px; bottom: -10px; }
         }
-
         .top-poster {
             width: 100%; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             background: #222; object-fit: cover; aspect-ratio: 2/3;
@@ -280,7 +268,7 @@
         .btn-trailer { background: linear-gradient(135deg, #e50914, #b20710); color: white; }
         .btn-next { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
 
-        /* --- Details --- */
+        /* --- Details & Skeleton --- */
         .title-logo {
             max-width: 100%; max-height: 100px; width: auto;
             object-fit: contain; object-position: left;
@@ -288,6 +276,17 @@
             display: none; 
         }
         @media (min-width: 768px) { .title-logo { max-width: 350px; max-height: 120px; } }
+
+        /* Skeleton Loading for Poster */
+        .skeleton-poster {
+            min-height: 300px; width: 100%;
+            background: #222;
+            background-image: linear-gradient(to right, #222 0%, #333 20%, #222 40%, #222 100%);
+            background-repeat: no-repeat;
+            background-size: 800px 100%; 
+            animation: shimmer 1.5s infinite linear;
+            border-radius: 0.75rem;
+        }
 
         .cast-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
         .cast-card { min-width: 80px; text-align: center; cursor: pointer; transition: transform 0.2s; }
@@ -299,7 +298,7 @@
         .cast-name { font-size: 0.75rem; color: #ddd; font-weight: 600; }
         .cast-char { font-size: 0.65rem; color: #888; }
 
-        /* --- Rich Episode Accordion --- */
+        /* --- Accordion --- */
         .accordion-header {
             background: rgba(255,255,255,0.05); color: #fff; padding: 16px;
             border-radius: 12px; cursor: pointer; display: flex;
@@ -364,6 +363,13 @@
             background-size: 200% 100%;
         }
         @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+        
+        /* Loading Overlay for Player */
+        #server-loading-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px;
+            pointer-events: none; z-index: 10; font-size: 0.9rem; color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -424,6 +430,9 @@
                     <span id="detail-rating" class="flex items-center"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
                     <span id="detail-runtime" class="flex items-center"><i class="far fa-clock mr-2"></i> <span></span></span>
                     <span id="detail-status" class="flex items-center text-green-400 font-semibold"><i class="fas fa-info-circle mr-2"></i><span></span></span>
+                    
+                    <span id="detail-country" class="flex items-center hidden"><i class="fas fa-globe mr-2"></i> <span></span></span>
+                    <span id="detail-age" class="flex items-center hidden px-2 py-0.5 border border-gray-500 rounded text-xs font-bold"><span></span></span>
                 </div>
                 
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
@@ -439,7 +448,8 @@
 
     <div id="player-interface" class="hidden fade-in">
         <div class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
-            <iframe id="player-iframe" allowfullscreen></iframe>
+             <div id="server-loading-msg" class="hidden">Connecting...</div>
+             <iframe id="player-iframe" allowfullscreen onerror="handleServerError()"></iframe>
         </div>
 
         <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -452,7 +462,7 @@
                     <i class="fab fa-youtube mr-2"></i> Trailer
                 </button>
                 <button onclick="openDownloadModal()" class="action-btn btn-download flex-grow md:flex-grow-0 shadow-lg">
-                    <i class="fas fa-download mr-2"></i> DL
+                    <i class="fas fa-download mr-2"></i> Download
                 </button>
             </div>
         </div>
@@ -500,7 +510,7 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
-        <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2 hidden">
+        <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2" style="display:none;">
             <i class="fas fa-circle-notch fa-spin mr-2"></i>Loading more...
         </div>
     </div>
@@ -680,20 +690,23 @@
     async function loadTrending() {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
-        infiniteLoader.classList.remove('hidden');
+        infiniteLoader.style.display = 'block';
 
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (data.results && data.results.length > 0) {
                 if (trendingPage === 1) {
                     initHero(data.results.slice(0, 5));
-                    renderTop10(data.results.slice(0, 10)); // Top 10 logic
+                    renderTop10(data.results.slice(0, 10)); 
                 }
                 trendingPage++;
                 renderCards(data.results, trendingContainer, true);
             }
         } catch (error) { console.error("Trending Error:", error); } 
-        finally { isTrendingLoading = false; infiniteLoader.classList.add('hidden'); }
+        finally { 
+            isTrendingLoading = false; 
+            infiniteLoader.style.display = 'none'; 
+        }
     }
 
     async function initHero(items) {
@@ -781,19 +794,6 @@
         });
     }
 
-    async function loadRecommendations(type, id) {
-        recommendationsContainer.innerHTML = '';
-        recommendationsSection.classList.add('hidden');
-        try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/recommendations?api_key=${TMDB_API_KEY}`);
-            if (data.results && data.results.length > 0) {
-                recommendationsSection.classList.remove('hidden');
-                const results = data.results.map(item => ({ ...item, media_type: type }));
-                renderCards(results, recommendationsContainer, false);
-            }
-        } catch (e) { console.error("Recs Error", e); }
-    }
-
     function renderCards(items, container, trackIds) {
         items.forEach(item => {
             if (trackIds) {
@@ -824,6 +824,19 @@
             card.onclick = () => selectContent(item.id, title, type);
             container.appendChild(card);
         });
+    }
+
+    async function loadRecommendations(type, id) {
+        recommendationsContainer.innerHTML = '';
+        recommendationsSection.classList.add('hidden');
+        try {
+            const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/recommendations?api_key=${TMDB_API_KEY}`);
+            if (data.results && data.results.length > 0) {
+                recommendationsSection.classList.remove('hidden');
+                const results = data.results.map(item => ({ ...item, media_type: type }));
+                renderCards(results, recommendationsContainer, false);
+            }
+        } catch (e) { console.error("Recs Error", e); }
     }
 
     searchInput.addEventListener('input', () => {
@@ -981,6 +994,8 @@
         TMDB_ID = id;
         mediaType = type;
         currentTitle = title;
+        document.title = `${title} - Chithruka`; // UPDATE TAB TITLE
+
         searchResults.innerHTML = ''; 
         searchInput.value = '';
         heroSection.style.display = 'none';
@@ -989,6 +1004,12 @@
         playerInterface.classList.add('hidden'); 
         detailsSection.classList.add('hidden');
         playerIframe.src = "about:blank";
+
+        // Skeleton Logic
+        const posterImg = document.getElementById('detail-poster');
+        posterImg.src = ''; 
+        posterImg.classList.add('skeleton-poster');
+        posterImg.onload = () => posterImg.classList.remove('skeleton-poster');
 
         if (mediaType === 'tv') await fetchShowDetails(id, title);
         else await fetchMovieDetails(id, title);
@@ -1000,7 +1021,8 @@
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
-            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits&include_image_language=en,null`);
+            // Added release_dates to fetch
+            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             renderDetails(detailData, title);
             playerInterface.classList.remove('hidden');
@@ -1010,7 +1032,8 @@
 
     async function fetchShowDetails(id, title) {
         try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits&include_image_language=en,null`);
+            // Added content_ratings to fetch
+            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
             renderDetails(data, title);
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
                 .map(s => ({ season: s.season_number, episodes: s.episode_count, title: s.name }));
@@ -1097,6 +1120,40 @@
             statusEl.classList.add('hidden');
         }
 
+        // --- NEW: Country & Age Rating Logic ---
+        const countryEl = document.getElementById('detail-country');
+        const ageEl = document.getElementById('detail-age');
+        
+        // Country
+        if (data.production_countries && data.production_countries.length > 0) {
+            countryEl.querySelector('span').textContent = data.production_countries[0].iso_3166_1;
+            countryEl.classList.remove('hidden');
+        } else {
+            countryEl.classList.add('hidden');
+        }
+
+        // Age Rating
+        let rating = null;
+        if (mediaType === 'movie' && data.release_dates && data.release_dates.results) {
+            const usRelease = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
+            if (usRelease && usRelease.release_dates) {
+                // Find first certification that isn't empty
+                const cert = usRelease.release_dates.find(d => d.certification);
+                if (cert) rating = cert.certification;
+            }
+        } else if (mediaType === 'tv' && data.content_ratings && data.content_ratings.results) {
+            const usRating = data.content_ratings.results.find(r => r.iso_3166_1 === 'US');
+            if (usRating) rating = usRating.rating;
+        }
+
+        if (rating) {
+            ageEl.querySelector('span').textContent = rating;
+            ageEl.classList.remove('hidden');
+        } else {
+            ageEl.classList.add('hidden');
+        }
+        // ----------------------------------------
+
         let logoPath = null;
         if (data.images && data.images.logos && data.images.logos.length > 0) {
             const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
@@ -1114,8 +1171,10 @@
         }
         
         document.getElementById('detail-overview').textContent = data.overview || "No description available.";
-        const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : 'https://placehold.co/300x450/333/999?text=No+Poster';
+        
+        const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
         document.getElementById('detail-poster').src = poster;
+        
         const date = data.release_date || data.first_air_date;
         document.getElementById('detail-date').querySelector('span').textContent = date ? new Date(date).getFullYear() : "N/A";
         document.getElementById('detail-rating').querySelector('span').textContent = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
@@ -1171,6 +1230,8 @@
             showMessage("Server unavailable (Missing IMDb ID). Try another.", true);
         } else {
             playerIframe.src = url;
+            // Reset error handler UI logic here if needed
+            document.getElementById('server-loading-msg').classList.add('hidden');
         }
         if (mediaType === 'tv') {
             currentEpisodeInfo.textContent = `S${currentSeason}:E${currentEpisode} - Server ${currentServerIndex + 1}`;
@@ -1184,6 +1245,25 @@
         const activeItem = document.querySelector(`.episode-rich-item[onclick*="(${currentSeason}, ${currentEpisode},"]`);
         if(activeItem) activeItem.classList.add('active');
         saveProgress();
+    }
+    
+    // --- NEW: Handle Server Errors ---
+    window.handleServerError = function() {
+        if(currentServerIndex < SERVER_URLS.length - 1) {
+            const nextServer = currentServerIndex + 1;
+            const msg = document.getElementById('server-loading-msg');
+            msg.textContent = `Source ${currentServerIndex + 1} busy, switching to Source ${nextServer + 1}...`;
+            msg.classList.remove('hidden');
+            
+            // Switch after small delay to show message
+            setTimeout(() => {
+                const btns = document.querySelectorAll('.server-btn');
+                if(btns[nextServer]) switchServer(nextServer, btns[nextServer]);
+            }, 1500);
+        } else {
+            document.getElementById('server-loading-msg').textContent = "This movie is unavailable right now.";
+            document.getElementById('server-loading-msg').classList.remove('hidden');
+        }
     }
 
     function saveProgress() {
