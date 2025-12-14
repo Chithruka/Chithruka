@@ -280,7 +280,7 @@
         .card-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; }
         .rating-badge { color: #46d369; font-weight: 700; } /* Netflix green for match */
 
-        /* Remove Button Style - UPDATED: Always Visible */
+        /* Remove Button Style - Always Visible */
         .remove-btn {
             position: absolute; top: 8px; right: 8px;
             width: 28px; height: 28px; border-radius: 50%;
@@ -292,7 +292,7 @@
         }
         .remove-btn:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
 
-        /* --- Scroll Buttons - UPDATED for Mobile --- */
+        /* --- Scroll Buttons - Updated for Mobile --- */
         .scroll-btn {
             position: absolute; top: 40%; transform: translateY(-50%); z-index: 20;
             background: rgba(20, 20, 20, 0.8); color: white; border-radius: 50%;
@@ -1622,16 +1622,18 @@
     function saveProgress() {
         if (!TMDB_ID) return;
         
-        // Get current history
+        // Ensure ID is a number for consistent comparison
+        const idToCheck = Number(TMDB_ID);
+        
         let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
         
-        // Remove existing entry for this ID to move it to the top
-        history = history.filter(h => h.tmdbId !== TMDB_ID);
+        // Remove existing entry for this ID (Fix for duplicates)
+        history = history.filter(h => Number(h.tmdbId) !== idToCheck);
         
         // Add new entry
         history.unshift({
             mediaType, 
-            tmdbId: TMDB_ID, 
+            tmdbId: idToCheck, 
             title: currentTitle, 
             season: currentSeason, 
             episode: currentEpisode,
@@ -1643,8 +1645,6 @@
         if (history.length > 20) history.pop();
         
         localStorage.setItem('watch_history', JSON.stringify(history));
-        // Note: We do NOT call updateContinueWatchingUI() here because the user is currently watching content
-        // and we want the slider hidden. It will update when they return to home.
     }
 
     function updateContinueWatchingUI() {
@@ -1705,7 +1705,8 @@
     window.removeFromHistory = function(id, event) {
         if(event) event.stopPropagation(); // Stop card click
         let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
-        history = history.filter(h => h.tmdbId !== id);
+        // Filter needs to check against Number(id) just in case
+        history = history.filter(h => Number(h.tmdbId) !== Number(id));
         localStorage.setItem('watch_history', JSON.stringify(history));
         updateContinueWatchingUI();
     }
@@ -1779,11 +1780,13 @@
             btnContainer.appendChild(btn);
         });
         
-        // --- DEEP LINKING CHECK ---
+        // --- DEEP LINKING CHECK (FIXED) ---
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('id') && urlParams.has('type')) {
              heroSection.style.display = 'none'; // Prevent hero flash
-             selectContent(urlParams.get('id'), "Loading Content...", urlParams.get('type'));
+             // Explicitly cast ID to Number to fix deep linking bugs
+             const deepId = Number(urlParams.get('id'));
+             selectContent(deepId, "Loading Content...", urlParams.get('type'));
         }
 
         loadProgress(); // Now loads history slider
