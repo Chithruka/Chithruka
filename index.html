@@ -16,6 +16,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
+        /* --- Import Custom Variable Font for Footer --- */
+        @font-face {
+            font-family: 'TheFont';
+            src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2") format('woff2');
+        }
+
         :root {
             --accent: #e50914; /* Netflix Red */
             --text-muted: #bfbfbf;
@@ -26,8 +32,14 @@
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             margin: 0;
-            padding-bottom: 40px;
+            padding-bottom: 0; /* Removed padding to let footer sit at bottom */
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1; /* Pushes footer to bottom if content is short */
         }
 
         /* --- Dynamic Background --- */
@@ -67,6 +79,41 @@
             background: linear-gradient(45deg, #fff, #e50914);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             cursor: pointer; z-index: 50;
+        }
+
+        /* --- Footer Animation Styles --- */
+        .footer-container {
+            width: 100%;
+            padding: 40px 0;
+            background: linear-gradient(to top, #000 20%, transparent);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .footer-name {
+            font-family: 'TheFont', sans-serif;
+            font-size: clamp(3rem, 5vw, 6rem); /* Responsive size */
+            text-align: center;
+            
+            /* Gradient Text Color */
+            background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            
+            /* Combined Animations: Breathe + Gradient Move */
+            animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
+        }
+
+        @keyframes letter-breathe {
+            from, to { font-variation-settings: 'wght' 100; }
+            50% { font-variation-settings: 'wght' 900; }
+        }
+
+        @keyframes gradient-move {
+            to { background-position: 200% center; }
         }
 
         /* --- Header / Nav --- */
@@ -452,6 +499,10 @@
     </div>
 </div>
 
+<footer class="footer-container">
+    <span class="footer-name">CHITHRUKA</span>
+</footer>
+
 <div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
         <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
@@ -490,6 +541,17 @@
         <button onclick="closeTrailerModal()" class="absolute -top-10 right-0 text-white hover:text-red-500 text-2xl"><i class="fas fa-times"></i> Close</button>
         <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
             <iframe id="trailer-iframe" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+<div id="resume-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl text-center">
+        <h3 class="text-xl font-bold mb-2 text-white">Resume Watching?</h3>
+        <p id="resume-text" class="text-gray-300 text-sm mb-6">Continue where you left off?</p>
+        <div class="flex gap-3 justify-center">
+            <button id="btn-resume-no" class="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition">No</button>
+            <button id="btn-resume-yes" class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition">Resume</button>
         </div>
     </div>
 </div>
@@ -948,13 +1010,12 @@
             
             if (!episodeData.length) { showMessage("No episodes available.", true); return; }
 
-            // --- CHANGED: Populate Season Dropdown ---
             const seasonSelect = document.getElementById('season-select');
             seasonSelect.innerHTML = '';
             episodeData.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.season;
-                opt.textContent = s.title; // e.g. "Season 1"
+                opt.textContent = s.title; 
                 seasonSelect.appendChild(opt);
             });
 
@@ -968,14 +1029,12 @@
         } catch (e) { showMessage("Failed to load show details.", true); console.error(e); }
     }
     
-    // --- ADDED: Handle Season Change ---
     window.changeSeason = async function(season) {
         currentSeason = parseInt(season);
-        currentEpisode = 1; // Reset to ep 1 of new season
+        currentEpisode = 1; 
         
-        // Show loading state in accordion
         episodeAccordionContent.innerHTML = '<div class="text-center p-4 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading Season...</div>';
-        if (!accordionOpen) toggleAccordion(); // Open accordion to show loading
+        if (!accordionOpen) toggleAccordion(); 
 
         await fetchSeasonDetails(TMDB_ID, currentSeason);
         updatePlayer();
@@ -991,7 +1050,6 @@
 
     function renderEpisodesRich() {
         let html = '';
-        // Note: Removed the "Season X" sticky header since we now have the dropdown
         seasonEpisodes.forEach(ep => {
             const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
             const isActive = (ep.episode_number === currentEpisode);
@@ -1133,13 +1191,36 @@
         const saved = localStorage.getItem('stream_progress');
         if (!saved) return;
         const p = JSON.parse(saved);
-        if (Date.now() - p.timestamp > 86400000) return; 
-        if (confirm(`Resume watching "${p.title}"?`)) {
-            await selectContent(p.tmdbId, p.title, p.mediaType);
-            if (p.mediaType === 'tv') {
-                setTimeout(() => { selectEpisode(p.season, p.episode, null); }, 1000);
-            }
-        }
+        if (Date.now() - p.timestamp > 86400000) return; // 24h expiry
+        
+        showResumePrompt(p);
+    }
+
+    function showResumePrompt(p) {
+        const modal = document.getElementById('resume-modal');
+        const text = document.getElementById('resume-text');
+        const btnYes = document.getElementById('btn-resume-yes');
+        const btnNo = document.getElementById('btn-resume-no');
+
+        let msg = `Continue watching "${p.title}"?`;
+        if (p.mediaType === 'tv') msg = `Continue "${p.title}" (S${p.season}:E${p.episode})?`;
+        
+        text.textContent = msg;
+        modal.classList.remove('hidden');
+
+        btnYes.onclick = async () => {
+             modal.classList.add('hidden');
+             await selectContent(p.tmdbId, p.title, p.mediaType);
+             if (p.mediaType === 'tv') {
+                 setTimeout(() => { selectEpisode(p.season, p.episode, null); }, 1000);
+             }
+        };
+        
+        // --- CHANGED: Clear progress on NO ---
+        btnNo.onclick = () => {
+            localStorage.removeItem('stream_progress');
+            modal.classList.add('hidden');
+        };
     }
 
     window.nextEpisode = function() {
@@ -1151,7 +1232,6 @@
             if (episodeData[sIndex + 1]) {
                 nextS = episodeData[sIndex + 1].season;
                 nextE = 1;
-                // Update Season Dropdown First
                 document.getElementById('season-select').value = nextS;
                 changeSeason(nextS).then(() => {
                     selectEpisode(nextS, nextE, null);
