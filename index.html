@@ -379,7 +379,7 @@
 <div class="container mx-auto px-4">
 
     <nav class="navbar">
-        <div class="logo-text text-4xl md:text-6xl" onclick="location.reload()">Chithruka</div>
+        <div class="logo-text text-4xl md:text-6xl" onclick="location.href='index.html';">Chithruka</div>
 
         <div class="search-group">
             <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
@@ -594,7 +594,6 @@
 <div id="message-box" class="fixed bottom-5 right-5 p-4 rounded-lg shadow-lg hidden z-50 text-white font-semibold max-w-sm text-center"></div>
 
 <script>
-    // --- CONFIGURATION ---
     const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240'; 
     const BASE_TMDB_URL = 'https://api.themoviedb.org/3';
     const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92'; 
@@ -604,7 +603,6 @@
     const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280'; 
     const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 
-    // Global State
     let mediaType = 'movie'; 
     let TMDB_ID = null;
     let IMDB_ID = null; 
@@ -647,7 +645,6 @@
         source2: { movie: "https://godriveplayer.com/download.php?type=movie&tmdb=[ID]", tv: "https://godriveplayer.com/download.php?type=series&tmdb=[ID]&season=[S]&episode=[E]" }
     };
 
-    // --- DOM ELEMENTS ---
     const playerInterface = document.getElementById('player-interface');
     const playerIframe = document.getElementById('player-iframe');
     const searchInput = document.getElementById('search-input');
@@ -669,7 +666,6 @@
     const heroSection = document.getElementById('hero-section');
     const pageBackground = document.getElementById('page-background');
 
-    // --- UTILITIES ---
     function showMessage(text, isError = false) {
         messageBox.textContent = text;
         messageBox.className = `fixed bottom-5 right-5 p-4 rounded-lg shadow-lg z-50 text-white font-semibold max-w-sm text-center ${isError ? 'bg-red-700' : 'bg-blue-600'}`;
@@ -994,7 +990,11 @@
         TMDB_ID = id;
         mediaType = type;
         currentTitle = title;
-        document.title = `${title} - Chithruka`; // UPDATE TAB TITLE
+        document.title = `${title} - Chithruka`;
+        
+        // --- NEW: Update URL Bar ---
+        const newUrl = `?id=${id}&type=${type}`;
+        window.history.pushState({ id, type, title }, '', newUrl);
 
         searchResults.innerHTML = ''; 
         searchInput.value = '';
@@ -1005,7 +1005,6 @@
         detailsSection.classList.add('hidden');
         playerIframe.src = "about:blank";
 
-        // Skeleton Logic
         const posterImg = document.getElementById('detail-poster');
         posterImg.src = ''; 
         posterImg.classList.add('skeleton-poster');
@@ -1021,7 +1020,6 @@
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
-            // Added release_dates to fetch
             const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             renderDetails(detailData, title);
@@ -1032,7 +1030,6 @@
 
     async function fetchShowDetails(id, title) {
         try {
-            // Added content_ratings to fetch
             const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
             renderDetails(data, title);
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
@@ -1120,11 +1117,9 @@
             statusEl.classList.add('hidden');
         }
 
-        // --- NEW: Country & Age Rating Logic ---
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
         
-        // Country
         if (data.production_countries && data.production_countries.length > 0) {
             countryEl.querySelector('span').textContent = data.production_countries[0].iso_3166_1;
             countryEl.classList.remove('hidden');
@@ -1132,12 +1127,10 @@
             countryEl.classList.add('hidden');
         }
 
-        // Age Rating
         let rating = null;
         if (mediaType === 'movie' && data.release_dates && data.release_dates.results) {
             const usRelease = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
             if (usRelease && usRelease.release_dates) {
-                // Find first certification that isn't empty
                 const cert = usRelease.release_dates.find(d => d.certification);
                 if (cert) rating = cert.certification;
             }
@@ -1152,7 +1145,6 @@
         } else {
             ageEl.classList.add('hidden');
         }
-        // ----------------------------------------
 
         let logoPath = null;
         if (data.images && data.images.logos && data.images.logos.length > 0) {
@@ -1230,7 +1222,6 @@
             showMessage("Server unavailable (Missing IMDb ID). Try another.", true);
         } else {
             playerIframe.src = url;
-            // Reset error handler UI logic here if needed
             document.getElementById('server-loading-msg').classList.add('hidden');
         }
         if (mediaType === 'tv') {
@@ -1247,7 +1238,6 @@
         saveProgress();
     }
     
-    // --- NEW: Handle Server Errors ---
     window.handleServerError = function() {
         if(currentServerIndex < SERVER_URLS.length - 1) {
             const nextServer = currentServerIndex + 1;
@@ -1255,7 +1245,6 @@
             msg.textContent = `Source ${currentServerIndex + 1} busy, switching to Source ${nextServer + 1}...`;
             msg.classList.remove('hidden');
             
-            // Switch after small delay to show message
             setTimeout(() => {
                 const btns = document.querySelectorAll('.server-btn');
                 if(btns[nextServer]) switchServer(nextServer, btns[nextServer]);
@@ -1363,6 +1352,16 @@
     window.closeDownloadModal = () => downloadModal.classList.add('hidden');
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
+    // --- POPSTATE EVENT: Handle Browser Back Button ---
+    window.addEventListener('popstate', (event) => {
+        if (event.state) {
+            selectContent(event.state.id, event.state.title, event.state.type);
+        } else {
+            // If back to homepage, reload to reset
+            location.reload();
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         const btnContainer = document.getElementById('server-buttons');
         SERVER_URLS.forEach((s, i) => {
@@ -1372,8 +1371,21 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
-        loadProgress();
-        loadTrending();
+
+        // --- NEW: Check URL for ID on Load ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlId = urlParams.get('id');
+        const urlType = urlParams.get('type');
+
+        if (urlId && urlType) {
+            // Load specific movie from URL
+            selectContent(urlId, "Loading...", urlType);
+        } else {
+            // Default Home Logic
+            loadProgress();
+            loadTrending();
+        }
+
         loadGenres();
     });
 </script>
