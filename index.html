@@ -280,28 +280,33 @@
         .card-meta { display: flex; justify-content: space-between; font-size: 0.75rem; color: #999; }
         .rating-badge { color: #46d369; font-weight: 700; } /* Netflix green for match */
 
-        /* Remove Button Style */
+        /* Remove Button Style - UPDATED: Always Visible */
         .remove-btn {
             position: absolute; top: 8px; right: 8px;
             width: 28px; height: 28px; border-radius: 50%;
             background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3);
             color: white; display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: all 0.2s; z-index: 20;
+            opacity: 1; /* Fix: Always visible */
+            transition: all 0.2s; z-index: 20;
             backdrop-filter: blur(4px);
         }
-        .poster-wrapper:hover .remove-btn { opacity: 1; }
         .remove-btn:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
 
-        /* --- Scroll Buttons --- */
+        /* --- Scroll Buttons - UPDATED for Mobile --- */
         .scroll-btn {
             position: absolute; top: 40%; transform: translateY(-50%); z-index: 20;
             background: rgba(20, 20, 20, 0.8); color: white; border-radius: 50%;
             width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(4px); opacity: 0; /* Hidden by default, show on hover */
+            backdrop-filter: blur(4px); opacity: 0; /* Hidden by default on desktop */
         }
         .group:hover .scroll-btn { opacity: 1; }
         .scroll-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-50%) scale(1.1); }
+        
+        /* Fix: Always show scroll buttons on touch devices */
+        @media (max-width: 768px) {
+            .scroll-btn { opacity: 1 !important; }
+        }
 
 
         /* --- Top 10 Styling --- */
@@ -921,7 +926,7 @@
                 const li = document.createElement('li');
                 li.className = 'search-result-item';
                 li.innerHTML = `<img src="${img}" class="result-poster rounded-full" loading="lazy"><div class="text-left"><div class="font-bold text-white text-sm">${name}</div><div class="text-xs text-gray-400">Actor</div></div>`;
-                li.onclick = () => loadActorCredits(item.id, name);
+                li.onclick = () => loadActorCredits(item.id, name, item.profile_path);
                 searchResults.appendChild(li);
             } else {
                 const title = item.title || item.name;
@@ -940,7 +945,7 @@
         });
     }
 
-    async function loadActorCredits(personId, personName) {
+    async function loadActorCredits(personId, personName, profilePath) {
         searchResults.innerHTML = '';
         searchInput.value = '';
         trendingContainer.innerHTML = ''; 
@@ -949,7 +954,11 @@
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
 
-        document.getElementById('trending-header').innerHTML = `<i class="fas fa-user-circle text-purple-500 mr-3"></i> Featuring ${personName}`;
+        const imgHtml = profilePath 
+            ? `<img src="${TMDB_IMG_BASE_URL}${profilePath}" class="w-8 h-8 rounded-full object-cover mr-3 border border-gray-600 inline-block">` 
+            : `<i class="fas fa-user-circle text-purple-500 mr-3"></i>`;
+
+        document.getElementById('trending-header').innerHTML = `${imgHtml} Featuring ${personName}`;
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`);
             const sorted = data.cast.sort((a,b) => b.popularity - a.popularity);
@@ -1439,7 +1448,7 @@
                     <div class="cast-name">${c.name}</div>
                     <div class="cast-char">${c.character}</div>
                 `;
-                castDiv.onclick = () => loadActorCredits(c.id, c.name);
+                castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path);
                 castList.appendChild(castDiv);
             });
         }
@@ -1474,7 +1483,7 @@
                         <div class="crew-job">${c.job}</div>
                      `;
                      // Added click handler for crew
-                     crewDiv.onclick = () => loadActorCredits(c.id, c.name);
+                     crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path);
                      crewList.appendChild(crewDiv);
                 });
                 crewContainer.classList.remove('hidden');
@@ -1769,6 +1778,14 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
+        
+        // --- DEEP LINKING CHECK ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('id') && urlParams.has('type')) {
+             heroSection.style.display = 'none'; // Prevent hero flash
+             selectContent(urlParams.get('id'), "Loading Content...", urlParams.get('type'));
+        }
+
         loadProgress(); // Now loads history slider
         loadTrending();
         loadGenres();
