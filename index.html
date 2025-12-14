@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chithruka Streamer</title>
-    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
@@ -32,175 +32,138 @@
 
         /* --- Dynamic Background --- */
         #page-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            /* Default Gradient */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
             background: radial-gradient(circle at top left, #1a1a2e, #000000);
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            transition: background-image 0.7s ease-in-out;
-            will-change: background-image;
+            background-size: cover; background-position: center; background-attachment: fixed;
+            transition: background-image 0.7s ease-in-out; will-change: background-image;
         }
 
         #page-background::before {
-            content: '';
-            position: absolute;
-            inset: 0;
+            content: ''; position: absolute; inset: 0;
             background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         }
 
-        /* --- Glassmorphism Utilities --- */
+        /* --- Glassmorphism --- */
         .glass-panel {
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
         .glass-input, .glass-select {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; backdrop-filter: blur(4px);
         }
         .glass-input:focus, .glass-select:focus {
-            border-color: var(--accent);
-            background: rgba(0, 0, 0, 0.5);
-            outline: none;
+            border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
         }
 
         /* --- Logo --- */
         .logo-text {
-            font-family: 'Dancing Script', cursive;
-            font-weight: 700;
-            font-size: 3.5rem;
+            font-family: 'Dancing Script', cursive; font-weight: 700;
             line-height: 1;
             background: linear-gradient(45deg, #fff, #e50914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            cursor: pointer;
-            z-index: 50;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            cursor: pointer; z-index: 50;
         }
 
         /* --- Header / Nav --- */
         .navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 30px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 20px;
-            position: relative;
-            z-index: 50;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px 5%; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;
+            position: relative; z-index: 50;
+        }
+        /* Mobile: Center logo, stack search */
+        @media (max-width: 640px) {
+            .navbar { justify-content: center; flex-direction: column; }
+            .search-group { width: 100%; justify-content: center; }
+            #search-input { width: 100%; max-width: 100%; }
         }
 
         .search-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-grow: 1;
-            max-width: 600px;
-            justify-content: flex-end;
-            position: relative;
+            display: flex; align-items: center; gap: 10px; flex-grow: 1;
+            max-width: 600px; justify-content: flex-end; position: relative;
         }
         
         .filter-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
-            padding: 10px 16px;
-            border-radius: 50%;
-            transition: all 0.3s;
-            border: 1px solid transparent;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05); color: var(--text-muted);
+            padding: 10px 16px; border-radius: 50%; transition: all 0.3s;
+            border: 1px solid transparent; cursor: pointer; flex-shrink: 0;
         }
         .filter-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: var(--accent); }
 
         #search-input {
-            width: 100%;
-            max-width: 300px;
-            padding: 10px 40px 10px 20px;
-            border-radius: 50px;
-            transition: width 0.3s;
+            width: 100%; max-width: 300px; padding: 10px 40px 10px 20px;
+            border-radius: 50px; transition: width 0.3s;
         }
-        #search-input:focus { max-width: 400px; }
+        @media (min-width: 641px) { #search-input:focus { max-width: 400px; } }
 
         #search-results {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 100%;
-            max-width: 400px;
-            z-index: 50;
-            margin-top: 10px;
-            border-radius: 12px;
-            overflow: hidden;
-            max-height: 400px;
-            overflow-y: auto;
+            position: absolute; top: 100%; right: 0; width: 100%; max-width: 400px;
+            z-index: 50; margin-top: 10px; border-radius: 12px; overflow: hidden;
+            max-height: 400px; overflow-y: auto;
         }
         .search-result-item {
             display: flex; align-items: center; gap: 12px; padding: 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            background: rgba(20, 20, 20, 0.95);
-            cursor: pointer; transition: background 0.2s;
+            background: rgba(20, 20, 20, 0.95); cursor: pointer; transition: background 0.2s;
         }
         .search-result-item:hover { background: rgba(50, 50, 50, 0.95); }
         .result-poster { width: 40px; height: 60px; border-radius: 4px; object-fit: cover; background: #333; }
 
-        /* --- Hero Slider --- */
+        /* --- Hero Slider (Responsive) --- */
         #hero-section {
-            position: relative;
-            width: 100%;
-            height: 550px;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            display: none; 
+            position: relative; width: 100%; 
+            height: 60vh; /* Mobile height */
+            border-radius: 20px; overflow: hidden; margin-bottom: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: none; 
             background: #000;
         }
+        @media (min-width: 768px) { #hero-section { height: 550px; } }
+
         .hero-slide {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-            background-size: cover;
-            background-position: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; transition: opacity 1s ease-in-out;
+            background-size: cover; background-position: center;
         }
         .hero-slide.active { opacity: 1; }
         
         .hero-overlay {
-            position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 40%, transparent 100%);
-            display: flex;
-            align-items: center;
-            padding-left: 60px;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.5) 50%, transparent 100%);
+            display: flex; align-items: flex-end; /* Align bottom on mobile */
+            padding: 30px;
+        }
+        @media (min-width: 768px) {
+            .hero-overlay {
+                background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 40%, transparent 100%);
+                align-items: center; padding-left: 60px;
+            }
         }
 
-        .hero-content { max-width: 500px; z-index: 10; }
+        .hero-content { max-width: 500px; z-index: 10; margin-bottom: 20px; }
+        @media (min-width: 768px) { .hero-content { margin-bottom: 0; } }
         
         .hero-logo {
-            max-width: 350px; max-height: 150px;
-            object-fit: contain; object-position: left;
-            margin-bottom: 20px;
+            max-width: 200px; max-height: 100px; /* Mobile size */
+            object-fit: contain; object-position: left; margin-bottom: 10px;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
         }
+        @media (min-width: 768px) { .hero-logo { max-width: 350px; max-height: 150px; margin-bottom: 20px; } }
+
+        .hero-text {
+            font-size: 0.9rem; margin-bottom: 1rem; line-clamp: 2; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        @media (min-width: 768px) { .hero-text { font-size: 1.125rem; margin-bottom: 1.5rem; line-clamp: 3; -webkit-line-clamp: 3; } }
 
         .hero-indicators {
             position: absolute; bottom: 20px; right: 30px;
             display: flex; gap: 10px; z-index: 20;
         }
         .indicator {
-            width: 10px; height: 10px; border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background: rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s;
         }
         .indicator.active { background: var(--accent); transform: scale(1.2); }
@@ -214,10 +177,10 @@
         
         /* --- Buttons --- */
         .server-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: #ccc; padding: 8px 16px; border-radius: 8px;
-            cursor: pointer; transition: all 0.2s; font-size: 0.85rem;
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05); color: #ccc;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05);
+            flex-grow: 1; /* Grow on mobile */
         }
         .server-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
         .server-btn.active {
@@ -239,11 +202,12 @@
 
         /* --- Details --- */
         .title-logo {
-            max-width: 350px; max-height: 120px; width: auto;
+            max-width: 100%; max-height: 100px; width: auto; /* Mobile */
             object-fit: contain; object-position: left;
-            margin-bottom: 1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
             display: none; 
         }
+        @media (min-width: 768px) { .title-logo { max-width: 350px; max-height: 120px; } }
 
         .cast-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
         .cast-card { min-width: 80px; text-align: center; cursor: pointer; transition: transform 0.2s; }
@@ -265,19 +229,15 @@
         .accordion-content {
             background: rgba(0,0,0,0.2); padding: 10px; margin-top: 5px;
             border-radius: 12px; max-height: 0; overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            overflow-y: auto; 
+            transition: max-height 0.3s ease-out; overflow-y: auto; 
         }
-        
         .episode-rich-item {
             display: flex; gap: 15px; padding: 10px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer; transition: background 0.2s;
-            border-radius: 8px;
+            cursor: pointer; transition: background 0.2s; border-radius: 8px;
         }
         .episode-rich-item:hover { background: rgba(255,255,255,0.05); }
         .episode-rich-item.active { background: rgba(229,9,20,0.15); border: 1px solid rgba(229,9,20,0.3); }
-        
         .ep-still { width: 120px; height: 68px; flex-shrink: 0; border-radius: 6px; object-fit: cover; background: #222; }
         .ep-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .ep-title { font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
@@ -288,23 +248,22 @@
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
         .scroll-card {
-            min-width: 160px; width: 160px; flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px; overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer; display: flex; flex-direction: column;
+            min-width: 140px; width: 140px; flex-shrink: 0; /* Smaller on mobile */
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;
+            display: flex; flex-direction: column;
         }
+        @media (min-width: 768px) { .scroll-card { min-width: 160px; width: 160px; } }
+
         .scroll-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 15px 30px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2);
             z-index: 10;
         }
-        /* Changed from background-image div to img tag for lazy loading */
-        .poster-img {
-            width: 100%; height: 230px; object-fit: cover; background-color: #222;
-        }
+        .poster-img { width: 100%; height: 200px; object-fit: cover; background-color: #222; }
+        @media (min-width: 768px) { .poster-img { height: 230px; } }
+        
         .card-body { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
         .card-title { font-weight: 600; color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-meta { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
@@ -334,15 +293,15 @@
 <div class="container mx-auto px-4">
 
     <nav class="navbar">
-        <div class="logo-text" onclick="location.reload()">Chithruka</div>
+        <div class="logo-text text-4xl md:text-6xl" onclick="location.reload()">Chithruka</div>
 
         <div class="search-group">
             <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
                 <i class="fas fa-sliders-h"></i>
             </button>
             
-            <div class="relative w-full max-w-[300px]">
-                <input type="text" id="search-input" class="glass-input" placeholder="Search Movies, TV, People...">
+            <div class="relative w-full max-w-[300px] flex-grow">
+                <input type="text" id="search-input" class="glass-input" placeholder="Search...">
                 <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
             </div>
             
@@ -355,22 +314,27 @@
         <div id="hero-indicators" class="hero-indicators"></div>
     </div>
 
-    <div id="details-section" class="glass-panel p-8 rounded-2xl hidden mb-8">
+    <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8">
         <div class="flex flex-col md:flex-row gap-8">
-            <div class="flex-shrink-0 mx-auto md:mx-0">
-                <img id="detail-poster" src="" alt="Poster" class="w-52 rounded-xl shadow-2xl object-cover border border-gray-700" loading="lazy">
+            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52">
+                <img id="detail-poster" src="" alt="Poster" class="w-full rounded-xl shadow-2xl object-cover border border-gray-700" loading="lazy">
             </div>
             <div class="flex-grow min-w-0">
                 <img id="detail-logo" src="" alt="Title Logo" class="title-logo" loading="lazy">
-                <h2 id="detail-heading" class="text-4xl font-bold mb-3 text-white"></h2>
+                <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white"></h2>
                 
-                <div class="flex flex-wrap items-center gap-5 text-sm text-gray-300 mb-6">
+                <p id="detail-tagline" class="text-gray-400 italic text-sm md:text-base mb-4"></p>
+                
+                <div class="flex flex-wrap items-center gap-4 md:gap-5 text-sm text-gray-300 mb-6">
                     <span id="detail-date" class="flex items-center"><i class="far fa-calendar-alt mr-2 text-accent"></i> <span></span></span>
                     <span id="detail-rating" class="flex items-center"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
+                    
                     <span id="detail-runtime" class="flex items-center"><i class="far fa-clock mr-2"></i> <span></span></span>
+                    <span id="detail-status" class="flex items-center text-green-400 font-semibold"><i class="fas fa-info-circle mr-2"></i><span></span></span>
                 </div>
+                
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
-                <p id="detail-overview" class="text-gray-300 leading-relaxed text-base mb-6"></p>
+                <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
 
                 <div id="cast-container" class="mt-4">
                     <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wide">Top Cast</h4>
@@ -387,15 +351,15 @@
 
         <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div id="server-buttons" class="flex flex-wrap gap-2"></div>
-            <div class="flex gap-3 w-full md:w-auto">
+            <div class="flex flex-wrap gap-3 w-full md:w-auto">
                 <button id="next-ep-btn" onclick="nextEpisode()" class="action-btn btn-next flex-grow md:flex-grow-0 hidden shadow-lg">
-                    <i class="fas fa-step-forward mr-2"></i> Next Ep
+                    <i class="fas fa-step-forward mr-2"></i> Next
                 </button>
                 <button onclick="openTrailerModal()" class="action-btn btn-trailer flex-grow md:flex-grow-0 shadow-lg">
                     <i class="fab fa-youtube mr-2"></i> Trailer
                 </button>
                 <button onclick="openDownloadModal()" class="action-btn btn-download flex-grow md:flex-grow-0 shadow-lg">
-                    <i class="fas fa-download mr-2"></i> Download
+                    <i class="fas fa-download mr-2"></i> DL
                 </button>
             </div>
         </div>
@@ -410,14 +374,14 @@
     </div>
 
     <div id="recommendations-section" class="mb-8 relative hidden">
-        <h2 class="text-2xl font-bold mb-6 text-white flex items-center px-2">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2">
             <i class="fas fa-thumbs-up text-blue-500 mr-3"></i> You May Also Like
         </h2>
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('recommendations-container', -300)">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <div id="recommendations-container" class="flex flex-nowrap gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <div id="recommendations-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
             <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('recommendations-container', 300)">
                 <i class="fas fa-chevron-right"></i>
             </button>
@@ -425,7 +389,7 @@
     </div>
 
     <div class="mb-12 relative">
-        <h2 id="trending-header" class="text-2xl font-bold mb-6 text-white flex items-center px-2">
+        <h2 id="trending-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2">
             <i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now
         </h2>
         
@@ -434,7 +398,7 @@
                 <i class="fas fa-chevron-left"></i>
             </button>
 
-            <div id="trending-container" class="flex flex-nowrap gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth">
+            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth">
                 </div>
 
             <button id="scroll-right" class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
@@ -452,7 +416,6 @@
     <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
         <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
         <h3 class="text-xl font-bold mb-4 text-center text-white">Discover</h3>
-        
         <div class="flex flex-col gap-4">
             <div>
                 <label class="block text-xs text-gray-400 mb-1">Type</label>
@@ -470,11 +433,11 @@
             <div class="flex gap-4">
                 <div class="flex-1">
                     <label class="block text-xs text-gray-400 mb-1">Year</label>
-                    <input type="number" id="filter-year" class="glass-input w-full p-2 rounded-lg" placeholder="2023" min="1900" max="2030">
+                    <input type="number" id="filter-year" class="glass-input w-full p-2 rounded-lg" placeholder="2023">
                 </div>
                 <div class="flex-1">
                     <label class="block text-xs text-gray-400 mb-1">Min Rating</label>
-                    <input type="number" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0" min="0" max="10" step="0.1">
+                    <input type="number" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
                 </div>
             </div>
             <button onclick="applyFilter()" class="mt-2 w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Apply Filter</button>
@@ -518,10 +481,10 @@
     
     // OPTIMIZATION: Use smaller images for speed
     const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92'; 
-    const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342'; // Optimized for cards
-    const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300'; // Optimized for details
-    const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500'; // For big modal posters
-    const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280'; // Optimized backdrop (was original)
+    const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342'; 
+    const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300';
+    const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500'; 
+    const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280'; 
     const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 
     // Global State
@@ -542,7 +505,6 @@
     let loadedGenreType = null;
     let heroInterval;
 
-    // --- CACHING (Optimization) ---
     const requestCache = new Map();
 
     async function fetchCached(url) {
@@ -555,7 +517,6 @@
         } catch (e) { throw e; }
     }
 
-    // --- URL DEFINITIONS ---
     const SERVER_URLS = [
         { name: "Server 1 (VidSrc.to)", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
         { name: "Server 2 (VidSrc VIP)", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
@@ -598,7 +559,6 @@
         setTimeout(() => messageBox.classList.add('hidden'), 3000);
     }
 
-    // --- SCROLLING ---
     window.scrollContainer = function(id, amount) {
         document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
     }
@@ -609,7 +569,6 @@
         }
     });
 
-    // --- FETCH DATA (TRENDING & HERO) ---
     async function loadTrending() {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
@@ -617,13 +576,8 @@
 
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
-            
             if (data.results && data.results.length > 0) {
-                // If it's the first page, initialize the Hero with top 5
-                if (trendingPage === 1) {
-                    initHero(data.results.slice(0, 5));
-                }
-
+                if (trendingPage === 1) initHero(data.results.slice(0, 5));
                 trendingPage++;
                 renderCards(data.results, trendingContainer, true);
             }
@@ -631,7 +585,6 @@
         finally { isTrendingLoading = false; infiniteLoader.classList.add('hidden'); }
     }
 
-    // --- HERO SLIDER LOGIC ---
     async function initHero(items) {
         const slidesContainer = document.getElementById('hero-slides');
         const indicatorsContainer = document.getElementById('hero-indicators');
@@ -647,7 +600,6 @@
             const backdrop = item.backdrop_path ? `${TMDB_BACKDROP_WEB}${item.backdrop_path}` : null;
             if (!backdrop) continue;
 
-            // Fetch Logo
             let logoUrl = null;
             try {
                 const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}&include_image_language=en,null`);
@@ -661,14 +613,14 @@
             
             const titleHtml = logoUrl 
                 ? `<img src="${logoUrl}" class="hero-logo" alt="${title}" loading="lazy">`
-                : `<h1 class="text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>`;
+                : `<h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>`;
 
             slide.innerHTML = `
                 <div class="hero-overlay">
                     <div class="hero-content fade-in">
                         ${titleHtml}
-                        <p class="text-white text-lg mb-6 line-clamp-3 drop-shadow-md text-gray-200 w-3/4">${item.overview}</p>
-                        <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-lg px-8 py-3">
+                        <p class="hero-text text-white text-gray-200">${item.overview}</p>
+                        <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3">
                             <i class="fas fa-play mr-2"></i> Watch Now
                         </button>
                     </div>
@@ -693,22 +645,17 @@
     function showHeroSlide(index) {
         const slides = document.querySelectorAll('.hero-slide');
         const indicators = document.querySelectorAll('.indicator');
-        
         slides.forEach(s => s.classList.remove('active'));
         indicators.forEach(i => i.classList.remove('active'));
-        
         if (slides[index]) slides[index].classList.add('active');
         if (indicators[index]) indicators[index].classList.add('active');
     }
 
-    // --- OTHER FETCH FUNCTIONS ---
     async function loadRecommendations(type, id) {
         recommendationsContainer.innerHTML = '';
         recommendationsSection.classList.add('hidden');
-        
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/recommendations?api_key=${TMDB_API_KEY}`);
-            
             if (data.results && data.results.length > 0) {
                 recommendationsSection.classList.remove('hidden');
                 const results = data.results.map(item => ({ ...item, media_type: type }));
@@ -722,12 +669,9 @@
             if (trackIds) {
                 if (loadedIds.has(item.id) || item.media_type === 'person') return;
                 loadedIds.add(item.id);
-            } else {
-                 if (item.media_type === 'person') return;
-            }
+            } else if (item.media_type === 'person') return;
 
             const title = item.title || item.name;
-            // OPTIMIZATION: Use smaller poster size (w342) for lists
             const poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
             if (!poster) return;
 
@@ -737,7 +681,6 @@
 
             const card = document.createElement('div');
             card.className = 'scroll-card';
-            // Use native img tag for lazy loading
             card.innerHTML = `
                 <img src="${poster}" class="poster-img" loading="lazy" alt="${title}">
                 <div class="card-body">
@@ -748,16 +691,11 @@
                     </div>
                 </div>
             `;
-            
-            card.onclick = () => {
-                selectContent(item.id, title, type);
-            };
-
+            card.onclick = () => selectContent(item.id, title, type);
             container.appendChild(card);
         });
     }
 
-    // --- SEARCH (MULTI) ---
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
         const query = searchInput.value.trim();
@@ -803,7 +741,6 @@
         });
     }
 
-    // --- ACTOR CREDITS ---
     async function loadActorCredits(personId, personName) {
         searchResults.innerHTML = '';
         searchInput.value = '';
@@ -813,7 +750,6 @@
         heroSection.style.display = 'none';
 
         document.getElementById('trending-header').innerHTML = `<i class="fas fa-user-circle text-purple-500 mr-3"></i> Featuring ${personName}`;
-        
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`);
             const sorted = data.cast.sort((a,b) => b.popularity - a.popularity);
@@ -828,7 +764,6 @@
         } catch(e) { showMessage("Could not load filmography", true); }
     }
 
-    // --- ADVANCED FILTER ---
     window.openFilterModal = () => {
         filterModal.classList.remove('hidden');
         loadGenres();
@@ -839,7 +774,6 @@
     async function loadGenres() {
         const type = document.getElementById('filter-type').value;
         if (loadedGenreType === type) return; 
-
         const select = document.getElementById('filter-genre');
         select.innerHTML = '<option value="">Any Genre</option>';
         try {
@@ -889,7 +823,6 @@
         } catch (e) { showMessage("Filter failed", true); }
     }
 
-    // --- TRAILER LOGIC ---
     window.openTrailerModal = async function() {
         if (!TMDB_ID) return;
         trailerModal.classList.remove('hidden');
@@ -899,7 +832,6 @@
             const data = await fetchCached(`${BASE_TMDB_URL}/${endpoint}/${TMDB_ID}/videos?api_key=${TMDB_API_KEY}`);
             const trailer = data.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || data.results.find(v => v.site === 'YouTube');
             if (trailer) {
-                // FIXED: URL parameters to prevent playback errors
                 trailerIframe.src = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&origin=${window.location.origin}&enablejsapi=1&rel=0`;
             } else {
                 trailerIframe.src = '';
@@ -913,14 +845,12 @@
         trailerIframe.src = ''; 
     };
 
-    // --- CONTENT SELECTION ---
     window.selectContent = async function(id, title, type) {
         TMDB_ID = id;
         mediaType = type;
         currentTitle = title;
         searchResults.innerHTML = ''; 
         searchInput.value = '';
-        
         heroSection.style.display = 'none';
 
         playerInterface.classList.add('hidden'); 
@@ -931,19 +861,14 @@
         else await fetchMovieDetails(id, title);
         
         loadRecommendations(mediaType, id);
-
-        setTimeout(() => {
-             detailsSection.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+        setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
     }
 
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
             const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits&include_image_language=en,null`);
-            
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
-            
             renderDetails(detailData, title);
             playerInterface.classList.remove('hidden');
             updatePlayer();
@@ -953,19 +878,14 @@
     async function fetchShowDetails(id, title) {
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits&include_image_language=en,null`);
-            
             renderDetails(data, title);
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
                 .map(s => ({ season: s.season_number, episodes: s.episode_count, title: s.name }));
-
             if (!episodeData.length) { showMessage("No episodes available.", true); return; }
-
             currentSeason = episodeData[0].season;
             currentEpisode = 1;
-
             tvControls.classList.remove('hidden');
             playerInterface.classList.remove('hidden');
-            
             await fetchSeasonDetails(id, currentSeason);
             updatePlayer();
         } catch (e) { showMessage("Failed to load show details.", true); console.error(e); }
@@ -982,11 +902,9 @@
     function renderEpisodesRich() {
         let html = '';
         html += `<h4 class="text-white text-sm font-bold mt-3 mb-2 px-2 sticky top-0 bg-black/50 backdrop-blur-sm p-3 rounded z-10">Season ${currentSeason}</h4>`;
-        
         seasonEpisodes.forEach(ep => {
             const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
             const isActive = (ep.episode_number === currentEpisode);
-            
             html += `
             <div class="episode-rich-item ${isActive ? 'active' : ''}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
                 <img src="${still}" class="ep-still" loading="lazy">
@@ -996,23 +914,36 @@
                 </div>
             </div>`;
         });
-        
         episodeAccordionContent.innerHTML = html;
         if (accordionOpen) episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
     }
 
     function renderDetails(data, title) {
-        // --- DYNAMIC BACKGROUND ---
-        // Optimization: Use Web-size background (w1280) instead of original
-        if (data.backdrop_path) {
-            pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
-        } else {
-            pageBackground.style.backgroundImage = 'radial-gradient(circle at top left, #1a1a2e, #000000)';
-        }
+        if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
+        else pageBackground.style.backgroundImage = 'radial-gradient(circle at top left, #1a1a2e, #000000)';
 
         detailsSection.classList.remove('hidden');
         const logoImg = document.getElementById('detail-logo');
         const textHeading = document.getElementById('detail-heading');
+        
+        // Tagline Logic
+        const taglineEl = document.getElementById('detail-tagline');
+        if (data.tagline) {
+            taglineEl.textContent = `"${data.tagline}"`;
+            taglineEl.classList.remove('hidden');
+        } else {
+            taglineEl.classList.add('hidden');
+        }
+
+        // Status Logic
+        const statusEl = document.getElementById('detail-status');
+        if(data.status) {
+            statusEl.querySelector('span').textContent = data.status;
+            statusEl.classList.remove('hidden');
+        } else {
+            statusEl.classList.add('hidden');
+        }
+
         let logoPath = null;
         if (data.images && data.images.logos && data.images.logos.length > 0) {
             const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
@@ -1037,6 +968,7 @@
         document.getElementById('detail-rating').querySelector('span').textContent = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
         let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
         document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime/60)}h ${runtime%60}m` : "N/A";
+        
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
         (data.genres || []).forEach(g => {
@@ -1064,7 +996,6 @@
         }
     }
 
-    // --- PLAYER & AUTOMATION ---
     function buildUrl(template) {
         if (!TMDB_ID) return "#";
         let tpl = (mediaType === 'movie') ? template.movie : template.tv;
@@ -1099,7 +1030,6 @@
         document.querySelectorAll('.episode-rich-item').forEach(item => item.classList.remove('active'));
         const activeItem = document.querySelector(`.episode-rich-item[onclick*="(${currentSeason}, ${currentEpisode},"]`);
         if(activeItem) activeItem.classList.add('active');
-        
         saveProgress();
     }
 
@@ -1133,9 +1063,7 @@
             if (episodeData[sIndex + 1]) {
                 nextS = episodeData[sIndex + 1].season;
                 nextE = 1;
-                fetchSeasonDetails(TMDB_ID, nextS).then(() => {
-                    selectEpisode(nextS, nextE, null);
-                });
+                fetchSeasonDetails(TMDB_ID, nextS).then(() => { selectEpisode(nextS, nextE, null); });
                 showMessage(`Starting Season ${nextS}...`);
                 return;
             } else {
@@ -1177,7 +1105,6 @@
     window.closeDownloadModal = () => downloadModal.classList.add('hidden');
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
-    // Init
     document.addEventListener('DOMContentLoaded', () => {
         const btnContainer = document.getElementById('server-buttons');
         SERVER_URLS.forEach((s, i) => {
@@ -1192,7 +1119,5 @@
         loadGenres();
     });
 </script>
-
 </body>
-
 </html>
