@@ -32,14 +32,15 @@
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             margin: 0;
-            padding-bottom: 0; /* Removed padding to let footer sit at bottom */
-            overflow-x: hidden;
+            padding-bottom: 0; 
+            /* --- FIX: PREVENT HORIZONTAL SCROLL/BREATHING --- */
+            overflow-x: hidden; 
             display: flex;
             flex-direction: column;
         }
 
         .container {
-            flex: 1; /* Pushes footer to bottom if content is short */
+            flex: 1; /* Pushes footer to bottom */
         }
 
         /* --- Dynamic Background --- */
@@ -90,11 +91,17 @@
             justify-content: center;
             align-items: center;
             margin-top: auto;
+            overflow: hidden; /* Extra safety */
         }
 
         .footer-name {
             font-family: 'TheFont', sans-serif;
-            font-size: clamp(3rem, 5vw, 6rem); /* Responsive size */
+            
+            /* --- FIX: SMALLER FONT SIZE FOR MOBILE --- */
+            /* Min: 1.5rem (24px) for mobile, Max: 6rem (96px) for desktop */
+            font-size: clamp(1.5rem, 10vw, 6rem); 
+            max-width: 90vw; /* Prevent hitting edges */
+            
             text-align: center;
             
             /* Gradient Text Color */
@@ -1216,7 +1223,6 @@
              }
         };
         
-        // --- CHANGED: Clear progress on NO ---
         btnNo.onclick = () => {
             localStorage.removeItem('stream_progress');
             modal.classList.add('hidden');
