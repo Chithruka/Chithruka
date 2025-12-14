@@ -7,6 +7,8 @@
     
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
 
+    <link rel="manifest" href="manifest.json">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
@@ -97,6 +99,7 @@
             justify-content: center;
             align-items: center;
             margin-top: auto;
+            overflow: hidden;
             text-align: center;
             gap: 15px;
         }
@@ -120,7 +123,7 @@
         }
 
         #install-app-btn {
-            display: none; /* Hidden by default, shown via JS if installable */
+            display: none; /* Hidden by default, shown via JS */
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
             padding: 8px 16px;
@@ -967,10 +970,13 @@
     // --- Load Countries for Filter ---
     async function loadCountries() {
         const select = document.getElementById('filter-country');
+        // Only load if empty (default has 1 child)
         if (select.children.length > 1) return;
+        
         try {
             const data = await fetchCached(`https://api.themoviedb.org/3/configuration/countries?api_key=${TMDB_API_KEY}`);
             data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+            
             data.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.iso_3166_1;
@@ -980,19 +986,24 @@
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
-    // --- Quick Filter Function ---
+    // --- NEW: Quick Filter Function ---
     window.quickFilter = function(type, value) {
+        // Ensure we are filtering for the correct media type first
         document.getElementById('filter-type').value = mediaType;
+        
+        // Reset all inputs first
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
 
+        // Set the specific value
         if (type === 'genre') document.getElementById('filter-genre').value = value;
         else if (type === 'country') document.getElementById('filter-country').value = value;
         else if (type === 'year') document.getElementById('filter-year').value = value;
         else if (type === 'rating') document.getElementById('filter-rating').value = value;
 
+        // Apply
         applyFilter();
     }
 
@@ -1484,15 +1495,6 @@
     window.closeDownloadModal = () => downloadModal.classList.add('hidden');
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
-    // --- POPSTATE EVENT: Handle Browser Back Button ---
-    window.addEventListener('popstate', (event) => {
-        if (event.state) {
-            selectContent(event.state.id, event.state.title, event.state.type);
-        } else {
-            location.reload();
-        }
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
         const btnContainer = document.getElementById('server-buttons');
         SERVER_URLS.forEach((s, i) => {
@@ -1502,21 +1504,9 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
-
-        // --- Check URL for ID on Load ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlId = urlParams.get('id');
-        const urlType = urlParams.get('type');
-
-        if (urlId && urlType) {
-            selectContent(urlId, "Loading...", urlType);
-        } else {
-            loadProgress();
-            loadTrending();
-        }
-
+        loadProgress();
+        loadTrending();
         loadGenres();
-        loadCountries(); // Load countries on start
     });
 </script>
 </body>
