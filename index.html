@@ -589,7 +589,10 @@
                     <input type="number" step="0.1" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
                 </div>
             </div>
-            <button onclick="applyFilter()" class="mt-2 w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Apply Filter</button>
+            <div class="flex gap-3 mt-2">
+                <button onclick="clearFilters()" class="flex-1 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold transition">Reset</button>
+                <button onclick="applyFilter()" class="flex-1 p-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Apply</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1005,6 +1008,34 @@
         applyFilter();
     }
 
+    // --- NEW: Clear Filters Function ---
+    window.clearFilters = function() {
+        // 1. Reset Form
+        document.getElementById('filter-genre').value = "";
+        document.getElementById('filter-country').value = "";
+        document.getElementById('filter-year').value = "";
+        document.getElementById('filter-rating').value = "";
+        
+        // 2. Close Modal
+        closeFilterModal();
+        
+        // 3. Reset UI State
+        searchInput.value = '';
+        searchResults.innerHTML = '';
+        heroSection.style.display = 'block';
+        document.getElementById('top10-section').style.display = 'block';
+        
+        // 4. Reset Header
+        const header = document.getElementById('trending-header');
+        header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
+        
+        // 5. Reload Trending
+        trendingContainer.innerHTML = '';
+        loadedIds.clear();
+        trendingPage = 1;
+        loadTrending();
+    }
+
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
@@ -1019,7 +1050,6 @@
         document.getElementById('top10-section').style.display = 'none';
         
         // --- Smart Title Logic ---
-        // 1. Get Genre Name (Try Dropdown first, then fallback to Label)
         const genreSelect = document.getElementById('filter-genre');
         let genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
         if ((!genreName || genreName === "Any Genre") && activeFilterLabel && genre) {
@@ -1027,7 +1057,6 @@
         }
         if (genreName === "Any Genre") genreName = "";
 
-        // 2. Get Country Name
         const countrySelect = document.getElementById('filter-country');
         let countryName = countrySelect.options?.[countrySelect.selectedIndex]?.text;
         if ((!countryName || countryName === "Any Country") && activeFilterLabel && country) {
@@ -1035,11 +1064,7 @@
         }
         if (countryName === "Any Country") countryName = "";
 
-        // 3. Build Title String
         const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
-        let titleParts = [];
-        
-        // "Action Movies" or just "Movies"
         let mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
         
         if (countryName) mainStr += ` from ${countryName}`;
@@ -1052,7 +1077,6 @@
         else if (countryName) activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
 
         document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
-        // -------------------------
 
         let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=1`;
         
