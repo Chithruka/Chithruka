@@ -355,6 +355,7 @@
         .ep-still { width: 120px; height: 68px; flex-shrink: 0; border-radius: 6px; object-fit: cover; background: #222; }
         .ep-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .ep-title { font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
+        .ep-meta { font-size: 0.7rem; color: #888; margin-bottom: 3px; }
         .ep-overview { font-size: 0.75rem; color: #aaa; display: -webkit-box; -webkit-line-clamp: 2; }
         
         .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); }
@@ -690,6 +691,29 @@
             requestCache.set(url, data);
             return data;
         } catch (e) { throw e; }
+    }
+
+    // --- HELPER FUNCTIONS ---
+    function formatRuntime(minutes) {
+        if (!minutes) return "";
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}h ${m}m`;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return "TBA";
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+
+    function getSeasonStatus(airDate) {
+        if (!airDate) return "TBA"; 
+        const today = new Date();
+        const release = new Date(airDate);
+        today.setHours(0,0,0,0);
+        release.setHours(0,0,0,0);
+        return release > today ? "📅 Upcoming" : "✅ Released";
     }
 
     const SERVER_URLS = [
@@ -1238,8 +1262,14 @@
             }
             renderDetails(data, currentTitle);
             
+            // Added air_date mapping
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
-                .map(s => ({ season: s.season_number, episodes: s.episode_count, title: s.name }));
+                .map(s => ({ 
+                    season: s.season_number, 
+                    episodes: s.episode_count, 
+                    title: s.name,
+                    air_date: s.air_date 
+                }));
             
             if (!episodeData.length) { showMessage("No episodes available.", true); return; }
 
@@ -1248,7 +1278,12 @@
             episodeData.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.season;
-                opt.textContent = s.title; 
+                
+                // Enhanced Option Text with Status
+                const status = getSeasonStatus(s.air_date);
+                const dateStr = s.air_date ? ` (${s.air_date})` : '';
+                opt.textContent = `${s.title}${dateStr} - ${status}`; 
+                
                 seasonSelect.appendChild(opt);
             });
 
@@ -1304,11 +1339,19 @@
         seasonEpisodes.forEach(ep => {
             const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
             const isActive = (ep.episode_number === currentEpisode);
+            
+            // New Metadata Strings
+            const rating = ep.vote_average ? Math.round(ep.vote_average * 10) + "%" : "NR";
+            const date = formatDate(ep.air_date);
+            const runtime = formatRuntime(ep.runtime);
+            const metaString = `${rating} • ${date} • ${runtime}`;
+
             html += `
             <div class="episode-rich-item ${isActive ? 'active' : ''}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
                 <img src="${still}" class="ep-still" loading="lazy">
                 <div class="ep-info">
                     <div class="ep-title">${ep.episode_number}. ${ep.name}</div>
+                    <div class="ep-meta">${metaString}</div>
                     <div class="ep-overview">${ep.overview || 'No overview available.'}</div>
                 </div>
             </div>`;
