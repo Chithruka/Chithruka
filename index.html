@@ -90,25 +90,50 @@
         /* --- Footer Animation --- */
         .footer-container {
             width: 100%;
-            padding: 40px 0;
+            padding: 40px 20px;
             background: linear-gradient(to top, #000 20%, transparent);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             margin-top: auto;
-            overflow: hidden;
+            text-align: center;
+            gap: 15px;
         }
 
         .footer-name {
             font-family: 'TheFont', sans-serif;
             font-size: clamp(1.5rem, 10vw, 6rem); 
             max-width: 90vw;
-            text-align: center;
             background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
+        }
+
+        .footer-disclaimer {
+            font-size: 12px;
+            color: #888;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        #install-app-btn {
+            display: none; /* Hidden by default, shown via JS if installable */
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        #install-app-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
         }
 
         @keyframes letter-breathe {
@@ -454,7 +479,7 @@
 
     <div id="player-interface" class="hidden fade-in">
         <div class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
-             <div id="server-loading-msg" class="hidden">Connecting...</div>
+             <div id="server-loading-msg" class="hidden"></div>
              <iframe id="player-iframe" allowfullscreen onerror="handleServerError()"></iframe>
         </div>
 
@@ -516,14 +541,15 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
-        <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2" style="display:none;">
-            <i class="fas fa-circle-notch fa-spin"></i>
         </div>
-    </div>
 </div>
 
 <footer class="footer-container">
     <span class="footer-name">CHITHRUKA</span>
+    <p class="footer-disclaimer">
+        This site does not store any files on its server. All contents are provided by non-affiliated third parties.
+    </p>
+    <button id="install-app-btn" onclick="installPWA()"><i class="fas fa-download mr-2"></i> Install App</button>
 </footer>
 
 <div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
@@ -557,7 +583,7 @@
                 </div>
                 <div class="flex-1">
                     <label class="block text-xs text-gray-400 mb-1">Min Rating</label>
-                    <input type="number" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
+                    <input type="number" step="0.1" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
                 </div>
             </div>
             <button onclick="applyFilter()" class="mt-2 w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Apply Filter</button>
@@ -631,6 +657,7 @@
     let loadedIds = new Set(); 
     let loadedGenreType = null;
     let heroInterval;
+    let deferredPrompt; 
 
     const requestCache = new Map();
 
@@ -674,7 +701,6 @@
     const recommendationsSection = document.getElementById('recommendations-section');
     const recommendationsContainer = document.getElementById('recommendations-container');
     const filterModal = document.getElementById('filter-modal');
-    const infiniteLoader = document.getElementById('infinite-loader');
     const heroSection = document.getElementById('hero-section');
     const pageBackground = document.getElementById('page-background');
 
@@ -698,8 +724,7 @@
     async function loadTrending() {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
-        infiniteLoader.style.display = 'block';
-
+        
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (data.results && data.results.length > 0) {
@@ -713,7 +738,6 @@
         } catch (error) { console.error("Trending Error:", error); } 
         finally { 
             isTrendingLoading = false; 
-            infiniteLoader.style.display = 'none'; 
         }
     }
 
@@ -943,13 +967,10 @@
     // --- Load Countries for Filter ---
     async function loadCountries() {
         const select = document.getElementById('filter-country');
-        // Only load if empty (default has 1 child)
         if (select.children.length > 1) return;
-        
         try {
             const data = await fetchCached(`https://api.themoviedb.org/3/configuration/countries?api_key=${TMDB_API_KEY}`);
             data.sort((a, b) => a.english_name.localeCompare(b.english_name));
-            
             data.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.iso_3166_1;
@@ -959,24 +980,19 @@
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
-    // --- NEW: Quick Filter Function ---
+    // --- Quick Filter Function ---
     window.quickFilter = function(type, value) {
-        // Ensure we are filtering for the correct media type first
         document.getElementById('filter-type').value = mediaType;
-        
-        // Reset all inputs first
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
 
-        // Set the specific value
         if (type === 'genre') document.getElementById('filter-genre').value = value;
         else if (type === 'country') document.getElementById('filter-country').value = value;
         else if (type === 'year') document.getElementById('filter-year').value = value;
         else if (type === 'rating') document.getElementById('filter-rating').value = value;
 
-        // Apply
         applyFilter();
     }
 
@@ -1016,9 +1032,27 @@
             } else {
                 renderCards(results, trendingContainer, true);
             }
-            // Auto-scroll to results
+            // --- FIX: Auto Scroll to Results ---
             document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
         } catch (e) { showMessage("Filter failed", true); }
+    }
+
+    // --- PWA INSTALL LOGIC ---
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.getElementById('install-app-btn');
+        if(btn) btn.style.display = 'block';
+    });
+
+    window.installPWA = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            document.getElementById('install-app-btn').style.display = 'none';
+        }
+        deferredPrompt = null;
     }
 
     window.openTrailerModal = async function() {
@@ -1193,15 +1227,13 @@
             const code = data.production_countries[0].iso_3166_1;
             let fullName = code;
             try {
-                // Modern browser API to convert "KR" -> "South Korea"
                 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
                 fullName = regionNames.of(code);
             } catch(e) {}
             
             const span = countryEl.querySelector('span');
-            span.textContent = code; // Show short code
+            span.textContent = code; 
             
-            // Add interaction
             countryEl.title = fullName;
             countryEl.onclick = () => quickFilter('country', code);
             
@@ -1225,13 +1257,13 @@
         const ratingVal = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
         ratingSpan.textContent = ratingVal;
         if(ratingVal !== "N/A") {
+            // --- FIX: Pass precise decimal rating ---
             ratingEl.onclick = () => quickFilter('rating', data.vote_average);
         }
 
         let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
         document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime/60)}h ${runtime%60}m` : "N/A";
         
-        // Age Rating Logic
         let ageRating = null;
         if (mediaType === 'movie' && data.release_dates && data.release_dates.results) {
             const usRelease = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
@@ -1251,7 +1283,6 @@
             ageEl.classList.add('hidden');
         }
 
-        // Logo / Title
         let logoPath = null;
         if (data.images && data.images.logos && data.images.logos.length > 0) {
             const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
@@ -1453,6 +1484,15 @@
     window.closeDownloadModal = () => downloadModal.classList.add('hidden');
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
+    // --- POPSTATE EVENT: Handle Browser Back Button ---
+    window.addEventListener('popstate', (event) => {
+        if (event.state) {
+            selectContent(event.state.id, event.state.title, event.state.type);
+        } else {
+            location.reload();
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         const btnContainer = document.getElementById('server-buttons');
         SERVER_URLS.forEach((s, i) => {
@@ -1462,9 +1502,21 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
-        loadProgress();
-        loadTrending();
+
+        // --- Check URL for ID on Load ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlId = urlParams.get('id');
+        const urlType = urlParams.get('type');
+
+        if (urlId && urlType) {
+            selectContent(urlId, "Loading...", urlType);
+        } else {
+            loadProgress();
+            loadTrending();
+        }
+
         loadGenres();
+        loadCountries(); // Load countries on start
     });
 </script>
 </body>
