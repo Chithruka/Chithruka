@@ -9,8 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
     
-    <link href="https://fonts.googleapis.com/css2?family=BBH+Bartle&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -62,83 +61,13 @@
             border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
         }
 
-        /* --- NEW ANIMATED LOGO STYLES --- */
-        .logo-wrapper {
-            position: relative;
-            cursor: pointer;
-            z-index: 50;
-            padding: 10px 0;
-        }
-
-        .logo-h2 {
-            margin: 0; padding: 0;
-            font-family: "BBH Bartle", "Impact", sans-serif; /* Fallback to Impact if font fails */
-            font-weight: 400;
-            font-style: normal;
-            font-size: 3rem; /* Desktop Size */
-            color: transparent; /* Hide base text */
-            text-transform: uppercase;
-            position: relative;
+        /* --- Logo --- */
+        .logo-text {
+            font-family: 'Dancing Script', cursive; font-weight: 700;
             line-height: 1;
-            display: inline-block;
-        }
-
-        /* Top Half */
-        .logo-h2 span:nth-child(1) {
-            position: absolute;
-            top: 0; left: 0;
-            color: #fff;
-            transition: 0.5s;
-            clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
-            overflow: hidden;
-            width: 100%;
-        }
-        .logo-wrapper:hover .logo-h2 span:nth-child(1) {
-            transform: translateY(-12px);
-        }
-
-        /* Bottom Half */
-        .logo-h2 span:nth-child(2) {
-            position: absolute;
-            top: 0; left: 0;
-            color: #fff;
-            transition: 0.5s;
-            clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
-            overflow: hidden;
-            width: 100%;
-        }
-        .logo-wrapper:hover .logo-h2 span:nth-child(2) {
-            transform: translateY(12px);
-        }
-
-        /* Middle "STREAMER" Text */
-        .logo-h2 span:nth-child(3) {
-            position: absolute;
-            top: 50%; left: 0;
-            transform: translateY(-50%) scaleY(0);
-            width: 100%; /* Match parent width */
-            background: var(--accent); /* Theme Red */
-            color: #fff;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.25em; /* Small relative size */
-            font-weight: 700;
-            letter-spacing: 0.5em;
-            text-align: center;
-            transition: 0.5s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 20px;
-        }
-        .logo-wrapper:hover .logo-h2 span:nth-child(3) {
-            transform: translateY(-50%) scaleY(1);
-        }
-
-        /* Mobile Logo Sizing */
-        @media (max-width: 640px) {
-            .logo-h2 { font-size: 2.2rem; }
-            .logo-wrapper:hover .logo-h2 span:nth-child(1) { transform: translateY(-8px); }
-            .logo-wrapper:hover .logo-h2 span:nth-child(2) { transform: translateY(8px); }
+            background: linear-gradient(45deg, #fff, #e50914);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            cursor: pointer; z-index: 50;
         }
 
         /* --- Navbar --- */
@@ -230,19 +159,21 @@
         }
         .top-10-card:hover { transform: scale(1.05); z-index: 10; }
         
+        /* The Big Number Style (Cineby Inspired) */
         .rank-number {
             position: absolute; bottom: -20px; left: -30px;
             font-size: 110px; font-weight: 900; line-height: 1;
             font-family: 'Inter', sans-serif;
             color: transparent;
-            -webkit-text-stroke: 2px #fff;
+            -webkit-text-stroke: 2px #fff; /* Outline by default */
             z-index: -1; 
             transition: all 0.3s ease;
         }
         
+        /* Fill Red on Hover */
         .top-10-card:hover .rank-number {
-            color: var(--accent); 
-            -webkit-text-stroke: 0px; 
+            color: var(--accent); /* Red Fill */
+            -webkit-text-stroke: 0px; /* Remove outline */
             text-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
         }
 
@@ -265,7 +196,7 @@
         .season-content {
             background: rgba(0,0,0,0.2); 
             border-radius: 0 0 8px 8px; overflow: hidden;
-            display: none; 
+            display: none; /* Hidden by default */
             padding-top: 5px;
         }
         .season-content.open { display: block; }
@@ -300,13 +231,7 @@
         .footer-col ul li { margin-bottom: 12px; }
         .footer-col a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; font-size: 0.9rem; }
         .footer-col a:hover { color: var(--accent); }
-        .footer-brand { 
-            font-family: "BBH Bartle", sans-serif; /* Use the new font for footer brand too */
-            font-size: 2.5rem; 
-            color: #fff; 
-            margin-bottom: 15px; 
-            display: block; 
-        }
+        .footer-brand { font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: #fff; margin-bottom: 15px; display: block; }
         .copyright { text-align: center; color: #666; font-size: 0.8rem; margin-top: 60px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); }
 
         /* --- Standard Components --- */
@@ -349,14 +274,7 @@
 <div class="container mx-auto px-4 flex-grow">
 
     <nav class="navbar">
-        <div class="logo-wrapper" onclick="location.reload()">
-            <h2 class="logo-h2">
-                CHITHRUKA
-                <span>CHITHRUKA</span>
-                <span>CHITHRUKA</span>
-                <span>STREAMER</span>
-            </h2>
-        </div>
+        <div class="logo-text text-4xl md:text-6xl" onclick="location.reload()">Chithruka</div>
 
         <div class="search-group">
             <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
@@ -477,7 +395,7 @@
 <footer class="site-footer">
     <div class="footer-grid">
         <div class="footer-col">
-            <span class="footer-brand">CHITHRUKA</span>
+            <span class="footer-brand">Chithruka</span>
             <p class="text-gray-400 text-sm leading-relaxed">
                 Premium streaming experience with a modern touch. Discover, watch, and enjoy your favorite movies and TV shows in high quality.
             </p>
