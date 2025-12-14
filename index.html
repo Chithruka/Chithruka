@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chithruka Streamer</title>
     
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
@@ -70,6 +72,11 @@
         }
         .glass-input:focus, .glass-select:focus {
             border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
+        }
+        /* Style for Select Options (fixes dark text on some browsers) */
+        .glass-select option {
+            background-color: #222;
+            color: white;
         }
 
         /* --- Logo --- */
@@ -538,6 +545,12 @@
                     <option value="">Any Genre</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Country</label>
+                <select id="filter-country" class="glass-select w-full p-2 rounded-lg">
+                    <option value="">Any Country</option>
+                </select>
+            </div>
             <div class="flex gap-4">
                 <div class="flex-1">
                     <label class="block text-xs text-gray-400 mb-1">Year</label>
@@ -928,9 +941,30 @@
         } catch(e) { console.error("Genre fetch error", e); }
     }
 
+    // --- NEW: Load Countries for Filter ---
+    async function loadCountries() {
+        const select = document.getElementById('filter-country');
+        // Only load if empty (default has 1 child)
+        if (select.children.length > 1) return;
+        
+        try {
+            const data = await fetchCached(`https://api.themoviedb.org/3/configuration/countries?api_key=${TMDB_API_KEY}`);
+            // Sort countries by name
+            data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+            
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.iso_3166_1;
+                opt.textContent = c.english_name;
+                select.appendChild(opt);
+            });
+        } catch (e) { console.error("Countries fetch error", e); }
+    }
+
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
+        const country = document.getElementById('filter-country').value; // Get Country
         const year = document.getElementById('filter-year').value;
         const rating = document.getElementById('filter-rating').value;
 
@@ -941,12 +975,14 @@
         document.getElementById('top10-section').style.display = 'none';
         
         let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=1`;
+        
         if (year) {
             if(type === 'movie') url += `&primary_release_year=${year}`;
             else url += `&first_air_date_year=${year}`;
         }
         if (genre) url += `&with_genres=${genre}`;
         if (rating) url += `&vote_average.gte=${rating}`;
+        if (country) url += `&with_origin_country=${country}`; // Apply Country Filter
 
         trendingContainer.innerHTML = '';
         loadedIds.clear();
@@ -992,7 +1028,6 @@
         currentTitle = title;
         document.title = `${title} - Chithruka`;
         
-        // --- NEW: Update URL Bar ---
         const newUrl = `?id=${id}&type=${type}`;
         window.history.pushState({ id, type, title }, '', newUrl);
 
@@ -1022,7 +1057,14 @@
         try {
             const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
-            renderDetails(detailData, title);
+            
+            // --- FIX: Force update title on load ---
+            if (detailData.title) {
+                currentTitle = detailData.title;
+                document.title = `${currentTitle} - Chithruka`;
+            }
+            renderDetails(detailData, currentTitle);
+            
             playerInterface.classList.remove('hidden');
             updatePlayer();
         } catch (e) { showMessage("Failed to load details.", true); console.error(e); }
@@ -1031,7 +1073,14 @@
     async function fetchShowDetails(id, title) {
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
-            renderDetails(data, title);
+            
+            // --- FIX: Force update title on load ---
+            if (data.name) {
+                currentTitle = data.name;
+                document.title = `${currentTitle} - Chithruka`;
+            }
+            renderDetails(data, currentTitle);
+            
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
                 .map(s => ({ season: s.season_number, episodes: s.episode_count, title: s.name }));
             
@@ -1357,7 +1406,6 @@
         if (event.state) {
             selectContent(event.state.id, event.state.title, event.state.type);
         } else {
-            // If back to homepage, reload to reset
             location.reload();
         }
     });
@@ -1372,21 +1420,20 @@
             btnContainer.appendChild(btn);
         });
 
-        // --- NEW: Check URL for ID on Load ---
+        // --- Check URL for ID on Load ---
         const urlParams = new URLSearchParams(window.location.search);
         const urlId = urlParams.get('id');
         const urlType = urlParams.get('type');
 
         if (urlId && urlType) {
-            // Load specific movie from URL
             selectContent(urlId, "Loading...", urlType);
         } else {
-            // Default Home Logic
             loadProgress();
             loadTrending();
         }
 
         loadGenres();
+        loadCountries(); // Load countries on start
     });
 </script>
 </body>
