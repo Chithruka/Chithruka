@@ -432,12 +432,12 @@
                 <p id="detail-tagline" class="text-gray-400 italic text-sm md:text-base mb-4"></p>
                 
                 <div class="flex flex-wrap items-center gap-4 md:gap-5 text-sm text-gray-300 mb-6">
-                    <span id="detail-date" class="flex items-center"><i class="far fa-calendar-alt mr-2 text-accent"></i> <span></span></span>
-                    <span id="detail-rating" class="flex items-center"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
+                    <span id="detail-date" class="flex items-center cursor-pointer hover:text-accent transition" title="Filter by Year"><i class="far fa-calendar-alt mr-2 text-accent"></i> <span></span></span>
+                    <span id="detail-rating" class="flex items-center cursor-pointer hover:text-yellow-400 transition" title="Filter by Rating"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
                     <span id="detail-runtime" class="flex items-center"><i class="far fa-clock mr-2"></i> <span></span></span>
                     <span id="detail-status" class="flex items-center text-green-400 font-semibold"><i class="fas fa-info-circle mr-2"></i><span></span></span>
                     
-                    <span id="detail-country" class="flex items-center hidden"><i class="fas fa-globe mr-2"></i> <span></span></span>
+                    <span id="detail-country" class="flex items-center hidden cursor-pointer hover:text-blue-400 transition"><i class="fas fa-globe mr-2"></i> <span></span></span>
                     <span id="detail-age" class="flex items-center hidden px-2 py-0.5 border border-gray-500 rounded text-xs font-bold"><span></span></span>
                 </div>
                 
@@ -516,10 +516,7 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
-        <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2" style="display:none;">
-            <i class="fas fa-circle-notch fa-spin"></i>
         </div>
-    </div>
 </div>
 
 <footer class="footer-container">
@@ -674,7 +671,6 @@
     const recommendationsSection = document.getElementById('recommendations-section');
     const recommendationsContainer = document.getElementById('recommendations-container');
     const filterModal = document.getElementById('filter-modal');
-    const infiniteLoader = document.getElementById('infinite-loader');
     const heroSection = document.getElementById('hero-section');
     const pageBackground = document.getElementById('page-background');
 
@@ -698,8 +694,7 @@
     async function loadTrending() {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
-        infiniteLoader.style.display = 'block';
-
+        
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (data.results && data.results.length > 0) {
@@ -713,7 +708,6 @@
         } catch (error) { console.error("Trending Error:", error); } 
         finally { 
             isTrendingLoading = false; 
-            infiniteLoader.style.display = 'none'; 
         }
     }
 
@@ -959,6 +953,27 @@
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
+    // --- NEW: Quick Filter Function ---
+    window.quickFilter = function(type, value) {
+        // Ensure we are filtering for the correct media type first
+        document.getElementById('filter-type').value = mediaType;
+        
+        // Reset all inputs first
+        document.getElementById('filter-genre').value = "";
+        document.getElementById('filter-country').value = "";
+        document.getElementById('filter-year').value = "";
+        document.getElementById('filter-rating').value = "";
+
+        // Set the specific value
+        if (type === 'genre') document.getElementById('filter-genre').value = value;
+        else if (type === 'country') document.getElementById('filter-country').value = value;
+        else if (type === 'year') document.getElementById('filter-year').value = value;
+        else if (type === 'rating') document.getElementById('filter-rating').value = value;
+
+        // Apply
+        applyFilter();
+    }
+
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
@@ -1056,7 +1071,6 @@
             const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             
-            // --- FIX: Force title update ---
             if (detailData.title) {
                 currentTitle = detailData.title;
                 document.title = `${currentTitle} - Chithruka`;
@@ -1072,7 +1086,6 @@
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
             
-            // --- FIX: Force title update ---
             if (data.name) {
                 currentTitle = data.name;
                 document.title = `${currentTitle} - Chithruka`;
@@ -1170,41 +1183,67 @@
         // --- Smart Country Name with Tooltip ---
         if (data.production_countries && data.production_countries.length > 0) {
             const code = data.production_countries[0].iso_3166_1;
-            const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-            const fullName = regionNames.of(code); // "KR" -> "South Korea"
+            let fullName = code;
+            try {
+                // Modern browser API to convert "KR" -> "South Korea"
+                const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+                fullName = regionNames.of(code);
+            } catch(e) {}
             
             const span = countryEl.querySelector('span');
             span.textContent = code; // Show short code
             
             // Add interaction
             countryEl.title = fullName;
-            countryEl.style.cursor = 'pointer';
-            countryEl.onclick = () => showMessage(fullName); // Mobile fallback
+            countryEl.onclick = () => quickFilter('country', code);
             
             countryEl.classList.remove('hidden');
         } else {
             countryEl.classList.add('hidden');
         }
 
-        let rating = null;
+        // Add onclick handlers for filters
+        const dateEl = document.getElementById('detail-date');
+        const dateSpan = dateEl.querySelector('span');
+        const dateVal = data.release_date || data.first_air_date;
+        const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
+        dateSpan.textContent = year;
+        if(year !== "N/A") {
+            dateEl.onclick = () => quickFilter('year', year);
+        }
+
+        const ratingEl = document.getElementById('detail-rating');
+        const ratingSpan = ratingEl.querySelector('span');
+        const ratingVal = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
+        ratingSpan.textContent = ratingVal;
+        if(ratingVal !== "N/A") {
+            ratingEl.onclick = () => quickFilter('rating', Math.floor(data.vote_average));
+        }
+
+        let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
+        document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime/60)}h ${runtime%60}m` : "N/A";
+        
+        // Age Rating Logic
+        let ageRating = null;
         if (mediaType === 'movie' && data.release_dates && data.release_dates.results) {
             const usRelease = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
             if (usRelease && usRelease.release_dates) {
                 const cert = usRelease.release_dates.find(d => d.certification);
-                if (cert) rating = cert.certification;
+                if (cert) ageRating = cert.certification;
             }
         } else if (mediaType === 'tv' && data.content_ratings && data.content_ratings.results) {
             const usRating = data.content_ratings.results.find(r => r.iso_3166_1 === 'US');
-            if (usRating) rating = usRating.rating;
+            if (usRating) ageRating = usRating.rating;
         }
 
-        if (rating) {
-            ageEl.querySelector('span').textContent = rating;
+        if (ageRating) {
+            ageEl.querySelector('span').textContent = ageRating;
             ageEl.classList.remove('hidden');
         } else {
             ageEl.classList.add('hidden');
         }
 
+        // Logo / Title
         let logoPath = null;
         if (data.images && data.images.logos && data.images.logos.length > 0) {
             const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
@@ -1226,18 +1265,13 @@
         const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
         document.getElementById('detail-poster').src = poster;
         
-        const date = data.release_date || data.first_air_date;
-        document.getElementById('detail-date').querySelector('span').textContent = date ? new Date(date).getFullYear() : "N/A";
-        document.getElementById('detail-rating').querySelector('span').textContent = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
-        let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
-        document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime/60)}h ${runtime%60}m` : "N/A";
-        
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
         (data.genres || []).forEach(g => {
             const tag = document.createElement('span');
-            tag.className = 'px-3 py-1 bg-white/10 text-gray-200 text-xs rounded-full border border-white/10';
+            tag.className = 'px-3 py-1 bg-white/10 text-gray-200 text-xs rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition';
             tag.textContent = g.name;
+            tag.onclick = () => quickFilter('genre', g.id);
             genreContainer.appendChild(tag);
         });
 
