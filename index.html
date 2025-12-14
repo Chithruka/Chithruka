@@ -1439,7 +1439,7 @@
         const castList = document.getElementById('cast-list');
         castList.innerHTML = '';
         if (data.credits && data.credits.cast) {
-            data.credits.cast.slice(0, 10).forEach(c => {
+            data.credits.cast.forEach(c => { // REMOVED SLICE LIMIT
                 const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
                 const castDiv = document.createElement('div');
                 castDiv.className = 'cast-card';
@@ -1459,13 +1459,12 @@
         crewList.innerHTML = '';
         
         if (data.credits && data.credits.crew) {
-            const keyJobs = ['Director', 'Writer', 'Screenplay', 'Director of Photography', 'Executive Producer'];
-            const importantCrew = data.credits.crew.filter(c => keyJobs.includes(c.job));
+            // REMOVED JOB FILTER
             
             // Remove duplicates
             const uniqueCrew = [];
             const crewMap = new Map();
-            importantCrew.forEach(c => {
+            data.credits.crew.forEach(c => { // USE FULL CREW LIST
                 if(!crewMap.has(c.id)) {
                     crewMap.set(c.id, true);
                     uniqueCrew.push(c);
@@ -1473,7 +1472,7 @@
             });
 
             if (uniqueCrew.length > 0) {
-                uniqueCrew.slice(0, 15).forEach(c => {
+                uniqueCrew.forEach(c => { // REMOVED SLICE LIMIT
                      const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
                      const crewDiv = document.createElement('div');
                      crewDiv.className = 'cast-card';
