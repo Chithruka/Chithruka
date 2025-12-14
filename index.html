@@ -662,7 +662,7 @@
     let heroInterval;
     let deferredPrompt; 
     
-    // --- NEW: Store label for dynamic titles ---
+    // Stores the text label (e.g., "Action") when clicking a tag
     let activeFilterLabel = "";
 
     const requestCache = new Map();
@@ -949,7 +949,7 @@
     window.openFilterModal = () => {
         filterModal.classList.remove('hidden');
         loadGenres();
-        loadCountries(); // Ensure countries are loaded
+        loadCountries(); 
     };
     window.closeFilterModal = () => filterModal.classList.add('hidden');
     filterModal.addEventListener('click', e => { if(e.target === filterModal) closeFilterModal(); });
@@ -988,30 +988,23 @@
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
-    // --- UPDATED: Quick Filter with Label Support ---
     window.quickFilter = function(type, value, label = "") {
-        activeFilterLabel = label; // Store label
+        activeFilterLabel = label; 
         
-        // Ensure we are filtering for the correct media type first
         document.getElementById('filter-type').value = mediaType;
-        
-        // Reset all inputs first
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
 
-        // Set the specific value
         if (type === 'genre') document.getElementById('filter-genre').value = value;
         else if (type === 'country') document.getElementById('filter-country').value = value;
         else if (type === 'year') document.getElementById('filter-year').value = value;
         else if (type === 'rating') document.getElementById('filter-rating').value = value;
 
-        // Apply
         applyFilter();
     }
 
-    // --- UPDATED: Apply Filter with Dynamic Titles ---
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
@@ -1025,31 +1018,41 @@
         heroSection.style.display = 'none'; 
         document.getElementById('top10-section').style.display = 'none';
         
-        // --- Dynamic Header Logic ---
-        let titleText = "Filtered Results";
-        let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
-
-        if (year) {
-            titleText = `Released in ${year}`;
-            activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
-        } else if (genre) {
-            const select = document.getElementById('filter-genre');
-            const selectedText = select.options[select.selectedIndex]?.text;
-            titleText = activeFilterLabel || selectedText || "Genre";
-            activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
-        } else if (rating) {
-            titleText = `Rated higher than ${rating}`;
-            activeIcon = '<i class="fas fa-star text-yellow-500 mr-3"></i>';
-        } else if (country) {
-            const select = document.getElementById('filter-country');
-            const selectedText = select.options[select.selectedIndex]?.text;
-            const name = activeFilterLabel || selectedText || country;
-            titleText = `Released in ${name}`;
-            activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
+        // --- Smart Title Logic ---
+        // 1. Get Genre Name (Try Dropdown first, then fallback to Label)
+        const genreSelect = document.getElementById('filter-genre');
+        let genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
+        if ((!genreName || genreName === "Any Genre") && activeFilterLabel && genre) {
+             genreName = activeFilterLabel;
         }
+        if (genreName === "Any Genre") genreName = "";
 
-        document.getElementById('trending-header').innerHTML = `${activeIcon} ${titleText}`;
-        // ---------------------------
+        // 2. Get Country Name
+        const countrySelect = document.getElementById('filter-country');
+        let countryName = countrySelect.options?.[countrySelect.selectedIndex]?.text;
+        if ((!countryName || countryName === "Any Country") && activeFilterLabel && country) {
+             countryName = activeFilterLabel;
+        }
+        if (countryName === "Any Country") countryName = "";
+
+        // 3. Build Title String
+        const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
+        let titleParts = [];
+        
+        // "Action Movies" or just "Movies"
+        let mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
+        
+        if (countryName) mainStr += ` from ${countryName}`;
+        if (year) mainStr += ` released in ${year}`;
+        if (rating) mainStr += ` rated ${rating}+`;
+
+        let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
+        if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
+        else if (year) activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
+        else if (countryName) activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
+
+        document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
+        // -------------------------
 
         let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=1`;
         
@@ -1265,7 +1268,7 @@
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
         
-        // --- Smart Country Name with Tooltip and Click Action ---
+        // --- Country Click Handlers ---
         if (data.production_countries && data.production_countries.length > 0) {
             const code = data.production_countries[0].iso_3166_1;
             let fullName = code;
@@ -1278,7 +1281,7 @@
             span.textContent = code; 
             
             countryEl.title = fullName;
-            countryEl.onclick = () => quickFilter('country', code, fullName); // Pass fullName as label
+            countryEl.onclick = () => quickFilter('country', code, fullName); 
             
             countryEl.classList.remove('hidden');
         } else {
@@ -1345,14 +1348,14 @@
         const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
         document.getElementById('detail-poster').src = poster;
         
-        // --- Genre Clicks with Names ---
+        // --- Genre Clicks with Labels ---
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
         (data.genres || []).forEach(g => {
             const tag = document.createElement('span');
             tag.className = 'px-3 py-1 bg-white/10 text-gray-200 text-xs rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition';
             tag.textContent = g.name;
-            tag.onclick = () => quickFilter('genre', g.id, g.name); // Pass g.name as label
+            tag.onclick = () => quickFilter('genre', g.id, g.name); 
             genreContainer.appendChild(tag);
         });
 
