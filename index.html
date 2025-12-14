@@ -6,15 +6,12 @@
     <title>Chithruka Streamer</title>
     
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
-
     <link rel="manifest" href="manifest.json">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
     
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -331,6 +328,7 @@
         }
         .cast-name { font-size: 0.75rem; color: #ddd; font-weight: 600; }
         .cast-char { font-size: 0.65rem; color: #888; }
+        .crew-job { font-size: 0.65rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
 
         /* --- Accordion --- */
         .accordion-header {
@@ -404,6 +402,24 @@
             background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px;
             pointer-events: none; z-index: 10; font-size: 0.9rem; color: #ccc;
         }
+
+        /* --- Extended Details Styles --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-block h5 { font-weight: 700; color: #888; margin-bottom: 10px; font-size: 0.85rem; text-transform: uppercase; }
+        .info-list { max-height: 150px; overflow-y: auto; padding-right: 5px; }
+        .info-list::-webkit-scrollbar { width: 4px; }
+        .info-list::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        
+        .release-item { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .release-country { font-weight: 600; color: #fff; }
+        .release-date { color: #aaa; }
     </style>
 </head>
 <body>
@@ -474,7 +490,36 @@
 
                 <div id="cast-container" class="mt-4">
                     <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wide">Top Cast</h4>
-                    <div id="cast-list" class="cast-scroll scrollbar-hide"></div>
+                    <div id="cast-list" class="cast-scroll scrollbar-hide relative group">
+                        </div>
+                </div>
+
+                <div id="crew-container" class="mt-6 hidden">
+                    <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wide">Behind the Scenes</h4>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('crew-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="crew-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('crew-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h5><i class="fas fa-building mr-2"></i> Production</h5>
+                        <div id="production-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-calendar-check mr-2"></i> Release Dates</h5>
+                        <div id="release-dates-list" class="info-list"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-language mr-2"></i> Alt. Titles</h5>
+                        <div id="alt-titles-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-cogs mr-2"></i> Tech Specs</h5>
+                        <div id="tech-specs-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -513,6 +558,21 @@
                 <i id="accordion-icon" class="fas fa-chevron-down text-gray-400"></i>
             </div>
             <div id="episode-accordion-content" class="accordion-content"></div>
+        </div>
+    </div>
+
+    <div id="collection-section" class="mb-8 relative hidden">
+        <h2 id="collection-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2">
+            <i class="fas fa-layer-group text-purple-500 mr-3"></i> Collection
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('collection-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="collection-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('collection-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
 
@@ -712,6 +772,8 @@
     const filterModal = document.getElementById('filter-modal');
     const heroSection = document.getElementById('hero-section');
     const pageBackground = document.getElementById('page-background');
+    const collectionSection = document.getElementById('collection-section');
+    const collectionContainer = document.getElementById('collection-container');
 
     function showMessage(text, isError = false) {
         messageBox.textContent = text;
@@ -1008,28 +1070,22 @@
         applyFilter();
     }
 
-    // --- NEW: Clear Filters Function ---
     window.clearFilters = function() {
-        // 1. Reset Form
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
         
-        // 2. Close Modal
         closeFilterModal();
         
-        // 3. Reset UI State
         searchInput.value = '';
         searchResults.innerHTML = '';
         heroSection.style.display = 'block';
         document.getElementById('top10-section').style.display = 'block';
         
-        // 4. Reset Header
         const header = document.getElementById('trending-header');
         header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
         
-        // 5. Reload Trending
         trendingContainer.innerHTML = '';
         loadedIds.clear();
         trendingPage = 1;
@@ -1049,7 +1105,6 @@
         heroSection.style.display = 'none'; 
         document.getElementById('top10-section').style.display = 'none';
         
-        // --- Smart Title Logic ---
         const genreSelect = document.getElementById('filter-genre');
         let genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
         if ((!genreName || genreName === "Any Genre") && activeFilterLabel && genre) {
@@ -1163,6 +1218,7 @@
 
         playerInterface.classList.add('hidden'); 
         detailsSection.classList.add('hidden');
+        collectionSection.classList.add('hidden'); // Hide collection by default
         playerIframe.src = "about:blank";
 
         const posterImg = document.getElementById('detail-poster');
@@ -1180,7 +1236,7 @@
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
-            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
+            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             
             if (detailData.title) {
@@ -1189,6 +1245,11 @@
             }
             renderDetails(detailData, currentTitle);
             
+            // --- Collection Check ---
+            if (detailData.belongs_to_collection) {
+                loadCollection(detailData.belongs_to_collection.id, detailData.belongs_to_collection.name);
+            }
+
             playerInterface.classList.remove('hidden');
             updatePlayer();
         } catch (e) { showMessage("Failed to load details.", true); console.error(e); }
@@ -1196,8 +1257,9 @@
 
     async function fetchShowDetails(id, title) {
         try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
-            
+            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids&include_image_language=en,null`);
+            if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
+
             if (data.name) {
                 currentTitle = data.name;
                 document.title = `${currentTitle} - Chithruka`;
@@ -1228,6 +1290,24 @@
         } catch (e) { showMessage("Failed to load show details.", true); console.error(e); }
     }
     
+    // --- Collection Loader ---
+    async function loadCollection(collectionId, collectionName) {
+        try {
+            const data = await fetchCached(`${BASE_TMDB_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`);
+            const parts = data.parts.map(p => ({...p, media_type: 'movie'}));
+            
+            // Sort by release date
+            parts.sort((a,b) => new Date(a.release_date) - new Date(b.release_date));
+            
+            if (parts.length > 0) {
+                collectionContainer.innerHTML = '';
+                document.getElementById('collection-header').innerHTML = `<i class="fas fa-layer-group text-purple-500 mr-3"></i> ${data.name}`;
+                collectionSection.classList.remove('hidden');
+                renderCards(parts, collectionContainer, false);
+            }
+        } catch(e) { console.error("Collection Load Error", e); }
+    }
+
     window.changeSeason = async function(season) {
         currentSeason = parseInt(season);
         currentEpisode = 1; 
@@ -1383,6 +1463,7 @@
             genreContainer.appendChild(tag);
         });
 
+        // --- Render Cast ---
         const castList = document.getElementById('cast-list');
         castList.innerHTML = '';
         if (data.credits && data.credits.cast) {
@@ -1399,6 +1480,114 @@
                 castList.appendChild(castDiv);
             });
         }
+
+        // --- Render Extended Crew ---
+        const crewContainer = document.getElementById('crew-container');
+        const crewList = document.getElementById('crew-list');
+        crewList.innerHTML = '';
+        
+        if (data.credits && data.credits.crew) {
+            const keyJobs = ['Director', 'Writer', 'Screenplay', 'Director of Photography', 'Executive Producer'];
+            const importantCrew = data.credits.crew.filter(c => keyJobs.includes(c.job));
+            
+            // Remove duplicates (same person different job)
+            const uniqueCrew = [];
+            const crewMap = new Map();
+            importantCrew.forEach(c => {
+                if(!crewMap.has(c.id)) {
+                    crewMap.set(c.id, true);
+                    uniqueCrew.push(c);
+                }
+            });
+
+            if (uniqueCrew.length > 0) {
+                uniqueCrew.slice(0, 15).forEach(c => {
+                     const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
+                     const crewDiv = document.createElement('div');
+                     crewDiv.className = 'cast-card';
+                     crewDiv.innerHTML = `
+                        <img src="${pic}" class="cast-img" loading="lazy">
+                        <div class="cast-name">${c.name}</div>
+                        <div class="crew-job">${c.job}</div>
+                     `;
+                     crewList.appendChild(crewDiv);
+                });
+                crewContainer.classList.remove('hidden');
+            } else {
+                crewContainer.classList.add('hidden');
+            }
+        }
+
+        // --- Render Detailed Info ---
+        renderDetailedInfo(data);
+    }
+
+    function renderDetailedInfo(data) {
+        // 1. Production
+        const prodList = document.getElementById('production-list');
+        prodList.innerHTML = '';
+        if(data.production_companies) {
+            data.production_companies.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "mb-1";
+                div.textContent = `${p.name} (${p.origin_country})`;
+                prodList.appendChild(div);
+            });
+        }
+
+        // 2. Release Dates (Detailed)
+        const relList = document.getElementById('release-dates-list');
+        relList.innerHTML = '';
+        if(data.release_dates && data.release_dates.results) {
+             data.release_dates.results.forEach(r => {
+                 // Try to get region name
+                 let countryName = r.iso_3166_1;
+                 try { countryName = new Intl.DisplayNames(['en'], { type: 'region' }).of(r.iso_3166_1); } catch(e){}
+                 
+                 r.release_dates.forEach(d => {
+                     if(d.type === 3 || d.type === 4) { // Theatrical or Digital
+                         const dateStr = new Date(d.release_date).toLocaleDateString();
+                         const div = document.createElement('div');
+                         div.className = "release-item";
+                         div.innerHTML = `<span class="release-country">${countryName}</span> <span class="release-date">${dateStr}</span>`;
+                         relList.appendChild(div);
+                     }
+                 });
+             });
+        }
+
+        // 3. Alt Titles
+        const altList = document.getElementById('alt-titles-list');
+        altList.innerHTML = '';
+        if(data.alternative_titles && (data.alternative_titles.titles || data.alternative_titles.results)) {
+            const titles = data.alternative_titles.titles || data.alternative_titles.results;
+            titles.slice(0, 10).forEach(t => {
+                const div = document.createElement('div');
+                div.className = "mb-1";
+                div.innerHTML = `<span class="text-white">${t.iso_3166_1}:</span> ${t.title}`;
+                altList.appendChild(div);
+            });
+        }
+
+        // 4. Tech Specs (Budget, Revenue, Lang, Status)
+        const techList = document.getElementById('tech-specs-list');
+        techList.innerHTML = '';
+        const specs = [
+            { label: "Original Language", val: data.original_language ? data.original_language.toUpperCase() : null },
+            { label: "Budget", val: data.budget ? `$${data.budget.toLocaleString()}` : null },
+            { label: "Revenue", val: data.revenue ? `$${data.revenue.toLocaleString()}` : null },
+            { label: "Status", val: data.status },
+            { label: "Runtime", val: data.runtime ? `${data.runtime} min` : null }
+        ];
+        
+        specs.forEach(s => {
+            if(s.val) {
+                const div = document.createElement('div');
+                div.className = "mb-1 flex justify-between";
+                div.innerHTML = `<span class="text-gray-400">${s.label}</span> <span>${s.val}</span>`;
+                techList.appendChild(div);
+            }
+        });
     }
 
     function buildUrl(template) {
