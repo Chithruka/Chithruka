@@ -516,7 +516,10 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
+        <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2" style="display:none;">
+            <i class="fas fa-circle-notch fa-spin"></i>
         </div>
+    </div>
 </div>
 
 <footer class="footer-container">
@@ -671,6 +674,7 @@
     const recommendationsSection = document.getElementById('recommendations-section');
     const recommendationsContainer = document.getElementById('recommendations-container');
     const filterModal = document.getElementById('filter-modal');
+    const infiniteLoader = document.getElementById('infinite-loader');
     const heroSection = document.getElementById('hero-section');
     const pageBackground = document.getElementById('page-background');
 
@@ -694,7 +698,8 @@
     async function loadTrending() {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
-        
+        infiniteLoader.style.display = 'block';
+
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (data.results && data.results.length > 0) {
@@ -708,6 +713,7 @@
         } catch (error) { console.error("Trending Error:", error); } 
         finally { 
             isTrendingLoading = false; 
+            infiniteLoader.style.display = 'none'; 
         }
     }
 
@@ -1010,6 +1016,8 @@
             } else {
                 renderCards(results, trendingContainer, true);
             }
+            // Auto-scroll to results
+            document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
         } catch (e) { showMessage("Filter failed", true); }
     }
 
@@ -1217,7 +1225,7 @@
         const ratingVal = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
         ratingSpan.textContent = ratingVal;
         if(ratingVal !== "N/A") {
-            ratingEl.onclick = () => quickFilter('rating', Math.floor(data.vote_average));
+            ratingEl.onclick = () => quickFilter('rating', data.vote_average);
         }
 
         let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
@@ -1445,15 +1453,6 @@
     window.closeDownloadModal = () => downloadModal.classList.add('hidden');
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
-    // --- POPSTATE EVENT: Handle Browser Back Button ---
-    window.addEventListener('popstate', (event) => {
-        if (event.state) {
-            selectContent(event.state.id, event.state.title, event.state.type);
-        } else {
-            location.reload();
-        }
-    });
-
     document.addEventListener('DOMContentLoaded', () => {
         const btnContainer = document.getElementById('server-buttons');
         SERVER_URLS.forEach((s, i) => {
@@ -1463,21 +1462,9 @@
             btn.onclick = () => switchServer(i, btn);
             btnContainer.appendChild(btn);
         });
-
-        // --- Check URL for ID on Load ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlId = urlParams.get('id');
-        const urlType = urlParams.get('type');
-
-        if (urlId && urlType) {
-            selectContent(urlId, "Loading...", urlType);
-        } else {
-            loadProgress();
-            loadTrending();
-        }
-
+        loadProgress();
+        loadTrending();
         loadGenres();
-        loadCountries(); // Load countries on start
     });
 </script>
 </body>
