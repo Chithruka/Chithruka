@@ -73,7 +73,6 @@
         .glass-input:focus, .glass-select:focus {
             border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
         }
-        /* Style for Select Options (fixes dark text on some browsers) */
         .glass-select option {
             background-color: #222;
             color: white;
@@ -518,7 +517,7 @@
             </button>
         </div>
         <div id="infinite-loader" class="text-center text-xs text-gray-500 mt-2" style="display:none;">
-            <i class="fas fa-circle-notch fa-spin mr-2"></i>Loading more...
+            <i class="fas fa-circle-notch fa-spin"></i>
         </div>
     </div>
 </div>
@@ -941,7 +940,7 @@
         } catch(e) { console.error("Genre fetch error", e); }
     }
 
-    // --- NEW: Load Countries for Filter ---
+    // --- Load Countries for Filter ---
     async function loadCountries() {
         const select = document.getElementById('filter-country');
         // Only load if empty (default has 1 child)
@@ -949,7 +948,6 @@
         
         try {
             const data = await fetchCached(`https://api.themoviedb.org/3/configuration/countries?api_key=${TMDB_API_KEY}`);
-            // Sort countries by name
             data.sort((a, b) => a.english_name.localeCompare(b.english_name));
             
             data.forEach(c => {
@@ -964,7 +962,7 @@
     async function applyFilter() {
         const type = document.getElementById('filter-type').value;
         const genre = document.getElementById('filter-genre').value;
-        const country = document.getElementById('filter-country').value; // Get Country
+        const country = document.getElementById('filter-country').value; 
         const year = document.getElementById('filter-year').value;
         const rating = document.getElementById('filter-rating').value;
 
@@ -982,7 +980,7 @@
         }
         if (genre) url += `&with_genres=${genre}`;
         if (rating) url += `&vote_average.gte=${rating}`;
-        if (country) url += `&with_origin_country=${country}`; // Apply Country Filter
+        if (country) url += `&with_origin_country=${country}`; 
 
         trendingContainer.innerHTML = '';
         loadedIds.clear();
@@ -1058,7 +1056,7 @@
             const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates&include_image_language=en,null`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             
-            // --- FIX: Force update title on load ---
+            // --- FIX: Force title update ---
             if (detailData.title) {
                 currentTitle = detailData.title;
                 document.title = `${currentTitle} - Chithruka`;
@@ -1074,7 +1072,7 @@
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings&include_image_language=en,null`);
             
-            // --- FIX: Force update title on load ---
+            // --- FIX: Force title update ---
             if (data.name) {
                 currentTitle = data.name;
                 document.title = `${currentTitle} - Chithruka`;
@@ -1169,8 +1167,20 @@
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
         
+        // --- Smart Country Name with Tooltip ---
         if (data.production_countries && data.production_countries.length > 0) {
-            countryEl.querySelector('span').textContent = data.production_countries[0].iso_3166_1;
+            const code = data.production_countries[0].iso_3166_1;
+            const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+            const fullName = regionNames.of(code); // "KR" -> "South Korea"
+            
+            const span = countryEl.querySelector('span');
+            span.textContent = code; // Show short code
+            
+            // Add interaction
+            countryEl.title = fullName;
+            countryEl.style.cursor = 'pointer';
+            countryEl.onclick = () => showMessage(fullName); // Mobile fallback
+            
             countryEl.classList.remove('hidden');
         } else {
             countryEl.classList.add('hidden');
