@@ -817,7 +817,8 @@
     // --- AUTHENTICATION FUNCTIONS ---
     async function authenticateTMDB() {
         try {
-            const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`);
+            // Anti-Cache: Added cache: 'no-store' to ensure new token
+            const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
             const data = await res.json();
             if(data.success) {
                 window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${window.location.href}`;
@@ -826,6 +827,9 @@
     }
 
     async function createSession(requestToken) {
+        // Prevent re-use: Check if we are already logged in
+        if (sessionId) return; 
+
         try {
             const res = await fetch(`${BASE_TMDB_URL}/authentication/session/new?api_key=${TMDB_API_KEY}`, {
                 method: 'POST',
@@ -839,9 +843,13 @@
                 await fetchAccountDetails();
                 showMessage("Login Successful!");
             } else {
-                showMessage("Login Expired. Try again.", true);
+                // If token is invalid (already used), clean URL and alert user
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showMessage("Login session expired. Please try again.", true);
             }
-        } catch(e) { showMessage("Session creation failed", true); }
+        } catch(e) { 
+            showMessage("Session creation failed", true); 
+        }
     }
 
     async function fetchAccountDetails() {
@@ -1509,10 +1517,6 @@
         else await fetchMovieDetails(id, title);
         
         loadRecommendations(mediaType, id);
-        
-        // --- AUTH CHECK: Check Status ---
-        checkAccountStates(id, type);
-
         setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
     }
 
