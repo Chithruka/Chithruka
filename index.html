@@ -158,6 +158,57 @@
         .search-result-item:hover { background: rgba(50, 50, 50, 0.95); }
         .result-poster { width: 40px; height: 60px; border-radius: 4px; object-fit: cover; background: #333; }
 
+        /* --- Auth UI --- */
+        #user-section { display: flex; align-items: center; gap: 10px; margin-left: 10px; }
+        .login-btn {
+            background-color: var(--accent); color: white; padding: 8px 16px;
+            border-radius: 4px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            transition: background 0.2s; border: none;
+        }
+        .login-btn:hover { background-color: #b20710; }
+        
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid var(--accent);
+        }
+        .user-menu {
+            position: absolute; top: 100%; right: 0; background: #222;
+            border-radius: 8px; overflow: hidden; display: none; min-width: 150px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 60;
+        }
+        .user-menu.show { display: block; }
+        .user-menu-item {
+            padding: 10px 15px; color: #eee; cursor: pointer; border-bottom: 1px solid #333; transition: background 0.2s; font-size: 0.9rem;
+        }
+        .user-menu-item:hover { background: #333; }
+        .user-menu-item:last-child { border-bottom: none; }
+
+        /* --- Interaction Buttons (Heart, Bookmark, Rate) --- */
+        .interaction-bar {
+            display: flex; gap: 15px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .interact-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            color: #ccc; cursor: pointer; transition: all 0.2s; font-size: 1rem;
+            background: rgba(0,0,0,0.3);
+        }
+        .interact-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
+        .interact-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(229, 9, 20, 0.1); }
+        
+        .rating-slider-container {
+            display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1);
+            padding: 5px 15px; border-radius: 20px; display: none;
+        }
+        .rating-slider-container.show { display: flex; }
+        
+        input[type=range] {
+            -webkit-appearance: none; width: 100px; height: 4px; background: #555; border-radius: 2px; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer;
+        }
+
         /* --- Hero Slider --- */
         #hero-section {
             position: relative; width: 100%; height: 60vh;
@@ -378,15 +429,29 @@
     <nav class="navbar">
         <div class="logo-text text-4xl md:text-6xl" onclick="location.href='index.html';">Chithruka</div>
 
-        <div class="search-group">
-            <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
-                <i class="fas fa-sliders-h"></i>
-            </button>
-            <div class="relative w-full max-w-[300px] flex-grow">
-                <input type="text" id="search-input" class="glass-input" placeholder="Search...">
-                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+        <div class="flex items-center gap-4">
+            <div class="search-group">
+                <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <div class="relative w-full max-w-[300px] flex-grow">
+                    <input type="text" id="search-input" class="glass-input" placeholder="Search...">
+                    <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                </div>
+                <ul id="search-results" class="glass-panel"></ul>
             </div>
-            <ul id="search-results" class="glass-panel"></ul>
+
+            <div id="user-section" class="relative">
+                <button id="tmdb-login-btn" onclick="authenticateTMDB()" class="login-btn">
+                    <i class="fas fa-user-circle mr-2"></i>Login
+                </button>
+                <img id="user-avatar" src="" class="user-avatar hidden" onclick="toggleUserMenu()">
+                <div id="user-menu" class="user-menu">
+                    <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><i class="fas fa-heart text-red-500 mr-2"></i> Favorites</div>
+                    <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><i class="fas fa-bookmark text-blue-500 mr-2"></i> Watchlist</div>
+                    <div class="user-menu-item" onclick="logoutTMDB()"><i class="fas fa-sign-out-alt text-gray-400 mr-2"></i> Logout</div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -445,6 +510,18 @@
                     
                     <span id="detail-country" class="flex items-center hidden cursor-pointer hover:text-blue-400 transition"><i class="fas fa-globe mr-2"></i> <span></span></span>
                     <span id="detail-age" class="flex items-center hidden px-2 py-0.5 border border-gray-500 rounded text-xs font-bold"><span></span></span>
+                </div>
+
+                <div id="interaction-bar" class="interaction-bar hidden">
+                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fas fa-heart"></i></div>
+                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fas fa-bookmark"></i></div>
+                    <div onclick="toggleRatingSlider()" class="interact-btn" title="Rate this"><i class="fas fa-star"></i></div>
+                    
+                    <div id="rating-slider" class="rating-slider-container">
+                        <input type="range" min="1" max="10" step="0.5" id="rating-input" oninput="document.getElementById('rating-val').innerText = this.value">
+                        <span id="rating-val" class="text-sm font-bold text-yellow-400 w-6">5</span>
+                        <button onclick="submitRating()" class="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/40">OK</button>
+                    </div>
                 </div>
                 
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
@@ -664,6 +741,7 @@
     const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280'; 
     const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 
+    // --- State Variables ---
     let mediaType = 'movie'; 
     let TMDB_ID = null;
     let IMDB_ID = null; 
@@ -681,9 +759,11 @@
     let loadedGenreType = null;
     let heroInterval;
     let deferredPrompt; 
-    
-    // Stores the text label (e.g., "Action") when clicking a tag
     let activeFilterLabel = "";
+    
+    // --- Auth State ---
+    let sessionId = localStorage.getItem('tmdb_session_id');
+    let accountId = localStorage.getItem('tmdb_account_id');
 
     const requestCache = new Map();
 
@@ -732,6 +812,191 @@
             badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Released';
             badge.classList.add('text-green-400');
         }
+    }
+
+    // --- AUTHENTICATION FUNCTIONS ---
+    async function authenticateTMDB() {
+        try {
+            const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`);
+            const data = await res.json();
+            if(data.success) {
+                window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${window.location.href}`;
+            }
+        } catch(e) { showMessage("Auth failed", true); }
+    }
+
+    async function createSession(requestToken) {
+        try {
+            const res = await fetch(`${BASE_TMDB_URL}/authentication/session/new?api_key=${TMDB_API_KEY}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ request_token: requestToken })
+            });
+            const data = await res.json();
+            if (data.success) {
+                sessionId = data.session_id;
+                localStorage.setItem('tmdb_session_id', sessionId);
+                await fetchAccountDetails();
+                showMessage("Login Successful!");
+            } else {
+                showMessage("Login Expired. Try again.", true);
+            }
+        } catch(e) { showMessage("Session creation failed", true); }
+    }
+
+    async function fetchAccountDetails() {
+        if(!sessionId) return;
+        try {
+            const data = await fetchCached(`${BASE_TMDB_URL}/account?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);
+            accountId = data.id;
+            localStorage.setItem('tmdb_account_id', accountId);
+            updateAuthUI(data);
+        } catch(e) { console.error("Account fetch error", e); }
+    }
+
+    function updateAuthUI(user) {
+        const loginBtn = document.getElementById('tmdb-login-btn');
+        const avatar = document.getElementById('user-avatar');
+        const interactBar = document.getElementById('interaction-bar');
+        
+        if (user) {
+            loginBtn.classList.add('hidden');
+            avatar.classList.remove('hidden');
+            interactBar.classList.remove('hidden');
+            
+            if(user.avatar && user.avatar.tmdb.avatar_path) {
+                avatar.src = `${TMDB_IMG_BASE_URL}${user.avatar.tmdb.avatar_path}`;
+            } else {
+                avatar.src = `https://ui-avatars.com/api/?name=${user.username}&background=random`;
+            }
+        } else {
+            loginBtn.classList.remove('hidden');
+            avatar.classList.add('hidden');
+            interactBar.classList.add('hidden');
+        }
+    }
+
+    function toggleUserMenu() {
+        document.getElementById('user-menu').classList.toggle('show');
+    }
+
+    function logoutTMDB() {
+        localStorage.removeItem('tmdb_session_id');
+        localStorage.removeItem('tmdb_account_id');
+        sessionId = null;
+        accountId = null;
+        location.reload();
+    }
+
+    // --- USER ACTIONS (FAV, WATCHLIST, RATE) ---
+    async function checkAccountStates(id, type) {
+        if(!sessionId) return;
+        try {
+            // Using fetch instead of fetchCached to get real-time state
+            const res = await fetch(`${BASE_TMDB_URL}/${type}/${id}/account_states?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);
+            const data = await res.json();
+            
+            const favBtn = document.getElementById('btn-favorite');
+            const watchBtn = document.getElementById('btn-watchlist');
+            const rateVal = document.getElementById('rating-val');
+            const rateInput = document.getElementById('rating-input');
+
+            if(data.favorite) favBtn.classList.add('active');
+            else favBtn.classList.remove('active');
+
+            if(data.watchlist) watchBtn.classList.add('active');
+            else watchBtn.classList.remove('active');
+
+            if(data.rated) {
+                rateInput.value = data.rated.value;
+                rateVal.innerText = data.rated.value;
+            } else {
+                rateInput.value = 5;
+                rateVal.innerText = 5;
+            }
+        } catch(e) { console.error("State check error", e); }
+    }
+
+    async function toggleFavorite() {
+        if(!sessionId) return showMessage("Please login first", true);
+        const btn = document.getElementById('btn-favorite');
+        const isFav = btn.classList.contains('active');
+        
+        try {
+            await fetch(`${BASE_TMDB_URL}/account/${accountId}/favorite?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, favorite: !isFav })
+            });
+            btn.classList.toggle('active');
+            showMessage(isFav ? "Removed from Favorites" : "Added to Favorites");
+        } catch(e) { showMessage("Action failed", true); }
+    }
+
+    async function toggleWatchlist() {
+        if(!sessionId) return showMessage("Please login first", true);
+        const btn = document.getElementById('btn-watchlist');
+        const isWatch = btn.classList.contains('active');
+        
+        try {
+            await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, watchlist: !isWatch })
+            });
+            btn.classList.toggle('active');
+            showMessage(isWatch ? "Removed from Watchlist" : "Added to Watchlist");
+        } catch(e) { showMessage("Action failed", true); }
+    }
+
+    function toggleRatingSlider() {
+        if(!sessionId) return showMessage("Please login first", true);
+        document.getElementById('rating-slider').classList.toggle('show');
+    }
+
+    async function submitRating() {
+        const val = document.getElementById('rating-input').value;
+        try {
+            await fetch(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/rating?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ value: val })
+            });
+            showMessage(`Rated ${val}/10`);
+            document.getElementById('rating-slider').classList.remove('show');
+        } catch(e) { showMessage("Rating failed", true); }
+    }
+
+    async function loadMyLibrary(type) { // type: 'favorite' or 'watchlist'
+        if(!sessionId) return;
+        toggleUserMenu();
+        heroSection.style.display = 'none';
+        document.getElementById('top10-section').style.display = 'none';
+        
+        const header = document.getElementById('trending-header');
+        header.innerHTML = `<i class="fas fa-${type === 'favorite' ? 'heart' : 'bookmark'} text-accent mr-3"></i> My ${type === 'favorite' ? 'Favorites' : 'Watchlist'}`;
+        
+        trendingContainer.innerHTML = '';
+        loadedIds.clear();
+        
+        // Fetch Movies
+        const moviesRes = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
+        const movies = await moviesRes.json();
+        
+        // Fetch TV
+        const tvRes = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
+        const tv = await tvRes.json();
+        
+        const combined = [
+            ...(movies.results || []).map(m => ({...m, media_type: 'movie'})),
+            ...(tv.results || []).map(t => ({...t, media_type: 'tv'}))
+        ];
+        
+        // Simple sort by ID as a proxy for 'recently added' in combined list
+        combined.sort((a,b) => b.id - a.id);
+
+        if(combined.length === 0) trendingContainer.innerHTML = '<div class="p-4 text-gray-400">Nothing here yet.</div>';
+        else renderCards(combined, trendingContainer, true);
     }
 
     const SERVER_URLS = [
@@ -1244,6 +1509,10 @@
         else await fetchMovieDetails(id, title);
         
         loadRecommendations(mediaType, id);
+        
+        // --- AUTH CHECK: Check Status ---
+        checkAccountStates(id, type);
+
         setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
     }
 
@@ -1857,6 +2126,16 @@
         
         // --- DEEP LINKING CHECK (FIXED) ---
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Check for TMDB Auth Redirect
+        if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
+            createSession(urlParams.get('request_token'));
+            // Remove params from URL after processing
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if(sessionId) {
+            fetchAccountDetails();
+        }
+
         if (urlParams.has('id') && urlParams.has('type')) {
              heroSection.style.display = 'none'; // Prevent hero flash
              // Explicitly cast ID to Number to fix deep linking bugs
