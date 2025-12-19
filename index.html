@@ -1530,7 +1530,7 @@ try {
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
-            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles&include_image_language=en,null`);
+            const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles`);
             if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
             
             if (detailData.title) {
@@ -1551,7 +1551,7 @@ try {
 
     async function fetchShowDetails(id, title) {
         try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids&include_image_language=en,null`);
+            const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids`);
             if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
             if (data.name) {
@@ -2161,4 +2161,5 @@ try {
 </script>
 </body>
 </html>
+
 
