@@ -1095,11 +1095,18 @@
             if (!backdrop) continue;
 
             let logoUrl = null;
-            try {
-                const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}&include_image_language=en,null`);
-                const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
-                if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
-            } catch(e) {}
+try {
+    // 1. CRITICAL: Remove "&include_image_language=en,null"
+    // Without this parameter, the API sends logos in ALL languages.
+    const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`);
+    
+    // 2. Logic: Try to find 'en' first. If undefined, default to the first available logo (highest rated).
+    const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
+    
+    if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
+} catch(e) {
+    console.error(e);
+}
 
             const slide = document.createElement('div');
             slide.className = `hero-slide ${i===0 ? 'active' : ''}`;
@@ -2154,3 +2161,4 @@
 </script>
 </body>
 </html>
+
