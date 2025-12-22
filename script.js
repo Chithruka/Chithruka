@@ -209,11 +209,25 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
             const rateVal = document.getElementById('rating-val');
             const rateInput = document.getElementById('rating-input');
 
-            if(data.favorite) favBtn.classList.add('active');
-            else favBtn.classList.remove('active');
+            // --- FIX: Handle Favorite Icon State ---
+            const favIcon = favBtn.querySelector('i');
+            if(data.favorite) {
+                favBtn.classList.add('active');
+                favIcon.classList.replace('fa-regular', 'fa-solid'); // Turn Solid
+            } else {
+                favBtn.classList.remove('active');
+                favIcon.classList.replace('fa-solid', 'fa-regular'); // Turn Regular
+            }
 
-            if(data.watchlist) watchBtn.classList.add('active');
-            else watchBtn.classList.remove('active');
+            // --- FIX: Handle Watchlist Icon State ---
+            const watchIcon = watchBtn.querySelector('i');
+            if(data.watchlist) {
+                watchBtn.classList.add('active');
+                watchIcon.classList.replace('fa-regular', 'fa-solid'); // Turn Solid
+            } else {
+                watchBtn.classList.remove('active');
+                watchIcon.classList.replace('fa-solid', 'fa-regular'); // Turn Regular
+            }
 
             if(data.rated) {
                 rateInput.value = data.rated.value;
@@ -228,6 +242,7 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
     async function toggleFavorite() {
         if(!sessionId) return showMessage("Please login first", true);
         const btn = document.getElementById('btn-favorite');
+        const icon = btn.querySelector('i'); // Select the icon
         const isFav = btn.classList.contains('active');
         
         try {
@@ -236,14 +251,25 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, favorite: !isFav })
             });
+            
+            // --- FIX: Swap Icon Class on Click ---
             btn.classList.toggle('active');
-            showMessage(isFav ? "Removed from Favorites" : "Added to Favorites");
+            if (isFav) {
+                // Was active, now removing -> Go Regular
+                icon.classList.replace('fa-solid', 'fa-regular');
+                showMessage("Removed from Favorites");
+            } else {
+                // Was inactive, now adding -> Go Solid
+                icon.classList.replace('fa-regular', 'fa-solid');
+                showMessage("Added to Favorites");
+            }
         } catch(e) { showMessage("Action failed", true); }
     }
 
     async function toggleWatchlist() {
         if(!sessionId) return showMessage("Please login first", true);
         const btn = document.getElementById('btn-watchlist');
+        const icon = btn.querySelector('i'); // Select the icon
         const isWatch = btn.classList.contains('active');
         
         try {
@@ -252,8 +278,18 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, watchlist: !isWatch })
             });
+            
+            // --- FIX: Swap Icon Class on Click ---
             btn.classList.toggle('active');
-            showMessage(isWatch ? "Removed from Watchlist" : "Added to Watchlist");
+            if (isWatch) {
+                // Was active, now removing -> Go Regular
+                icon.classList.replace('fa-solid', 'fa-regular');
+                showMessage("Removed from Watchlist");
+            } else {
+                // Was inactive, now adding -> Go Solid
+                icon.classList.replace('fa-regular', 'fa-solid');
+                showMessage("Added to Watchlist");
+            }
         } catch(e) { showMessage("Action failed", true); }
     }
 
@@ -496,8 +532,8 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
             } else if (item.media_type === 'person') return;
 
             const title = item.title || item.name;
-            const poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
-            if (!poster) return;
+            // Use existing poster or a fake URL to force error if missing
+            const poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : 'missing_image_force_error';
 
             const rating = item.vote_average ? item.vote_average.toFixed(1) : 'NR';
             const year = (item.release_date || item.first_air_date || 'N/A').substring(0,4);
@@ -505,9 +541,20 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
 
             const card = document.createElement('div');
             card.className = 'scroll-card';
+            
+            // --- UPDATED LOGIC ---
+            // 1. onload: Removes skeleton class (Success).
+            // 2. onerror: Sets display='none'. This hides the broken image tag completely,
+            //    revealing the CSS ::before icon defined in .poster-wrapper.
             card.innerHTML = `
                 <div class="poster-wrapper">
-                    <img src="${poster}" class="poster-img" loading="lazy" alt="${title}">
+                    <img src="${poster}" 
+                         class="poster-img skeleton" 
+                         loading="lazy" 
+                         alt="${title}" 
+                         onload="this.classList.remove('skeleton')"
+                         onerror="this.style.display='none'">
+                         
                     <div class="play-overlay">
                         <div class="play-icon-circle"><i class="fas fa-play"></i></div>
                     </div>
@@ -520,6 +567,7 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
                     </div>
                 </div>
             `;
+            
             card.onclick = () => selectContent(item.id, title, type);
             container.appendChild(card);
         });
@@ -772,7 +820,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         if (company) activeIcon = '<i class="fas fa-industry text-yellow-500 mr-3"></i>'; // Icon for company
         else if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
         else if (year) activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
-        else if (countryName) activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
+        else if (countryName) activeIcon = '<i class="fa-solid fa-earth-asia text-blue-500 mr-3"></i>';
     
         document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
     
@@ -954,7 +1002,11 @@ window.quickFilter = function(type, value, label = "", logo = "") {
                 const opt = document.createElement('option');
                 opt.value = s.season;
                 const dateStr = s.air_date ? ` (${s.air_date.substring(0,4)})` : '';
-                opt.textContent = `${s.title}${dateStr}`; 
+                
+                // --- FIX: Show total episodes in dropdown ---
+                opt.textContent = `${s.title} (${s.episodes} Episodes)${dateStr}`; 
+                // -------------------------------------------
+                
                 seasonSelect.appendChild(opt);
             });
 
@@ -1045,7 +1097,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
         else pageBackground.style.backgroundImage = 'none';
 
-        // --- NEW: Ambient Color Extraction ---
+        // Ambient Color Extraction
         const posterUrl = data.poster_path ? `${TMDB_POSTER_MD}${data.poster_path}` : null;
         if (posterUrl) {
             getDominantColor(posterUrl).then(rgb => {
@@ -1074,6 +1126,19 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         } else {
             statusEl.classList.add('hidden');
         }
+
+        // --- NEW: Inject Total Seasons & Episodes (Before Status) ---
+        const existingCount = document.getElementById('detail-tv-stats');
+        if (existingCount) existingCount.remove();
+
+        if (data.number_of_seasons) {
+            const countSpan = document.createElement('span');
+            countSpan.id = 'detail-tv-stats';
+            countSpan.className = "flex items-center text-gray-300 font-semibold";
+            countSpan.innerHTML = `<i class="fas fa-layer-group mr-2 text-gray-400"></i> ${data.number_of_seasons} Seasons • ${data.number_of_episodes} Episodes`;
+            statusEl.parentElement.insertBefore(countSpan, statusEl);
+        }
+        // -----------------------------------------------------------
 
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
@@ -1569,7 +1634,23 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         }
         loadTrending();
         loadGenres();
-    });
+   
+   // --- NEW: Footer Logic (Year & Country) ---
+   document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+   fetch('https://ipapi.co/json/')
+       .then(res => res.json())
+       .then(data => {
+           const countryEl = document.getElementById('user-country');
+           if (data.country_name) {
+               countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500"></i> ${data.country_name}`;
+           } else {
+               countryEl.style.display = 'none';
+           }
+       })
+       .catch(() => {
+           document.getElementById('user-country').innerText = "Location Unavailable";
+       }); });
 
 function clearHistory() {
     if (!confirm("Are you sure you want to clear your watch history?")) return;
