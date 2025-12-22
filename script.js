@@ -602,14 +602,22 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
         trendingContainer.innerHTML = ''; 
         loadedIds.clear();
         trendingPage = 1;
+
+        // --- FIX START: Hide the current movie details/player ---
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
+        detailsSection.classList.add('hidden');
+        playerInterface.classList.add('hidden');
+        collectionSection.classList.add('hidden');
+        document.getElementById('continue-watching-section').classList.add('hidden');
+        // --- FIX END ---
 
         const imgHtml = profilePath 
             ? `<img src="${TMDB_IMG_BASE_URL}${profilePath}" class="w-8 h-8 rounded-full object-cover mr-3 border border-gray-600 inline-block">` 
             : `<i class="fas fa-user-circle text-purple-500 mr-3"></i>`;
 
         document.getElementById('trending-header').innerHTML = `${imgHtml} Featuring ${personName}`;
+        
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`);
             const sorted = data.cast.sort((a,b) => b.popularity - a.popularity);
@@ -619,8 +627,11 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
                 trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No movies found.</div>';
             } else {
                 renderCards(results, trendingContainer, true);
+                // --- FIX: Reset horizontal scroll to start ---
+                trendingContainer.scrollLeft = 0;
             }
-            document.getElementById('trending-header').scrollIntoView({behavior:'smooth'});
+            // --- FIX: Scroll the header to the very top of the screen ---
+            document.getElementById('trending-header').scrollIntoView({behavior:'smooth', block: 'start'});
         } catch(e) { showMessage("Could not load filmography", true); }
     }
 
@@ -666,14 +677,17 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
         } catch (e) { console.error("Countries fetch error", e); }
     }
 
-    window.quickFilter = function(type, value, label = "") {
-        activeFilterLabel = label; 
-        document.getElementById('filter-genre').value = "";
-        document.getElementById('filter-country').value = "";
-        document.getElementById('filter-year').value = "";
-        document.getElementById('filter-rating').value = "";
-        applyFilter({ [type]: value });
-    }
+// --- FIX: Added 'logo' parameter ---
+window.quickFilter = function(type, value, label = "", logo = "") {
+    activeFilterLabel = label; 
+    document.getElementById('filter-genre').value = "";
+    document.getElementById('filter-country').value = "";
+    document.getElementById('filter-year').value = "";
+    document.getElementById('filter-rating').value = "";
+    
+    // --- FIX: Pass logoPath in the object ---
+    applyFilter({ [type]: value, logoPath: logo });
+}
 
     window.clearFilters = function() {
         document.getElementById('filter-genre').value = "";
@@ -710,6 +724,9 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
         const country = overrides.country || document.getElementById('filter-country').value; 
         const year = overrides.year || document.getElementById('filter-year').value;
         const rating = overrides.rating || document.getElementById('filter-rating').value;
+        
+        // --- NEW: Capture Company Override ---
+        const company = overrides.company; 
     
         closeFilterModal();
         searchResults.innerHTML = '';
@@ -738,30 +755,42 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
         }
         if (countryName === "Any Country") countryName = "";
     
-        const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
-        let mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
-        
-        if (countryName) mainStr += ` from ${countryName}`;
-        if (year) mainStr += ` released in ${year}`;
-        if (rating) mainStr += ` rated ${rating}+`;
+        // --- NEW: Header Logic for Company ---
+        let mainStr = "";
+        if (company && activeFilterLabel) {
+            mainStr = `Produced by ${activeFilterLabel}`;
+        } else {
+            const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
+            mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
+            
+            if (countryName) mainStr += ` from ${countryName}`;
+            if (year) mainStr += ` released in ${year}`;
+            if (rating) mainStr += ` rated ${rating}+`;
+        }
     
         let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
-        if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
+        if (company) activeIcon = '<i class="fas fa-industry text-yellow-500 mr-3"></i>'; // Icon for company
+        else if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
         else if (year) activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
         else if (countryName) activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
     
         document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
     
-        let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false&page=1`;
+        let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false`;
         
         if (year) {
-            if(type === 'movie') url += `&primary_release_year=${year}`;
-            else url += `&first_air_date_year=${year}`;
+            if(type === 'movie') urlBase += `&primary_release_year=${year}`;
+            else urlBase += `&first_air_date_year=${year}`;
         }
     
-        if (genre) url += `&with_genres=${genre}`;
-        if (rating) url += `&vote_average.gte=${rating}`;
-        if (country) url += `&with_origin_country=${country}`; 
+        if (genre) urlBase += `&with_genres=${genre}`;
+        if (rating) urlBase += `&vote_average.gte=${rating}`;
+        if (country) urlBase += `&with_origin_country=${country}`;
+        
+        // --- NEW: Append Company Parameter ---
+        if (company) urlBase += `&with_companies=${company}`;
+    
+        currentFetchUrl = urlBase; 
     
         trendingContainer.innerHTML = '';
         renderSkeletons(trendingContainer, 10); 
@@ -769,7 +798,8 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
         trendingPage = 1;
         
         try {
-            const data = await fetchCached(url);
+            const data = await fetchCached(`${currentFetchUrl}&page=1`);
+            
             let results = data.results.map(i => ({...i, media_type: type}));
             
             if (year) {
@@ -783,8 +813,10 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
             
             if (results.length === 0) {
                 trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No results found matching your criteria.</div>';
+                currentFetchUrl = "STOP"; 
             } else {
                 renderCards(results, trendingContainer, true);
+                trendingPage = 2; 
             }
             document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
         } catch (e) { 
@@ -1190,16 +1222,37 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
 
     function renderDetailedInfo(data) {
         // 1. Production
-        const prodList = document.getElementById('production-list');
-        prodList.innerHTML = '';
-        if(data.production_companies) {
-            data.production_companies.forEach(p => {
-                const div = document.createElement('div');
-                div.className = "mb-1";
-                div.textContent = `${p.name} (${p.origin_country})`;
-                prodList.appendChild(div);
-            });
-        }
+            const prodList = document.getElementById('production-list');
+            prodList.innerHTML = '';
+            if(data.production_companies) {
+                data.production_companies.forEach(p => {
+                    const div = document.createElement('div');
+                    // Flex layout for perfect alignment of Logo + Text
+                    div.className = "mb-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all group";
+                    
+                    // Logic: Show Logo if available, otherwise show Icon
+                    let iconHtml = '';
+                    if (p.logo_path) {
+                        // Added 'bg-white' and padding so black logos are visible on dark theme
+                        iconHtml = `<img src="${TMDB_IMG_BASE_URL}${p.logo_path}" class="w-8 h-8 object-contain bg-white rounded-md p-0.5" alt="${p.name}" loading="lazy">`;
+                    } else {
+                        iconHtml = `<div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-md"><i class="fas fa-industry text-gray-400 text-xs"></i></div>`;
+                    }
+    
+                    div.innerHTML = `
+                        ${iconHtml}
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-gray-200 group-hover:text-red-500 transition-colors">${p.name}</span>
+                            <span class="text-xs text-gray-500">${p.origin_country}</span>
+                        </div>
+                    `;
+
+            // --- FIX: Pass 'p.logo_path' as the 4th argument ---
+            div.onclick = () => quickFilter('company', p.id, p.name, p.logo_path);
+            
+            prodList.appendChild(div);
+                });
+            }
 
         // 2. Release Dates
         const relList = document.getElementById('release-dates-list');
