@@ -551,7 +551,7 @@ try {
         }
     
         try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
+            const data = await fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=true`);
             displayResults(data.results);
         } catch (e) { 
             searchResults.innerHTML = '<li class="p-4 text-center text-red-400">Error fetching results.</li>'; 
@@ -660,18 +660,14 @@ try {
     window.quickFilter = function(type, value, label = "") {
         activeFilterLabel = label; 
         
-        document.getElementById('filter-type').value = mediaType;
+        // Clear the visual inputs so they don't interfere
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
-
-        if (type === 'genre') document.getElementById('filter-genre').value = value;
-        else if (type === 'country') document.getElementById('filter-country').value = value;
-        else if (type === 'year') document.getElementById('filter-year').value = value;
-        else if (type === 'rating') document.getElementById('filter-rating').value = value;
-
-        applyFilter();
+    
+        // Pass the specific filter directly to applyFilter
+        applyFilter({ [type]: value });
     }
 
     window.clearFilters = function() {
@@ -700,67 +696,94 @@ try {
         loadTrending();
     }
 
-    async function applyFilter() {
-        const type = document.getElementById('filter-type').value;
-        const genre = document.getElementById('filter-genre').value;
-        const country = document.getElementById('filter-country').value; 
-        const year = document.getElementById('filter-year').value;
-        const rating = document.getElementById('filter-rating').value;
-
+    async function applyFilter(overrides = {}) {
+        const type = document.getElementById('filter-type').value; // 'movie' or 'tv'
+        
+        // PRIORITY LOGIC
+        const genre = overrides.genre || document.getElementById('filter-genre').value;
+        const country = overrides.country || document.getElementById('filter-country').value; 
+        const year = overrides.year || document.getElementById('filter-year').value;
+        const rating = overrides.rating || document.getElementById('filter-rating').value;
+    
         closeFilterModal();
         searchResults.innerHTML = '';
         searchInput.value = ''; 
         heroSection.style.display = 'none'; 
         document.getElementById('top10-section').style.display = 'none';
-        
-        // Hide continue watching when searching/filtering
         document.getElementById('continue-watching-section').classList.add('hidden');
-
-        const genreSelect = document.getElementById('filter-genre');
-        let genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
-        if ((!genreName || genreName === "Any Genre") && activeFilterLabel && genre) {
-             genreName = activeFilterLabel;
+    
+        // --- 1. UI HEADER LOGIC (Keep existing visual logic) ---
+        let genreName = "";
+        if (genre) {
+             if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
+             else {
+                 const genreSelect = document.getElementById('filter-genre');
+                 genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
+             }
         }
         if (genreName === "Any Genre") genreName = "";
-
-        const countrySelect = document.getElementById('filter-country');
-        let countryName = countrySelect.options?.[countrySelect.selectedIndex]?.text;
-        if ((!countryName || countryName === "Any Country") && activeFilterLabel && country) {
-             countryName = activeFilterLabel;
+    
+        let countryName = "";
+        if (country) {
+            if (overrides.country && activeFilterLabel) countryName = activeFilterLabel;
+            else {
+                const countrySelect = document.getElementById('filter-country');
+                countryName = countrySelect.options?.[countrySelect.selectedIndex]?.text;
+            }
         }
         if (countryName === "Any Country") countryName = "";
-
+    
         const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
         let mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
         
         if (countryName) mainStr += ` from ${countryName}`;
         if (year) mainStr += ` released in ${year}`;
         if (rating) mainStr += ` rated ${rating}+`;
-
+    
         let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
         if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
         else if (year) activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
         else if (countryName) activeIcon = '<i class="fas fa-globe text-blue-500 mr-3"></i>';
-
+    
         document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
-
-        let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=1`;
+    
+        // --- 2. API QUERY LOGIC (FIXED) ---
+        let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false&page=1`;
         
+        // Strict Year Filtering
         if (year) {
-            if(type === 'movie') url += `&primary_release_year=${year}`;
-            else url += `&first_air_date_year=${year}`;
+            if(type === 'movie') {
+                url += `&primary_release_year=${year}`;
+            } else {
+                url += `&first_air_date_year=${year}`;
+            }
         }
+    
         if (genre) url += `&with_genres=${genre}`;
         if (rating) url += `&vote_average.gte=${rating}`;
         if (country) url += `&with_origin_country=${country}`; 
-
+    
+        // --- 3. EXECUTE FETCH ---
         trendingContainer.innerHTML = '';
+        renderSkeletons(trendingContainer, 10); 
         loadedIds.clear();
         trendingPage = 1;
         
         try {
             const data = await fetchCached(url);
-            const results = data.results.map(i => ({...i, media_type: type}));
+            
+            // CLIENT-SIDE DOUBLE CHECK (The "A-Level Math" Safety Net)
+            // Sometimes API is fuzzy. We filter the results manually to be 100% sure.
+            let results = data.results.map(i => ({...i, media_type: type}));
+            
+            if (year) {
+                results = results.filter(item => {
+                    const date = item.release_date || item.first_air_date;
+                    return date && date.substring(0, 4) === year.toString();
+                });
+            }
+            
+            trendingContainer.innerHTML = ''; 
             
             if (results.length === 0) {
                 trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No results found matching your criteria.</div>';
@@ -768,9 +791,12 @@ try {
                 renderCards(results, trendingContainer, true);
             }
             document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
-        } catch (e) { showMessage("Filter failed", true); }
-
-        activeFilterLabel = ""; // Reset label
+        } catch (e) { 
+            console.error(e);
+            showMessage("Filter failed", true); 
+        }
+    
+        activeFilterLabel = ""; 
     }
 
     // --- PWA INSTALL LOGIC ---
@@ -846,7 +872,7 @@ try {
         loadRecommendations(mediaType, id);
         setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
     }
-
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
@@ -1320,22 +1346,29 @@ try {
     }
     
     window.handleServerError = function() {
-        if(currentServerIndex < SERVER_URLS.length - 1) {
-            const nextServer = currentServerIndex + 1;
-            const msg = document.getElementById('server-loading-msg');
-            msg.textContent = `Source ${currentServerIndex + 1} busy, switching to Source ${nextServer + 1}...`;
-            msg.classList.remove('hidden');
-            
-            setTimeout(() => {
-                const btns = document.querySelectorAll('.server-btn');
-                if(btns[nextServer]) switchServer(nextServer, btns[nextServer]);
-            }, 1500);
-        } else {
-            document.getElementById('server-loading-msg').textContent = "This movie is unavailable right now.";
-            document.getElementById('server-loading-msg').classList.remove('hidden');
-        }
+        // 1. Calculate next server index
+        const nextIndex = (currentServerIndex + 1) % SERVER_URLS.length; // Loops back to 0 if at end
+        
+        // 2. Show a temporary "Switching..." overlay
+        const msg = document.getElementById('server-loading-msg');
+        msg.innerHTML = `
+            <div class="text-2xl mb-4 text-red-500"><i class="fas fa-tools"></i></div>
+            <h3 class="text-xl font-bold mb-2">Switching Server...</h3>
+            <p class="text-gray-400 text-sm">Trying Source ${nextIndex + 1} of ${SERVER_URLS.length}</p>
+        `;
+        msg.classList.remove('hidden');
+    
+        // 3. Actually switch after a short delay (for visual feedback)
+        setTimeout(() => {
+            // Find the button for the next server and click it effectively
+            const nextBtn = document.querySelectorAll('.server-btn')[nextIndex];
+            if (nextBtn) {
+                switchServer(nextIndex, nextBtn);
+            }
+            // Hide the message overlay
+            msg.classList.add('hidden');
+        }, 1000);
     }
-
     // --- REFACTORED HISTORY / CONTINUE WATCHING LOGIC ---
     function saveProgress() {
         if (!TMDB_ID) return;
@@ -1552,4 +1585,38 @@ function clearHistory() {
     // 3. Update UI
     updateContinueWatchingUI();
     showMessage("History Cleared");
+}
+
+async function shareMovie() {
+    const movieTitle = document.title;
+    const movieUrl = window.location.href;
+
+    // 1. Mobile Native Share
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: movieTitle,
+                text: `Watch ${movieTitle} on NHK LIGHTWORKS:`,
+                url: movieUrl
+            });
+        } catch (err) {
+            console.log('Share cancelled:', err);
+        }
+    } 
+    // 2. Desktop Clipboard Fallback
+    else {
+        navigator.clipboard.writeText(movieUrl).then(() => {
+            showToast();
+        }).catch(err => {
+            console.error('Copy failed:', err);
+        });
+    }
+}
+
+function showToast() {
+    const toast = document.getElementById("toast");
+    toast.className = "toast show";
+    setTimeout(function(){ 
+        toast.className = toast.className.replace("show", ""); 
+    }, 3000);
 }
