@@ -43,8 +43,8 @@
                 </button>
                 <img id="user-avatar" src="" class="user-avatar hidden" onclick="toggleUserMenu()">
                 <div id="user-menu" class="user-menu">
-                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fa-regular fa-heart"></i></div>
-                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
+                    <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><i class="fas fa-heart text-red-500 mr-2"></i> Favorites</div>
+                    <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><i class="fas fa-bookmark text-blue-500 mr-2"></i> Watchlist</div>
                     <div class="user-menu-item" onclick="logoutTMDB()"><i class="fas fa-sign-out-alt text-gray-400 mr-2"></i> Logout</div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
 
                 <div id="interaction-bar" class="interaction-bar hidden">
                     <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fa-regular fa-heart"></i></div>
-<div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
+                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
                     <div onclick="toggleRatingSlider()" class="interact-btn" title="Rate this"><i class="fas fa-star"></i></div>
                         <button class="interaction-btn" onclick="shareMovie()" aria-label="Share">
                             <i class="fa-solid fa-share-nodes"></i>
