@@ -1,4 +1,4 @@
-    const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240'; 
+const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240'; 
     const BASE_TMDB_URL = 'https://api.themoviedb.org/3';
     const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92'; 
     const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342'; 
@@ -7,6 +7,7 @@
     const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280'; 
     const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 
+    
     // --- State Variables ---
     let mediaType = 'movie'; 
     let TMDB_ID = null;
@@ -57,6 +58,25 @@
         return new Date(dateString).toLocaleDateString('en-US', options);
     }
 
+    // --- NEW: COLOR EXTRACTION HELPER ---
+    function getDominantColor(imageUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = imageUrl;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1;
+                canvas.height = 1;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 1, 1);
+                const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+                resolve(`${r}, ${g}, ${b}`);
+            };
+            img.onerror = () => resolve('0, 0, 0'); // Default black on error
+        });
+    }
+
     function updateSeasonStatusUI(airDate) {
         const badge = document.getElementById('season-status-badge');
         if (!airDate) {
@@ -79,29 +99,28 @@
             badge.classList.add('text-green-400');
         }
     }
-// --- SKELETON LOADING HELPER ---
-function renderSkeletons(container, count = 10) {
-    container.innerHTML = '';
-    const fragment = document.createDocumentFragment();
-    
-    for (let i = 0; i < count; i++) {
-        const div = document.createElement('div');
-        div.className = 'scroll-card'; // Keeps same layout as real cards
-        div.innerHTML = `
-            <div class="poster-wrapper skeleton skeleton-poster"></div>
-            <div class="card-body">
-                <div class="skeleton skeleton-text" style="width: 80%"></div>
-                <div class="skeleton skeleton-text" style="width: 40%"></div>
-            </div>
-        `;
-        fragment.appendChild(div);
+    // --- SKELETON LOADING HELPER ---
+    function renderSkeletons(container, count = 10) {
+        container.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        
+        for (let i = 0; i < count; i++) {
+            const div = document.createElement('div');
+            div.className = 'scroll-card'; 
+            div.innerHTML = `
+                <div class="poster-wrapper skeleton skeleton-poster"></div>
+                <div class="card-body">
+                    <div class="skeleton skeleton-text" style="width: 80%"></div>
+                    <div class="skeleton skeleton-text" style="width: 40%"></div>
+                </div>
+            `;
+            fragment.appendChild(div);
+        }
+        container.appendChild(fragment);
     }
-    container.appendChild(fragment);
-}
     // --- AUTHENTICATION FUNCTIONS ---
     async function authenticateTMDB() {
         try {
-            // Anti-Cache: Added cache: 'no-store' to ensure new token
             const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
             const data = await res.json();
             if(data.success) {
@@ -111,7 +130,6 @@ function renderSkeletons(container, count = 10) {
     }
 
     async function createSession(requestToken) {
-        // Prevent re-use: Check if we are already logged in
         if (sessionId) return; 
 
         try {
@@ -127,7 +145,6 @@ function renderSkeletons(container, count = 10) {
                 await fetchAccountDetails();
                 showMessage("Login Successful!");
             } else {
-                // If token is invalid (already used), clean URL and alert user
                 window.history.replaceState({}, document.title, window.location.pathname);
                 showMessage("Login session expired. Please try again.", true);
             }
@@ -184,7 +201,6 @@ function renderSkeletons(container, count = 10) {
     async function checkAccountStates(id, type) {
         if(!sessionId) return;
         try {
-            // Using fetch instead of fetchCached to get real-time state
             const res = await fetch(`${BASE_TMDB_URL}/${type}/${id}/account_states?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);
             const data = await res.json();
             
@@ -268,12 +284,10 @@ function renderSkeletons(container, count = 10) {
         const header = document.getElementById('trending-header');
         header.innerHTML = `<i class="fas fa-${type === 'favorite' ? 'heart' : 'bookmark'} text-accent mr-3"></i> My ${type === 'favorite' ? 'Favorites' : 'Watchlist'}`;
         
-        // NEW: Show skeletons immediately
         renderSkeletons(trendingContainer, 10);
         loadedIds.clear();
         
         try {
-            // Parallel fetching for speed (Physics/Math logic: do both jobs at once!)
             const [moviesRes, tvRes] = await Promise.all([
                 fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`),
                 fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`)
@@ -289,7 +303,6 @@ function renderSkeletons(container, count = 10) {
             
             combined.sort((a,b) => b.id - a.id);
     
-            // Clear skeletons
             trendingContainer.innerHTML = '';
     
             if(combined.length === 0) trendingContainer.innerHTML = '<div class="p-4 text-gray-400">Nothing here yet.</div>';
@@ -357,7 +370,6 @@ function renderSkeletons(container, count = 10) {
         if (isTrendingLoading) return;
         isTrendingLoading = true;
         
-        // NEW: Show skeletons only if it's the first load
         if (trendingPage === 1) {
             renderSkeletons(trendingContainer, 10);
         }
@@ -365,11 +377,8 @@ function renderSkeletons(container, count = 10) {
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             
-            // Clear skeletons before adding real data
             if (trendingPage === 1) {
                 trendingContainer.innerHTML = '';
-                
-                // Initialize Hero & Top 10 only on first load
                 initHero(data.results.slice(0, 5));
                 renderTop10(data.results.slice(0, 10)); 
             }
@@ -380,12 +389,12 @@ function renderSkeletons(container, count = 10) {
             }
         } catch (error) { 
             console.error("Trending Error:", error); 
-            // Optional: Remove skeletons on error so it doesn't look like it's still loading
             if (trendingPage === 1) trendingContainer.innerHTML = '<p class="text-red-500 p-4">Failed to load content.</p>';
         } finally { 
             isTrendingLoading = false; 
         }
     }
+
     async function initHero(items) {
         const slidesContainer = document.getElementById('hero-slides');
         const indicatorsContainer = document.getElementById('hero-indicators');
@@ -402,18 +411,13 @@ function renderSkeletons(container, count = 10) {
             if (!backdrop) continue;
 
             let logoUrl = null;
-try {
-    // 1. CRITICAL: Remove "&include_image_language=en,null"
-    // Without this parameter, the API sends logos in ALL languages.
-    const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`);
-    
-    // 2. Logic: Try to find 'en' first. If undefined, default to the first available logo (highest rated).
-    const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
-    
-    if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
-} catch(e) {
-    console.error(e);
-}
+            try {
+                const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`);
+                const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
+                if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
+            } catch(e) {
+                console.error(e);
+            }
 
             const slide = document.createElement('div');
             slide.className = `hero-slide ${i===0 ? 'active' : ''}`;
@@ -478,7 +482,6 @@ try {
         });
     }
 
-    // --- REFINED RENDER CARDS (NEW UI) ---
     function renderCards(items, container, trackIds) {
         items.forEach(item => {
             if (trackIds) {
@@ -537,7 +540,6 @@ try {
     });
 
     async function performMultiSearch(query) {
-        // NEW: Show mini-skeletons in the search dropdown
         searchResults.innerHTML = '';
         for(let i=0; i<3; i++) {
             searchResults.innerHTML += `
@@ -557,6 +559,7 @@ try {
             searchResults.innerHTML = '<li class="p-4 text-center text-red-400">Error fetching results.</li>'; 
         }
     }
+
     function displayResults(results) {
         searchResults.innerHTML = '';
         if (!results || !results.length) { searchResults.innerHTML = '<li class="p-4 text-center text-gray-400">No results found.</li>'; return; }
@@ -659,14 +662,10 @@ try {
 
     window.quickFilter = function(type, value, label = "") {
         activeFilterLabel = label; 
-        
-        // Clear the visual inputs so they don't interfere
         document.getElementById('filter-genre').value = "";
         document.getElementById('filter-country').value = "";
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
-    
-        // Pass the specific filter directly to applyFilter
         applyFilter({ [type]: value });
     }
 
@@ -676,6 +675,9 @@ try {
         document.getElementById('filter-year').value = "";
         document.getElementById('filter-rating').value = "";
         
+        // --- NEW: Reset Ambient Color ---
+        document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
+        
         closeFilterModal();
         
         searchInput.value = '';
@@ -683,7 +685,6 @@ try {
         heroSection.style.display = 'block';
         document.getElementById('top10-section').style.display = 'block';
         
-        // Show Continue Watching again if it has content
         const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
         if(history.length > 0) document.getElementById('continue-watching-section').classList.remove('hidden');
 
@@ -697,9 +698,8 @@ try {
     }
 
     async function applyFilter(overrides = {}) {
-        const type = document.getElementById('filter-type').value; // 'movie' or 'tv'
+        const type = document.getElementById('filter-type').value; 
         
-        // PRIORITY LOGIC
         const genre = overrides.genre || document.getElementById('filter-genre').value;
         const country = overrides.country || document.getElementById('filter-country').value; 
         const year = overrides.year || document.getElementById('filter-year').value;
@@ -712,7 +712,6 @@ try {
         document.getElementById('top10-section').style.display = 'none';
         document.getElementById('continue-watching-section').classList.add('hidden');
     
-        // --- 1. UI HEADER LOGIC (Keep existing visual logic) ---
         let genreName = "";
         if (genre) {
              if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
@@ -747,23 +746,17 @@ try {
     
         document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
     
-        // --- 2. API QUERY LOGIC (FIXED) ---
         let url = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false&page=1`;
         
-        // Strict Year Filtering
         if (year) {
-            if(type === 'movie') {
-                url += `&primary_release_year=${year}`;
-            } else {
-                url += `&first_air_date_year=${year}`;
-            }
+            if(type === 'movie') url += `&primary_release_year=${year}`;
+            else url += `&first_air_date_year=${year}`;
         }
     
         if (genre) url += `&with_genres=${genre}`;
         if (rating) url += `&vote_average.gte=${rating}`;
         if (country) url += `&with_origin_country=${country}`; 
     
-        // --- 3. EXECUTE FETCH ---
         trendingContainer.innerHTML = '';
         renderSkeletons(trendingContainer, 10); 
         loadedIds.clear();
@@ -771,9 +764,6 @@ try {
         
         try {
             const data = await fetchCached(url);
-            
-            // CLIENT-SIDE DOUBLE CHECK (The "A-Level Math" Safety Net)
-            // Sometimes API is fuzzy. We filter the results manually to be 100% sure.
             let results = data.results.map(i => ({...i, media_type: type}));
             
             if (year) {
@@ -853,12 +843,11 @@ try {
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
         
-        // --- HIDE CONTINUE WATCHING IMMEDIATELY ---
         document.getElementById('continue-watching-section').classList.add('hidden');
 
         playerInterface.classList.add('hidden'); 
         detailsSection.classList.add('hidden');
-        collectionSection.classList.add('hidden'); // Hide collection by default
+        collectionSection.classList.add('hidden');
         playerIframe.src = "about:blank";
 
         const posterImg = document.getElementById('detail-poster');
@@ -873,6 +862,7 @@ try {
         setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
     async function fetchMovieDetails(id, title) {
         tvControls.classList.add('hidden');
         try {
@@ -885,7 +875,6 @@ try {
             }
             renderDetails(detailData, currentTitle);
             
-            // --- Collection Check ---
             if (detailData.belongs_to_collection) {
                 loadCollection(detailData.belongs_to_collection.id, detailData.belongs_to_collection.name);
             }
@@ -906,7 +895,6 @@ try {
             }
             renderDetails(data, currentTitle);
             
-            // Added air_date mapping
             episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
                 .map(s => ({ 
                     season: s.season_number, 
@@ -920,7 +908,6 @@ try {
             const seasonSelect = document.getElementById('season-select');
             seasonSelect.innerHTML = '';
             
-            // Set initial season status UI
             if (episodeData.length > 0) {
                  updateSeasonStatusUI(episodeData[0].air_date);
             }
@@ -943,13 +930,11 @@ try {
         } catch (e) { showMessage("Failed to load show details.", true); console.error(e); }
     }
     
-    // --- Collection Loader ---
     async function loadCollection(collectionId, collectionName) {
         try {
             const data = await fetchCached(`${BASE_TMDB_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`);
             const parts = data.parts.map(p => ({...p, media_type: 'movie'}));
             
-            // Sort by release date
             parts.sort((a,b) => new Date(a.release_date) - new Date(b.release_date));
             
             if (parts.length > 0) {
@@ -965,7 +950,6 @@ try {
         currentSeason = parseInt(seasonVal);
         currentEpisode = 1; 
         
-        // Find selected season data to update status
         const selectedSeasonData = episodeData.find(s => s.season === currentSeason);
         if (selectedSeasonData) {
             updateSeasonStatusUI(selectedSeasonData.air_date);
@@ -992,7 +976,6 @@ try {
             const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
             const isActive = (ep.episode_number === currentEpisode);
             
-            // New Metadata with FontAwesome Icons
             const rating = ep.vote_average ? Math.round(ep.vote_average * 10) + "%" : "NR";
             const date = formatDate(ep.air_date);
             const runtime = formatRuntime(ep.runtime);
@@ -1019,9 +1002,20 @@ try {
         if (accordionOpen) episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
     }
 
+    // --- UPDATED RENDER DETAILS WITH AMBIENT LOGIC ---
     function renderDetails(data, title) {
         if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
-        else pageBackground.style.backgroundImage = 'radial-gradient(circle at top left, #1a1a2e, #000000)';
+        else pageBackground.style.backgroundImage = 'none';
+
+        // --- NEW: Ambient Color Extraction ---
+        const posterUrl = data.poster_path ? `${TMDB_POSTER_MD}${data.poster_path}` : null;
+        if (posterUrl) {
+            getDominantColor(posterUrl).then(rgb => {
+                document.documentElement.style.setProperty('--ambient-color', rgb);
+            });
+        } else {
+            document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
+        }
 
         detailsSection.classList.remove('hidden');
         const logoImg = document.getElementById('detail-logo');
@@ -1046,7 +1040,6 @@ try {
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
         
-        // --- Country Click Handlers ---
         if (data.production_countries && data.production_countries.length > 0) {
             const code = data.production_countries[0].iso_3166_1;
             let fullName = code;
@@ -1126,7 +1119,6 @@ try {
         const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
         document.getElementById('detail-poster').src = poster;
         
-        // --- Genre Clicks with Labels ---
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
         (data.genres || []).forEach(g => {
@@ -1137,11 +1129,10 @@ try {
             genreContainer.appendChild(tag);
         });
 
-        // --- Render Cast ---
         const castList = document.getElementById('cast-list');
         castList.innerHTML = '';
         if (data.credits && data.credits.cast) {
-            data.credits.cast.forEach(c => { // REMOVED SLICE LIMIT
+            data.credits.cast.forEach(c => { 
                 const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
                 const castDiv = document.createElement('div');
                 castDiv.className = 'cast-card';
@@ -1155,18 +1146,14 @@ try {
             });
         }
 
-        // --- Render Extended Crew (Clickable) ---
         const crewContainer = document.getElementById('crew-container');
         const crewList = document.getElementById('crew-list');
         crewList.innerHTML = '';
         
         if (data.credits && data.credits.crew) {
-            // REMOVED JOB FILTER
-            
-            // Remove duplicates
             const uniqueCrew = [];
             const crewMap = new Map();
-            data.credits.crew.forEach(c => { // USE FULL CREW LIST
+            data.credits.crew.forEach(c => { 
                 if(!crewMap.has(c.id)) {
                     crewMap.set(c.id, true);
                     uniqueCrew.push(c);
@@ -1174,7 +1161,7 @@ try {
             });
 
             if (uniqueCrew.length > 0) {
-                uniqueCrew.forEach(c => { // REMOVED SLICE LIMIT
+                uniqueCrew.forEach(c => { 
                      const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
                      const crewDiv = document.createElement('div');
                      crewDiv.className = 'cast-card';
@@ -1183,7 +1170,6 @@ try {
                         <div class="cast-name">${c.name}</div>
                         <div class="crew-job">${c.job}</div>
                      `;
-                     // Added click handler for crew
                      crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path);
                      crewList.appendChild(crewDiv);
                 });
@@ -1193,7 +1179,6 @@ try {
             }
         }
 
-        // --- Render Detailed Info ---
         renderDetailedInfo(data);
     }
 
@@ -1210,7 +1195,7 @@ try {
             });
         }
 
-        // 2. Release Dates (Detailed)
+        // 2. Release Dates
         const relList = document.getElementById('release-dates-list');
         relList.innerHTML = '';
         if(data.release_dates && data.release_dates.results) {
@@ -1281,7 +1266,6 @@ try {
     function updatePlayer() {
         if (!TMDB_ID) return;
         
-        // 1. Load the Iframe
         const url = buildUrl(SERVER_URLS[currentServerIndex]);
         if (url === "about:blank") {
             playerIframe.src = "about:blank";
@@ -1291,54 +1275,43 @@ try {
             document.getElementById('server-loading-msg').classList.add('hidden');
         }
     
-        // 2. Logic for the "Next" Button
         const nextBtn = document.getElementById('next-ep-btn');
         
         if (mediaType === 'tv') {
             currentEpisodeInfo.textContent = `S${currentSeason}:E${currentEpisode} - Server ${currentServerIndex + 1}`;
             
-            // Find current season data
             const seasonData = episodeData.find(s => s.season === currentSeason);
             
             if (seasonData) {
-                // Logic: Are there more episodes in this season?
                 if (currentEpisode < seasonData.episodes) {
                     nextBtn.innerHTML = '<i class="fas fa-step-forward mr-2"></i> Next Episode';
-                    nextBtn.onclick = nextEpisode; // Uses your existing function
+                    nextBtn.onclick = nextEpisode; 
                     nextBtn.classList.remove('hidden');
                 } 
-                // Logic: Is there a NEXT season?
                 else if (episodeData.find(s => s.season === currentSeason + 1)) {
                     nextBtn.innerHTML = '<i class="fas fa-forward mr-2"></i> Start Season ' + (currentSeason + 1);
                     nextBtn.onclick = () => {
-                        // Manually trigger season change
                         const nextSeason = currentSeason + 1;
                         document.getElementById('season-select').value = nextSeason;
                         changeSeason(nextSeason).then(() => selectEpisode(nextSeason, 1, null));
                     };
                     nextBtn.classList.remove('hidden');
                 } 
-                // Logic: Series Finale (No more seasons)
                 else {
                     nextBtn.classList.add('hidden');
                 }
             }
         } else {
-            // It's a movie
             currentEpisodeInfo.textContent = "Movie";
             nextBtn.classList.add('hidden');
         }
         
-        // 3. Highlight the current episode in the list
         document.querySelectorAll('.episode-rich-item').forEach(item => item.classList.remove('active'));
-        // Note: This selector is tricky because of generated HTML. 
-        // A safer way is to rely on IDs if we added them, but this usually works:
         const activeItem = Array.from(document.querySelectorAll('.episode-rich-item')).find(
             el => el.getAttribute('onclick')?.includes(`(${currentSeason}, ${currentEpisode},`)
         );
         if(activeItem) {
             activeItem.classList.add('active');
-            // Auto-scroll the list to the active episode
             activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     
@@ -1346,10 +1319,8 @@ try {
     }
     
     window.handleServerError = function() {
-        // 1. Calculate next server index
-        const nextIndex = (currentServerIndex + 1) % SERVER_URLS.length; // Loops back to 0 if at end
+        const nextIndex = (currentServerIndex + 1) % SERVER_URLS.length; 
         
-        // 2. Show a temporary "Switching..." overlay
         const msg = document.getElementById('server-loading-msg');
         msg.innerHTML = `
             <div class="text-2xl mb-4 text-red-500"><i class="fas fa-tools"></i></div>
@@ -1358,41 +1329,34 @@ try {
         `;
         msg.classList.remove('hidden');
     
-        // 3. Actually switch after a short delay (for visual feedback)
         setTimeout(() => {
-            // Find the button for the next server and click it effectively
             const nextBtn = document.querySelectorAll('.server-btn')[nextIndex];
             if (nextBtn) {
                 switchServer(nextIndex, nextBtn);
             }
-            // Hide the message overlay
             msg.classList.add('hidden');
         }, 1000);
     }
-    // --- REFACTORED HISTORY / CONTINUE WATCHING LOGIC ---
+    
     function saveProgress() {
         if (!TMDB_ID) return;
         
-        // Ensure ID is a number for consistent comparison
         const idToCheck = Number(TMDB_ID);
         
         let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
         
-        // Remove existing entry for this ID (Fix for duplicates)
         history = history.filter(h => Number(h.tmdbId) !== idToCheck);
         
-        // Add new entry
         history.unshift({
             mediaType, 
             tmdbId: idToCheck, 
             title: currentTitle, 
             season: currentSeason, 
             episode: currentEpisode,
-            poster: document.getElementById('detail-poster').src, // Capture current poster
+            poster: document.getElementById('detail-poster').src, 
             timestamp: Date.now()
         });
         
-        // Limit history to 20 items
         if (history.length > 20) history.pop();
         
         localStorage.setItem('watch_history', JSON.stringify(history));
@@ -1413,7 +1377,7 @@ try {
 
         history.forEach(item => {
             const card = document.createElement('div');
-            card.className = 'scroll-card'; // BoredFlix style base class
+            card.className = 'scroll-card'; 
             
             const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
             
@@ -1434,11 +1398,9 @@ try {
                 </div>
             `;
             
-            // Resume Logic
             card.onclick = async () => {
                 await selectContent(item.tmdbId, item.title, item.mediaType);
                 if (item.mediaType === 'tv') {
-                    // Slight delay to ensure seasons loaded
                     setTimeout(() => {
                         document.getElementById('season-select').value = item.season;
                         changeSeason(item.season).then(() => {
@@ -1452,17 +1414,14 @@ try {
         });
     }
 
-    // Explicit global function for the onclick attribute
     window.removeFromHistory = function(id, event) {
-        if(event) event.stopPropagation(); // Stop card click
+        if(event) event.stopPropagation(); 
         let history = JSON.parse(localStorage.getItem('watch_history') || '[]');
-        // Filter needs to check against Number(id) just in case
         history = history.filter(h => Number(h.tmdbId) !== Number(id));
         localStorage.setItem('watch_history', JSON.stringify(history));
         updateContinueWatchingUI();
     }
 
-    // Deprecated the old single-item loader
     function loadProgress() {
         updateContinueWatchingUI();
     }
@@ -1531,58 +1490,29 @@ try {
             btnContainer.appendChild(btn);
         });
         
-        // --- DEEP LINKING CHECK (FIXED) ---
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Check for TMDB Auth Redirect
         if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
             createSession(urlParams.get('request_token'));
-            // Remove params from URL after processing
             window.history.replaceState({}, document.title, window.location.pathname);
         } else if(sessionId) {
             fetchAccountDetails();
         }
 
         if (urlParams.has('id') && urlParams.has('type')) {
-             heroSection.style.display = 'none'; // Prevent hero flash
-             // Explicitly cast ID to Number to fix deep linking bugs
+             heroSection.style.display = 'none'; 
              const deepId = Number(urlParams.get('id'));
              selectContent(deepId, "Loading Content...", urlParams.get('type'));
         }
 
-        loadProgress(); // Now loads history slider
+        loadProgress(); 
         loadTrending();
         loadGenres();
     });
 
-    function renderSkeletons(container, count = 10) {
-        container.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        
-        for (let i = 0; i < count; i++) {
-            const div = document.createElement('div');
-            div.className = 'scroll-card';
-            div.innerHTML = `
-                <div class="poster-wrapper skeleton"></div>
-                <div class="card-body">
-                    <div class="skeleton skeleton-text"></div>
-                    <div class="skeleton skeleton-text" style="width: 40%"></div>
-                </div>
-            `;
-            fragment.appendChild(div);
-        }
-        container.appendChild(fragment);
-    }
-
-    // --- HISTORY MANAGEMENT ---
 function clearHistory() {
-    // 1. Confirm with the user (Good UX)
     if (!confirm("Are you sure you want to clear your watch history?")) return;
-
-    // 2. Wipe LocalStorage
     localStorage.removeItem('watch_history');
-
-    // 3. Update UI
     updateContinueWatchingUI();
     showMessage("History Cleared");
 }
@@ -1591,7 +1521,6 @@ async function shareMovie() {
     const movieTitle = document.title;
     const movieUrl = window.location.href;
 
-    // 1. Mobile Native Share
     if (navigator.share) {
         try {
             await navigator.share({
@@ -1603,7 +1532,6 @@ async function shareMovie() {
             console.log('Share cancelled:', err);
         }
     } 
-    // 2. Desktop Clipboard Fallback
     else {
         navigator.clipboard.writeText(movieUrl).then(() => {
             showToast();
