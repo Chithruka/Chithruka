@@ -93,9 +93,9 @@
     </div>
 
     <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8">
-        <div class="flex flex-col md:flex-row gap-8">
-            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52">
-                <img id="detail-poster" src="" alt="Poster" class="w-full rounded-xl shadow-2xl object-cover border border-gray-700" loading="lazy">
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52 detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
+                <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover" loading="lazy">
             </div>
             <div class="flex-grow min-w-0">
                 <img id="detail-logo" src="" alt="Title Logo" class="title-logo" loading="lazy">
@@ -277,7 +277,7 @@
             <div class="flex flex-col items-center md:items-start">
                 <h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3>
                 <ul class="space-y-3 text-sm text-gray-400 w-full text-center md:text-left">
-                    <li><a href="#" onclick="window.scrollTo({top:0, behavior:'smooth'})" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-home text-xs opacity-50"></i> Home</a></li>
+                    <li><a href="#" onclick="location.href='index.html';" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-home text-xs opacity-50"></i> Home</a></li>
                     <li><a href="#" onclick="quickFilter('movie', '', 'Trending Movies')" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-fire text-xs opacity-50"></i> Trending Movies</a></li>
                     <li><a href="#" onclick="quickFilter('tv', '', 'Trending TV')" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-tv text-xs opacity-50"></i> TV Series</a></li>
                     <li><a href="#" onclick="openFilterModal()" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-search text-xs opacity-50"></i> Advanced Search</a></li>
@@ -289,6 +289,7 @@
                  
                  <button id="install-app-btn" onclick="installPWA()" class="hidden w-full md:w-auto flex items-center justify-center gap-4 bg-white/5 hover:bg-red-600 text-white px-5 py-3 rounded-xl transition-all duration-300 group mb-6 border border-white/10 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20">
                     <i class="fab fa-android text-2xl group-hover:scale-110 transition-transform"></i>
+                    <i class="fa-solid fa-desktop text-2xl group-hover:scale-110 transition-transform"></i>
                     <div class="text-left">
                         <div class="text-[10px] uppercase opacity-60 font-bold leading-none mb-1">Download for</div>
                         <div class="font-bold text-sm leading-none">Android / PC</div>
@@ -307,7 +308,7 @@
             </p>
             
             <div class="flex gap-4">
-                <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"><i class="fab fa-facebook-f"></i></a>
+                <a onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"><i class="fa-solid fa-angles-up fa-bounce"></i></a>
                 <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-sky-500 hover:text-white hover:border-sky-500 transition-all duration-300"><i class="fab fa-twitter"></i></a>
                 <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-pink-600 hover:text-white hover:border-pink-600 transition-all duration-300"><i class="fab fa-instagram"></i></a>
             </div>
