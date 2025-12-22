@@ -538,3 +538,47 @@ input[type=range]::-webkit-slider-thumb {
     color: white;
     padding: 10px;
 }
+
+/* --- Detail Page Poster Skeleton & Default --- */
+.detail-poster-wrapper {
+    position: relative;
+    background-color: #1f1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 2/3; 
+    
+    /* Add these lines to prevent flex stretching issues */
+    height: auto; 
+    align-self: flex-start;
+}
+
+/* The 'No Image' Icon (sits behind the img) */
+.detail-poster-wrapper::before {
+    content: '\f03e'; /* FontAwesome image icon */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 3rem;
+    color: #333;
+    position: absolute;
+    z-index: 0;
+}
+
+/* The Image itself */
+#detail-poster {
+    z-index: 1;
+    position: relative;
+    background-color: #1f1f1f; /* Hides icon while loading */
+    min-height: 100%;
+    transition: opacity 0.3s ease;
+}
+
+/* Skeleton Animation State */
+#detail-poster.skeleton {
+    opacity: 1; /* Ensure visible to show shimmer */
+    background: #121212; 
+    background-image: linear-gradient(to right, #121212 0%, #2a2a2a 20%, #121212 40%, #121212 100%);
+    background-repeat: no-repeat;
+    background-size: 2000px 100%; 
+    animation: shimmer 2s infinite linear;
+}
