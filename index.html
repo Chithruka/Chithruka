@@ -100,7 +100,7 @@
             <div class="flex-grow min-w-0">
                 <img id="detail-logo" src="" alt="Title Logo" class="title-logo" loading="lazy">
                 <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white"></h2>
-                
+    
                 <p id="detail-tagline" class="text-gray-400 italic text-sm md:text-base mb-4"></p>
                 
                 <div class="flex flex-wrap items-center gap-4 md:gap-5 text-sm text-gray-300 mb-6">
@@ -117,7 +117,12 @@
                     <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fas fa-heart"></i></div>
                     <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fas fa-bookmark"></i></div>
                     <div onclick="toggleRatingSlider()" class="interact-btn" title="Rate this"><i class="fas fa-star"></i></div>
+                        <button class="interaction-btn" onclick="shareMovie()" aria-label="Share">
+                            <i class="fa-solid fa-share-nodes"></i>
+                            <span>Share</span>
+                        </button>
                     
+                    <div id="toast" class="toast">Link copied to clipboard!</div>
                     <div id="rating-slider" class="rating-slider-container">
                         <input type="range" min="1" max="10" step="0.5" id="rating-input" oninput="document.getElementById('rating-val').innerText = this.value">
                         <span id="rating-val" class="text-sm font-bold text-yellow-400 w-6">5</span>
