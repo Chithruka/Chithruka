@@ -1481,33 +1481,39 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
     document.addEventListener('DOMContentLoaded', () => {
-        const btnContainer = document.getElementById('server-buttons');
-        SERVER_URLS.forEach((s, i) => {
-            const btn = document.createElement('button');
-            btn.className = `server-btn ${i===0?'active':''}`;
-            btn.textContent = s.name.split('(')[0].trim();
-            btn.onclick = () => switchServer(i, btn);
-            btnContainer.appendChild(btn);
-        });
-        
+        // ... (keep your existing variable declarations like urlParams) ...
+    
         const urlParams = new URLSearchParams(window.location.search);
-        
-        if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
-            createSession(urlParams.get('request_token'));
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else if(sessionId) {
-            fetchAccountDetails();
-        }
-
+    
+        // CHECK: Are we trying to load a specific movie?
         if (urlParams.has('id') && urlParams.has('type')) {
-             heroSection.style.display = 'none'; 
-             const deepId = Number(urlParams.get('id'));
-             selectContent(deepId, "Loading Content...", urlParams.get('type'));
+            // --- MOVIE MODE ---
+            
+            // 1. Hide Home Page Elements
+            if (heroSection) heroSection.style.display = 'none';
+            
+            // 2. Load the Movie Details
+            const deepId = Number(urlParams.get('id'));
+            selectContent(deepId, "Loading Content...", urlParams.get('type'));
+            
+            // 3. Do NOT load trending/genres here (prevents the overlap)
+            
+        } else {
+            // --- HOME MODE ---
+            
+            // Only load the home page content if we are NOT on a movie page
+            if (heroSection) heroSection.style.display = 'flex'; // Ensure it's visible
+            loadTrending();
+            loadGenres();
+            loadProgress(); 
         }
-
-        loadProgress(); 
-        loadTrending();
-        loadGenres();
+        
+        // Keep global setup functions outside (like Search setup)
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                // ... your search logic ...
+            });
+        }
     });
 
 function clearHistory() {
