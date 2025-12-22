@@ -198,100 +198,102 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
     }
 
     // --- USER ACTIONS (FAV, WATCHLIST, RATE) ---
-    async function checkAccountStates(id, type) {
-        if(!sessionId) return;
-        try {
-            const res = await fetch(`${BASE_TMDB_URL}/${type}/${id}/account_states?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);
-            const data = await res.json();
-            
-            const favBtn = document.getElementById('btn-favorite');
-            const watchBtn = document.getElementById('btn-watchlist');
-            const rateVal = document.getElementById('rating-val');
-            const rateInput = document.getElementById('rating-input');
+// --- ROBUST INTERACTION FUNCTIONS ---
+// --- ROBUST INTERACTION FUNCTIONS ---
 
-            // --- FIX: Handle Favorite Icon State ---
+async function checkAccountStates(id, type) {
+    if(!sessionId) return;
+    try {
+        const res = await fetch(`${BASE_TMDB_URL}/${type}/${id}/account_states?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);
+        const data = await res.json();
+        
+        const favBtn = document.getElementById('btn-favorite');
+        const watchBtn = document.getElementById('btn-watchlist');
+        const rateVal = document.getElementById('rating-val');
+        const rateInput = document.getElementById('rating-input');
+
+        // --- FIX: Force the class name directly ---
+        if (favBtn) {
             const favIcon = favBtn.querySelector('i');
-            if(data.favorite) {
+            if (data.favorite) {
                 favBtn.classList.add('active');
-                favIcon.classList.replace('fa-regular', 'fa-solid'); // Turn Solid
+                favIcon.className = 'fa-solid fa-heart'; // Force Filled
             } else {
                 favBtn.classList.remove('active');
-                favIcon.classList.replace('fa-solid', 'fa-regular'); // Turn Regular
+                favIcon.className = 'fa-regular fa-heart'; // Force Outline
             }
+        }
 
-            // --- FIX: Handle Watchlist Icon State ---
+        if (watchBtn) {
             const watchIcon = watchBtn.querySelector('i');
-            if(data.watchlist) {
+            if (data.watchlist) {
                 watchBtn.classList.add('active');
-                watchIcon.classList.replace('fa-regular', 'fa-solid'); // Turn Solid
+                watchIcon.className = 'fa-solid fa-bookmark'; // Force Filled
             } else {
                 watchBtn.classList.remove('active');
-                watchIcon.classList.replace('fa-solid', 'fa-regular'); // Turn Regular
+                watchIcon.className = 'fa-regular fa-bookmark'; // Force Outline
             }
+        }
 
-            if(data.rated) {
-                rateInput.value = data.rated.value;
-                rateVal.innerText = data.rated.value;
-            } else {
-                rateInput.value = 5;
-                rateVal.innerText = 5;
-            }
-        } catch(e) { console.error("State check error", e); }
-    }
+        if(data.rated) {
+            rateInput.value = data.rated.value;
+            rateVal.innerText = data.rated.value;
+        } else {
+            rateInput.value = 5;
+            rateVal.innerText = 5;
+        }
+    } catch(e) { console.error("State check error", e); }
+}
 
-    async function toggleFavorite() {
-        if(!sessionId) return showMessage("Please login first", true);
-        const btn = document.getElementById('btn-favorite');
-        const icon = btn.querySelector('i'); // Select the icon
-        const isFav = btn.classList.contains('active');
-        
-        try {
-            await fetch(`${BASE_TMDB_URL}/account/${accountId}/favorite?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, favorite: !isFav })
-            });
-            
-            // --- FIX: Swap Icon Class on Click ---
-            btn.classList.toggle('active');
-            if (isFav) {
-                // Was active, now removing -> Go Regular
-                icon.classList.replace('fa-solid', 'fa-regular');
-                showMessage("Removed from Favorites");
-            } else {
-                // Was inactive, now adding -> Go Solid
-                icon.classList.replace('fa-regular', 'fa-solid');
-                showMessage("Added to Favorites");
-            }
-        } catch(e) { showMessage("Action failed", true); }
+async function toggleFavorite() {
+    if(!sessionId) return showMessage("Please login first", true);
+    const btn = document.getElementById('btn-favorite');
+    const icon = btn.querySelector('i');
+    const isFav = btn.classList.contains('active');
+    
+    // Optimistic UI Update (Change instantly, then revert if failed)
+    btn.classList.toggle('active');
+    icon.className = isFav ? 'fa-regular fa-heart' : 'fa-solid fa-heart';
+    
+    try {
+        await fetch(`${BASE_TMDB_URL}/account/${accountId}/favorite?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, favorite: !isFav })
+        });
+        showMessage(isFav ? "Removed from Favorites" : "Added to Favorites");
+    } catch(e) { 
+        // Revert on failure
+        btn.classList.toggle('active');
+        icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        showMessage("Action failed", true); 
     }
+}
 
-    async function toggleWatchlist() {
-        if(!sessionId) return showMessage("Please login first", true);
-        const btn = document.getElementById('btn-watchlist');
-        const icon = btn.querySelector('i'); // Select the icon
-        const isWatch = btn.classList.contains('active');
-        
-        try {
-            await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, watchlist: !isWatch })
-            });
-            
-            // --- FIX: Swap Icon Class on Click ---
-            btn.classList.toggle('active');
-            if (isWatch) {
-                // Was active, now removing -> Go Regular
-                icon.classList.replace('fa-solid', 'fa-regular');
-                showMessage("Removed from Watchlist");
-            } else {
-                // Was inactive, now adding -> Go Solid
-                icon.classList.replace('fa-regular', 'fa-solid');
-                showMessage("Added to Watchlist");
-            }
-        } catch(e) { showMessage("Action failed", true); }
+async function toggleWatchlist() {
+    if(!sessionId) return showMessage("Please login first", true);
+    const btn = document.getElementById('btn-watchlist');
+    const icon = btn.querySelector('i');
+    const isWatch = btn.classList.contains('active');
+    
+    // Optimistic UI Update
+    btn.classList.toggle('active');
+    icon.className = isWatch ? 'fa-regular fa-bookmark' : 'fa-solid fa-bookmark';
+    
+    try {
+        await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ media_type: mediaType, media_id: TMDB_ID, watchlist: !isWatch })
+        });
+        showMessage(isWatch ? "Removed from Watchlist" : "Added to Watchlist");
+    } catch(e) { 
+        // Revert
+        btn.classList.toggle('active');
+        icon.className = isWatch ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+        showMessage("Action failed", true); 
     }
+}
 
     function toggleRatingSlider() {
         if(!sessionId) return showMessage("Please login first", true);
@@ -313,40 +315,53 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
 
     async function loadMyLibrary(type) { 
         if(!sessionId) return;
-        toggleUserMenu();
+        
+        // Close the menu first
+        const dropdown = document.getElementById('user-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+    
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
-        
+        detailsSection.classList.add('hidden');
+        playerInterface.classList.add('hidden');
+        collectionSection.classList.add('hidden');
+        document.getElementById('continue-watching-section').classList.add('hidden');
+    
         const header = document.getElementById('trending-header');
-        header.innerHTML = `<i class="fas fa-${type === 'favorite' ? 'heart' : 'bookmark'} text-accent mr-3"></i> My ${type === 'favorite' ? 'Favorites' : 'Watchlist'}`;
         
+        // Set Header Icon and Text
+        if(type === 'favorite') header.innerHTML = '<i class="fas fa-heart text-red-500 mr-3"></i> My Favorites';
+        else header.innerHTML = '<i class="fas fa-bookmark text-blue-500 mr-3"></i> My Watchlist';
+        
+        trendingContainer.innerHTML = '';
         renderSkeletons(trendingContainer, 10);
-        loadedIds.clear();
         
         try {
-            const [moviesRes, tvRes] = await Promise.all([
-                fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`),
-                fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`)
-            ]);
-    
-            const movies = await moviesRes.json();
-            const tv = await tvRes.json();
+            // Fetch Movies
+            const resMovies = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
+            const dataMovies = await resMovies.json();
             
-            const combined = [
-                ...(movies.results || []).map(m => ({...m, media_type: 'movie'})),
-                ...(tv.results || []).map(t => ({...t, media_type: 'tv'}))
-            ];
+            // Fetch TV Shows
+            const resTV = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
+            const dataTV = await resTV.json();
             
-            combined.sort((a,b) => b.id - a.id);
-    
+            const movies = dataMovies.results.map(i => ({...i, media_type: 'movie'}));
+            const tv = dataTV.results.map(i => ({...i, media_type: 'tv'}));
+            
+            // Combine and sort by newest first (assuming the API returns them sorted, we just merge)
+            const combined = [...movies, ...tv];
+            
             trendingContainer.innerHTML = '';
-    
-            if(combined.length === 0) trendingContainer.innerHTML = '<div class="p-4 text-gray-400">Nothing here yet.</div>';
-            else renderCards(combined, trendingContainer, true);
+            if(combined.length === 0) {
+                trendingContainer.innerHTML = '<div class="text-gray-400 p-4">Your list is empty.</div>';
+            } else {
+                renderCards(combined, trendingContainer, false);
+            }
             
-        } catch (e) {
-            console.error("Library Error", e);
-            trendingContainer.innerHTML = '<div class="p-4 text-red-400">Error loading library</div>';
+            header.scrollIntoView({ behavior: 'smooth' });
+        } catch(e) {
+            console.error(e);
+            trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load library.</div>';
         }
     }
 
@@ -923,24 +938,30 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         
         const newUrl = `?id=${id}&type=${type}`;
         window.history.pushState({ id, type, title }, '', newUrl);
-
+    
         searchResults.innerHTML = ''; 
         searchInput.value = '';
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
         
         document.getElementById('continue-watching-section').classList.add('hidden');
-
+    
         playerInterface.classList.add('hidden'); 
         detailsSection.classList.add('hidden');
         collectionSection.classList.add('hidden');
         playerIframe.src = "about:blank";
-
+    
         const posterImg = document.getElementById('detail-poster');
         posterImg.src = ''; 
-        posterImg.classList.add('skeleton-poster');
-        posterImg.onload = () => posterImg.classList.remove('skeleton-poster');
-
+        // Reset poster to skeleton state
+        posterImg.style.display = 'block'; 
+        posterImg.classList.add('skeleton'); 
+        posterImg.onload = () => posterImg.classList.remove('skeleton');
+    
+        // --- FIX: Check if User has Liked/Watchlisted this ---
+        checkAccountStates(id, type); 
+        // ---------------------------------------------------
+    
         if (mediaType === 'tv') await fetchShowDetails(id, title);
         else await fetchMovieDetails(id, title);
         
