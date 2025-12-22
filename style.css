@@ -78,37 +78,6 @@ font-family: "Amatic SC", sans-serif;
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     cursor: pointer; z-index: 50;
 }
-
-/* --- Modern Footer Animations --- */
-/* --- Restore Original Breathing Animation --- */
-@font-face {
-    font-family: 'TheFont';
-    src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2") format('woff2');
-}
-
-.footer-name {
-    font-family: 'TheFont', sans-serif;
-    /* Reduced from 3rem to 2rem for better animation performance */
-    font-size: 2rem; 
-    background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
-    background-size: 200% auto;
-    -webkit-background-clip: text; 
-    -webkit-text-fill-color: transparent;
-    animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
-    display: inline-block;
-    /* Optional: Prevents layout jitter during the breathe animation */
-    width: max-content; 
-}
-
-@keyframes letter-breathe {
-    from, to { font-variation-settings: 'wght' 100; }
-    50% { font-variation-settings: 'wght' 900; }
-}
-
-@keyframes gradient-move { 
-    to { background-position: 200% center; } 
-}
-
 .footer-disclaimer { font-size: 12px; color: #888; max-width: 600px; line-height: 1.5; }
 
 #install-app-btn {
