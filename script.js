@@ -1007,16 +1007,21 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         collectionSection.classList.add('hidden');
         playerIframe.src = "about:blank";
     
+        // --- UPDATED POSTER RESET LOGIC ---
         const posterImg = document.getElementById('detail-poster');
         posterImg.src = ''; 
-        // Reset poster to skeleton state
+        // Ensure image element is displayed so skeleton background is visible
         posterImg.style.display = 'block'; 
+        // Add skeleton class to start shimmer animation
         posterImg.classList.add('skeleton'); 
-        posterImg.onload = () => posterImg.classList.remove('skeleton');
+        
+        // Remove old event listeners by cloning (optional but cleaner) or just resetting handlers
+        posterImg.onload = null;
+        posterImg.onerror = null;
+        // ----------------------------------
     
-        // --- FIX: Check if User has Liked/Watchlisted this ---
+        // Check if User has Liked/Watchlisted this
         checkAccountStates(id, type); 
-        // ---------------------------------------------------
     
         if (mediaType === 'tv') await fetchShowDetails(id, title);
         else await fetchMovieDetails(id, title);
@@ -1204,7 +1209,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
             statusEl.classList.add('hidden');
         }
 
-        // --- NEW: Inject Total Seasons & Episodes (Before Status) ---
+        // Inject Total Seasons & Episodes (Before Status)
         const existingCount = document.getElementById('detail-tv-stats');
         if (existingCount) existingCount.remove();
 
@@ -1215,7 +1220,6 @@ window.quickFilter = function(type, value, label = "", logo = "") {
             countSpan.innerHTML = `<i class="fas fa-layer-group mr-2 text-gray-400"></i> ${data.number_of_seasons} Seasons • ${data.number_of_episodes} Episodes`;
             statusEl.parentElement.insertBefore(countSpan, statusEl);
         }
-        // -----------------------------------------------------------
 
         const countryEl = document.getElementById('detail-country');
         const ageEl = document.getElementById('detail-age');
@@ -1296,8 +1300,30 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         
         document.getElementById('detail-overview').textContent = data.overview || "No description available.";
         
-        const poster = data.poster_path ? `${TMDB_POSTER_LG}${data.poster_path}` : '';
-        document.getElementById('detail-poster').src = poster;
+        // --- UPDATED POSTER LOADING LOGIC ---
+        const posterImg = document.getElementById('detail-poster');
+        
+        if (data.poster_path) {
+            // Set source
+            posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
+            posterImg.style.display = 'block';
+            
+            // On Load: Remove skeleton class to stop shimmer
+            posterImg.onload = () => {
+                posterImg.classList.remove('skeleton');
+            };
+
+            // On Error: Hide image (reveals CSS ::before icon)
+            posterImg.onerror = () => {
+                posterImg.style.display = 'none';
+                posterImg.classList.remove('skeleton');
+            };
+        } else {
+            // No poster path -> Hide image immediately (reveals CSS ::before icon)
+            posterImg.style.display = 'none';
+            posterImg.classList.remove('skeleton');
+        }
+        // ------------------------------------
         
         const genreContainer = document.getElementById('detail-genres');
         genreContainer.innerHTML = '';
@@ -1463,10 +1489,31 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         }
         return url;
     }
-
+    function renderServerButtons() {
+        const btnContainer = document.getElementById('server-buttons');
+        if (!btnContainer) return;
+        
+        btnContainer.innerHTML = ''; // Clear existing buttons
+        
+        SERVER_URLS.forEach((server, index) => {
+            const btn = document.createElement('button');
+            // Add 'active' class if this is the current server
+            btn.className = `server-btn ${index === currentServerIndex ? 'active' : ''}`;
+            btn.textContent = server.name; 
+            btn.onclick = () => switchServer(index, btn);
+            btnContainer.appendChild(btn);
+        });
+    }
     function updatePlayer() {
         if (!TMDB_ID) return;
         
+        // --- NEW: Render Server Buttons if they are missing ---
+        const btnContainer = document.getElementById('server-buttons');
+        if (btnContainer && btnContainer.children.length === 0) {
+            renderServerButtons();
+        }
+        // -----------------------------------------------------
+
         const url = buildUrl(SERVER_URLS[currentServerIndex]);
         if (url === "about:blank") {
             playerIframe.src = "about:blank";
@@ -1485,7 +1532,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
             
             if (seasonData) {
                 if (currentEpisode < seasonData.episodes) {
-                    nextBtn.innerHTML = '<i class="fas fa-step-forward mr-2"></i> Next Episode';
+                    nextBtn.innerHTML = '<i class="fa-solid fa-forward-step fa-fade mr-2"></i> Next Episode';
                     nextBtn.onclick = nextEpisode; 
                     nextBtn.classList.remove('hidden');
                 } 
@@ -1513,7 +1560,6 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         );
         if(activeItem) {
             activeItem.classList.add('active');
-            activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     
         saveProgress();
@@ -1582,10 +1628,23 @@ window.quickFilter = function(type, value, label = "", logo = "") {
             
             const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
             
+            // --- UPDATED HTML STRUCTURE ---
+            // 1. Added 'skeleton' class to img
+            // 2. Added onload to remove skeleton
+            // 3. Added onerror to hide broken images (shows wrapper background icon)
             card.innerHTML = `
                 <div class="poster-wrapper">
-                    <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)"><i class="fas fa-times text-xs"></i></div>
-                    <img src="${item.poster}" class="poster-img" loading="lazy">
+                    <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)" title="Remove from History">
+                        <i class="fas fa-times text-xs"></i>
+                    </div>
+                    
+                    <img src="${item.poster}" 
+                         class="poster-img skeleton" 
+                         loading="lazy"
+                         alt="${item.title}"
+                         onload="this.classList.remove('skeleton')"
+                         onerror="this.style.display='none'">
+                         
                     <div class="play-overlay">
                         <div class="play-icon-circle"><i class="fas fa-play"></i></div>
                     </div>
@@ -1598,6 +1657,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
                     </div>
                 </div>
             `;
+            // -----------------------------
             
             card.onclick = async () => {
                 await selectContent(item.tmdbId, item.title, item.mediaType);
@@ -1682,52 +1742,67 @@ window.quickFilter = function(type, value, label = "", logo = "") {
     downloadModal.addEventListener('click', e => { if(e.target === downloadModal) closeDownloadModal(); });
 
     document.addEventListener('DOMContentLoaded', () => {
-        const btnContainer = document.getElementById('server-buttons');
-        SERVER_URLS.forEach((s, i) => {
-            const btn = document.createElement('button');
-            btn.className = `server-btn ${i===0?'active':''}`;
-            btn.textContent = s.name.split('(')[0].trim();
-            btn.onclick = () => switchServer(i, btn);
-            btnContainer.appendChild(btn);
-        });
-        
         const urlParams = new URLSearchParams(window.location.search);
-        
-        if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
-            createSession(urlParams.get('request_token'));
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else if(sessionId) {
-            fetchAccountDetails();
+    
+        // 1. Check for Account Login (Session ID)
+        const storedSession = localStorage.getItem('tmdb_session_id');
+        const storedAccount = localStorage.getItem('tmdb_account_id');
+        if(storedSession && storedAccount) {
+            sessionId = storedSession;
+            accountId = storedAccount;
+            updateUserUI(true);
         }
-
+    
+        // 2. Load Progress (Continue Watching)
+        // FIX: Only load history if we are NOT on a specific movie page
+        if (!urlParams.has('id')) {
+            loadProgress(); 
+        }
+    
+        // 3. Handle Direct URL Navigation (e.g. ?id=123&type=movie)
         if (urlParams.has('id') && urlParams.has('type')) {
              heroSection.style.display = 'none'; 
              const deepId = Number(urlParams.get('id'));
              selectContent(deepId, "Loading Content...", urlParams.get('type'));
         }
-
-        if (!new URLSearchParams(window.location.search).has('id')) {
-            loadProgress();
-        }
+    
+        // 4. Load Initial Content
         loadTrending();
         loadGenres();
-   
-   // --- NEW: Footer Logic (Year & Country) ---
-   document.getElementById('footer-year').textContent = new Date().getFullYear();
-
-   fetch('https://ipapi.co/json/')
-       .then(res => res.json())
-       .then(data => {
-           const countryEl = document.getElementById('user-country');
-           if (data.country_name) {
-               countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500"></i> ${data.country_name}`;
-           } else {
-               countryEl.style.display = 'none';
-           }
-       })
-       .catch(() => {
-           document.getElementById('user-country').innerText = "Location Unavailable";
-       }); });
+    
+        // 5. Footer Logic (Year & Clickable Country)
+        const yearSpan = document.getElementById('footer-year');
+        if(yearSpan) yearSpan.textContent = new Date().getFullYear();
+    
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                const countryEl = document.getElementById('user-country');
+                
+                if (data.country_name && data.country_code) {
+                    // Set text and icon
+                    countryEl.innerHTML = `<i class="fas fa-globe text-blue-500 animate-pulse"></i> ${data.country_name}`;
+                    
+                    // Add clickable styling
+                    countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
+                    countryEl.title = `Browse content from ${data.country_name}`;
+                    
+                    // Add Click Event -> Filters by Country
+                    countryEl.onclick = () => {
+                        // Smooth scroll to top before filtering
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        // Use the 2-letter country code (e.g., 'US', 'IN')
+                        quickFilter('country', data.country_code, data.country_name);
+                    };
+                } else {
+                    if(countryEl) countryEl.style.display = 'none';
+                }
+            })
+            .catch(() => {
+                const countryEl = document.getElementById('user-country');
+                if(countryEl) countryEl.innerText = "Location Unavailable";
+            });
+    });
 
 function clearHistory() {
     if (!confirm("Are you sure you want to clear your watch history?")) return;
@@ -1766,4 +1841,32 @@ function showToast() {
     setTimeout(function(){ 
         toast.className = toast.className.replace("show", ""); 
     }, 3000);
+}
+
+function loadHome() {
+    // 1. Reset the loader state
+    currentFetchUrl = ""; 
+    trendingPage = 1;
+    
+    // 2. Reset UI
+    searchInput.value = '';
+    searchResults.innerHTML = '';
+    
+    heroSection.style.display = 'block'; // Show Hero
+    document.getElementById('top10-section').style.display = 'block'; // Show Top 10
+    
+    detailsSection.classList.add('hidden');
+    playerInterface.classList.add('hidden');
+    collectionSection.classList.add('hidden');
+    document.getElementById('continue-watching-section').classList.remove('hidden'); // Show Continue Watching
+
+    // 3. Reset Header
+    document.getElementById('trending-header').innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    
+    // 4. Scroll to Top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 5. Load Content
+    trendingContainer.innerHTML = '';
+    loadTrending();
 }
