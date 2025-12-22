@@ -12,6 +12,7 @@ const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
     let mediaType = 'movie'; 
     let TMDB_ID = null;
     let IMDB_ID = null; 
+    let currentFetchUrl = "";
     let currentTitle = ""; 
     let currentSeason = 1;
     let currentEpisode = 1;
@@ -316,54 +317,89 @@ async function toggleWatchlist() {
     async function loadMyLibrary(type) { 
         if(!sessionId) return;
         
-        // Close the menu first
+        // --- CRITICAL FIX: Stop the Trending Loader ---
+        currentFetchUrl = "STOP"; 
+        trendingPage = 1;
+        // ---------------------------------------------
+
+        // Close dropdown if open
         const dropdown = document.getElementById('user-dropdown');
         if (dropdown) dropdown.classList.add('hidden');
-    
+
         heroSection.style.display = 'none';
         document.getElementById('top10-section').style.display = 'none';
         detailsSection.classList.add('hidden');
         playerInterface.classList.add('hidden');
         collectionSection.classList.add('hidden');
         document.getElementById('continue-watching-section').classList.add('hidden');
-    
+
         const header = document.getElementById('trending-header');
         
-        // Set Header Icon and Text
         if(type === 'favorite') header.innerHTML = '<i class="fas fa-heart text-red-500 mr-3"></i> My Favorites';
         else header.innerHTML = '<i class="fas fa-bookmark text-blue-500 mr-3"></i> My Watchlist';
         
         trendingContainer.innerHTML = '';
         renderSkeletons(trendingContainer, 10);
         
+        // --- FIX: Scroll to header immediately ---
+        setTimeout(() => {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
         try {
-            // Fetch Movies
-            const resMovies = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
+            // Fetch Movies & TV (Page 1)
+            const [resMovies, resTV] = await Promise.all([
+                fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`),
+                fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`)
+            ]);
+
             const dataMovies = await resMovies.json();
-            
-            // Fetch TV Shows
-            const resTV = await fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`);
             const dataTV = await resTV.json();
             
-            const movies = dataMovies.results.map(i => ({...i, media_type: 'movie'}));
-            const tv = dataTV.results.map(i => ({...i, media_type: 'tv'}));
+            const movies = (dataMovies.results || []).map(i => ({...i, media_type: 'movie'}));
+            const tv = (dataTV.results || []).map(i => ({...i, media_type: 'tv'}));
             
-            // Combine and sort by newest first (assuming the API returns them sorted, we just merge)
+            // Merge lists
             const combined = [...movies, ...tv];
             
             trendingContainer.innerHTML = '';
+            
             if(combined.length === 0) {
                 trendingContainer.innerHTML = '<div class="text-gray-400 p-4">Your list is empty.</div>';
             } else {
                 renderCards(combined, trendingContainer, false);
             }
             
-            header.scrollIntoView({ behavior: 'smooth' });
         } catch(e) {
             console.error(e);
             trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load library.</div>';
         }
     }
+    // Function to force-load the Homepage
+function loadHome() {
+    // 1. Reset the loader state
+    currentFetchUrl = ""; 
+    trendingPage = 1;
+    
+    // 2. Reset UI
+    searchInput.value = '';
+    searchResults.innerHTML = '';
+    
+    heroSection.style.display = 'block'; // Show Hero
+    document.getElementById('top10-section').style.display = 'block'; // Show Top 10
+    
+    detailsSection.classList.add('hidden');
+    playerInterface.classList.add('hidden');
+    collectionSection.classList.add('hidden');
+    document.getElementById('continue-watching-section').classList.remove('hidden'); // Show Continue Watching
+
+    // 3. Reset Header
+    document.getElementById('trending-header').innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    
+    // 4. Load Content
+    trendingContainer.innerHTML = '';
+    loadTrending();
+}
 
     const SERVER_URLS = [
         { name: "Server 1 (VidSrc.to)", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
@@ -419,6 +455,13 @@ async function toggleWatchlist() {
 
     async function loadTrending() {
         if (isTrendingLoading) return;
+        
+        // 1. Capture URL
+        const activeUrl = currentFetchUrl;
+        
+        // 2. BLOCK infinite scroll if we are in Library/Actor mode
+        if (activeUrl === "STOP") return;
+
         isTrendingLoading = true;
         
         if (trendingPage === 1) {
@@ -426,19 +469,32 @@ async function toggleWatchlist() {
         }
         
         try {
-            const data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
+            let data;
             
-            if (trendingPage === 1) {
-                trendingContainer.innerHTML = '';
-
-                // --- FIX START: Check for ID in URL before showing Hero ---
-                const urlParams = new URLSearchParams(window.location.search);
-                if (!urlParams.has('id')) {
-                    initHero(data.results.slice(0, 5));
-                }
-                // --- FIX END ---
+            if (activeUrl) {
+                // Load Filter Results
+                data = await fetchCached(`${activeUrl}&page=${trendingPage}`);
+                const type = activeUrl.includes('/tv?') ? 'tv' : 'movie';
+                data.results = data.results.map(i => ({...i, media_type: type}));
+            } else {
+                // Load Trending
+                data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
                 
-                renderTop10(data.results.slice(0, 10)); 
+                // Only show Hero on Page 1 of Home
+                if (trendingPage === 1) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (!urlParams.has('id')) {
+                        trendingContainer.innerHTML = '';
+                        initHero(data.results.slice(0, 5));
+                        renderTop10(data.results.slice(0, 10)); 
+                    }
+                }
+            }
+            
+            // Race Condition Check
+            if (currentFetchUrl !== activeUrl) {
+                 isTrendingLoading = false;
+                 return;
             }
     
             if (data.results && data.results.length > 0) {
