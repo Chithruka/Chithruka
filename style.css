@@ -70,29 +70,43 @@ body {
 
 /* --- Logo --- */
 .logo-text {
-    font-family: 'Dancing Script', cursive; font-weight: 700;
+font-family: "Amatic SC", sans-serif;
+  font-weight: 700;
+  font-style: normal;
     line-height: 1;
     background: linear-gradient(45deg, #fff, #e50914);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     cursor: pointer; z-index: 50;
 }
 
-/* --- Footer Animation --- */
-.footer-container {
-    width: 100%; padding: 40px 20px;
-    background: linear-gradient(to top, #000 20%, transparent);
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    margin-top: auto; overflow: hidden; text-align: center; gap: 15px;
+/* --- Modern Footer Animations --- */
+/* --- Restore Original Breathing Animation --- */
+@font-face {
+    font-family: 'TheFont';
+    src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2") format('woff2');
 }
 
 .footer-name {
     font-family: 'TheFont', sans-serif;
-    font-size: clamp(1.5rem, 10vw, 6rem); 
-    max-width: 90vw;
+    /* Reduced from 3rem to 2rem for better animation performance */
+    font-size: 2rem; 
     background: linear-gradient(90deg, #e50914, #ffffff, #e50914);
     background-size: 200% auto;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent;
     animation: letter-breathe 3s ease-in-out infinite, gradient-move 3s linear infinite;
+    display: inline-block;
+    /* Optional: Prevents layout jitter during the breathe animation */
+    width: max-content; 
+}
+
+@keyframes letter-breathe {
+    from, to { font-variation-settings: 'wght' 100; }
+    50% { font-variation-settings: 'wght' 900; }
+}
+
+@keyframes gradient-move { 
+    to { background-position: 200% center; } 
 }
 
 .footer-disclaimer { font-size: 12px; color: #888; max-width: 600px; line-height: 1.5; }
@@ -274,21 +288,50 @@ input[type=range]::-webkit-slider-thumb {
     :root { --card-width: 170px; --card-height: 255px; } 
 }
 
+/* --- Wrapper acts as the 'No Image' placeholder --- */
 .poster-wrapper {
     width: 100%;
     aspect-ratio: 2/3;
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    background: #222;
+    background: #1f1f1f; /* Dark background */
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     transition: box-shadow 0.3s ease;
+    
+    /* Center the 'No Image' Icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* The default icon that sits BEHIND the image */
+.poster-wrapper::before {
+    content: '\f03e'; /* FontAwesome 'image' icon code */
+    font-family: "Font Awesome 6 Free"; /* Ensure FontAwesome is loaded */
+    font-weight: 900;
+    font-size: 2.5rem;
+    color: #333;
+    position: absolute;
+    z-index: 0; 
+}
+
+/* The Image covers the icon. If hidden, the icon reveals. */
 .poster-img {
-    width: 100%; height: 100%; object-fit: cover;
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
+    z-index: 1; /* Sits above the icon */
+    position: relative;
+    background-color: #1f1f1f; /* Hides icon while loading */
+}
+
+/* Skeleton animation for the image itself while loading */
+.poster-img.skeleton {
+    min-height: 100%;
+    display: block;
 }
 
 .scroll-card:hover .poster-wrapper {
@@ -381,7 +424,17 @@ input[type=range]::-webkit-slider-thumb {
 .title-logo { max-width: 100%; max-height: 100px; width: auto; object-fit: contain; object-position: left; margin-bottom: 0.5rem; display: none; }
 @media (min-width: 768px) { .title-logo { max-width: 350px; max-height: 120px; } }
 .cast-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-.cast-card { min-width: 80px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+.cast-card { 
+    min-width: 80px; 
+    text-align: center; 
+    cursor: pointer; 
+    transition: transform 0.2s;
+    
+    /* --- FIX: Force perfect centering --- */
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+}
 .cast-card:hover { transform: scale(1.05); }
 .cast-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 5px; background: #222; }
 .cast-name { font-size: 0.75rem; color: #ddd; font-weight: 600; }
@@ -481,4 +534,38 @@ input[type=range]::-webkit-slider-thumb {
     visibility: visible;
     opacity: 1;
     bottom: 50px; 
+}
+
+/* --- FIX: Match Season Selector to Episode Selector UI --- */
+#season-select {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.05); /* Exact match to accordion header */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    
+    /* Remove default ugly arrow and add a custom clean one */
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2em;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+#season-select:hover, #season-select:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+#season-select option {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 10px;
 }
