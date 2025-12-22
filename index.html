@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">
     
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -43,8 +43,8 @@
                 </button>
                 <img id="user-avatar" src="" class="user-avatar hidden" onclick="toggleUserMenu()">
                 <div id="user-menu" class="user-menu">
-                    <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><i class="fas fa-heart text-red-500 mr-2"></i> Favorites</div>
-                    <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><i class="fas fa-bookmark text-blue-500 mr-2"></i> Watchlist</div>
+                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fa-regular fa-heart"></i></div>
+                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
                     <div class="user-menu-item" onclick="logoutTMDB()"><i class="fas fa-sign-out-alt text-gray-400 mr-2"></i> Logout</div>
                 </div>
             </div>
@@ -114,8 +114,8 @@
                 </div>
 
                 <div id="interaction-bar" class="interaction-bar hidden">
-                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fas fa-heart"></i></div>
-                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fas fa-bookmark"></i></div>
+                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fa-regular fa-heart"></i></div>
+<div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
                     <div onclick="toggleRatingSlider()" class="interact-btn" title="Rate this"><i class="fas fa-star"></i></div>
                         <button class="interaction-btn" onclick="shareMovie()" aria-label="Share">
                             <i class="fa-solid fa-share-nodes"></i>
@@ -258,12 +258,64 @@
         </div>
 </div>
 
-<footer class="footer-container">
-    <span class="footer-name">CHITHRUKA</span>
-    <p class="footer-disclaimer">
-        This site does not store any files on its server. All contents are provided by non-affiliated third parties.
-    </p>
-    <button id="install-app-btn" onclick="installPWA()"><i class="fas fa-download mr-2"></i> Install App</button>
+<footer class="relative bg-black/90 backdrop-blur-xl border-t border-white/5 mt-24 pt-16 pb-8 z-10">
+    <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent"></div>
+
+    <div class="container mx-auto px-6 max-w-7xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            
+            <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                <h2 class="footer-name mb-4 cursor-pointer" onclick="location.href='index.html'">
+                    CHITHRUKA
+                </h2>
+                <p class="text-gray-400 text-sm mb-6 max-w-xs leading-relaxed">
+                    Your ultimate destination for movies & TV. Streaming perfection, curated just for you.
+                </p>
+                
+                <div id="user-country" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300 hover:bg-white/10 transition-colors">
+                    <i class="fas fa-globe text-blue-500 animate-pulse"></i> Locating...
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center md:items-start">
+                <h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3>
+                <ul class="space-y-3 text-sm text-gray-400 w-full text-center md:text-left">
+                    <li><a href="#" onclick="window.scrollTo({top:0, behavior:'smooth'})" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-home text-xs opacity-50"></i> Home</a></li>
+                    <li><a href="#" onclick="quickFilter('movie', '', 'Trending Movies')" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-fire text-xs opacity-50"></i> Trending Movies</a></li>
+                    <li><a href="#" onclick="quickFilter('tv', '', 'Trending TV')" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-tv text-xs opacity-50"></i> TV Series</a></li>
+                    <li><a href="#" onclick="openFilterModal()" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-search text-xs opacity-50"></i> Advanced Search</a></li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col items-center md:items-start">
+                 <h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">App & Legal</h3>
+                 
+                 <button id="install-app-btn" onclick="installPWA()" class="hidden w-full md:w-auto flex items-center justify-center gap-4 bg-white/5 hover:bg-red-600 text-white px-5 py-3 rounded-xl transition-all duration-300 group mb-6 border border-white/10 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20">
+                    <i class="fab fa-android text-2xl group-hover:scale-110 transition-transform"></i>
+                    <div class="text-left">
+                        <div class="text-[10px] uppercase opacity-60 font-bold leading-none mb-1">Download for</div>
+                        <div class="font-bold text-sm leading-none">Android / PC</div>
+                    </div>
+                </button>
+
+                <p class="text-xs text-gray-500 leading-relaxed text-center md:text-left max-w-xs">
+                    This site does not store any files on its server. All contents are provided by non-affiliated third parties.
+                </p>
+            </div>
+        </div>
+
+        <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p class="text-xs text-gray-500 font-medium">
+                &copy; <span id="footer-year"></span> Chithruka. All Rights Reserved.
+            </p>
+            
+            <div class="flex gap-4">
+                <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-300"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-sky-500 hover:text-white hover:border-sky-500 transition-all duration-300"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-pink-600 hover:text-white hover:border-pink-600 transition-all duration-300"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
 </footer>
 
 <div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
