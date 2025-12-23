@@ -16,7 +16,13 @@ body {
     min-height: 100vh;
     margin: 0;
     padding-bottom: 0; 
+    
+    /* --- STRICT OVERFLOW FIX --- */
     overflow-x: hidden; 
+    width: 100%;
+    position: relative;
+    /* -------------------------- */
+    
     display: flex;
     flex-direction: column;
     background-color: #000;
@@ -94,20 +100,54 @@ font-family: "Amatic SC", sans-serif;
 @keyframes gradient-move { to { background-position: 200% center; } }
 
 /* --- Header / Nav --- */
+/* --- Header / Nav --- */
 .navbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 15px 5%; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;
-    position: relative; z-index: 50;
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    padding: 15px 5%; 
+    margin-bottom: 20px; 
+    flex-wrap: wrap; 
+    gap: 15px;
+    position: relative; 
+    z-index: 50;
 }
-@media (max-width: 640px) {
-    .navbar { justify-content: center; flex-direction: column; }
-    .search-group { width: 100%; justify-content: center; }
+
+/* Mobile Layout: Logo Left, Login Right, Search Bottom */
+@media (max-width: 768px) {
+    .navbar { 
+        flex-direction: row; /* Keep row direction to align Logo & Login */
+    }
+    
+    #user-section {
+        order: 2; /* Force Login to Right */
+        margin-left: auto; /* Push to far right corner */
+    }
+    
+    .search-group { 
+        order: 3; /* Force Search to new line */
+        width: 100%; 
+        max-width: 100%; 
+        margin-top: 10px;
+        justify-content: center;
+    }
+    
     #search-input { width: 100%; max-width: 100%; }
 }
 
+/* Desktop Layout: Logo - Search - Login */
+@media (min-width: 769px) {
+    .search-group {
+        flex-grow: 1;
+        justify-content: center; /* Center the search bar */
+        margin: 0 40px;
+    }
+}
+
 .search-group {
-    display: flex; align-items: center; gap: 10px; flex-grow: 1;
-    max-width: 600px; justify-content: flex-end; position: relative;
+    display: flex; align-items: center; gap: 10px; 
+    position: relative;
+    /* Removed fixed max-width and justify-end to allow better centering */
 }
 
 .filter-btn {
