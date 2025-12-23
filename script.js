@@ -584,17 +584,34 @@ function loadHome() {
     trendingPage = 1;
     searchInput.value = '';
     searchResults.innerHTML = '';
+    
+    // Show Home Sections
     heroSection.style.display = 'block';
     document.getElementById('top10-section').style.display = 'block';
+    
+    // Show Trailers Section
+    const trailerSection = document.getElementById('trailers-section');
+    if (trailerSection) trailerSection.style.display = 'block';
+
+    // Hide Detail/Player/Collection Sections
     detailsSection.classList.add('hidden');
     playerInterface.classList.add('hidden');
     collectionSection.classList.add('hidden');
-    document.getElementById('continue-watching-section').classList.remove('hidden');
+    
+    // Logic for Continue Watching
+    const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+    if (history.length > 0) {
+        document.getElementById('continue-watching-section').classList.remove('hidden');
+    } else {
+        document.getElementById('continue-watching-section').classList.add('hidden');
+    }
 
     document.getElementById('trending-header').innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     trendingContainer.innerHTML = '';
     loadTrending();
+    loadLatestTrailers(); // <--- Load the trailers
 }
 
 const SERVER_URLS = [
@@ -1984,19 +2001,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Load "Continue Watching" history if on homepage
     if (!urlParams.has('id')) {
         loadProgress();
     }
 
+    // --- 3. Routing Logic ---
     if (urlParams.has('id') && urlParams.has('type')) {
+        // Deep Link: Go directly to content
         heroSection.style.display = 'none';
+        document.getElementById('trailers-section').style.display = 'none'; // Ensure trailers are hidden
+        
         const deepId = Number(urlParams.get('id'));
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
+    } else {
+        // Homepage: Load Trailers
+        loadLatestTrailers();
     }
 
+    // --- 4. Load Global Content ---
     loadTrending();
     loadGenres();
 
+    // --- 5. Footer & Location Logic ---
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
@@ -2075,4 +2102,96 @@ function startVoiceInput() {
     };
 
     recognition.start();
+}
+async function loadLatestTrailers() {
+    const container = document.getElementById('trailers-container');
+    const section = document.getElementById('trailers-section');
+    
+    // Safety check: if elements don't exist in HTML yet, stop
+    if (!container || !section) return;
+
+    // Show skeletons while loading
+    container.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        container.innerHTML += `
+            <div class="trailer-card">
+                <div class="w-full h-full bg-gray-800 animate-pulse"></div>
+            </div>`;
+    }
+
+    try {
+        // Fetch "Upcoming" movies as they usually have the newest trailers
+        // We use fetchCached wrapper from your script to handle caching
+        const data = await fetchCached(`${BASE_TMDB_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
+
+        container.innerHTML = ''; // Clear skeletons
+
+        // Filter results: must have a backdrop image to look good in landscape
+        const items = data.results.filter(i => i.backdrop_path);
+
+        if (items.length === 0) {
+            section.style.display = 'none'; // Hide section if no items
+            return;
+        }
+
+        items.forEach(item => {
+            // Use TMDB_STILL_SZ (w300) which matches card width closely for performance
+            // or you could use a larger size if you added it to variables
+            const imgUrl = `${TMDB_STILL_SZ}${item.backdrop_path}`;
+            const title = item.title.replace(/'/g, "&apos;"); // Escape quotes for onclick
+
+            const card = document.createElement('div');
+            card.className = 'trailer-card';
+            card.innerHTML = `
+                <img src="${imgUrl}" class="trailer-img" loading="lazy" alt="${item.title}">
+                <div class="trailer-play-icon"><i class="fas fa-play"></i></div>
+                <div class="trailer-content">
+                    <div class="trailer-title">${item.title}</div>
+                    <div class="trailer-sub">Official Trailer</div>
+                </div>
+            `;
+
+            // On click, play trailer directly without navigating away
+            card.onclick = () => playTrailerDirectly(item.id, 'movie');
+
+            container.appendChild(card);
+        });
+        
+        // Ensure section is visible
+        section.style.display = 'block';
+
+    } catch (e) {
+        console.error("Trailers Error:", e);
+        container.innerHTML = '<div class="p-4 text-gray-500 text-sm">Trailers unavailable</div>';
+    }
+}
+async function playTrailerDirectly(id, type) {
+    const modal = document.getElementById('trailer-modal');
+    const iframe = document.getElementById('trailer-iframe');
+
+    if (!modal || !iframe) return;
+
+    modal.classList.remove('hidden');
+    iframe.src = ''; // Clear previous video
+
+    try {
+        const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/videos?api_key=${TMDB_API_KEY}`);
+        
+        // precise logic: Look for "Trailer" type first, fallback to any YouTube video
+        const trailer = data.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
+                        data.results.find(v => v.site === 'YouTube');
+
+        if (trailer) {
+            // Autoplay enabled, no related videos (rel=0)
+            iframe.src = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`;
+        } else {
+            showMessage("Trailer not found", true);
+            // Close modal automatically if no trailer found
+            setTimeout(() => modal.classList.add('hidden'), 1500);
+        }
+    } catch (e) {
+        console.error("Trailer fetch failed", e);
+        showMessage("Error loading trailer", true);
+        modal.classList.add('hidden');
+    }
 }
