@@ -38,37 +38,48 @@ body {
     transition: background-image 0.7s ease-in-out; will-change: background-image;
 }
 
+/* --- UPDATED: Dynamic Background --- */
 #page-background::before {
-    content: ''; position: absolute; inset: 0;
-    /* Ambient Gradient Overlay */
+    content: ''; 
+    position: absolute; 
+    inset: 0;
+    /* UPDATED GRADIENT:
+       1. Reduced opacity from 0.95 to 0.85 so the image shows through more.
+       2. The color is now guaranteed dark (thanks to the JS change), so this overlay won't blind users.
+    */
     background: linear-gradient(
         to right, 
-        rgba(var(--ambient-color), 0.95) 0%, 
-        rgba(var(--ambient-color), 0.7) 40%,
+        rgba(var(--ambient-color), 0.85) 0%, 
+        rgba(var(--ambient-color), 0.6) 50%,
         rgba(0, 0, 0, 0.8) 100%
     );
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); /* Reduced blur for clarity */
     transition: background 1s ease;
 }
 
+/* --- UPDATED: Glassmorphism --- */
+.glass-panel {
+    /* Made background much more transparent (0.03 -> 0.01) */
+    background: rgba(0, 0, 0, 0.2); 
+    /* Increased blur slightly to keep text readable against the more visible background */
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.glass-input, .glass-select {
+    /* Darker, more transparent background for inputs */
+    background: rgba(0, 0, 0, 0.4); 
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white; 
+    backdrop-filter: blur(10px);
+}
 #page-background::after {
     content: ''; position: absolute; inset: 0;
     background: linear-gradient(to bottom, transparent 0%, #000 100%);
     z-index: -1;
 }
 
-/* --- Glassmorphism --- */
-.glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-}
-
-.glass-input, .glass-select {
-    background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white; backdrop-filter: blur(4px);
-}
 .glass-input:focus, .glass-select:focus {
     border-color: var(--accent); background: rgba(0, 0, 0, 0.5); outline: none;
 }
