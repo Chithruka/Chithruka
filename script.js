@@ -32,6 +32,7 @@ let heroInterval;
 let deferredPrompt;
 let activeFilterLabel = "";
 let aiModalOpen = false;
+let userCountryCode = 'US'; // Default fallback
 // --- Auth State ---
 let sessionId = localStorage.getItem('tmdb_session_id');
 let accountId = localStorage.getItem('tmdb_account_id');
@@ -252,6 +253,8 @@ async function handleAISearch() {
     }
 }
 
+// In script.js
+
 async function displayAIResults(titles, aiMessage) {
     // Reset view to Home/Trending layout but cleared
     searchInput.value = `AI Search`;
@@ -269,7 +272,7 @@ async function displayAIResults(titles, aiMessage) {
     header.innerHTML = `
         <div class="flex flex-col animate-fade-in">
             <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
-                <i class="fas fa-robot text-pink-500 mr-3"></i> AI Recommendations
+            <i class="fa-solid fa-user-astronaut text-pink-500 mr-3"></i> AI Recommendations
             </div>
             <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-2 border-pink-500 pl-3">
                 "${aiMessage}"
@@ -308,6 +311,12 @@ async function displayAIResults(titles, aiMessage) {
         } else {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">AI found suggestions, but no matches in database.</div>';
         }
+
+        // --- NEW: Scroll to the results automatically ---
+        setTimeout(() => {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
     } catch (e) {
         console.error("AI Result Fetch Error", e);
         trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading AI results.</div>';
@@ -791,14 +800,19 @@ function renderCards(items, container, trackIds) {
 
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'NR';
         const year = (item.release_date || item.first_air_date || 'N/A').substring(0, 4);
-        const type = item.media_type;
+        const type = item.media_type; // 'movie' or 'tv'
+
+        // --- NEW: Generate Badge HTML ---
+        const badgeHtml = type === 'tv' 
+            ? `<div class="media-badge tv">TV</div>` 
+            : `<div class="media-badge movie">MOVIE</div>`;
 
         const card = document.createElement('div');
         card.className = 'scroll-card';
 
         card.innerHTML = `
                 <div class="poster-wrapper">
-                    <img src="${poster}" 
+                    ${badgeHtml} <img src="${poster}" 
                          class="poster-img skeleton" 
                          loading="lazy" 
                          alt="${title}" 
@@ -1789,9 +1803,15 @@ function updateContinueWatchingUI() {
 
         const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
 
+        // --- NEW: Generate Badge HTML ---
+        // Note: We use 'item.mediaType' here because that is how it is saved in localStorage
+        const badgeHtml = item.mediaType === 'tv' 
+            ? `<div class="media-badge tv">TV</div>` 
+            : `<div class="media-badge movie">MOVIE</div>`;
+
         card.innerHTML = `
                 <div class="poster-wrapper">
-                    <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)" title="Remove from History">
+                    ${badgeHtml} <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)" title="Remove from History">
                         <i class="fas fa-times text-xs"></i>
                     </div>
                     
@@ -1912,7 +1932,7 @@ async function shareMovie() {
         try {
             await navigator.share({
                 title: movieTitle,
-                text: `Watch ${movieTitle} on NHK LIGHTWORKS:`,
+                text: `Watch ${movieTitle} on Chithruka:`,
                 url: movieUrl
             });
         } catch (err) {
@@ -1986,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const countryEl = document.getElementById('user-country');
 
             if (data.country_name && data.country_code) {
-                countryEl.innerHTML = `<i class="fas fa-globe text-blue-500 animate-pulse"></i> ${data.country_name}`;
+                countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${data.country_name}`;
 
                 countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
                 countryEl.title = `Browse content from ${data.country_name}`;
