@@ -164,9 +164,26 @@ font-family: "Amatic SC", sans-serif;
 @media (min-width: 641px) { #search-input:focus { max-width: 400px; } }
 
 #search-results {
-    position: absolute; top: 100%; right: 0; width: 100%; max-width: 400px;
-    z-index: 50; margin-top: 10px; border-radius: 12px; overflow: hidden;
-    max-height: 400px; overflow-y: auto;
+    position: absolute; 
+    top: 100%; 
+    left: 0; /* Align to the left edge of the input */
+    width: 100%; /* Match the width of the input exactly */
+    z-index: 50; 
+    margin-top: 10px; 
+    border-radius: 12px; 
+    overflow: hidden;
+    max-height: 400px; 
+    overflow-y: auto;
+    
+    /* Ensure it sits on top of other elements */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+/* --- NEW: Hide container when empty --- */
+#search-results:empty {
+    display: none;
+    padding: 0;
+    border: none;
 }
 .search-result-item {
     display: flex; align-items: center; gap: 12px; padding: 12px;
