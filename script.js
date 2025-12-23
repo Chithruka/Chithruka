@@ -496,7 +496,14 @@ function loadHome() {
                  isTrendingLoading = false;
                  return;
             }
-    
+    // --- NEW SAFETY CHECK ---
+            if (!data || !data.results) {
+                console.warn("API Error or Limit Reached");
+                trendingContainer.innerHTML = '<p class="text-gray-400 p-4">Content currently unavailable. Please try again later.</p>';
+                isTrendingLoading = false;
+                return;
+            }
+            // ------------------------
             if (data.results && data.results.length > 0) {
                 trendingPage++;
                 renderCards(data.results, trendingContainer, true);
@@ -1609,10 +1616,24 @@ window.quickFilter = function(type, value, label = "", logo = "") {
         localStorage.setItem('watch_history', JSON.stringify(history));
     }
 
-    function updateContinueWatchingUI() {
+ function updateContinueWatchingUI() {
         const container = document.getElementById('continue-watching-container');
         const section = document.getElementById('continue-watching-section');
-        const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+        
+        // --- SAFE DATA LOADING ---
+        let history = [];
+        try {
+            const raw = localStorage.getItem('watch_history');
+            history = raw ? JSON.parse(raw) : [];
+            
+            // Filter out any bad/null items that might cause crashes
+            history = history.filter(item => item && item.tmdbId && item.poster);
+        } catch (e) {
+            console.error("History corrupted, resetting:", e);
+            localStorage.removeItem('watch_history'); // Auto-fix bad data
+            history = [];
+        }
+        // -------------------------
 
         if (history.length === 0) {
             section.classList.add('hidden');
@@ -1628,10 +1649,6 @@ window.quickFilter = function(type, value, label = "", logo = "") {
             
             const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
             
-            // --- UPDATED HTML STRUCTURE ---
-            // 1. Added 'skeleton' class to img
-            // 2. Added onload to remove skeleton
-            // 3. Added onerror to hide broken images (shows wrapper background icon)
             card.innerHTML = `
                 <div class="poster-wrapper">
                     <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)" title="Remove from History">
@@ -1657,7 +1674,6 @@ window.quickFilter = function(type, value, label = "", logo = "") {
                     </div>
                 </div>
             `;
-            // -----------------------------
             
             card.onclick = async () => {
                 await selectContent(item.tmdbId, item.title, item.mediaType);
