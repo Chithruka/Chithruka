@@ -7,7 +7,6 @@ const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 
-
 // --- State Variables ---
 let mediaType = 'movie';
 let TMDB_ID = null;
@@ -128,7 +127,9 @@ async function authenticateTMDB() {
         const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
         const data = await res.json();
         if (data.success) {
-            window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${window.location.href}`;
+            // FIX: Use clean URL (no query params) for redirect to prevent errors
+            const redirectUrl = window.location.origin + window.location.pathname;
+            window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${encodeURIComponent(redirectUrl)}`;
         }
     } catch (e) {
         showMessage("Auth failed", true);
@@ -150,6 +151,11 @@ async function createSession(requestToken) {
             localStorage.setItem('tmdb_session_id', sessionId);
             await fetchAccountDetails();
             showMessage("Login Successful!");
+            
+            // Reload page to update UI fully
+            setTimeout(() => {
+                 window.location.href = window.location.pathname; 
+            }, 1000);
         } else {
             window.history.replaceState({}, document.title, window.location.pathname);
             showMessage("Login session expired. Please try again.", true);
@@ -179,17 +185,17 @@ function updateAuthUI(user) {
     if (user) {
         loginBtn.classList.add('hidden');
         avatar.classList.remove('hidden');
-        interactBar.classList.remove('hidden');
+        if(interactBar) interactBar.classList.remove('hidden');
 
-        if (user.avatar && user.avatar.tmdb.avatar_path) {
+        if (user.avatar && user.avatar.tmdb && user.avatar.tmdb.avatar_path) {
             avatar.src = `${TMDB_IMG_BASE_URL}${user.avatar.tmdb.avatar_path}`;
         } else {
-            avatar.src = `https://ui-avatars.com/api/?name=${user.username}&background=random`;
+            avatar.src = `https://ui-avatars.com/api/?name=${user.username || 'User'}&background=random`;
         }
     } else {
         loginBtn.classList.remove('hidden');
         avatar.classList.add('hidden');
-        interactBar.classList.add('hidden');
+        if(interactBar) interactBar.classList.add('hidden');
     }
 }
 
@@ -323,8 +329,8 @@ async function loadMyLibrary(type) {
     currentFetchUrl = "STOP";
     trendingPage = 1;
 
-    const dropdown = document.getElementById('user-dropdown');
-    if (dropdown) dropdown.classList.add('hidden');
+    const dropdown = document.getElementById('user-menu');
+    if (dropdown) dropdown.classList.remove('show');
 
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
@@ -1718,52 +1724,47 @@ function showToast() {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // --- FIX: CHECK FOR LOGIN RETURN TOKEN ---
-    // If the URL has 'request_token' and 'approved=true', we just came back from TMDB.
+    // --- 1. Check for TMDB Login Return (Redirect from Auth) ---
+    // If the URL contains a request_token, it means the user just logged in on TMDB.
     if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
         const token = urlParams.get('request_token');
-        // Clean the URL so the token doesn't stay there visible
+        
+        // Remove the ugly token from the address bar immediately
         window.history.replaceState({}, document.title, window.location.pathname);
-        // Create the actual session
+        
+        // Force reset any old session and create a new one
+        sessionId = null; 
         createSession(token);
     } 
-    // -----------------------------------------
     else {
-        // Normal Load: Check for stored session
+        // --- 2. Standard Page Load ---
         const storedSession = localStorage.getItem('tmdb_session_id');
         const storedAccount = localStorage.getItem('tmdb_account_id');
         
         if (storedSession && storedAccount) {
             sessionId = storedSession;
             accountId = storedAccount;
-            // Optimistic UI update while we fetch real details
             updateAuthUI({ username: "User", avatar: { tmdb: { avatar_path: null } } }); 
             fetchAccountDetails(); 
         }
     }
 
-    // Load Watch History (Continue Watching)
-    // Only load if we are NOT on a specific movie page (prevents conflict/lag)
     if (!urlParams.has('id')) {
         loadProgress();
     }
 
-    // Handle Direct Link Navigation (e.g. ?id=123&type=movie)
     if (urlParams.has('id') && urlParams.has('type')) {
         heroSection.style.display = 'none';
         const deepId = Number(urlParams.get('id'));
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
     }
 
-    // Initial Content Load
     loadTrending();
     loadGenres();
 
-    // Footer Year
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
-    // Geo-Location (Country Detection)
     fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
