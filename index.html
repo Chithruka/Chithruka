@@ -100,8 +100,21 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
+        <div class="mb-12 relative" id="trailers-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2">
+            <i class="fab fa-youtube text-red-600 mr-3"></i> Latest Trailers
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trailers-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="trailers-container" class="flex flex-nowrap gap-6 pl-4 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trailers-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
     </div>
-
+    </div>
     <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8">
         <div class="flex flex-col md:flex-row gap-8 md:items-start">
             <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52 detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
