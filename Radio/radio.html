@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radio Global V12 (Deep Search)</title>
+    <title>Radio Global V13 (Fixed)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -47,7 +47,7 @@
         /* --- RESPONSIVE CSS --- */
         @media (max-width: 600px) {
             #ui-layer { width: 100%; padding-right: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%); }
-            #recorder-panel { display: none !important; } /* Hide recorder on mobile */
+            #recorder-panel { display: none !important; } 
         }
 
         /* --- CONTROLS --- */
@@ -59,7 +59,7 @@
         .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
         input {
             background: #222; border: 1px solid #444; color: white; padding: 12px;
-            border-radius: 6px; width: 100%; font-size: 16px; outline: none; /* Larger text for mobile input */
+            border-radius: 6px; width: 100%; font-size: 16px; outline: none; 
         }
         input:focus { border-color: #00ff88; }
         
@@ -127,7 +127,7 @@
             <div id="now-playing">
                 <div id="np-title">No Signal</div>
                 <div id="np-meta">Ready to tune</div>
-                <audio id="audio-player" controls style="width: 100%; margin-top: 8px; height: 30px;"></audio>
+                <audio id="audio-player" controls crossorigin="anonymous" style="width: 100%; margin-top: 8px; height: 30px;"></audio>
             </div>
         </div>
 
@@ -145,6 +145,7 @@
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <script>
         // --- SETUP ---
@@ -155,6 +156,7 @@
         let markersLayer = new L.LayerGroup();
         let loadedUUIDs = new Set();
         let audioPlayer = document.getElementById('audio-player');
+        let hls = null; // HLS instance
         let currentCountryCode = 'US';
         let mediaRecorder;
         let audioChunks = [];
@@ -192,7 +194,7 @@
         }
 
         function checkMobileAutoClose() {
-            if(window.innerWidth < 600) toggleMenu();
+            if(window.innerWidth < 600 && !isMenuOpen) toggleMenu(); // Open menu if closed to show player
         }
 
         // --- BOOT ---
@@ -200,13 +202,20 @@
             if(window.innerWidth < 600) { toggleMenu(); } // Default closed on mobile
 
             initMap();
+            
+            log("Connecting to radio network...", 'info');
             activeServer = await findBestServer();
+            
             if(activeServer) {
                 document.getElementById('server-dot').classList.add('server-online');
                 document.getElementById('connected-server').innerText = "Online";
+                log("Connected: " + activeServer.split('//')[1], 'ok');
+            } else {
+                log("Server Connection Failed", 'err');
+                return;
             }
 
-            // Geo Cascade (Reliable V10 Logic)
+            // Geo Cascade
             try {
                 const geo = await resolveUserLocation();
                 currentCountryCode = geo.code;
@@ -215,7 +224,7 @@
                 loadStations(`countrycode=${currentCountryCode}`, true); 
             } catch (e) {
                 log("Loc failed. Global mode.", 'err');
-                document.getElementById('location-val').innerText = "Unknown";
+                document.getElementById('location-val').innerText = "Global";
                 loadStations(`order=clickcount&reverse=true`, false);
             }
         }
@@ -235,10 +244,14 @@
         }
 
         async function findBestServer() {
-            try {
-                const p = DEFAULT_SERVERS.map(u => fetch(`${u}/json/stats`).then(r => r.ok ? u : Promise.reject()));
-                return await Promise.any(p);
-            } catch { return DEFAULT_SERVERS[0]; }
+            // Robust server finder without Promise.any dependency for older browsers
+            for (const server of DEFAULT_SERVERS) {
+                try {
+                    const r = await fetch(`${server}/json/stats`, { method: 'HEAD' });
+                    if (r.ok) return server;
+                } catch (e) { continue; }
+            }
+            return DEFAULT_SERVERS[0]; // Fallback
         }
 
         function initMap() {
@@ -249,9 +262,8 @@
 
         async function loadStations(q, clear) {
             if(!activeServer) return;
-            log("Searching...", 'info');
+            log("Scanning frequencies...", 'info');
             try {
-                // INCREASED LIMIT TO 500
                 const r = await fetch(`${activeServer}/json/stations/search?hidebroken=true&limit=500&${q}`); 
                 const s = await r.json();
                 
@@ -269,20 +281,22 @@
                         const isSec = st.url_resolved.startsWith('https');
                         
                         L.circleMarker([st.geo_lat, st.geo_long], {
-                            radius: 9, // Nice big touch target
+                            radius: 9, 
                             fillColor: "#00ff88", 
                             color: isSec ? "#fff" : "#ffaa00", 
                             weight: 1, 
                             fillOpacity: 0.8
-                        }).bindTooltip(`<b>${st.name}</b><br>${st.tags}`).on('click', () => tuneStation(st)).addTo(markersLayer);
+                        })
+                        .bindTooltip(`<b>${st.name}</b><br>${st.tags}`)
+                        .on('click', () => tuneStation(st))
+                        .addTo(markersLayer);
                         count++;
                     }
                 });
                 
                 document.getElementById('station-count').innerText = loadedUUIDs.size;
-                log(`Found ${count} stations.`, 'ok');
+                log(`tuned: ${count} stations`, 'ok');
 
-                // --- CRITICAL FIX: AUTO ZOOM ---
                 if(clear && count > 0) {
                     const group = L.featureGroup(markersLayer.getLayers());
                     map.fitBounds(group.getBounds(), {padding: [50, 50]});
@@ -293,17 +307,49 @@
 
         function tuneStation(st) {
             document.getElementById('np-title').innerText = st.name;
-            document.getElementById('np-meta').innerText = "Buffering...";
-            
-            audioPlayer.src = st.url_resolved;
-            audioPlayer.play().then(() => {
-                document.getElementById('np-meta').innerText = "Live On Air";
-                log(`Playing: ${st.name}`, 'ok');
-            }).catch(() => {
-                document.getElementById('np-meta').innerText = "Stream Error";
-                log("Stream failed (HTTP/Blocked)", 'err');
-            });
+            document.getElementById('np-meta').innerText = "Connecting...";
+            log(`Tuning: ${st.name}`, 'info');
+
+            const url = st.url_resolved;
+
+            // --- HLS SUPPORT IMPLEMENTATION ---
+            if (Hls.isSupported() && (url.includes('.m3u8') || st.codec === 'HLS')) {
+                if(hls) { hls.destroy(); } // Cleanup previous instance
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(audioPlayer);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    audioPlayer.play().catch(e => handleError(e));
+                });
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if(data.fatal) {
+                        log("HLS Error: " + data.type, 'err');
+                        handleError("Stream Format Error");
+                    }
+                });
+            } else {
+                // Standard Playback
+                if(hls) { hls.destroy(); hls = null; }
+                audioPlayer.src = url;
+                audioPlayer.load();
+                audioPlayer.play().catch(e => handleError(e));
+            }
+
+            // Update UI on success
+            audioPlayer.onplaying = () => {
+                document.getElementById('np-meta').innerText = "LIVE ON AIR";
+                document.getElementById('np-title').style.color = "#00ff88";
+                log("Playing successfully", 'ok');
+            };
+
             checkMobileAutoClose(); 
+        }
+
+        function handleError(e) {
+            console.error(e);
+            document.getElementById('np-meta').innerText = "Connection Failed";
+            document.getElementById('np-title').style.color = "#ff4444";
+            log("Stream failed (Mixed Content/Offline)", 'err');
         }
 
         // --- ACTIONS ---
@@ -313,9 +359,7 @@
         function performSearch() { 
             const v = document.getElementById('search-box').value; 
             if(v) {
-                // Smart Search: Checks Name OR Tag
-                // RadioBrowser API supports 'name' for names. 
-                // We use 'name' which is a partial match.
+                // Using 'name' search which matches name or tags loosely in API
                 loadStations(`name=${encodeURIComponent(v)}`, true); 
             }
             checkMobileAutoClose();
@@ -346,7 +390,7 @@
                         mediaRecorder.start();
                         btnRec.classList.add('rec-active');
                         btnRec.innerText = "■ STOP";
-                    } catch(e) { alert("Recording cancelled."); }
+                    } catch(e) { log("Recording cancelled", 'err'); }
                 }
             });
         }
