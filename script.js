@@ -127,7 +127,7 @@ async function authenticateTMDB() {
         const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
         const data = await res.json();
         if (data.success) {
-            // FIX: Use clean URL (no query params) for redirect to prevent errors
+            // Use clean URL for redirect
             const redirectUrl = window.location.origin + window.location.pathname;
             window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${encodeURIComponent(redirectUrl)}`;
         }
@@ -152,7 +152,6 @@ async function createSession(requestToken) {
             await fetchAccountDetails();
             showMessage("Login Successful!");
             
-            // Reload page to update UI fully
             setTimeout(() => {
                  window.location.href = window.location.pathname; 
             }, 1000);
@@ -326,6 +325,7 @@ async function submitRating() {
 async function loadMyLibrary(type) {
     if (!sessionId) return;
 
+    // IMPORTANT: Stop the trending auto-loader
     currentFetchUrl = "STOP";
     trendingPage = 1;
 
@@ -365,7 +365,7 @@ async function loadMyLibrary(type) {
 
         const combined = [...movies, ...tv];
 
-        trendingContainer.innerHTML = '';
+        trendingContainer.innerHTML = ''; // Clear skeletons
 
         if (combined.length === 0) {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">Your list is empty.</div>';
@@ -486,7 +486,11 @@ async function loadTrending() {
         if (data.results && data.results.length > 0) {
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
+        } else if (trendingPage === 1) {
+            // FIX: If page 1 returns no results, remove skeletons and show message
+            trendingContainer.innerHTML = '<p class="text-gray-400 p-4">No results found.</p>';
         }
+
     } catch (error) {
         console.error("Trending Error:", error);
         if (trendingPage === 1) trendingContainer.innerHTML = '<p class="text-gray-400 p-4">Failed to load content. Try again later.</p>';
@@ -702,6 +706,12 @@ async function loadActorCredits(personId, personName, profilePath) {
     loadedIds.clear();
     trendingPage = 1;
 
+    // IMPORTANT: Stop the trending auto-loader from overwriting this
+    currentFetchUrl = "STOP";
+    
+    // Show Skeletons so user knows it is loading
+    renderSkeletons(trendingContainer, 10);
+
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
     detailsSection.classList.add('hidden');
@@ -720,6 +730,8 @@ async function loadActorCredits(personId, personName, profilePath) {
         const sorted = data.cast.sort((a, b) => b.popularity - a.popularity);
         const results = sorted.map(i => ({ ...i, media_type: 'movie' }));
 
+        trendingContainer.innerHTML = ''; // Clear skeletons
+
         if (results.length === 0) {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No movies found.</div>';
         } else {
@@ -727,7 +739,10 @@ async function loadActorCredits(personId, personName, profilePath) {
             trendingContainer.scrollLeft = 0;
         }
         document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (e) { showMessage("Could not load filmography", true); }
+    } catch (e) { 
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load content.</div>';
+        showMessage("Could not load filmography", true); 
+    }
 }
 
 window.openFilterModal = () => {
