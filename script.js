@@ -6,6 +6,10 @@ const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300';
 const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
+// --- GROQ AI CONFIGURATION ---
+const GROQ_API_KEY = "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"; // Add your key here
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "llama-3.1-8b-instant";
 
 // --- State Variables ---
 let mediaType = 'movie';
@@ -27,7 +31,7 @@ let loadedGenreType = null;
 let heroInterval;
 let deferredPrompt;
 let activeFilterLabel = "";
-
+let aiModalOpen = false;
 // --- Auth State ---
 let sessionId = localStorage.getItem('tmdb_session_id');
 let accountId = localStorage.getItem('tmdb_account_id');
@@ -146,6 +150,144 @@ function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
     return `<div class="${cssClass} flex items-center justify-center bg-gray-800 border border-gray-700 ${color} ${iconSize}">
                 ${icon}
             </div>`;
+}
+
+// --- NEW: AI FUNCTIONS ---
+
+function toggleAIModal() {
+    const modal = document.getElementById('ai-modal');
+    const input = document.getElementById('ai-search-input');
+    const loader = document.getElementById('ai-loader');
+    const inputCont = document.getElementById('ai-input-container');
+    
+    aiModalOpen = !aiModalOpen;
+    
+    if (aiModalOpen) {
+        modal.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        loader.classList.add('hidden');
+        inputCont.classList.remove('hidden');
+    } else {
+        modal.classList.add('hidden');
+    }
+}
+
+async function handleAISearch() {
+    const input = document.getElementById('ai-search-input');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const loader = document.getElementById('ai-loader');
+    const inputCont = document.getElementById('ai-input-container');
+
+    // Show Loader, Hide Input
+    inputCont.classList.add('hidden');
+    loader.classList.remove('hidden');
+
+    try {
+        const response = await fetch(GROQ_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: GROQ_MODEL,
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a movie recommendation assistant. Return ONLY a valid JSON array of strings containing exactly 5 movie or TV show titles that best match the user's description. Do not output anything else. Example: [\"The Matrix\", \"Inception\"]"
+                    },
+                    {
+                        role: "user",
+                        content: query
+                    }
+                ],
+                temperature: 0.5
+            })
+        });
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        
+        // Parse the JSON array from AI
+        let titles = [];
+        try {
+            // Find the JSON array pattern in case AI adds extra text
+            const jsonMatch = content.match(/\[.*\]/s);
+            if (jsonMatch) {
+                titles = JSON.parse(jsonMatch[0]);
+            } else {
+                titles = JSON.parse(content);
+            }
+        } catch (e) {
+            console.error("AI Parse Error", e);
+            titles = [query]; // Fallback to raw query if parse fails
+        }
+
+        // Close AI Modal
+        toggleAIModal();
+
+        // Use the titles to drive the existing search interface
+        displayAIResults(titles, query);
+
+    } catch (error) {
+        console.error("AI Error:", error);
+        showMessage("AI Search Failed. Try again.", true);
+        toggleAIModal();
+    }
+}
+
+async function displayAIResults(titles, userQuery) {
+    // Reset view to Home/Trending layout but cleared
+    searchInput.value = `AI: ${userQuery}`;
+    searchResults.innerHTML = '';
+    heroSection.style.display = 'none';
+    document.getElementById('top10-section').style.display = 'none';
+    detailsSection.classList.add('hidden');
+    playerInterface.classList.add('hidden');
+    collectionSection.classList.add('hidden');
+    document.getElementById('continue-watching-section').classList.add('hidden');
+    
+    const header = document.getElementById('trending-header');
+    header.innerHTML = '<i class="fas fa-robot text-pink-500 mr-3"></i> AI Recommendations';
+
+    trendingContainer.innerHTML = '';
+    renderSkeletons(trendingContainer, 10);
+    loadedIds.clear();
+    trendingPage = 1;
+    currentFetchUrl = "STOP"; // Prevent auto-scrolling fetch
+
+    // Search TMDB for each title found by AI
+    const searchPromises = titles.map(title => 
+        fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&include_adult=true`)
+    );
+
+    try {
+        const resultsArray = await Promise.all(searchPromises);
+        let combinedResults = [];
+
+        resultsArray.forEach(data => {
+            if (data.results && data.results.length > 0) {
+                // Take the top 1 most relevant result for each title
+                const topResult = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
+                if (topResult) combinedResults.push(topResult);
+            }
+        });
+
+        trendingContainer.innerHTML = '';
+        if (combinedResults.length > 0) {
+            // Filter duplicates just in case
+            const uniqueResults = Array.from(new Map(combinedResults.map(item => [item.id, item])).values());
+            renderCards(uniqueResults, trendingContainer, true);
+        } else {
+            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">AI found suggestions, but no matches in database.</div>';
+        }
+    } catch (e) {
+        console.error("AI Result Fetch Error", e);
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading AI results.</div>';
+    }
 }
 
 // --- AUTHENTICATION FUNCTIONS ---
