@@ -121,13 +121,39 @@ function renderSkeletons(container, count = 10) {
     container.appendChild(fragment);
 }
 
+// --- NEW: Gender Icon Helper ---
+function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
+    if (path) {
+        return `<img src="${TMDB_IMG_BASE_URL}${path}" class="${cssClass} object-cover" loading="lazy" alt="Person">`;
+    }
+    
+    // Default Icon (User / Unknown)
+    let icon = '<i class="fas fa-user"></i>'; 
+    let color = 'text-gray-500';
+
+    if (gender === 1) { // Female
+        icon = '<i class="fa-solid fa-venus"></i>';
+        color = 'text-pink-500';
+    } else if (gender === 2) { // Male
+        icon = '<i class="fa-solid fa-mars"></i>';
+        color = 'text-blue-500';
+    } else if (gender === 3) { // Non-binary
+        icon = '<i class="fa-solid fa-non-binary"></i>';
+        color = 'text-purple-400';
+    }
+
+    // Return a div that mimics the image container but centers the icon
+    return `<div class="${cssClass} flex items-center justify-center bg-gray-800 border border-gray-700 ${color} ${iconSize}">
+                ${icon}
+            </div>`;
+}
+
 // --- AUTHENTICATION FUNCTIONS ---
 async function authenticateTMDB() {
     try {
         const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
         const data = await res.json();
         if (data.success) {
-            // Use clean URL for redirect
             const redirectUrl = window.location.origin + window.location.pathname;
             window.location.href = `https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${encodeURIComponent(redirectUrl)}`;
         }
@@ -325,7 +351,6 @@ async function submitRating() {
 async function loadMyLibrary(type) {
     if (!sessionId) return;
 
-    // IMPORTANT: Stop the trending auto-loader
     currentFetchUrl = "STOP";
     trendingPage = 1;
 
@@ -365,7 +390,7 @@ async function loadMyLibrary(type) {
 
         const combined = [...movies, ...tv];
 
-        trendingContainer.innerHTML = ''; // Clear skeletons
+        trendingContainer.innerHTML = '';
 
         if (combined.length === 0) {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">Your list is empty.</div>';
@@ -487,7 +512,6 @@ async function loadTrending() {
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
         } else if (trendingPage === 1) {
-            // FIX: If page 1 returns no results, remove skeletons and show message
             trendingContainer.innerHTML = '<p class="text-gray-400 p-4">No results found.</p>';
         }
 
@@ -676,11 +700,13 @@ function displayResults(results) {
     results.forEach(item => {
         if (item.media_type === 'person') {
             const name = item.name;
-            const img = item.profile_path ? `${TMDB_IMG_BASE_URL}${item.profile_path}` : 'https://placehold.co/40x60/333/999?text=User';
+            // Use gender icon helper
+            const imgHtml = getPersonFace(item.profile_path, item.gender, "result-poster rounded-full", "text-lg");
+            
             const li = document.createElement('li');
             li.className = 'search-result-item';
-            li.innerHTML = `<img src="${img}" class="result-poster rounded-full" loading="lazy"><div class="text-left"><div class="font-bold text-white text-sm">${name}</div><div class="text-xs text-gray-400">Actor</div></div>`;
-            li.onclick = () => loadActorCredits(item.id, name, item.profile_path);
+            li.innerHTML = `${imgHtml}<div class="text-left"><div class="font-bold text-white text-sm">${name}</div><div class="text-xs text-gray-400">Actor</div></div>`;
+            li.onclick = () => loadActorCredits(item.id, name, item.profile_path, item.gender);
             searchResults.appendChild(li);
         } else {
             const title = item.title || item.name;
@@ -699,17 +725,17 @@ function displayResults(results) {
     });
 }
 
-async function loadActorCredits(personId, personName, profilePath) {
+// --- UPDATED: Accepts gender to display correct icon in header ---
+async function loadActorCredits(personId, personName, profilePath, gender) {
     searchResults.innerHTML = '';
     searchInput.value = '';
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
 
-    // IMPORTANT: Stop the trending auto-loader from overwriting this
+    // IMPORTANT: Stop the trending auto-loader
     currentFetchUrl = "STOP";
     
-    // Show Skeletons so user knows it is loading
     renderSkeletons(trendingContainer, 10);
 
     heroSection.style.display = 'none';
@@ -719,18 +745,17 @@ async function loadActorCredits(personId, personName, profilePath) {
     collectionSection.classList.add('hidden');
     document.getElementById('continue-watching-section').classList.add('hidden');
 
-    const imgHtml = profilePath
-        ? `<img src="${TMDB_IMG_BASE_URL}${profilePath}" class="w-8 h-8 rounded-full object-cover mr-3 border border-gray-600 inline-block">`
-        : `<i class="fas fa-user-circle text-purple-500 mr-3"></i>`;
+    // Use gender icon helper for the header image
+    const imgHtml = getPersonFace(profilePath, gender, "w-8 h-8 rounded-full mr-3 border border-gray-600 inline-flex", "text-sm");
 
-    document.getElementById('trending-header').innerHTML = `${imgHtml} Featuring ${personName}`;
+    document.getElementById('trending-header').innerHTML = `<div class="flex items-center">${imgHtml} <span class="ml-2">Featuring ${personName}</span></div>`;
 
     try {
         const data = await fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`);
         const sorted = data.cast.sort((a, b) => b.popularity - a.popularity);
         const results = sorted.map(i => ({ ...i, media_type: 'movie' }));
 
-        trendingContainer.innerHTML = ''; // Clear skeletons
+        trendingContainer.innerHTML = ''; 
 
         if (results.length === 0) {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No movies found.</div>';
@@ -1300,15 +1325,17 @@ function renderDetails(data, title) {
     castList.innerHTML = '';
     if (data.credits && data.credits.cast) {
         data.credits.cast.forEach(c => {
-            const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
+            // Updated to use gender icon helper
+            const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
+            
             const castDiv = document.createElement('div');
             castDiv.className = 'cast-card';
             castDiv.innerHTML = `
-                    <img src="${pic}" class="cast-img" loading="lazy">
+                    ${picHtml}
                     <div class="cast-name">${c.name}</div>
                     <div class="cast-char">${c.character}</div>
                 `;
-            castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path);
+            castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
         });
     }
@@ -1329,16 +1356,18 @@ function renderDetails(data, title) {
 
         if (uniqueCrew.length > 0) {
             uniqueCrew.forEach(c => {
-                const pic = c.profile_path ? `${TMDB_IMG_BASE_URL}${c.profile_path}` : 'https://placehold.co/80x80/333/999?text=?';
-                const crewDiv = document.createElement('div');
-                crewDiv.className = 'cast-card';
-                crewDiv.innerHTML = `
-                        <img src="${pic}" class="cast-img" loading="lazy">
-                        <div class="cast-name">${c.name}</div>
-                        <div class="crew-job">${c.job}</div>
-                     `;
-                crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path);
-                crewList.appendChild(crewDiv);
+                 // Updated to use gender icon helper
+                 const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
+                 
+                 const crewDiv = document.createElement('div');
+                 crewDiv.className = 'cast-card';
+                 crewDiv.innerHTML = `
+                    ${picHtml}
+                    <div class="cast-name">${c.name}</div>
+                    <div class="crew-job">${c.job}</div>
+                 `;
+                 crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
+                 crewList.appendChild(crewDiv);
             });
             crewContainer.classList.remove('hidden');
         } else {
