@@ -76,10 +76,18 @@ function getDominantColor(imageUrl) {
             canvas.height = 1;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, 1, 1);
-            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            let [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+            // --- NEW: Force Darken the Color ---
+            // We multiply by 0.3 to keep only 30% of the brightness.
+            // This ensures even bright white becomes dark grey.
+            r = Math.floor(r * 0.3);
+            g = Math.floor(g * 0.3);
+            b = Math.floor(b * 0.3);
+
             resolve(`${r}, ${g}, ${b}`);
         };
-        img.onerror = () => resolve('0, 0, 0');
+        img.onerror = () => resolve('20, 20, 20'); // Default to dark grey, not black
     });
 }
 
@@ -197,40 +205,45 @@ async function handleAISearch() {
                 messages: [
                     {
                         role: "system",
-                        content: "You are a movie recommendation assistant. Return ONLY a valid JSON array of strings containing exactly 5 movie or TV show titles that best match the user's description. Do not output anything else. Example: [\"The Matrix\", \"Inception\"]"
+                        // INTELLIGENT PROMPT: Asks for friendly message + list of movies
+                        content: "You are a movie recommendation assistant. Return ONLY a valid JSON object with two keys: 'message' (a short, friendly, enthusiastic sentence explaining your choices to the user) and 'results' (an array of exactly 5 movie or TV show titles). Example: {\"message\": \"Here are some dark sci-fi movies involving time travel.\", \"results\": [\"Dark\", \"Tenet\"]}"
                     },
                     {
                         role: "user",
                         content: query
                     }
                 ],
-                temperature: 0.5
+                temperature: 0.7 // Higher temp = more creativity in the message
             })
         });
 
         const data = await response.json();
         const content = data.choices[0].message.content;
         
-        // Parse the JSON array from AI
-        let titles = [];
+        // Parse the JSON Object from AI
+        let aiData = {};
         try {
-            // Find the JSON array pattern in case AI adds extra text
-            const jsonMatch = content.match(/\[.*\]/s);
+            // Regex to find the JSON object in case AI adds extra whitespace
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                titles = JSON.parse(jsonMatch[0]);
+                aiData = JSON.parse(jsonMatch[0]);
             } else {
-                titles = JSON.parse(content);
+                aiData = JSON.parse(content);
             }
         } catch (e) {
             console.error("AI Parse Error", e);
-            titles = [query]; // Fallback to raw query if parse fails
+            // Fallback if AI fails to format JSON correctly
+            aiData = { 
+                message: "Here are the movies I found for: " + query, 
+                results: [query] 
+            };
         }
 
         // Close AI Modal
         toggleAIModal();
 
-        // Use the titles to drive the existing search interface
-        displayAIResults(titles, query);
+        // Pass both the list and the message to the display function
+        displayAIResults(aiData.results || [], aiData.message);
 
     } catch (error) {
         console.error("AI Error:", error);
@@ -239,9 +252,9 @@ async function handleAISearch() {
     }
 }
 
-async function displayAIResults(titles, userQuery) {
+async function displayAIResults(titles, aiMessage) {
     // Reset view to Home/Trending layout but cleared
-    searchInput.value = `AI: ${userQuery}`;
+    searchInput.value = `AI Search`;
     searchResults.innerHTML = '';
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
@@ -251,13 +264,24 @@ async function displayAIResults(titles, userQuery) {
     document.getElementById('continue-watching-section').classList.add('hidden');
     
     const header = document.getElementById('trending-header');
-    header.innerHTML = '<i class="fas fa-robot text-pink-500 mr-3"></i> AI Recommendations';
+    
+    // UPDATED HEADER: Shows the AI's Message gracefully
+    header.innerHTML = `
+        <div class="flex flex-col animate-fade-in">
+            <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
+                <i class="fas fa-robot text-pink-500 mr-3"></i> AI Recommendations
+            </div>
+            <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-2 border-pink-500 pl-3">
+                "${aiMessage}"
+            </span>
+        </div>
+    `;
 
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
     loadedIds.clear();
     trendingPage = 1;
-    currentFetchUrl = "STOP"; // Prevent auto-scrolling fetch
+    currentFetchUrl = "STOP"; 
 
     // Search TMDB for each title found by AI
     const searchPromises = titles.map(title => 
@@ -270,7 +294,7 @@ async function displayAIResults(titles, userQuery) {
 
         resultsArray.forEach(data => {
             if (data.results && data.results.length > 0) {
-                // Take the top 1 most relevant result for each title
+                // Prioritize finding the exact match
                 const topResult = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
                 if (topResult) combinedResults.push(topResult);
             }
@@ -278,7 +302,7 @@ async function displayAIResults(titles, userQuery) {
 
         trendingContainer.innerHTML = '';
         if (combinedResults.length > 0) {
-            // Filter duplicates just in case
+            // Filter duplicates (using a Map ensures uniqueness by ID)
             const uniqueResults = Array.from(new Map(combinedResults.map(item => [item.id, item])).values());
             renderCards(uniqueResults, trendingContainer, true);
         } else {
