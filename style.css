@@ -548,7 +548,10 @@ input[type=range]::-webkit-slider-thumb {
     justify-content: center;
     aspect-ratio: 2/3; 
     
-    /* Add these lines to prevent flex stretching issues */
+    /* Ensure it never overflows horizontally */
+    max-width: 100%; 
+    
+    /* Fixes vertical stretching on Desktop */
     height: auto; 
     align-self: flex-start;
 }
