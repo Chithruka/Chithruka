@@ -922,3 +922,28 @@ input[type=range]::-webkit-slider-thumb {
 .search {
     padding-right: 3rem !important; 
 }
+
+/* --- Media Type Badges --- */
+.media-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.media-badge.movie {
+    background: rgba(229, 9, 20, 0.85); /* Red for Movies */
+}
+
+.media-badge.tv {
+    background: rgba(37, 99, 235, 0.85); /* Blue for TV */
+}
