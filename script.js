@@ -2004,3 +2004,55 @@ document.addEventListener('DOMContentLoaded', () => {
             if (countryEl) countryEl.innerText = "Location Unavailable";
         });
 });
+
+/* --- VOICE SEARCH FUNCTIONALITY --- */
+
+function startVoiceInput() {
+    // Check browser support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Your browser does not support Voice Search. Try Chrome or Edge.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    const micBtn = document.getElementById('ai-mic-btn');
+    const input = document.getElementById('ai-search-input');
+
+    recognition.lang = 'en-US'; // Set language
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    // UI Updates on Start
+    recognition.onstart = () => {
+        micBtn.classList.add('listening');
+        input.placeholder = "Listening... Speak now";
+    };
+
+    // UI Updates on End
+    recognition.onend = () => {
+        micBtn.classList.remove('listening');
+        input.placeholder = "Type or ask AI...";
+    };
+
+    // Handle Result
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        input.value = transcript;
+        
+        // Auto-submit after a short delay so user sees what was typed
+        setTimeout(() => {
+            handleAISearch();
+        }, 800);
+    };
+
+    // Handle Errors
+    recognition.onerror = (event) => {
+        console.error("Voice Error:", event.error);
+        micBtn.classList.remove('listening');
+        input.placeholder = "Error. Please type.";
+    };
+
+    recognition.start();
+}
