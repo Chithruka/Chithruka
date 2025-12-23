@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Radio Global V12 (Deep Search)</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* --- CORE STYLES --- */
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #050505; color: white; overflow: hidden; }
+        
+        #map { height: 100vh; width: 100%; z-index: 1; opacity: 1; background: #000; }
+
+        /* --- TOGGLE BUTTON --- */
+        #menu-toggle {
+            position: fixed; top: 15px; left: 15px; z-index: 10000;
+            background: #00ff88; color: #000; border: none;
+            width: 40px; height: 40px; border-radius: 50%;
+            font-weight: bold; font-size: 20px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,255,136,0.4);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- UI CONTAINER --- */
+        #ui-layer {
+            position: fixed; top: 0; left: 0; z-index: 9999;
+            width: 360px; height: 100vh;
+            overflow-y: auto; pointer-events: none;
+            padding: 70px 20px 100px 20px;
+            box-sizing: border-box;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .ui-hidden { transform: translateX(-105%); }
+
+        .panel {
+            background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px);
+            padding: 15px; border-radius: 12px; border: 1px solid #333;
+            margin-bottom: 12px; pointer-events: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        h2 { margin: 0 0 10px 0; font-size: 14px; color: #00ff88; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        /* --- RESPONSIVE CSS --- */
+        @media (max-width: 600px) {
+            #ui-layer { width: 100%; padding-right: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%); }
+            #recorder-panel { display: none !important; } /* Hide recorder on mobile */
+        }
+
+        /* --- CONTROLS --- */
+        .metric-row { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 4px; }
+        .metric-val { color: #eee; font-weight: 600; font-family: monospace; }
+        .server-dot { height: 8px; width: 8px; background: #555; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .server-online { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
+
+        .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        input {
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            border-radius: 6px; width: 100%; font-size: 16px; outline: none; /* Larger text for mobile input */
+        }
+        input:focus { border-color: #00ff88; }
+        
+        button {
+            background: #333; color: white; border: 1px solid #444;
+            padding: 10px; border-radius: 6px; cursor: pointer;
+            font-size: 13px; font-weight: 600; white-space: nowrap;
+        }
+        button:active { background: #555; transform: scale(0.98); }
+
+        /* --- PLAYER --- */
+        #now-playing {
+            background: linear-gradient(90deg, #111, #1a1a1a);
+            padding: 10px; border-radius: 6px; border: 1px solid #333;
+            margin-top: 10px; text-align: center;
+        }
+        #np-title { font-size: 14px; color: #00ff88; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #np-meta { font-size: 11px; color: #666; margin-top: 2px; }
+
+        /* --- LOGS --- */
+        #sys-log {
+            font-family: monospace; font-size: 10px; color: #666;
+            height: 60px; overflow-y: auto; background: #080808; padding: 8px;
+            border: 1px solid #333; margin-top: 5px; border-radius: 4px;
+        }
+        .log-ok { color: #4f4; } .log-err { color: #f44; } .log-info { color: #4af; }
+
+        /* --- RECORDER BUTTON --- */
+        .rec-btn { width: 100%; border-color: #522; color: #fbb; background: #211; margin-top:5px; }
+        .rec-active { background: #e00 !important; color: white !important; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <button id="menu-toggle" onclick="toggleMenu()">☰</button>
+
+    <div id="ui-layer">
+        <div class="panel">
+            <h2>System Status</h2>
+            <div class="metric-row">
+                <span>Network:</span>
+                <span><span id="server-dot" class="server-dot"></span><span id="connected-server" class="metric-val">Connecting...</span></span>
+            </div>
+            <div class="metric-row">
+                <span>Location:</span> <span id="location-val" class="metric-val">Triangulating...</span>
+            </div>
+            <div class="metric-row">
+                <span>Stations:</span> <span id="station-count" class="metric-val">0</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Tuner</h2>
+            <div class="input-group">
+                <input type="text" id="search-box" placeholder="Search (Name, Country, Tag)" onkeypress="handleEnter(event)">
+                <button onclick="performSearch()">GO</button>
+            </div>
+            <div style="display:flex; gap:5px;">
+                <button onclick="loadLocal()" style="flex:1;">📍 My Country</button>
+                <button onclick="loadGlobal()" style="flex:1;">🌍 Global Top</button>
+            </div>
+
+            <div id="now-playing">
+                <div id="np-title">No Signal</div>
+                <div id="np-meta">Ready to tune</div>
+                <audio id="audio-player" controls style="width: 100%; margin-top: 8px; height: 30px;"></audio>
+            </div>
+        </div>
+
+        <div class="panel" id="recorder-panel">
+            <h2>Tape Recorder</h2>
+            <button id="btn-record" class="rec-btn">● REC (System Audio)</button>
+        </div>
+
+        <div class="panel">
+            <div class="metric-row"><span>LOG</span> <button onclick="window.location.reload()" style="padding:2px 6px; font-size:9px; height:auto;">RESET</button></div>
+            <div id="sys-log"></div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- SETUP ---
+        const DEFAULT_SERVERS = ["https://de1.api.radio-browser.info", "https://at1.api.radio-browser.info", "https://nl1.api.radio-browser.info"];
+        
+        let map;
+        let activeServer = null;
+        let markersLayer = new L.LayerGroup();
+        let loadedUUIDs = new Set();
+        let audioPlayer = document.getElementById('audio-player');
+        let currentCountryCode = 'US';
+        let mediaRecorder;
+        let audioChunks = [];
+        let streamObj;
+        let isMenuOpen = true;
+
+        // --- LOGGER ---
+        function log(msg, type = 'info') {
+            const box = document.getElementById('sys-log');
+            const d = document.createElement('div');
+            d.innerHTML = `> ${msg}`;
+            if(type === 'ok') d.classList.add('log-ok');
+            if(type === 'err') d.classList.add('log-err');
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- UI LOGIC ---
+        function toggleMenu() {
+            const ui = document.getElementById('ui-layer');
+            const btn = document.getElementById('menu-toggle');
+            isMenuOpen = !isMenuOpen;
+            
+            if(isMenuOpen) {
+                ui.classList.remove('ui-hidden');
+                btn.innerHTML = "✖";
+                btn.style.background = "#ff4444";
+                btn.style.color = "white";
+            } else {
+                ui.classList.add('ui-hidden');
+                btn.innerHTML = "☰";
+                btn.style.background = "#00ff88";
+                btn.style.color = "black";
+            }
+        }
+
+        function checkMobileAutoClose() {
+            if(window.innerWidth < 600) toggleMenu();
+        }
+
+        // --- BOOT ---
+        async function boot() {
+            if(window.innerWidth < 600) { toggleMenu(); } // Default closed on mobile
+
+            initMap();
+            activeServer = await findBestServer();
+            if(activeServer) {
+                document.getElementById('server-dot').classList.add('server-online');
+                document.getElementById('connected-server').innerText = "Online";
+            }
+
+            // Geo Cascade (Reliable V10 Logic)
+            try {
+                const geo = await resolveUserLocation();
+                currentCountryCode = geo.code;
+                document.getElementById('location-val').innerText = geo.country;
+                if(geo.lat) map.flyTo([geo.lat, geo.lon], 6);
+                loadStations(`countrycode=${currentCountryCode}`, true); 
+            } catch (e) {
+                log("Loc failed. Global mode.", 'err');
+                document.getElementById('location-val').innerText = "Unknown";
+                loadStations(`order=clickcount&reverse=true`, false);
+            }
+        }
+
+        async function resolveUserLocation() {
+            try {
+                const r = await fetch('https://ipwho.is/');
+                const d = await r.json();
+                if(d.success) return { code: d.country_code, country: d.country, lat: d.latitude, lon: d.longitude };
+            } catch(e) {}
+            try {
+                const r = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client');
+                const d = await r.json();
+                return { code: d.countryCode, country: d.countryName, lat: d.latitude, lon: d.longitude };
+            } catch(e) {}
+            throw new Error("Geo fail");
+        }
+
+        async function findBestServer() {
+            try {
+                const p = DEFAULT_SERVERS.map(u => fetch(`${u}/json/stats`).then(r => r.ok ? u : Promise.reject()));
+                return await Promise.any(p);
+            } catch { return DEFAULT_SERVERS[0]; }
+        }
+
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
+            markersLayer.addTo(map);
+        }
+
+        async function loadStations(q, clear) {
+            if(!activeServer) return;
+            log("Searching...", 'info');
+            try {
+                // INCREASED LIMIT TO 500
+                const r = await fetch(`${activeServer}/json/stations/search?hidebroken=true&limit=500&${q}`); 
+                const s = await r.json();
+                
+                if(s.length === 0) {
+                    log("No stations found.", 'err');
+                    return;
+                }
+
+                if(clear) { markersLayer.clearLayers(); loadedUUIDs.clear(); }
+                
+                let count = 0;
+                s.forEach(st => {
+                    if(st.geo_lat && !loadedUUIDs.has(st.stationuuid)) {
+                        loadedUUIDs.add(st.stationuuid);
+                        const isSec = st.url_resolved.startsWith('https');
+                        
+                        L.circleMarker([st.geo_lat, st.geo_long], {
+                            radius: 9, // Nice big touch target
+                            fillColor: "#00ff88", 
+                            color: isSec ? "#fff" : "#ffaa00", 
+                            weight: 1, 
+                            fillOpacity: 0.8
+                        }).bindTooltip(`<b>${st.name}</b><br>${st.tags}`).on('click', () => tuneStation(st)).addTo(markersLayer);
+                        count++;
+                    }
+                });
+                
+                document.getElementById('station-count').innerText = loadedUUIDs.size;
+                log(`Found ${count} stations.`, 'ok');
+
+                // --- CRITICAL FIX: AUTO ZOOM ---
+                if(clear && count > 0) {
+                    const group = L.featureGroup(markersLayer.getLayers());
+                    map.fitBounds(group.getBounds(), {padding: [50, 50]});
+                }
+
+            } catch(e) { log("Fetch error", 'err'); }
+        }
+
+        function tuneStation(st) {
+            document.getElementById('np-title').innerText = st.name;
+            document.getElementById('np-meta').innerText = "Buffering...";
+            
+            audioPlayer.src = st.url_resolved;
+            audioPlayer.play().then(() => {
+                document.getElementById('np-meta').innerText = "Live On Air";
+                log(`Playing: ${st.name}`, 'ok');
+            }).catch(() => {
+                document.getElementById('np-meta').innerText = "Stream Error";
+                log("Stream failed (HTTP/Blocked)", 'err');
+            });
+            checkMobileAutoClose(); 
+        }
+
+        // --- ACTIONS ---
+        function loadLocal() { loadStations(`countrycode=${currentCountryCode}`, true); checkMobileAutoClose(); }
+        function loadGlobal() { loadStations(`order=clickcount&reverse=true`, true); checkMobileAutoClose(); }
+        
+        function performSearch() { 
+            const v = document.getElementById('search-box').value; 
+            if(v) {
+                // Smart Search: Checks Name OR Tag
+                // RadioBrowser API supports 'name' for names. 
+                // We use 'name' which is a partial match.
+                loadStations(`name=${encodeURIComponent(v)}`, true); 
+            }
+            checkMobileAutoClose();
+        }
+        function handleEnter(e) { if(e.key === 'Enter') performSearch(); }
+
+        // --- RECORDER (Desktop) ---
+        const btnRec = document.getElementById('btn-record');
+        if(btnRec) {
+            btnRec.addEventListener('click', async () => {
+                if(btnRec.classList.contains('rec-active')) {
+                    mediaRecorder.stop();
+                    streamObj.getTracks().forEach(t => t.stop());
+                    btnRec.classList.remove('rec-active');
+                    btnRec.innerText = "● REC (System Audio)";
+                } else {
+                    try {
+                        streamObj = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                        mediaRecorder = new MediaRecorder(new MediaStream([streamObj.getAudioTracks()[0]]), { mimeType: 'audio/webm' });
+                        audioChunks = [];
+                        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                        mediaRecorder.onstop = () => {
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(new Blob(audioChunks, {type:'audio/webm'}));
+                            a.download = `radio_rec_${Date.now()}.webm`;
+                            a.click();
+                        };
+                        mediaRecorder.start();
+                        btnRec.classList.add('rec-active');
+                        btnRec.innerText = "■ STOP";
+                    } catch(e) { alert("Recording cancelled."); }
+                }
+            });
+        }
+
+        boot();
+    </script>
+</body>
+</html>

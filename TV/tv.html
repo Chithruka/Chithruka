@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro IPTV Multi-Source</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        /* --- CORE LAYOUT --- */
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #ccc;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            height: 100vh;
+            overflow: hidden; 
+        }
+
+        #tv-station {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #0f0f0f;
+            overflow: hidden;
+        }
+
+        #tv-chassis {
+            background: #2b2b2b;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 10px #000, 0 0 50px rgba(0,0,0,0.8), 0 0 0 5px #111;
+            width: 90%;
+            max-width: 1000px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        /* Fullscreen Logic */
+        #tv-chassis:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            padding: 0;
+            border-radius: 0;
+            background: black;
+            justify-content: center; 
+        }
+
+        #tv-chassis:fullscreen #screen-wrapper {
+            height: 100%;
+            border: none;
+            border-radius: 0;
+        }
+
+        #tv-chassis:fullscreen .tv-controls-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 50px;
+            width: auto;
+            min-width: 300px;
+            z-index: 2147483647; 
+        }
+        
+        #tv-chassis:fullscreen .brand { display: none; }
+
+        #screen-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 8px solid #111;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* --- CONTROLS --- */
+        .tv-controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            position: relative;
+            z-index: 100;
+        }
+
+        .brand { font-weight: bold; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-bottom: 5px; }
+        .desktop-badge { display: inline; font-size: 0.6em; }
+        .mobile-badge { display: none; font-size: 0.6em; }
+
+        /* --- SIDEBAR --- */
+        #playlist-sidebar {
+            width: 350px;
+            background-color: #1a1a1a;
+            border-left: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* --- MOBILE PORTRAIT --- */
+        @media (max-width: 900px) {
+            body { flex-direction: column; height: auto; overflow-y: auto; }
+            #tv-station { padding: 10px 0; width: 100%; min-height: auto; background: #000; }
+            #tv-chassis { width: 100%; padding: 10px; border-radius: 0; box-shadow: none; box-sizing: border-box; }
+            #screen-wrapper { border-width: 2px; }
+            #playlist-sidebar { width: 100%; height: 500px; border-left: none; border-top: 2px solid #333; }
+            .tv-controls-bar { flex-direction: column; gap: 10px; }
+            .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 5px; }
+            button { padding: 12px 5px; font-size: 10px; }
+            
+            .desktop-badge { display: none; }
+            .mobile-badge { display: inline; }
+        }
+
+        /* --- MOBILE LANDSCAPE --- */
+        @media (orientation: landscape) and (max-width: 900px) {
+            body { overflow: hidden; }
+            #tv-station { padding: 0; height: 100vh; width: 100vw; background: #000; }
+            #tv-chassis { width: 100%; height: 100%; padding: 0; border: none; border-radius: 0; }
+            #screen-wrapper { width: 100%; height: 100%; border: none; border-radius: 0; aspect-ratio: unset; }
+            #playlist-sidebar { display: none; }
+            
+            .tv-controls-bar {
+                position: absolute; bottom: 10px; left: 10px; right: 10px;
+                background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; z-index: 200;
+                flex-direction: row; 
+            }
+            .brand { display: none; } 
+            .btn-group { display: flex; width: 100%; }
+            #current-channel-display { display: none; }
+        }
+
+        /* --- VFX & REC --- */
+        #rec-overlay { position: absolute; top: 20px; right: 30px; color: red; font-weight: bold; font-size: 24px; display: none; z-index: 20; text-shadow: 0 0 5px black; pointer-events: none; }
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; }
+        .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
+        .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
+        .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
+        .retro-mode video { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
+        @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
+        @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
+
+        .btn-group { display: flex; gap: 10px; }
+        button { padding: 8px 16px; background: #444; border: 1px solid #222; color: white; cursor: pointer; font-family: inherit; text-transform: uppercase; font-size: 12px; box-shadow: 0 2px 0 #000; }
+        button:active { transform: translateY(2px); box-shadow: inset 0 2px 0 #000; }
+        button.active-btn { background: #d63031; }
+        #rec-btn.recording { background-color: red; color: white; border-color: darkred; animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+        #playlist-header { padding: 15px; background-color: #222; border-bottom: 2px solid #333; }
+        .filter-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        select, input[type="text"] { background: #333; color: #ccc; border: 1px solid #444; padding: 8px; width: 100%; box-sizing: border-box; }
+        #channel-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+        #channel-list::-webkit-scrollbar { width: 10px; background: #222;}
+        #channel-list::-webkit-scrollbar-thumb { background: #444; }
+        .channel-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #252525; display: flex; align-items: center; font-size: 12px; }
+        .channel-item:hover { background-color: #333; }
+        .channel-item.active { background-color: #d63031; color: white; }
+        .channel-logo { width: 30px; height: 30px; margin-right: 12px; object-fit: contain; background: #ccc; }
+        .channel-info { display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+    <div id="tv-station">
+        <div id="tv-chassis">
+            <div id="screen-wrapper">
+                <div id="rec-overlay" class="blink">● REC</div>
+                <div class="scanlines"></div>
+                <div class="noise"></div>
+                <div class="vignette"></div>
+                <video id="video" controls autoplay crossorigin="anonymous" playsinline></video>
+            </div>
+
+            <div class="tv-controls-bar">
+                <div class="brand">
+                    Sony Trinitron 
+                    <span class="desktop-badge">EMULATION</span>
+                    <span class="mobile-badge">MOBILE</span>
+                </div>
+                <div class="btn-group">
+                    <button id="vfx-btn" onclick="toggleVFX()">VCR FX: OFF</button>
+                    <button id="rec-btn" onclick="toggleRecording()">● Record</button>
+                    <button id="fs-btn" onclick="toggleFullscreen()">[ ] FULLSCREEN</button>
+                </div>
+            </div>
+            
+            <div style="margin-top:10px; text-align:center; color:#555; font-size: 0.8em;" id="current-channel-display">NO SIGNAL</div>
+        </div>
+    </div>
+
+    <div id="playlist-sidebar">
+        <div id="playlist-header">
+            <div class="filter-group">
+                <select id="country-filter" onchange="applyFilters()"><option value="all">ALL COUNTRIES</option></select>
+                <select id="category-filter" onchange="applyFilters()"><option value="all">ALL CATEGORIES</option></select>
+            </div>
+            <input type="text" id="search-box" placeholder="SEARCH..." onkeyup="applyFilters()">
+            <div style="margin-top: 5px; font-size: 0.7em; color: #666; text-align: right;">
+                <span id="channel-count">0</span> CHANNELS
+            </div>
+        </div>
+        <ul id="channel-list">
+            <li style="padding:20px; text-align:center; color:#666;">TUNING...</li>
+        </ul>
+    </div>
+
+    <script>
+        // --- MULTI-SOURCE CONFIGURATION ---
+        // You can add more .m3u or .m3u8 links here
+        const PLAYLIST_SOURCES = [
+            'https://iptv-org.github.io/iptv/index.m3u',              // Main Source
+            'https://i.mjh.nz/SamsungTVPlus/all.m3u8',               // Samsung TV Plus
+            'https://i.mjh.nz/PlutoTV/all.m3u8'                      // Pluto TV
+        ];
+        
+        const video = document.getElementById('video');
+        const tvChassis = document.getElementById('tv-chassis'); 
+        const screenWrapper = document.getElementById('screen-wrapper');
+        const fsBtn = document.getElementById('fs-btn');
+        const channelList = document.getElementById('channel-list');
+        const channelDisplay = document.getElementById('current-channel-display');
+        const countrySelect = document.getElementById('country-filter');
+        const categorySelect = document.getElementById('category-filter');
+        const searchBox = document.getElementById('search-box');
+        const vfxBtn = document.getElementById('vfx-btn');
+        
+        const recBtn = document.getElementById('rec-btn');
+        const recOverlay = document.getElementById('rec-overlay');
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+        let currentChannelName = "Unknown_Channel";
+        let allChannels = []; 
+        let hls = null;
+
+        // --- FETCHING MULTIPLE SOURCES ---
+        const statusMsg = document.querySelector('#channel-list li');
+        if(statusMsg) statusMsg.innerText = "Scanning Frequencies (Loading multiple sources)...";
+
+        // We use Promise.allSettled so if one link fails, the others still load.
+        Promise.allSettled(PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text())))
+            .then(results => {
+                let combinedData = [];
+                
+                results.forEach((result, index) => {
+                    if (result.status === 'fulfilled') {
+                        console.log(`Source ${index + 1} loaded successfully.`);
+                        const channels = parseM3U(result.value);
+                        combinedData = [...combinedData, ...channels];
+                    } else {
+                        console.error(`Source ${index + 1} failed to load:`, result.reason);
+                    }
+                });
+
+                allChannels = combinedData;
+                populateDropdowns(allChannels);
+                applyFilters(); // Render the combined list
+                
+                // Update status if empty
+                if(allChannels.length === 0) {
+                    channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists loaded.</li>';
+                }
+            });
+
+        // --- PARSER ---
+        function parseM3U(content) {
+            const lines = content.split('\n');
+            const channels = [];
+            let currentChannel = {};
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                    const groupMatch = line.match(/group-title="([^"]*)"/);
+                    const countryMatch = line.match(/tvg-country="([^"]*)"/);
+                    const nameParts = line.split(',');
+                    const name = nameParts[nameParts.length - 1];
+                    currentChannel = {
+                        name: name ? name.trim() : "Unknown",
+                        logo: logoMatch ? logoMatch[1] : null,
+                        group: groupMatch ? groupMatch[1] : 'Uncategorized',
+                        country: countryMatch ? countryMatch[1] : 'INT',
+                    };
+                } else if (line.startsWith('http')) {
+                    currentChannel.url = line;
+                    channels.push(currentChannel);
+                    currentChannel = {}; 
+                }
+            });
+            return channels;
+        }
+
+        // --- FULLSCREEN ---
+        async function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                try {
+                    await tvChassis.requestFullscreen();
+                    if (screen.orientation && screen.orientation.lock) {
+                        try { await screen.orientation.lock('landscape'); } catch (e) {}
+                    }
+                } catch (err) { alert("Fullscreen error: " + err.message); }
+            } else {
+                document.exitFullscreen();
+                if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fsBtn.innerText = "[X] EXIT FULL";
+            } else {
+                fsBtn.innerText = "[ ] FULLSCREEN";
+            }
+        });
+
+        // --- RECORDING ---
+        function toggleRecording() {
+            if (!isRecording) startRecording();
+            else stopRecording();
+        }
+
+        function startRecording() {
+            if (video.paused || !video.src) { alert("No active video stream!"); return; }
+            let stream;
+            try {
+                if (video.captureStream) stream = video.captureStream();
+                else if (video.mozCaptureStream) stream = video.mozCaptureStream();
+                else { alert("Browser not supported."); return; }
+            } catch (e) { alert("CORS Security restriction."); return; }
+
+            recordedChunks = [];
+            const options = { mimeType: 'video/webm; codecs=vp9' };
+            try { mediaRecorder = new MediaRecorder(stream, options); }
+            catch (e) { mediaRecorder = new MediaRecorder(stream); }
+
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0) recordedChunks.push(event.data);
+            };
+            mediaRecorder.onstop = saveRecording;
+            mediaRecorder.start();
+            isRecording = true;
+            recBtn.innerText = "■ STOP";
+            recBtn.classList.add('recording');
+            recOverlay.style.display = 'block';
+        }
+
+        function stopRecording() {
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            isRecording = false;
+            recBtn.innerText = "● RECORD";
+            recBtn.classList.remove('recording');
+            recOverlay.style.display = 'none';
+        }
+
+        function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style.display = 'none';
+            a.href = url;
+            
+            let safeName = currentChannelName.replace(/[^a-zA-Z0-9 \-_]/g, "");
+            let width = video.videoWidth;
+            let height = video.videoHeight;
+            let resolutionStr = (width && height) ? ` [${width}x${height}]` : "";
+            const timeStr = new Date().toISOString().slice(0, 10);
+            
+            a.download = `${safeName}${resolutionStr} ${timeStr}.webm`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // --- UI & DATA ---
+        function toggleVFX() {
+            screenWrapper.classList.toggle('retro-mode');
+            const isActive = screenWrapper.classList.contains('retro-mode');
+            vfxBtn.innerText = isActive ? "VCR FX: ON" : "VCR FX: OFF";
+            vfxBtn.classList.toggle('active-btn');
+        }
+
+        function populateDropdowns(channels) {
+            const countries = [...new Set(channels.map(c => c.country))].sort();
+            const categories = [...new Set(channels.map(c => c.group))].sort();
+            countries.forEach(c => {
+                if(c){
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.innerText = c.toUpperCase();
+                    countrySelect.appendChild(opt);
+                }
+            });
+            categories.forEach(c => {
+                if(c && c !== 'Uncategorized'){
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.innerText = c;
+                    categorySelect.appendChild(opt);
+                }
+            });
+        }
+
+        function applyFilters() {
+            const countryVal = countrySelect.value;
+            const categoryVal = categorySelect.value;
+            const searchVal = searchBox.value.toLowerCase();
+            const filtered = allChannels.filter(ch => {
+                const matchesCountry = (countryVal === 'all') || (ch.country === countryVal);
+                const matchesCategory = (categoryVal === 'all') || (ch.group === categoryVal);
+                const matchesSearch = ch.name.toLowerCase().includes(searchVal);
+                return matchesCountry && matchesCategory && matchesSearch;
+            });
+            renderChannels(filtered);
+        }
+
+        function renderChannels(channels) {
+            channelList.innerHTML = '';
+            document.getElementById('channel-count').innerText = channels.length;
+            const displayList = channels.slice(0, 200);
+            displayList.forEach(channel => {
+                const li = document.createElement('li');
+                li.className = 'channel-item';
+                li.onclick = () => playStream(channel, li);
+                const img = document.createElement('img');
+                img.src = channel.logo || 'https://via.placeholder.com/30?text=TV';
+                img.className = 'channel-logo';
+                img.onerror = function() { this.style.display = 'none'; };
+                const div = document.createElement('div');
+                div.className = 'channel-info';
+                div.innerHTML = `<span>${channel.name}</span><span style="color:#666; font-size:0.8em">${channel.country.toUpperCase()}</span>`;
+                li.appendChild(img);
+                li.appendChild(div);
+                channelList.appendChild(li);
+            });
+        }
+
+        function playStream(channel, element) {
+            currentChannelName = channel.name;
+            channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
+            if(isRecording) { stopRecording(); alert("Recording stopped: Channel Changed."); }
+
+            document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            if (Hls.isSupported()) {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(channel.url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = channel.url;
+                video.play();
+            }
+        }
+    </script>
+</body>
+</html>
