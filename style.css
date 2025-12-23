@@ -645,16 +645,64 @@ input[type=range]::-webkit-slider-thumb {
 
 /* ... (EXISTING CSS CONTENT - Append this to the end) ... */
 
-/* --- AI Button Styles --- */
-.flex {
+/* --- FIXED AI Button Styles --- */
+/* RENAME .flex to .ai-flex-row to avoid breaking Tailwind */
+.ai-flex-row {
   display: flex;
   align-items: center;
   gap: 5px;
 }
+
+.ai-btn-wrapper {
+    cursor: pointer;
+    /* Ensure it fits in mobile navbar */
+    transform: scale(0.9); 
+}
+
+/* Navbar Mobile Fixes to prevent horizontal scroll */
+@media (max-width: 768px) {
+    .navbar {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px; /* Reduced gap */
+        padding: 15px 10px; /* Reduce side padding on mobile */
+    }
+
+    /* Order 1: Logo */
+    .logo-text {
+        order: 1;
+        font-size: 2.5rem; /* Slightly smaller on mobile */
+    }
+
+    /* Order 2: AI Button */
+    .ai-btn-wrapper {
+        order: 2;
+        margin-left: auto; /* Push to right next to login */
+        margin-right: 5px;
+        transform: scale(0.85); /* Make slightly smaller for mobile */
+    }
+
+    /* Order 3: User/Login */
+    #user-section {
+        order: 3;
+        margin-left: 0;
+    }
+
+    /* Order 4: Search Bar (Full Width New Line) */
+    .search-group {
+        order: 4;
+        width: 100%;
+        margin: 10px 0 0 0;
+        flex-basis: 100%; /* Force new line */
+    }
+}
+
 .outer-cont {
-  padding: 10px 18px; /* Slightly adjusted padding */
+  padding: 8px 16px; /* Optimized padding */
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   position: relative;
   background: linear-gradient(90deg, #5bfcc4, #f593e4, #71a4f0);
@@ -667,7 +715,10 @@ input[type=range]::-webkit-slider-thumb {
     0px 5px 10px #000000cc;
   text-shadow: 1px 1px 1px #000;
   font-weight: 700;
+  white-space: nowrap; /* Prevent text wrapping */
 }
+
+/* ... Keep .outer-cont::before and active states same as before ... */
 .outer-cont::before {
   content: "";
   position: absolute;
@@ -686,17 +737,10 @@ input[type=range]::-webkit-slider-thumb {
   );
   transition: all 0.3s ease;
 }
-.outer-cont:hover::before {
-  filter: blur(15px);
-}
-.outer-cont:active::before {
-  filter: blur(5px);
-  transform: translateY(1px);
-}
+.outer-cont:hover::before { filter: blur(15px); }
+.outer-cont:active::before { filter: blur(5px); transform: translateY(1px); }
 .outer-cont:active {
-  box-shadow:
-    inset 0px 0px 5px #ffffffa9,
-    inset 0px 35px 30px #000;
+  box-shadow: inset 0px 0px 5px #ffffffa9, inset 0px 35px 30px #000;
   margin-top: 3px;
 }
 
