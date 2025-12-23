@@ -163,7 +163,20 @@
                         <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('cast-list', 200)"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
-
+<div id="soundtrack-section" class="mt-4 hidden">
+    <h4 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wide flex items-center">
+        <i class="fas fa-music text-pink-500 mr-2 text-lg"></i> Official Soundtrack
+    </h4>
+    <div class="glass-panel p-0 rounded-xl overflow-hidden relative bg-black/40">
+        <div id="soundtrack-embed-container" class="w-full"></div>
+        
+        <div class="p-3 text-center bg-black/50">
+            <a id="soundtrack-link" href="#" target="_blank" class="text-xs text-gray-400 hover:text-pink-400 transition-colors">
+                <i class="fas fa-external-link-alt mr-1"></i> Open Music
+            </a>
+        </div>
+    </div>
+</div>
                 <div id="crew-container" class="mt-6 hidden">
                     <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wide">Behind the Scenes</h4>
                     <div class="relative group">
@@ -280,7 +293,7 @@
         </div>
 </div>
 
-<footer class="relative bg-black/90 backdrop-blur-xl border-t border-white/5 mt-24 pt-16 pb-8 z-10">
+<footer class="relative bg-black/90 backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10">
     <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent"></div>
 
     <div class="container mx-auto px-6 max-w-7xl">
@@ -434,6 +447,6 @@
 </div>
 
 <div id="message-box" class="fixed bottom-5 right-5 p-4 rounded-lg shadow-lg hidden z-50 text-white font-semibold max-w-sm text-center"></div>
-<script src="script.js?v=4"></script>
+<script src="script.js?v=5"></script>
 </body>
 </html>
