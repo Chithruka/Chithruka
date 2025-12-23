@@ -589,7 +589,6 @@ function loadHome() {
     heroSection.style.display = 'block';
     document.getElementById('top10-section').style.display = 'block';
     
-    // Show Trailers Section
     const trailerSection = document.getElementById('trailers-section');
     if (trailerSection) trailerSection.style.display = 'block';
 
@@ -597,6 +596,10 @@ function loadHome() {
     detailsSection.classList.add('hidden');
     playerInterface.classList.add('hidden');
     collectionSection.classList.add('hidden');
+    
+    // Hide Soundtrack Section
+    const sSection = document.getElementById('soundtrack-section');
+    if (sSection) sSection.classList.add('hidden');
     
     // Logic for Continue Watching
     const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
@@ -611,7 +614,7 @@ function loadHome() {
     
     trendingContainer.innerHTML = '';
     loadTrending();
-    loadLatestTrailers(); // <--- Load the trailers
+    loadLatestTrailers();
 }
 
 const SERVER_URLS = [
@@ -1204,10 +1207,14 @@ window.selectContent = async function(id, title, type) {
     const newUrl = `?id=${id}&type=${type}`;
     window.history.pushState({ id, type, title }, '', newUrl);
 
+    // --- RESET UI ---
     searchResults.innerHTML = '';
     searchInput.value = '';
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
+    
+    const trailerSection = document.getElementById('trailers-section');
+    if(trailerSection) trailerSection.style.display = 'none';
 
     document.getElementById('continue-watching-section').classList.add('hidden');
 
@@ -1215,6 +1222,12 @@ window.selectContent = async function(id, title, type) {
     detailsSection.classList.add('hidden');
     collectionSection.classList.add('hidden');
     playerIframe.src = "about:blank";
+    
+    // --- RESET SOUNDTRACK ---
+    const sSection = document.getElementById('soundtrack-section');
+    const sContainer = document.getElementById('soundtrack-embed-container');
+    if (sSection) sSection.classList.add('hidden');
+    if (sContainer) sContainer.innerHTML = ''; // Clear iframe immediately
 
     const posterImg = document.getElementById('detail-poster');
     posterImg.src = '';
@@ -1226,10 +1239,13 @@ window.selectContent = async function(id, title, type) {
 
     checkAccountStates(id, type);
 
+    // --- LOAD CONTENT ---
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
 
     loadRecommendations(mediaType, id);
+    loadSoundtrack(title); // <--- CALL NEW FUNCTION HERE
+
     setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
 }
 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2193,5 +2209,58 @@ async function playTrailerDirectly(id, type) {
         console.error("Trailer fetch failed", e);
         showMessage("Error loading trailer", true);
         modal.classList.add('hidden');
+    }
+}
+
+async function loadSoundtrack(title) {
+    const section = document.getElementById('soundtrack-section');
+    const container = document.getElementById('soundtrack-embed-container');
+    const link = document.getElementById('soundtrack-link');
+
+    if (!section || !container) return;
+
+    // 1. Clean Title: Remove "The", years, and subtitles to broaden search
+    let cleanTitle = title.split(':')[0].split('(')[0].trim();
+    if (cleanTitle.toLowerCase().startsWith('the ')) {
+        cleanTitle = cleanTitle.substring(4);
+    }
+
+    try {
+        // 2. Search iTunes API (No Key Required)
+        // We search for "Title Soundtrack" in the album category
+        const query = encodeURIComponent(`${cleanTitle} Soundtrack`);
+        
+        // Use 'music' media type and 'album' entity to find full soundtracks
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&entity=album&limit=1`);
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+            const album = data.results[0];
+            const albumId = album.collectionId;
+            
+            // 3. Create Apple Music Embed URL (Dark Mode)
+            // height=450 allows showing the tracklist
+            container.innerHTML = `
+                <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" 
+                        frameborder="0" 
+                        height="450" 
+                        style="width:100%; max-width:100%; overflow:hidden; border-radius:10px; background:transparent;" 
+                        sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
+                        src="https://embed.music.apple.com/us/album/${albumId}?theme=dark">
+                </iframe>`;
+
+            if (link) {
+                link.href = album.collectionViewUrl;
+                link.innerHTML = `<i class="fab fa-apple mr-1"></i> Listen on Apple Music`;
+            }
+
+            section.classList.remove('hidden');
+        } else {
+            // No soundtrack found
+            section.classList.add('hidden');
+        }
+    } catch (e) {
+        console.error("Soundtrack Error:", e);
+        section.classList.add('hidden');
     }
 }
