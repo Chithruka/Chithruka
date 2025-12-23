@@ -1718,31 +1718,52 @@ function showToast() {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    const storedSession = localStorage.getItem('tmdb_session_id');
-    const storedAccount = localStorage.getItem('tmdb_account_id');
-    if (storedSession && storedAccount) {
-        sessionId = storedSession;
-        accountId = storedAccount;
-        updateAuthUI({ username: "User", avatar: { tmdb: { avatar_path: null } } }); 
-        fetchAccountDetails(); 
+    // --- FIX: CHECK FOR LOGIN RETURN TOKEN ---
+    // If the URL has 'request_token' and 'approved=true', we just came back from TMDB.
+    if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
+        const token = urlParams.get('request_token');
+        // Clean the URL so the token doesn't stay there visible
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Create the actual session
+        createSession(token);
+    } 
+    // -----------------------------------------
+    else {
+        // Normal Load: Check for stored session
+        const storedSession = localStorage.getItem('tmdb_session_id');
+        const storedAccount = localStorage.getItem('tmdb_account_id');
+        
+        if (storedSession && storedAccount) {
+            sessionId = storedSession;
+            accountId = storedAccount;
+            // Optimistic UI update while we fetch real details
+            updateAuthUI({ username: "User", avatar: { tmdb: { avatar_path: null } } }); 
+            fetchAccountDetails(); 
+        }
     }
 
+    // Load Watch History (Continue Watching)
+    // Only load if we are NOT on a specific movie page (prevents conflict/lag)
     if (!urlParams.has('id')) {
         loadProgress();
     }
 
+    // Handle Direct Link Navigation (e.g. ?id=123&type=movie)
     if (urlParams.has('id') && urlParams.has('type')) {
         heroSection.style.display = 'none';
         const deepId = Number(urlParams.get('id'));
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
     }
 
+    // Initial Content Load
     loadTrending();
     loadGenres();
 
+    // Footer Year
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
+    // Geo-Location (Country Detection)
     fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
