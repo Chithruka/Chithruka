@@ -447,7 +447,53 @@
 </div>
 
 <div id="message-box" class="fixed bottom-5 right-5 p-4 rounded-lg shadow-lg hidden z-50 text-white font-semibold max-w-sm text-center"></div>
-<script src="script.js?v=8"></script>
+<div id="ai-insight-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl border border-pink-500/30">
+        <button onclick="closeAIInsight()" class="absolute top-3 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        
+        <div class="text-center mb-6">
+            <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mb-1">
+                <i class="fas fa-robot mr-2"></i>AI Intel
+            </h3>
+            <p id="ai-insight-title" class="text-sm text-gray-400">Asking about: Movie Title</p>
+        </div>
+
+        <div id="ai-options" class="grid grid-cols-1 gap-3 mb-4">
+            <button onclick="fetchAIInsight('hype')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-fire"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Hype Me Up</div>
+                    <div class="text-[10px] text-gray-500">Why should I watch this?</div>
+                </div>
+            </button>
+            <button onclick="fetchAIInsight('trivia')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-lightbulb"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Hidden Trivia</div>
+                    <div class="text-[10px] text-gray-500">Behind the scenes facts</div>
+                </div>
+            </button>
+            <button onclick="fetchAIInsight('parents')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-shield-alt"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Parents Guide</div>
+                    <div class="text-[10px] text-gray-500">Is it safe for kids?</div>
+                </div>
+            </button>
+        </div>
+
+        <div id="ai-insight-loader" class="hidden flex flex-col items-center py-4">
+            <div class="loader-wrapper transform scale-50 mb-2">
+                <div class="loader"></div>
+            </div>
+            <p class="text-xs text-pink-400 animate-pulse">Analyzing movie data...</p>
+        </div>
+
+        <div id="ai-insight-result" class="hidden bg-black/40 p-4 rounded-xl border border-white/5 max-h-60 overflow-y-auto">
+            <p class="text-sm text-gray-300 leading-relaxed type-writer-effect"></p>
+        </div>
+    </div>
+</div>
+<script src="script.js?v=5"></script>
 </body>
 </html>
-
