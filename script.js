@@ -19,6 +19,7 @@ let currentFetchUrl = "";
 let currentTitle = "";
 let currentSeason = 1;
 let currentEpisode = 1;
+let currentMovieData = null;
 let episodeData = [];
 let seasonEpisodes = [];
 let accordionOpen = false;
@@ -1390,6 +1391,74 @@ function renderEpisodesRich() {
 }
 
 function renderDetails(data, title) {
+    // ----------------------------------------
+    // 1. CREATE SUPER-CONTEXT FOR AI
+    // ----------------------------------------
+    
+    // Calculate basics first
+    const dateVal = data.release_date || data.first_air_date;
+    const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
+    
+    // Calculate Age Rating (reuse your existing logic or do it inline)
+    let ageRating = "Not Rated";
+    if (mediaType === 'movie' && data.release_dates?.results) {
+        const us = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
+        if (us?.release_dates) {
+            const cert = us.release_dates.find(d => d.certification);
+            if (cert?.certification) ageRating = cert.certification;
+        }
+    } else if (mediaType === 'tv' && data.content_ratings?.results) {
+        const us = data.content_ratings.results.find(r => r.iso_3166_1 === 'US');
+        if (us?.rating) ageRating = us.rating;
+    }
+
+    // BUILD THE SMART OBJECT
+    // We filter out junk (images, full crew lists) to save tokens, 
+    // but keep all the intellectual data.
+    const aiContext = {
+        title: data.title || data.name,
+        original_title: data.original_title || data.original_name,
+        type: mediaType,
+        year: year,
+        release_date: dateVal,
+        age_rating: ageRating,
+        status: data.status,
+        tagline: data.tagline,
+        overview: data.overview,
+        genres: (data.genres || []).map(g => g.name),
+        
+        // Performance Stats
+        rating: data.vote_average,
+        vote_count: data.vote_count,
+        popularity: data.popularity,
+        
+        // Business Stats (Movies only)
+        budget: data.budget ? `$${data.budget.toLocaleString()}` : "N/A",
+        revenue: data.revenue ? `$${data.revenue.toLocaleString()}` : "N/A",
+        
+        // Technical
+        runtime: data.runtime || (data.episode_run_time ? data.episode_run_time[0] : "N/A"),
+        languages: (data.spoken_languages || []).map(l => l.english_name),
+        production_companies: (data.production_companies || []).map(c => c.name),
+        origin_countries: (data.production_countries || []).map(c => c.name),
+        
+        // Deep Cast & Crew (Top 10 Cast + Key Crew)
+        cast: (data.credits?.cast || []).slice(0, 10).map(c => `${c.name} (${c.character})`),
+        director: (data.credits?.crew || []).filter(c => c.job === 'Director').map(c => c.name),
+        creators: (data.created_by || []).map(c => c.name) // For TV
+    };
+    
+    // Save to global variable
+    currentMovieData = aiContext;
+    currentTitle = aiContext.title; // Keep this for display logic
+
+    // ----------------------------------------
+    // 2. STANDARD UI RENDERING (Rest of your function)
+    // ----------------------------------------
+    
+    // ... [Paste the rest of your UI rendering code here: Backgrounds, Posters, etc.] ...
+    // ... [Everything below this line remains exactly as your previous renderDetails] ...
+    
     if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
     else pageBackground.style.backgroundImage = 'none';
 
@@ -1434,8 +1503,6 @@ function renderDetails(data, title) {
     }
 
     const countryEl = document.getElementById('detail-country');
-    const ageEl = document.getElementById('detail-age');
-
     if (data.production_countries && data.production_countries.length > 0) {
         const code = data.production_countries[0].iso_3166_1;
         let fullName = code;
@@ -1446,10 +1513,8 @@ function renderDetails(data, title) {
 
         const span = countryEl.querySelector('span');
         span.textContent = code;
-
         countryEl.title = fullName;
         countryEl.onclick = () => quickFilter('country', code, fullName);
-
         countryEl.classList.remove('hidden');
     } else {
         countryEl.classList.add('hidden');
@@ -1457,9 +1522,8 @@ function renderDetails(data, title) {
 
     const dateEl = document.getElementById('detail-date');
     const dateSpan = dateEl.querySelector('span');
-    const dateVal = data.release_date || data.first_air_date;
-    const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
-    dateSpan.textContent = year;
+    dateSpan.textContent = year; // We calculated 'year' at the top
+
     if (year !== "N/A") {
         dateEl.onclick = () => quickFilter('year', year, year);
     }
@@ -1475,19 +1539,9 @@ function renderDetails(data, title) {
     let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
     document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : "N/A";
 
-    let ageRating = null;
-    if (mediaType === 'movie' && data.release_dates && data.release_dates.results) {
-        const usRelease = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
-        if (usRelease && usRelease.release_dates) {
-            const cert = usRelease.release_dates.find(d => d.certification);
-            if (cert) ageRating = cert.certification;
-        }
-    } else if (mediaType === 'tv' && data.content_ratings && data.content_ratings.results) {
-        const usRating = data.content_ratings.results.find(r => r.iso_3166_1 === 'US');
-        if (usRating) ageRating = usRating.rating;
-    }
-
-    if (ageRating) {
+    const ageEl = document.getElementById('detail-age');
+    // We already calculated ageRating at the top
+    if (ageRating !== "Not Rated") {
         ageEl.querySelector('span').textContent = ageRating;
         ageEl.classList.remove('hidden');
     } else {
@@ -1513,17 +1567,11 @@ function renderDetails(data, title) {
     document.getElementById('detail-overview').textContent = data.overview || "No description available.";
 
     const posterImg = document.getElementById('detail-poster');
-
     if (data.poster_path) {
         posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
         posterImg.style.display = 'block';
-        posterImg.onload = () => {
-            posterImg.classList.remove('skeleton');
-        };
-        posterImg.onerror = () => {
-            posterImg.style.display = 'none';
-            posterImg.classList.remove('skeleton');
-        };
+        posterImg.onload = () => { posterImg.classList.remove('skeleton'); };
+        posterImg.onerror = () => { posterImg.style.display = 'none'; posterImg.classList.remove('skeleton'); };
     } else {
         posterImg.style.display = 'none';
         posterImg.classList.remove('skeleton');
@@ -1539,13 +1587,22 @@ function renderDetails(data, title) {
         genreContainer.appendChild(tag);
     });
 
+    const interactBar = document.getElementById('interaction-bar');
+    if (!document.getElementById('btn-ai-intel')) {
+        const aiBtn = document.createElement('div');
+        aiBtn.id = 'btn-ai-intel';
+        aiBtn.className = 'interact-btn cursor-pointer hover:bg-white/10 transition-all duration-200';
+        aiBtn.title = "Ask AI Intel";
+        aiBtn.innerHTML = '<i class="fas fa-robot text-pink-500"></i>';
+        aiBtn.onclick = openAIInsight;
+        interactBar.prepend(aiBtn); 
+    }
+
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
     if (data.credits && data.credits.cast) {
         data.credits.cast.forEach(c => {
-            // Updated to use gender icon helper
             const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
-            
             const castDiv = document.createElement('div');
             castDiv.className = 'cast-card';
             castDiv.innerHTML = `
@@ -1574,9 +1631,7 @@ function renderDetails(data, title) {
 
         if (uniqueCrew.length > 0) {
             uniqueCrew.forEach(c => {
-                 // Updated to use gender icon helper
                  const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
-                 
                  const crewDiv = document.createElement('div');
                  crewDiv.className = 'cast-card';
                  crewDiv.innerHTML = `
@@ -1594,29 +1649,6 @@ function renderDetails(data, title) {
     }
 
     renderDetailedInfo(data);
-// --- INSERT THIS INSIDE renderDetails() function ---
-
-// 1. Get the container
-const interactBar = document.getElementById('interaction-bar');
-
-// 2. Check if the button already exists (to avoid duplicates)
-if (!document.getElementById('btn-ai-intel')) {
-    const aiBtn = document.createElement('div');
-    aiBtn.id = 'btn-ai-intel';
-    
-    // Style matches your existing .interact-btn class
-    aiBtn.className = 'interact-btn cursor-pointer hover:bg-white/10 transition-all duration-200';
-    aiBtn.title = "Ask AI Intel";
-    
-    // The Robot Icon
-    aiBtn.innerHTML = '<i class="fas fa-robot text-pink-500"></i>';
-    
-    // Attach the click event
-    aiBtn.onclick = openAIInsight;
-    
-    // Prepend adds it to the START of the row (left-most button)
-    interactBar.prepend(aiBtn); 
-}
 }
 
 function renderDetailedInfo(data) {
@@ -2289,66 +2321,88 @@ async function loadSoundtrack(title) {
 }
 
 // ==========================================
-// AI INTEL FEATURES (Add to bottom of script.js)
+// AI INTEL FUNCTIONS (Smart JSON Version)
 // ==========================================
 
-/**
- * Opens the AI Insight Modal and resets its state
- */
 function openAIInsight() {
-    if (!currentTitle) return; // specific global variable from your script
+    if (!currentMovieData) return;
     
     const modal = document.getElementById('ai-insight-modal');
     const titleDisplay = document.getElementById('ai-insight-title');
     
-    // Reset the view to show options first
+    const displayTitle = currentMovieData.year && currentMovieData.year !== "N/A" 
+        ? `${currentMovieData.title} (${currentMovieData.year})` 
+        : currentMovieData.title;
+
+    titleDisplay.textContent = `Asking about: ${displayTitle}`;
+    
+    // Reset View
     document.getElementById('ai-options').classList.remove('hidden');
     document.getElementById('ai-insight-loader').classList.add('hidden');
     document.getElementById('ai-insight-result').classList.add('hidden');
     
-    // Set title
-    titleDisplay.textContent = `Asking about: ${currentTitle}`;
     modal.classList.remove('hidden');
 }
 
-/**
- * Closes the AI Insight Modal
- */
 function closeAIInsight() {
     document.getElementById('ai-insight-modal').classList.add('hidden');
 }
 
-/**
- * Fetches specific insight from Groq AI based on the selected mode
- * @param {string} mode - 'hype', 'trivia', or 'parents'
- */
 async function fetchAIInsight(mode) {
     const loader = document.getElementById('ai-insight-loader');
     const options = document.getElementById('ai-options');
     const resultBox = document.getElementById('ai-insight-result');
     const resultText = resultBox.querySelector('p');
 
-    // 1. Update UI to Loading State
     options.classList.add('hidden');
     loader.classList.remove('hidden');
 
-    // 2. Construct the Prompt
-    let prompt = "";
-    const title = currentTitle || "this movie";
+    // --- THE POWER MOVE: Send the full sanitized JSON ---
+    const jsonContext = JSON.stringify(currentMovieData, null, 2);
 
+    let prompt = "";
+    
     switch (mode) {
         case 'hype':
-            prompt = `Act as an enthusiastic movie critic. Write a short, high-energy paragraph (max 60 words) explaining why the movie/show "${title}" is amazing and why I must watch it immediately. Do not give spoilers. Use emojis.`;
+            prompt = `Analyze the following movie metadata JSON and write a high-energy, enthusiastic hype paragraph (max 60 words).
+            
+            Use the data (Director, Budget, Cast, Production Company) to make specific, smart observations on why this is a must-watch.
+            
+            JSON DATA:
+            ${jsonContext}
+            
+            Do not mention JSON or data structure. Just act like a super-fan. Use emojis.`;
             break;
+
         case 'trivia':
-            prompt = `Provide exactly 3 short, fascinating, and lesser-known trivia facts about "${title}". Format them as a bulleted list.`;
+            prompt = `Analyze the movie metadata JSON below and generate 3 fascinating, deep-cut trivia facts.
+            
+            Look for connections between:
+            - The Director/Writer and their style.
+            - The Production Company (e.g. A24, Marvel) and what that implies.
+            - The Budget vs Revenue (if available).
+            - The Cast choices.
+            
+            JSON DATA:
+            ${jsonContext}
+            
+            Format as a bulleted list.`;
             break;
+
         case 'parents':
-            prompt = `Act as a helpful guide for parents. In 2-3 sentences, explain the age rating and maturity level of "${title}". Mention specific content warnings like violence, language, or themes clearly.`;
+            prompt = `Act as a parental guide. Analyze the JSON metadata below to explain the Age Rating.
+            
+            JSON DATA:
+            ${jsonContext}
+            
+            1. State the Age Rating clearly.
+            2. Based on the Genres, Overview, and Rating, warn about specific content (Violence, Language, etc.).
+            3. Suggest the appropriate minimum age.
+            
+            Keep it to 3 helpful sentences.`;
             break;
     }
 
-    // 3. Call the API
     try {
         const response = await fetch(GROQ_API_URL, {
             method: "POST",
@@ -2359,36 +2413,27 @@ async function fetchAIInsight(mode) {
             body: JSON.stringify({
                 model: GROQ_MODEL,
                 messages: [
-                    { 
-                        role: "system", 
-                        content: "You are a helpful, concise entertainment assistant." 
-                    },
-                    { 
-                        role: "user", 
-                        content: prompt 
-                    }
+                    { role: "system", content: "You are a cinema expert AI." },
+                    { role: "user", content: prompt }
                 ],
-                temperature: 0.7, // Creativity level
-                max_tokens: 200   // Limit response length
+                temperature: 0.7,
+                max_tokens: 400
             })
         });
 
-        if (!response.ok) throw new Error('AI API Error');
+        if (!response.ok) throw new Error("AI API Error");
 
         const data = await response.json();
         const content = data.choices[0].message.content;
 
-        // 4. Display Result
         loader.classList.add('hidden');
         resultBox.classList.remove('hidden');
-        
-        // Convert newlines to HTML breaks for proper formatting
         resultText.innerHTML = content.replace(/\n/g, '<br>');
 
     } catch (error) {
         console.error("AI Insight Error:", error);
         loader.classList.add('hidden');
         resultBox.classList.remove('hidden');
-        resultText.innerHTML = `<span class="text-red-400">AI Connection Failed.</span><br>Please try again later.`;
+        resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
     }
 }
