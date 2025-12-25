@@ -1040,3 +1040,10 @@ input[type=range]::-webkit-slider-thumb {
 #soundtrack-section {
     animation: fadeIn 0.8s ease-out;
 }
+/* --- New Section Title Styling --- */
+.section-title {
+    font-family: 'Montserrat', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: 1px; /* Adds a little space between letters for better readability */
+    font-weight: 800; /* Makes it nice and bold */
+}
