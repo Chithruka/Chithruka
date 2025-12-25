@@ -1594,6 +1594,29 @@ function renderDetails(data, title) {
     }
 
     renderDetailedInfo(data);
+// --- INSERT THIS INSIDE renderDetails() function ---
+
+// 1. Get the container
+const interactBar = document.getElementById('interaction-bar');
+
+// 2. Check if the button already exists (to avoid duplicates)
+if (!document.getElementById('btn-ai-intel')) {
+    const aiBtn = document.createElement('div');
+    aiBtn.id = 'btn-ai-intel';
+    
+    // Style matches your existing .interact-btn class
+    aiBtn.className = 'interact-btn cursor-pointer hover:bg-white/10 transition-all duration-200';
+    aiBtn.title = "Ask AI Intel";
+    
+    // The Robot Icon
+    aiBtn.innerHTML = '<i class="fas fa-robot text-pink-500"></i>';
+    
+    // Attach the click event
+    aiBtn.onclick = openAIInsight;
+    
+    // Prepend adds it to the START of the row (left-most button)
+    interactBar.prepend(aiBtn); 
+}
 }
 
 function renderDetailedInfo(data) {
@@ -2262,5 +2285,110 @@ async function loadSoundtrack(title) {
     } catch (e) {
         console.error("Soundtrack Error:", e);
         section.classList.add('hidden');
+    }
+}
+
+// ==========================================
+// AI INTEL FEATURES (Add to bottom of script.js)
+// ==========================================
+
+/**
+ * Opens the AI Insight Modal and resets its state
+ */
+function openAIInsight() {
+    if (!currentTitle) return; // specific global variable from your script
+    
+    const modal = document.getElementById('ai-insight-modal');
+    const titleDisplay = document.getElementById('ai-insight-title');
+    
+    // Reset the view to show options first
+    document.getElementById('ai-options').classList.remove('hidden');
+    document.getElementById('ai-insight-loader').classList.add('hidden');
+    document.getElementById('ai-insight-result').classList.add('hidden');
+    
+    // Set title
+    titleDisplay.textContent = `Asking about: ${currentTitle}`;
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Closes the AI Insight Modal
+ */
+function closeAIInsight() {
+    document.getElementById('ai-insight-modal').classList.add('hidden');
+}
+
+/**
+ * Fetches specific insight from Groq AI based on the selected mode
+ * @param {string} mode - 'hype', 'trivia', or 'parents'
+ */
+async function fetchAIInsight(mode) {
+    const loader = document.getElementById('ai-insight-loader');
+    const options = document.getElementById('ai-options');
+    const resultBox = document.getElementById('ai-insight-result');
+    const resultText = resultBox.querySelector('p');
+
+    // 1. Update UI to Loading State
+    options.classList.add('hidden');
+    loader.classList.remove('hidden');
+
+    // 2. Construct the Prompt
+    let prompt = "";
+    const title = currentTitle || "this movie";
+
+    switch (mode) {
+        case 'hype':
+            prompt = `Act as an enthusiastic movie critic. Write a short, high-energy paragraph (max 60 words) explaining why the movie/show "${title}" is amazing and why I must watch it immediately. Do not give spoilers. Use emojis.`;
+            break;
+        case 'trivia':
+            prompt = `Provide exactly 3 short, fascinating, and lesser-known trivia facts about "${title}". Format them as a bulleted list.`;
+            break;
+        case 'parents':
+            prompt = `Act as a helpful guide for parents. In 2-3 sentences, explain the age rating and maturity level of "${title}". Mention specific content warnings like violence, language, or themes clearly.`;
+            break;
+    }
+
+    // 3. Call the API
+    try {
+        const response = await fetch(GROQ_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: GROQ_MODEL,
+                messages: [
+                    { 
+                        role: "system", 
+                        content: "You are a helpful, concise entertainment assistant." 
+                    },
+                    { 
+                        role: "user", 
+                        content: prompt 
+                    }
+                ],
+                temperature: 0.7, // Creativity level
+                max_tokens: 200   // Limit response length
+            })
+        });
+
+        if (!response.ok) throw new Error('AI API Error');
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+
+        // 4. Display Result
+        loader.classList.add('hidden');
+        resultBox.classList.remove('hidden');
+        
+        // Convert newlines to HTML breaks for proper formatting
+        resultText.innerHTML = content.replace(/\n/g, '<br>');
+
+    } catch (error) {
+        console.error("AI Insight Error:", error);
+        loader.classList.add('hidden');
+        resultBox.classList.remove('hidden');
+        resultText.innerHTML = `<span class="text-red-400">AI Connection Failed.</span><br>Please try again later.`;
     }
 }
