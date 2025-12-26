@@ -502,7 +502,9 @@
 
 <div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4 animate-fade-in">
     <div class="w-full max-w-lg relative flex flex-col items-center">
-        
+        <button class="mt-8 text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2" onclick="toggleAIModal()">
+            <i class="fa-solid fa-xmark"></i> Close
+        </button><br>
         <div class="input w-full mb-6 relative" id="ai-input-container">
             <svg class="svg" onclick="handleAISearch()" style="cursor: pointer; pointer-events: auto;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M11.5 6C11.3949 6.00006 11.2925 5.96705 11.2073 5.90565C11.1221 5.84425 11.0583 5.75758 11.0251 5.65792L10.7623 4.86908C10.6623 4.57101 10.4288 4.33629 10.13 4.23693L9.34102 3.97354C9.24166 3.94019 9.1553 3.87649 9.09411 3.79142C9.03292 3.70635 9 3.60421 9 3.49943C9 3.39465 9.03292 3.29252 9.09411 3.20745C9.1553 3.12238 9.24166 3.05867 9.34102 3.02532L10.13 2.76193C10.4282 2.66191 10.663 2.42852 10.7623 2.12979L11.0258 1.34094C11.0591 1.24161 11.1229 1.15526 11.2079 1.09409C11.293 1.03291 11.3952 1 11.5 1C11.6048 1 11.707 1.03291 11.7921 1.09409C11.8771 1.15526 11.9409 1.24161 11.9742 1.34094L12.2377 2.12979C12.2868 2.27697 12.3695 2.4107 12.4792 2.52041C12.589 2.63013 12.7227 2.71281 12.87 2.76193L13.659 3.02532C13.7583 3.05867 13.8447 3.12238 13.9059 3.20745C13.9671 3.29252 14 3.39465 14 3.49943C14 3.60421 13.9671 3.70635 13.9059 3.79142C13.8447 3.87649 13.7583 3.94019 13.659 3.97354L12.87 4.23693C12.5718 4.33696 12.337 4.57034 12.2377 4.86908L11.9742 5.65792C11.9411 5.75747 11.8774 5.84406 11.7923 5.90545C11.7072 5.96684 11.6049 5.99992 11.5 6Z" fill="currentColor"></path>
@@ -536,10 +538,6 @@
           <span class="loader-letter">S</span><span class="loader-letter">e</span><span class="loader-letter">a</span><span class="loader-letter">r</span><span class="loader-letter">c</span><span class="loader-letter">h</span><span class="loader-letter">i</span><span class="loader-letter">n</span><span class="loader-letter">g</span>
           <div class="loader"></div>
         </div>
-        
-        <button class="mt-8 text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2" onclick="toggleAIModal()">
-            <i class="fa-solid fa-xmark"></i> Close
-        </button>
     </div>
 </div>
 
