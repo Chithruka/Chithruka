@@ -289,7 +289,7 @@ async function displayAIResults(titles, aiMessage) {
     header.innerHTML = `
         <div class="flex flex-col animate-fade-in">
             <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
-            <i class="fa-solid fa-user-astronaut text-pink-500 mr-3"></i> AI Recommendations
+            AI Recommendations
             </div>
             <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-2 border-pink-500 pl-3">
                 "${aiMessage}"
@@ -1392,7 +1392,7 @@ async function loadCollection(collectionId, collectionName) {
 
         if (parts.length > 0) {
             collectionContainer.innerHTML = '';
-            document.getElementById('collection-header').innerHTML = `<i class="fas fa-layer-group text-purple-500 mr-3"></i> ${data.name}`;
+            document.getElementById('collection-header').innerHTML = `${data.name}`;
             collectionSection.classList.remove('hidden');
             renderCards(parts, collectionContainer, false);
         }
@@ -1658,7 +1658,7 @@ function renderDetails(data, title) {
         aiBtn.id = 'btn-ai-intel';
         aiBtn.className = 'interact-btn cursor-pointer hover:bg-white/10 transition-all duration-200';
         aiBtn.title = "Ask AI Intel";
-        aiBtn.innerHTML = '<i class="fas fa-robot text-pink-500"></i>';
+        aiBtn.innerHTML = '<i class="fa-solid fa-user-astronaut"></i>';
         aiBtn.onclick = openAIInsight;
         interactBar.prepend(aiBtn); 
     }
