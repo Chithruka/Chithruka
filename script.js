@@ -1168,13 +1168,7 @@ async function applyFilter(overrides = {}) {
         if (rating) mainStr += ` rated ${rating}+`;
     }
 
-    let activeIcon = '<i class="fas fa-filter text-green-500 mr-3"></i>';
-    if (company) activeIcon = '<i class="fas fa-industry text-yellow-500 mr-3"></i>';
-    else if (genreName) activeIcon = '<i class="fas fa-film text-purple-500 mr-3"></i>';
-    else if (year) activeIcon = '<i class="far fa-calendar-alt text-accent mr-3"></i>';
-    else if (countryName) activeIcon = '<i class="fa-solid fa-earth-asia text-blue-500 mr-3"></i>';
-
-    document.getElementById('trending-header').innerHTML = `${activeIcon} ${mainStr}`;
+    document.getElementById('trending-header').innerHTML = mainStr;
 
     let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false`;
 
@@ -1464,7 +1458,7 @@ function renderDetails(data, title) {
     const dateVal = data.release_date || data.first_air_date;
     const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
     
-    // Calculate Age Rating (reuse your existing logic or do it inline)
+    // Calculate Age Rating
     let ageRating = "Not Rated";
     if (mediaType === 'movie' && data.release_dates?.results) {
         const us = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
@@ -1477,9 +1471,7 @@ function renderDetails(data, title) {
         if (us?.rating) ageRating = us.rating;
     }
 
-    // BUILD THE SMART OBJECT
-    // We filter out junk (images, full crew lists) to save tokens, 
-    // but keep all the intellectual data.
+    // AI Object Construction
     const aiContext = {
         title: data.title || data.name,
         original_title: data.original_title || data.original_name,
@@ -1491,38 +1483,26 @@ function renderDetails(data, title) {
         tagline: data.tagline,
         overview: data.overview,
         genres: (data.genres || []).map(g => g.name),
-        
-        // Performance Stats
         rating: data.vote_average,
         vote_count: data.vote_count,
         popularity: data.popularity,
-        
-        // Business Stats (Movies only)
         budget: data.budget ? `$${data.budget.toLocaleString()}` : "N/A",
         revenue: data.revenue ? `$${data.revenue.toLocaleString()}` : "N/A",
-        
-        // Technical
         runtime: data.runtime || (data.episode_run_time ? data.episode_run_time[0] : "N/A"),
         languages: (data.spoken_languages || []).map(l => l.english_name),
         production_companies: (data.production_companies || []).map(c => c.name),
         origin_countries: (data.production_countries || []).map(c => c.name),
-        
-        // Deep Cast & Crew (Top 10 Cast + Key Crew)
         cast: (data.credits?.cast || []).slice(0, 10).map(c => `${c.name} (${c.character})`),
         director: (data.credits?.crew || []).filter(c => c.job === 'Director').map(c => c.name),
-        creators: (data.created_by || []).map(c => c.name) // For TV
+        creators: (data.created_by || []).map(c => c.name)
     };
     
-    // Save to global variable
     currentMovieData = aiContext;
-    currentTitle = aiContext.title; // Keep this for display logic
+    currentTitle = aiContext.title;
 
     // ----------------------------------------
-    // 2. STANDARD UI RENDERING (Rest of your function)
+    // 2. UI RENDERING
     // ----------------------------------------
-    
-    // ... [Paste the rest of your UI rendering code here: Backgrounds, Posters, etc.] ...
-    // ... [Everything below this line remains exactly as your previous renderDetails] ...
     
     if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
     else pageBackground.style.backgroundImage = 'none';
@@ -1587,7 +1567,7 @@ function renderDetails(data, title) {
 
     const dateEl = document.getElementById('detail-date');
     const dateSpan = dateEl.querySelector('span');
-    dateSpan.textContent = year; // We calculated 'year' at the top
+    dateSpan.textContent = year;
 
     if (year !== "N/A") {
         dateEl.onclick = () => quickFilter('year', year, year);
@@ -1605,7 +1585,6 @@ function renderDetails(data, title) {
     document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : "N/A";
 
     const ageEl = document.getElementById('detail-age');
-    // We already calculated ageRating at the top
     if (ageRating !== "Not Rated") {
         ageEl.querySelector('span').textContent = ageRating;
         ageEl.classList.remove('hidden');
@@ -1663,9 +1642,14 @@ function renderDetails(data, title) {
         interactBar.prepend(aiBtn); 
     }
 
+    // --- UPDATED CAST SECTION WITH HIDING ---
+    const castContainer = document.getElementById('cast-container');
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
-    if (data.credits && data.credits.cast) {
+    
+    // Check if cast exists AND has items
+    if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
+        castContainer.classList.remove('hidden'); // Show container
         data.credits.cast.forEach(c => {
             const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
             const castDiv = document.createElement('div');
@@ -1678,8 +1662,11 @@ function renderDetails(data, title) {
             castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
         });
+    } else {
+        castContainer.classList.add('hidden'); // Hide container
     }
 
+    // --- CREW SECTION WITH HIDING ---
     const crewContainer = document.getElementById('crew-container');
     const crewList = document.getElementById('crew-list');
     crewList.innerHTML = '';
@@ -1695,6 +1682,7 @@ function renderDetails(data, title) {
         });
 
         if (uniqueCrew.length > 0) {
+            crewContainer.classList.remove('hidden'); // Show container
             uniqueCrew.forEach(c => {
                  const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
                  const crewDiv = document.createElement('div');
@@ -1707,19 +1695,23 @@ function renderDetails(data, title) {
                  crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
                  crewList.appendChild(crewDiv);
             });
-            crewContainer.classList.remove('hidden');
         } else {
-            crewContainer.classList.add('hidden');
+            crewContainer.classList.add('hidden'); // Hide if filtered list is empty
         }
+    } else {
+        crewContainer.classList.add('hidden'); // Hide if data doesn't exist
     }
 
     renderDetailedInfo(data);
 }
 
 function renderDetailedInfo(data) {
+    // --- PRODUCTION COMPANIES ---
     const prodList = document.getElementById('production-list');
     prodList.innerHTML = '';
-    if (data.production_companies) {
+    
+    if (data.production_companies && data.production_companies.length > 0) {
+        prodList.parentElement.classList.remove('hidden'); // Show Parent info-block
         data.production_companies.forEach(p => {
             const div = document.createElement('div');
             div.className = "mb-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all group";
@@ -1742,10 +1734,15 @@ function renderDetailedInfo(data) {
             div.onclick = () => quickFilter('company', p.id, p.name, p.logo_path);
             prodList.appendChild(div);
         });
+    } else {
+        prodList.parentElement.classList.add('hidden'); // Hide Parent info-block
     }
 
+    // --- RELEASE DATES ---
     const relList = document.getElementById('release-dates-list');
     relList.innerHTML = '';
+    let hasReleaseDates = false;
+
     if (data.release_dates && data.release_dates.results) {
         data.release_dates.results.forEach(r => {
             let countryName = r.iso_3166_1;
@@ -1753,6 +1750,7 @@ function renderDetailedInfo(data) {
 
             r.release_dates.forEach(d => {
                 if (d.type === 3 || d.type === 4) {
+                    hasReleaseDates = true;
                     const dateStr = new Date(d.release_date).toLocaleDateString();
                     const div = document.createElement('div');
                     div.className = "release-item";
@@ -1762,10 +1760,20 @@ function renderDetailedInfo(data) {
             });
         });
     }
+    
+    // Toggle Visibility based on content
+    if (hasReleaseDates) {
+        relList.parentElement.classList.remove('hidden');
+    } else {
+        relList.parentElement.classList.add('hidden');
+    }
 
+    // --- ALTERNATIVE TITLES ---
     const altList = document.getElementById('alt-titles-list');
     altList.innerHTML = '';
-    if (data.alternative_titles && (data.alternative_titles.titles || data.alternative_titles.results)) {
+    
+    if (data.alternative_titles && (data.alternative_titles.titles || data.alternative_titles.results) && (data.alternative_titles.titles || data.alternative_titles.results).length > 0) {
+        altList.parentElement.classList.remove('hidden');
         const titles = data.alternative_titles.titles || data.alternative_titles.results;
         titles.slice(0, 10).forEach(t => {
             const div = document.createElement('div');
@@ -1773,8 +1781,11 @@ function renderDetailedInfo(data) {
             div.innerHTML = `<span class="text-white">${t.iso_3166_1}:</span> ${t.title}`;
             altList.appendChild(div);
         });
+    } else {
+        altList.parentElement.classList.add('hidden');
     }
 
+    // --- TECH SPECS ---
     const techList = document.getElementById('tech-specs-list');
     techList.innerHTML = '';
     const specs = [
@@ -1785,14 +1796,22 @@ function renderDetailedInfo(data) {
         { label: "Runtime", val: data.runtime ? `${data.runtime} min` : null }
     ];
 
+    let hasSpecs = false;
     specs.forEach(s => {
         if (s.val) {
+            hasSpecs = true;
             const div = document.createElement('div');
             div.className = "mb-1 flex justify-between";
             div.innerHTML = `<span class="text-gray-400">${s.label}</span> <span>${s.val}</span>`;
             techList.appendChild(div);
         }
     });
+
+    if (hasSpecs) {
+        techList.parentElement.classList.remove('hidden');
+    } else {
+        techList.parentElement.classList.add('hidden');
+    }
 }
 
 function buildUrl(template) {
