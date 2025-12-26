@@ -2133,14 +2133,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
 
     // --- 1. Check for TMDB Login Return (Redirect from Auth) ---
-    // If the URL contains a request_token, it means the user just logged in on TMDB.
     if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
         const token = urlParams.get('request_token');
-        
-        // Remove the ugly token from the address bar immediately
         window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // Force reset any old session and create a new one
         sessionId = null; 
         createSession(token);
     } 
@@ -2157,7 +2152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Load "Continue Watching" history if on homepage (no specific ID selected)
+    // Load "Continue Watching" history if on homepage
     if (!urlParams.has('id')) {
         loadProgress();
     }
@@ -2167,7 +2162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Deep Link: Go directly to content
         heroSection.style.display = 'none';
         
-        // Ensure trailers section is hidden on detail view
         const trailerSection = document.getElementById('trailers-section');
         if(trailerSection) trailerSection.style.display = 'none'; 
         
@@ -2182,20 +2176,19 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTrending();
     loadGenres();
 
-    // --- 5. NEW: Attach Scroll Listeners (Hide/Show Buttons) ---
-    // This finds all scrollable containers (trending, history, cast, etc.)
+    // --- 5. Initialize Quotes (THIS FIXES THE MOBILE ISSUE) ---
+    initQuotes();
+
+    // --- 6. Attach Scroll Listeners ---
     const scrollContainers = document.querySelectorAll('.overflow-x-auto');
     scrollContainers.forEach(container => {
-        // Run once on load to set initial state (hide left button)
         updateScrollButtons(container);
-        
-        // Update whenever the user scrolls
         container.addEventListener('scroll', () => {
             updateScrollButtons(container);
         });
     });
 
-    // --- 6. Footer & Location Logic ---
+    // --- 7. Footer & Location Logic ---
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
@@ -2203,13 +2196,10 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             const countryEl = document.getElementById('user-country');
-
             if (data.country_name && data.country_code) {
                 countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${data.country_name}`;
-
                 countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
                 countryEl.title = `Browse content from ${data.country_name}`;
-
                 countryEl.onclick = () => {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     quickFilter('country', data.country_code, data.country_name);
