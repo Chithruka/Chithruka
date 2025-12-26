@@ -1,63 +1,44 @@
-/* --- 1. REGISTER FONTS --- */
-
-/* Light (300) */
-@font-face {
-    font-family: 'Netflix Sans';
-    src: url('fonts/NetflixSans-Lt.ttf') format('truetype');
-    font-weight: 300;
-    font-style: normal;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 100;
+display: optional;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Th.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Th.woff') format('woff');
 }
-
-/* Regular (400) - The default text */
 @font-face {
-    font-family: 'Netflix Sans';
-    /* Check if your file is named 'Reg' or 'Regular' */
-    src: url('fonts/NetflixSans-Reg.ttf') format('truetype'); 
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 300;
+display: optional;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Lt.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Lt.woff') format('woff');
 }
-
-/* Regular Italic */
 @font-face {
-    font-family: 'Netflix Sans';
-    src: url('fonts/NetflixSans-It.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 400; 
+display: swap;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Rg.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Rg.woff') format('woff');
 }
-
-/* Medium (500) - Good for subheadings */
 @font-face {
-    font-family: 'Netflix Sans';
-    src: url('fonts/NetflixSans-Md.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 500; 
+display: swap;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Md.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Md.woff') format('woff');
 }
-
-/* Bold (700) - For strong headers */
 @font-face {
-    font-family: 'Netflix Sans';
-    /* Check if your file is named 'Bd' or 'Bold' */
-    src: url('fonts/NetflixSans-Bd.ttf') format('truetype'); 
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 700;
+display: swap;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Bd.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Bd.woff') format('woff');
 }
-
-/* Black (900) - Extra Thick for Top 10 Numbers */
 @font-face {
-    font-family: 'Netflix Sans';
-    src: url('fonts/NetflixSans-Blk.ttf') format('truetype');
-    font-weight: 900;
-    font-style: normal;
-    font-display: swap;
+font-family: 'Netflix Sans'; 
+font-weight: 900;
+display: optional;
+src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Blk.woff2') format('woff2'),
+url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Blk.woff') format('woff');
 }
-
-/* --- 2. APPLY TO WEBSITE --- */
-
 :root {
     --accent: #e50914; 
     --card-width: 150px;
@@ -67,7 +48,8 @@
 
 body {
     color: #f0f0f0;
-    /* Apply the font family here */
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
     font-family: 'Netflix Sans', sans-serif;
     min-height: 100vh;
     margin: 0;
@@ -90,37 +72,30 @@ body {
     transition: background-image 0.7s ease-in-out; will-change: background-image;
 }
 
-/* --- UPDATED: Dynamic Background --- */
+/* --- Dynamic Background --- */
 #page-background::before {
     content: ''; 
     position: absolute; 
     inset: 0;
-    /* UPDATED GRADIENT:
-       1. Reduced opacity from 0.95 to 0.85 so the image shows through more.
-       2. The color is now guaranteed dark (thanks to the JS change), so this overlay won't blind users.
-    */
     background: linear-gradient(
         to right, 
         rgba(var(--ambient-color), 0.85) 0%, 
         rgba(var(--ambient-color), 0.6) 50%,
         rgba(0, 0, 0, 0.8) 100%
     );
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); /* Reduced blur for clarity */
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
     transition: background 1s ease;
 }
 
-/* --- UPDATED: Glassmorphism --- */
+/* --- Glassmorphism --- */
 .glass-panel {
-    /* Made background much more transparent (0.03 -> 0.01) */
     background: rgba(0, 0, 0, 0.2); 
-    /* Increased blur slightly to keep text readable against the more visible background */
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 .glass-input, .glass-select {
-    /* Darker, more transparent background for inputs */
     background: rgba(0, 0, 0, 0.4); 
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: white; 
@@ -143,8 +118,7 @@ font-family: "Bebas Neue", sans-serif;
   font-weight: 400;
   font-style: normal;
     line-height: 1;
-    background: #e50914;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    color: #e50914;
     cursor: pointer; z-index: 50;
 }
 .footer-disclaimer { font-size: 12px; color: #888; max-width: 600px; line-height: 1.5; }
@@ -163,7 +137,6 @@ font-family: "Bebas Neue", sans-serif;
 @keyframes gradient-move { to { background-position: 200% center; } }
 
 /* --- Header / Nav --- */
-/* --- Header / Nav --- */
 .navbar {
     display: flex; 
     align-items: center; 
@@ -179,16 +152,16 @@ font-family: "Bebas Neue", sans-serif;
 /* Mobile Layout: Logo Left, Login Right, Search Bottom */
 @media (max-width: 768px) {
     .navbar { 
-        flex-direction: row; /* Keep row direction to align Logo & Login */
+        flex-direction: row;
     }
     
     #user-section {
-        order: 2; /* Force Login to Right */
-        margin-left: auto; /* Push to far right corner */
+        order: 2;
+        margin-left: auto;
     }
     
     .search-group { 
-        order: 3; /* Force Search to new line */
+        order: 3;
         width: 100%; 
         max-width: 100%; 
         margin-top: 10px;
@@ -202,7 +175,7 @@ font-family: "Bebas Neue", sans-serif;
 @media (min-width: 769px) {
     .search-group {
         flex-grow: 1;
-        justify-content: center; /* Center the search bar */
+        justify-content: center;
         margin: 0 40px;
     }
 }
@@ -210,7 +183,6 @@ font-family: "Bebas Neue", sans-serif;
 .search-group {
     display: flex; align-items: center; gap: 10px; 
     position: relative;
-    /* Removed fixed max-width and justify-end to allow better centering */
 }
 
 .filter-btn {
@@ -229,16 +201,14 @@ font-family: "Bebas Neue", sans-serif;
 #search-results {
     position: absolute; 
     top: 100%; 
-    left: 0; /* Align to the left edge of the input */
-    width: 100%; /* Match the width of the input exactly */
+    left: 0;
+    width: 100%;
     z-index: 50; 
     margin-top: 10px; 
     border-radius: 12px; 
     overflow: hidden;
     max-height: 400px; 
     overflow-y: auto;
-    
-    /* Ensure it sits on top of other elements */
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
@@ -260,21 +230,14 @@ font-family: "Bebas Neue", sans-serif;
 #user-section { display: flex; align-items: center; gap: 10px; margin-left: 10px; }
 
 .login-btn {
-    /* Match User Avatar Dimensions */
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    
-    /* Border matching the avatar's style */
     border: 2px solid var(--accent);
-    
-    /* Center the Icon */
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    
-    /* Visuals */
     background-color: transparent; 
     color: white; 
     font-size: 1rem; 
@@ -406,20 +369,17 @@ input[type=range]::-webkit-slider-thumb {
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    background: #1f1f1f; /* Dark background */
+    background: #1f1f1f;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     transition: box-shadow 0.3s ease;
-    
-    /* Center the 'No Image' Icon */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* The default icon that sits BEHIND the image */
 .poster-wrapper::before {
-    content: '\f03e'; /* FontAwesome 'image' icon code */
-    font-family: "Font Awesome 6 Free"; /* Ensure FontAwesome is loaded */
+    content: '\f03e';
+    font-family: "Font Awesome 6 Free";
     font-weight: 900;
     font-size: 2.5rem;
     color: #333;
@@ -427,19 +387,17 @@ input[type=range]::-webkit-slider-thumb {
     z-index: 0; 
 }
 
-/* The Image covers the icon. If hidden, the icon reveals. */
 .poster-img {
     width: 100%; 
     height: 100%; 
     object-fit: cover;
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
-    z-index: 1; /* Sits above the icon */
+    z-index: 1;
     position: relative;
-    background-color: #1f1f1f; /* Hides icon while loading */
+    background-color: #1f1f1f;
 }
 
-/* Skeleton animation for the image itself while loading */
 .poster-img.skeleton {
     min-height: 100%;
     display: block;
@@ -503,16 +461,16 @@ input[type=range]::-webkit-slider-thumb {
     .scroll-btn { opacity: 1 !important; }
 }
 
-/* --- Top 10 Styling (Updated) --- */
+/* --- Top 10 Styling --- */
 .top-10-card {
     min-width: 160px; 
     width: 160px; 
     flex-shrink: 0;
     position: relative; 
-    margin-left: 10px; /* Reduced margin since number is now inside/overlapping */
+    margin-left: 10px;
     cursor: pointer; 
     transition: transform 0.3s;
-    overflow: visible; /* Allows the number to hang slightly off the edge if needed */
+    overflow: visible;
 }
 
 .top-10-card:hover { 
@@ -524,20 +482,13 @@ input[type=range]::-webkit-slider-thumb {
     position: absolute; 
     bottom: -10px;   
     left: -10px;     
-    
     font-family: 'Netflix Sans', sans-serif; 
     font-size: 100px; 
-    
-    /* 900 weight triggers the 'Blk' font file */
     font-weight: 900; 
-    
-    font-style: bold; /* Use italic to make it dynamic */
+    font-style: bold;
     line-height: 0.8;
-    
-    /* Black Fill with White Outline */
     color: #000000;  
     -webkit-text-stroke: 2px #ffffff; 
-    
     text-shadow: 4px 4px 15px rgba(0,0,0,0.9); 
     z-index: 10; 
     pointer-events: none; 
@@ -548,7 +499,6 @@ input[type=range]::-webkit-slider-thumb {
     border-radius: 8px; 
     object-fit: cover; 
     aspect-ratio: 2/3; 
-    /* Add a subtle border to separate poster from dark backgrounds */
     border: 1px solid rgba(255,255,255,0.1); 
 }
 
@@ -571,8 +521,6 @@ input[type=range]::-webkit-slider-thumb {
     text-align: center; 
     cursor: pointer; 
     transition: transform 0.2s;
-    
-    /* --- FIX: Force perfect centering --- */
     display: flex;
     flex-direction: column;
     align-items: center; 
@@ -690,8 +638,6 @@ input[type=range]::-webkit-slider-thumb {
     font-weight: 600;
     cursor: pointer;
     outline: none;
-    
-    /* Remove default ugly arrow and add a custom clean one */
     appearance: none;
     -webkit-appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -720,18 +666,14 @@ input[type=range]::-webkit-slider-thumb {
     align-items: center;
     justify-content: center;
     aspect-ratio: 2/3; 
-    
-    /* Ensure it never overflows horizontally */
     max-width: 100%; 
-    
-    /* Fixes vertical stretching on Desktop */
     height: auto; 
     align-self: flex-start;
 }
 
 /* The 'No Image' Icon (sits behind the img) */
 .detail-poster-wrapper::before {
-    content: '\f03e'; /* FontAwesome image icon */
+    content: '\f03e';
     font-family: "Font Awesome 6 Free";
     font-weight: 900;
     font-size: 3rem;
@@ -744,14 +686,14 @@ input[type=range]::-webkit-slider-thumb {
 #detail-poster {
     z-index: 1;
     position: relative;
-    background-color: #1f1f1f; /* Hides icon while loading */
+    background-color: #1f1f1f;
     min-height: 100%;
     transition: opacity 0.3s ease;
 }
 
 /* Skeleton Animation State */
 #detail-poster.skeleton {
-    opacity: 1; /* Ensure visible to show shimmer */
+    opacity: 1;
     background: #121212; 
     background-image: linear-gradient(to right, #121212 0%, #2a2a2a 20%, #121212 40%, #121212 100%);
     background-repeat: no-repeat;
@@ -759,10 +701,6 @@ input[type=range]::-webkit-slider-thumb {
     animation: shimmer 2s infinite linear;
 }
 
-/* ... (EXISTING CSS CONTENT - Append this to the end) ... */
-
-/* --- FIXED AI Button Styles --- */
-/* RENAME .flex to .ai-flex-row to avoid breaking Tailwind */
 .ai-flex-row {
   display: flex;
   align-items: center;
@@ -771,7 +709,6 @@ input[type=range]::-webkit-slider-thumb {
 
 .ai-btn-wrapper {
     cursor: pointer;
-    /* Ensure it fits in mobile navbar */
     transform: scale(0.9); 
 }
 
@@ -779,44 +716,40 @@ input[type=range]::-webkit-slider-thumb {
 @media (max-width: 768px) {
     .navbar {
         display: flex;
-        flex-wrap: wrap; /* Allow wrapping */
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        gap: 10px; /* Reduced gap */
-        padding: 15px 10px; /* Reduce side padding on mobile */
+        gap: 10px;
+        padding: 15px 10px;
     }
 
-    /* Order 1: Logo */
-    .logo-text {
+.logo-text {
         order: 1;
-        font-size: 2.5rem; /* Slightly smaller on mobile */
+        font-size: 2.5rem;
     }
 
-    /* Order 2: AI Button */
-    .ai-btn-wrapper {
+.ai-btn-wrapper {
         order: 2;
-        margin-left: auto; /* Push to right next to login */
+        margin-left: auto;
         margin-right: 5px;
-        transform: scale(0.85); /* Make slightly smaller for mobile */
+        transform: scale(0.85);
     }
 
-    /* Order 3: User/Login */
-    #user-section {
+#user-section {
         order: 3;
         margin-left: 0;
     }
 
-    /* Order 4: Search Bar (Full Width New Line) */
-    .search-group {
+.search-group {
         order: 4;
         width: 100%;
         margin: 10px 0 0 0;
-        flex-basis: 100%; /* Force new line */
+        flex-basis: 100%;
     }
 }
 
 .outer-cont {
-  padding: 8px 16px; /* Optimized padding */
+  padding: 8px 16px;
   border: none;
   font-size: 0.9rem;
   cursor: pointer;
@@ -831,10 +764,9 @@ input[type=range]::-webkit-slider-thumb {
     0px 5px 10px #000000cc;
   text-shadow: 1px 1px 1px #000;
   font-weight: 700;
-  white-space: nowrap; /* Prevent text wrapping */
+  white-space: nowrap;
 }
 
-/* ... Keep .outer-cont::before and active states same as before ... */
 .outer-cont::before {
   content: "";
   position: absolute;
@@ -917,7 +849,7 @@ input[type=range]::-webkit-slider-thumb {
     0 20px 25px -5px rgb(0 0 0 / 0.15),
     0 8px 10px -6px rgb(0 0 0 / 0.25);
   font-family: inherit;
-  width: 100%; /* Force full width in modal */
+  width: 100%;
   padding: 1rem 1rem 1rem calc(1rem + var(--icon-size) + 0.5rem);
   font-size: 1.025rem;
   field-sizing: content;
@@ -1012,7 +944,7 @@ input[type=range]::-webkit-slider-thumb {
 
 /* --- Voice Search Styles --- */
 #ai-mic-btn.listening {
-    color: #ff4b4b; /* Red when active */
+    color: #ff4b4b;
     animation: pulse-red 1.5s infinite;
     background: rgba(255, 75, 75, 0.1);
 }
@@ -1023,7 +955,6 @@ input[type=range]::-webkit-slider-thumb {
     100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
 }
 
-/* Adjust input padding so text doesn't hit the mic button */
 .search {
     padding-right: 3rem !important; 
 }
@@ -1046,17 +977,17 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .media-badge.movie {
-    background: #e50914; /* Red for Movies */
+    background: #e50914;
 }
 
 .media-badge.tv {
-    background: rgba(37, 99, 235, 0.85); /* Blue for TV */
+    background: rgba(37, 99, 235, 0.85);
 }
-/* --- Trailer Section Styling (Mobile Fixed) --- */
+
 .trailer-card {
     min-width: 280px;
     width: 280px;
-    height: 158px; /* Force height for mobile */
+    height: 158px;
     position: relative;
     cursor: pointer;
     border-radius: 12px;
@@ -1070,7 +1001,7 @@ input[type=range]::-webkit-slider-thumb {
     .trailer-card {
         min-width: 350px;
         width: 350px;
-        height: 197px; /* Force height for desktop */
+        height: 197px;
     }
 }
 
@@ -1117,8 +1048,6 @@ input[type=range]::-webkit-slider-thumb {
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 1rem;
-    
-    /* Default Hidden on Desktop */
     opacity: 0; 
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 0 20px rgba(229, 9, 20, 0.4);
@@ -1132,14 +1061,14 @@ input[type=range]::-webkit-slider-thumb {
 /* --- MOBILE FIX: Always show play button on touch screens --- */
 @media (max-width: 768px) {
     .trailer-play-icon {
-        opacity: 0.9 !important; /* Visible by default */
+        opacity: 0.9 !important;
         transform: translate(-50%, -50%) scale(1) !important;
     }
 }
-/* --- Soundtrack Section --- */
+
 #soundtrack-section iframe {
     background-color: transparent !important;
-    border-radius: 12px 12px 0 0; /* Rounded top corners only */
+    border-radius: 12px 12px 0 0;
 }
 
 #soundtrack-section {
@@ -1150,17 +1079,17 @@ input[type=range]::-webkit-slider-thumb {
     font-family: 'Netflix Sans', 'Montserrat', sans-serif !important;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-weight: 800; /* Bold text */
+    font-weight: 800;
     color: white;
     
     /* The Red Vertical Line */
     border-left: 5px solid #e50914; 
-    padding-left: 15px; /* Space between line and text */
+    padding-left: 15px;
     line-height: 1.1;
     
     display: flex;
     align-items: center;
-    margin-left: 10px; /* Offset slightly from screen edge */
+    margin-left: 10px;
 }
 /* --- QUOTE SLIDER STYLES (UPDATED) --- */
 .quote-slider-wrapper {
@@ -1169,7 +1098,6 @@ input[type=range]::-webkit-slider-thumb {
     gap: 30px; 
     justify-content: center;
     width: 100%; 
-    /* Increased max-width for big screens */
     max-width: 900px; 
 }
 
@@ -1179,7 +1107,7 @@ input[type=range]::-webkit-slider-thumb {
     align-items: center; 
     justify-content: center;
     width: 100%; 
-    min-height: 350px; /* Taller card */
+    min-height: 350px;
     padding: 40px; 
     border-radius: 24px;
     overflow: hidden; 
@@ -1220,7 +1148,7 @@ input[type=range]::-webkit-slider-thumb {
 .card:hover {
     box-shadow: 0 0 30px rgba(229, 9, 20, 0.4); 
     border-color: #e50914; 
-    transform: scale(1.02); /* Slight scale up instead of translate */
+    transform: scale(1.02);
 }
 
 .button {
@@ -1241,35 +1169,33 @@ input[type=range]::-webkit-slider-thumb {
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1);
     font-size: 1.2rem;
-    flex-shrink: 0; /* Prevent shrinking */
-    z-index: 10;    /* Ensure they stay on top */
+    flex-shrink: 0; 
+    z-index: 10; 
 }
 .nav-arrow:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
 
 /* --- MOBILE ADJUSTMENTS --- */
 @media (max-width: 768px) { 
     .nav-arrow { 
-        display: flex;  /* Force them to show */
-        width: 35px;    /* Smaller size for mobile */
+        display: flex; 
+        width: 35px; 
         height: 35px; 
         font-size: 0.9rem;
-        background: rgba(0,0,0,0.5); /* Darker background for visibility */
+        background: rgba(0,0,0,0.5);
     } 
     
     .quote-slider-wrapper { 
-        gap: 10px;       /* Small gap so arrows don't touch the card */
-        padding: 0 5px;  /* Prevent edge touching */
+        gap: 10px; 
+        padding: 0 5px; 
     }
     
     .card {
-        padding: 24px;   /* Slightly less padding inside card on mobile */
+        padding: 24px;
         min-height: 280px;
     }
 }
 #top10-container, #trailers-container {
-    padding-top: 6px !important;    /* Room for top zoom */
-    padding-bottom: 40px !important; /* Room for bottom zoom */
-    
-    /* Ensure the scrollbar doesn't overlap if visible */
+    padding-top: 6px !important;
+    padding-bottom: 40px !important;
     overflow-y: visible; 
 }
