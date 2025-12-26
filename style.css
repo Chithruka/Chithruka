@@ -1127,10 +1127,27 @@ input[type=range]::-webkit-slider-thumb {
     cursor: pointer; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1);
     font-size: 1.2rem;
     flex-shrink: 0; /* Prevent shrinking */
+    z-index: 10;    /* Ensure they stay on top */
 }
 .nav-arrow:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
 
+/* --- MOBILE ADJUSTMENTS --- */
 @media (max-width: 768px) { 
-    .nav-arrow { display: none; } 
-    .quote-slider-wrapper { gap: 0; }
+    .nav-arrow { 
+        display: flex;  /* Force them to show */
+        width: 35px;    /* Smaller size for mobile */
+        height: 35px; 
+        font-size: 0.9rem;
+        background: rgba(0,0,0,0.5); /* Darker background for visibility */
+    } 
+    
+    .quote-slider-wrapper { 
+        gap: 10px;       /* Small gap so arrows don't touch the card */
+        padding: 0 5px;  /* Prevent edge touching */
+    }
+    
+    .card {
+        padding: 24px;   /* Slightly less padding inside card on mobile */
+        min-height: 280px;
+    }
 }
