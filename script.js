@@ -1345,7 +1345,7 @@ async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
     try {
         // Updated URL to include 'keywords'
-        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords`);
+        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos`);
         
         if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
 
@@ -1370,7 +1370,7 @@ async function fetchMovieDetails(id, title) {
 async function fetchShowDetails(id, title) {
     try {
         // Updated URL to include 'keywords'
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords`);
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords,videos`);
         
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
@@ -1491,10 +1491,13 @@ function renderEpisodesRich() {
 }
 
 function renderDetails(data, title) {
-    // 1. AI Context Construction
+    // ============================================================
+    // 1. DATA PREPARATION & AI CONTEXT
+    // ============================================================
     const dateVal = data.release_date || data.first_air_date;
     const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
     
+    // Determine Age Rating (US Standard)
     let ageRating = "Not Rated";
     if (mediaType === 'movie' && data.release_dates?.results) {
         const us = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
@@ -1507,6 +1510,7 @@ function renderDetails(data, title) {
         if (us?.rating) ageRating = us.rating;
     }
 
+    // Build Context Object for AI
     const aiContext = {
         title: data.title || data.name,
         original_title: data.original_title || data.original_name,
@@ -1535,7 +1539,9 @@ function renderDetails(data, title) {
     currentMovieData = aiContext;
     currentTitle = aiContext.title;
 
-    // 2. UI Rendering - Background & Ambient Color
+    // ============================================================
+    // 2. VISUAL SETUP (Background & Colors)
+    // ============================================================
     if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
     else pageBackground.style.backgroundImage = 'none';
 
@@ -1549,31 +1555,31 @@ function renderDetails(data, title) {
     }
 
     detailsSection.classList.remove('hidden');
+
+    // ============================================================
+    // 3. HEADER INFO (Logo, Title, Tagline, Socials)
+    // ============================================================
     const logoImg = document.getElementById('detail-logo');
     const textHeading = document.getElementById('detail-heading');
 
-    // --- NEW: Social Media Links ---
-    // Remove old socials if they exist
-    const existingSocials = document.getElementById('detail-socials');
-    if (existingSocials) existingSocials.remove();
-
-    const socialContainer = document.createElement('div');
-    socialContainer.id = 'detail-socials';
-    socialContainer.className = "flex items-center gap-4 mt-3 mb-5";
-    
-    let socialHtml = '';
-    if (data.homepage) {
-        socialHtml += `<a href="${data.homepage}" target="_blank" title="Official Website" class="social-link-btn"><i class="fas fa-link"></i></a>`;
+    // Logic: Prefer graphical logo, fallback to text title
+    let logoPath = null;
+    if (data.images && data.images.logos && data.images.logos.length > 0) {
+        const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
+        const bestLogo = englishLogo || data.images.logos[0];
+        if (bestLogo) logoPath = bestLogo.file_path;
     }
-    if (data.external_ids) {
-        const ids = data.external_ids;
-        if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><i class="fab fa-imdb text-2xl"></i></a>`;
-        if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><i class="fab fa-facebook"></i></a>`;
-        if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><i class="fab fa-instagram"></i></a>`;
-        if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><i class="fab fa-x-twitter"></i></a>`;
+    if (logoPath) {
+        logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
+        logoImg.style.display = 'block';
+        textHeading.style.display = 'none';
+    } else {
+        logoImg.style.display = 'none';
+        textHeading.style.display = 'block';
+        textHeading.textContent = title;
     }
 
-    // --- Tagline & Social Injection ---
+    // Tagline
     const taglineEl = document.getElementById('detail-tagline');
     if (data.tagline) {
         taglineEl.textContent = `"${data.tagline}"`;
@@ -1582,12 +1588,38 @@ function renderDetails(data, title) {
         taglineEl.classList.add('hidden');
     }
 
+    // --- NEW: Social Media Links (Inserted after Tagline) ---
+    const existingSocials = document.getElementById('detail-socials');
+    if (existingSocials) existingSocials.remove();
+
+    const socialContainer = document.createElement('div');
+    socialContainer.id = 'detail-socials';
+    socialContainer.className = "flex items-center gap-4 mt-3 mb-5"; 
+    
+    let socialHtml = '';
+    // Official Homepage
+    if (data.homepage) {
+        socialHtml += `<a href="${data.homepage}" target="_blank" title="Official Website" class="social-link-btn"><i class="fas fa-link"></i></a>`;
+    }
+    // Social Networks
+    if (data.external_ids) {
+        const ids = data.external_ids;
+        if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><i class="fab fa-imdb text-2xl"></i></a>`;
+        if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><i class="fab fa-facebook"></i></a>`;
+        if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><i class="fab fa-instagram"></i></a>`;
+        if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><i class="fab fa-x-twitter"></i></a>`;
+    }
+
     if (socialHtml) {
         socialContainer.innerHTML = socialHtml;
         taglineEl.parentNode.insertBefore(socialContainer, taglineEl.nextSibling);
     }
 
-    // --- Status & TV Stats ---
+    // ============================================================
+    // 4. METADATA (Status, Country, Rating, Runtime)
+    // ============================================================
+    
+    // Status
     const statusEl = document.getElementById('detail-status');
     if (data.status) {
         statusEl.querySelector('span').textContent = data.status;
@@ -1596,6 +1628,7 @@ function renderDetails(data, title) {
         statusEl.classList.add('hidden');
     }
 
+    // TV Series Specific Stats (Seasons/Episodes)
     const existingCount = document.getElementById('detail-tv-stats');
     if (existingCount) existingCount.remove();
 
@@ -1607,7 +1640,7 @@ function renderDetails(data, title) {
         statusEl.parentElement.insertBefore(countSpan, statusEl);
     }
 
-    // --- Country ---
+    // Production Country
     const countryEl = document.getElementById('detail-country');
     if (data.production_countries && data.production_countries.length > 0) {
         const code = data.production_countries[0].iso_3166_1;
@@ -1626,25 +1659,23 @@ function renderDetails(data, title) {
         countryEl.classList.add('hidden');
     }
 
-    // --- Date & Rating ---
+    // Year & Rating
     const dateEl = document.getElementById('detail-date');
     const dateSpan = dateEl.querySelector('span');
     dateSpan.textContent = year;
-    if (year !== "N/A") {
-        dateEl.onclick = () => quickFilter('year', year, year);
-    }
+    if (year !== "N/A") dateEl.onclick = () => quickFilter('year', year, year);
 
     const ratingEl = document.getElementById('detail-rating');
     const ratingSpan = ratingEl.querySelector('span');
     const ratingVal = data.vote_average ? data.vote_average.toFixed(1) : "N/A";
     ratingSpan.textContent = ratingVal;
-    if (ratingVal !== "N/A") {
-        ratingEl.onclick = () => quickFilter('rating', data.vote_average);
-    }
+    if (ratingVal !== "N/A") ratingEl.onclick = () => quickFilter('rating', data.vote_average);
 
+    // Runtime
     let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
     document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : "N/A";
 
+    // Age Rating Badge
     const ageEl = document.getElementById('detail-age');
     if (ageRating !== "Not Rated") {
         ageEl.querySelector('span').textContent = ageRating;
@@ -1653,26 +1684,10 @@ function renderDetails(data, title) {
         ageEl.classList.add('hidden');
     }
 
-    // --- Logo vs Title ---
-    let logoPath = null;
-    if (data.images && data.images.logos && data.images.logos.length > 0) {
-        const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
-        const bestLogo = englishLogo || data.images.logos[0];
-        if (bestLogo) logoPath = bestLogo.file_path;
-    }
-    if (logoPath) {
-        logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
-        logoImg.style.display = 'block';
-        textHeading.style.display = 'none';
-    } else {
-        logoImg.style.display = 'none';
-        textHeading.style.display = 'block';
-        textHeading.textContent = title;
-    }
-
+    // Overview Text
     document.getElementById('detail-overview').textContent = data.overview || "No description available.";
 
-    // --- Poster ---
+    // Poster Image
     const posterImg = document.getElementById('detail-poster');
     if (data.poster_path) {
         posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
@@ -1684,7 +1699,11 @@ function renderDetails(data, title) {
         posterImg.classList.remove('skeleton');
     }
 
-    // --- Genres ---
+    // ============================================================
+    // 5. TAGS & KEYWORDS
+    // ============================================================
+    
+    // Genres
     const genreContainer = document.getElementById('detail-genres');
     genreContainer.innerHTML = '';
     (data.genres || []).forEach(g => {
@@ -1722,7 +1741,6 @@ function renderDetails(data, title) {
         genreContainer.parentNode.insertBefore(keywordContainer, genreContainer.nextSibling);
     }
 
-    // --- Interaction Bar ---
     const interactBar = document.getElementById('interaction-bar');
     if (!document.getElementById('btn-ai-intel')) {
         const aiBtn = document.createElement('div');
@@ -1734,7 +1752,6 @@ function renderDetails(data, title) {
         interactBar.prepend(aiBtn); 
     }
 
-    // --- CAST SECTION ---
     const castContainer = document.getElementById('cast-container');
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
@@ -1758,7 +1775,7 @@ function renderDetails(data, title) {
         castContainer.classList.add('hidden');
     }
 
-    // --- CREW SECTION ---
+    // Crew
     const crewContainer = document.getElementById('crew-container');
     const crewList = document.getElementById('crew-list');
     crewList.innerHTML = '';
@@ -1795,7 +1812,6 @@ function renderDetails(data, title) {
         crewContainer.classList.add('hidden');
     }
 
-    // --- NEW: Visual Gallery (Backdrops) ---
     const galleryContainer = document.getElementById('gallery-container');
     const galleryList = document.getElementById('gallery-list');
     
@@ -1825,13 +1841,65 @@ function renderDetails(data, title) {
                 div.onclick = () => window.open(fullUrl, '_blank');
                 galleryList.appendChild(div);
             });
-
             updateScrollButtons(galleryList);
         } else {
             galleryContainer.classList.add('hidden');
         }
     }
 
+    const videoContainer = document.getElementById('videos-container');
+    const videoList = document.getElementById('videos-list');
+
+    if (videoContainer && videoList) {
+        videoList.innerHTML = '';
+        
+        // Filter for YouTube videos only
+        const videos = (data.videos && data.videos.results) 
+            ? data.videos.results.filter(v => v.site === "YouTube") 
+            : [];
+
+        if (videos.length > 0) {
+            videoContainer.classList.remove('hidden');
+
+            // Sort: Trailers -> Teasers -> Featurettes -> Clips
+            videos.sort((a, b) => {
+                const typeOrder = { "Trailer": 1, "Teaser": 2, "Featurette": 3, "Clip": 4 };
+                return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+            });
+
+            videos.forEach(video => {
+                const div = document.createElement('div');
+                div.className = "video-card flex-shrink-0 group";
+                
+                div.innerHTML = `
+                    <div class="video-thumbnail">
+                        <img src="https://img.youtube.com/vi/${video.key}/hqdefault.jpg" loading="lazy" alt="${video.name}">
+                        <div class="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors flex items-center justify-center">
+                            <i class="fas fa-play-circle text-4xl text-white opacity-80 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-type">${video.type}</div>
+                        <div class="video-title">${video.name}</div>
+                    </div>
+                `;
+
+                div.onclick = () => {
+                    const modal = document.getElementById('trailer-modal');
+                    const iframe = document.getElementById('trailer-iframe');
+                    modal.classList.remove('hidden');
+                    iframe.src = `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0`;
+                };
+
+                videoList.appendChild(div);
+            });
+            updateScrollButtons(videoList);
+        } else {
+            videoContainer.classList.add('hidden');
+        }
+    }
+
+    // Finalize Details
     renderDetailedInfo(data);
 }
 
