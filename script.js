@@ -607,8 +607,9 @@ async function loadMyLibrary(type) {
 
     const header = document.getElementById('trending-header');
 
-    if (type === 'favorite') header.innerHTML = '<i class="fas fa-heart text-red-500 mr-3"></i> My Favorites';
-    else header.innerHTML = '<i class="fas fa-bookmark text-blue-500 mr-3"></i> My Watchlist';
+    // --- ICONS REMOVED HERE ---
+    if (type === 'favorite') header.innerHTML = 'My Favorites';
+    else header.innerHTML = 'My Watchlist';
 
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
