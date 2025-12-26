@@ -1123,12 +1123,22 @@ input[type=range]::-webkit-slider-thumb {
 #soundtrack-section {
     animation: fadeIn 0.8s ease-out;
 }
-/* --- New Section Title Styling --- */
+/* --- Modern Red Line Titles --- */
 .section-title {
-    font-family: 'Montserrat', sans-serif !important;
+    font-family: 'Netflix Sans', 'Montserrat', sans-serif !important;
     text-transform: uppercase;
-    letter-spacing: 1px; /* Adds a little space between letters for better readability */
-    font-weight: 800; /* Makes it nice and bold */
+    letter-spacing: 1px;
+    font-weight: 800; /* Bold text */
+    color: white;
+    
+    /* The Red Vertical Line */
+    border-left: 5px solid #e50914; 
+    padding-left: 15px; /* Space between line and text */
+    line-height: 1.1;
+    
+    display: flex;
+    align-items: center;
+    margin-left: 10px; /* Offset slightly from screen edge */
 }
 /* --- QUOTE SLIDER STYLES (UPDATED) --- */
 .quote-slider-wrapper {
@@ -1233,4 +1243,11 @@ input[type=range]::-webkit-slider-thumb {
         padding: 24px;   /* Slightly less padding inside card on mobile */
         min-height: 280px;
     }
+}
+#top10-container, #trailers-container {
+    padding-top: 6px !important;    /* Room for top zoom */
+    padding-bottom: 40px !important; /* Room for bottom zoom */
+    
+    /* Ensure the scrollbar doesn't overlap if visible */
+    overflow-y: visible; 
 }
