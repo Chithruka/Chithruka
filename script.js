@@ -7,9 +7,9 @@ const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
 // --- GROQ AI CONFIGURATION ---
-const GROQ_API_KEY = "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"; // Add your key here
+const GROQ_API_KEY = "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"; // Add your key here
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.1-8b-instant";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // --- State Variables ---
 let mediaType = 'movie';
@@ -207,53 +207,55 @@ async function handleAISearch() {
                 messages: [
                     {
                         role: "system",
-                        // --- UPGRADED PROMPT ---
-                        content: `You are an expert Movie Detective and Recommendation Engine. 
-                        
-                        Your Goal:
-                        1. If the user describes a plot (e.g., "boy finds high tech glasses"), IDENTIFY the specific movie/show (e.g., "Ejen Ali").
-                        2. If the user asks for a mood/genre (e.g., "sad movies"), RECOMMEND the best ones.
+                        content: `You are an expert Movie Recommendation Engine. 
                         
                         Strict Rules:
-                        - Return ONLY a valid JSON object.
-                        - Keys: "message" (a short, enthusiastic confirmation of what you found) and "results" (array of exactly 5 titles).
-                        - Do not add markdown formatting like \`\`\`json.
+                        1. Return ONLY a valid JSON object. Do not add intro text.
+                        2. Structure: { "message": "Short comment", "results": ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"] }
+                        3. If you can't find movies, return results as empty array.
                         
-                        Example 1 (Plot Search):
-                        User: "Man stuck on mars grows potatoes"
-                        JSON: {"message": "That sounds exactly like The Martian! Here is that and similar movies.", "results": ["The Martian", "Interstellar", "Gravity", "Moon", "Apollo 13"]}
-                        
-                        Example 2 (Vague Plot):
-                        User: "A boy finds a pair of high-tech glasses"
-                        JSON: {"message": "I found a few matches for that plot description!", "results": ["Ejen Ali", "CJ7", "Spider-Man: Far From Home", "Spy Kids 3-D: Game Over", "Kingsman: The Secret Service"]}`
+                        User Query: ${query}`
                     },
                     {
                         role: "user",
                         content: query
                     }
                 ],
-                // Lower temperature slightly to make it more factual/accurate for searches
-                temperature: 0.5 
+                temperature: 0.3 // Lower temperature for more consistent JSON
             })
         });
 
         const data = await response.json();
+
+        // 1. Check for API Errors (e.g., Invalid Key)
+        if (!response.ok) {
+            console.error("Groq API Error:", data);
+            throw new Error(data.error?.message || "API request failed");
+        }
+
         const content = data.choices[0].message.content;
-        
-        // Parse the JSON Object from AI
+        console.log("Raw AI Response:", content); // Debugging line
+
+        // 2. Robust JSON Parsing (Removes Markdown ```json ... ``` wrapper if present)
         let aiData = {};
         try {
-            // Regex to find the JSON object in case AI adds extra whitespace
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                aiData = JSON.parse(jsonMatch[0]);
+            // Remove markdown code blocks if AI added them
+            const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            // Find the first '{' and last '}' to isolate JSON
+            const firstBracket = cleanContent.indexOf('{');
+            const lastBracket = cleanContent.lastIndexOf('}');
+            
+            if (firstBracket !== -1 && lastBracket !== -1) {
+                const jsonString = cleanContent.substring(firstBracket, lastBracket + 1);
+                aiData = JSON.parse(jsonString);
             } else {
-                aiData = JSON.parse(content);
+                aiData = JSON.parse(cleanContent);
             }
         } catch (e) {
-            console.error("AI Parse Error", e);
+            console.error("JSON Parse Error. Raw content:", content);
             aiData = { 
-                message: "I couldn't quite identify that, but here are some guesses.", 
+                message: "I found something, but the format was a bit off.", 
                 results: [query] 
             };
         }
@@ -265,9 +267,13 @@ async function handleAISearch() {
         displayAIResults(aiData.results || [], aiData.message);
 
     } catch (error) {
-        console.error("AI Error:", error);
-        showMessage("AI Search Failed. Try again.", true);
-        toggleAIModal();
+        console.error("AI Logic Failed:", error);
+        // Show the specific error in the alert so you know what's wrong
+        showMessage(`AI Error: ${error.message}`, true);
+        
+        // Reset UI
+        loader.classList.add('hidden');
+        inputCont.classList.remove('hidden');
     }
 }
 
@@ -291,7 +297,7 @@ async function displayAIResults(titles, aiMessage) {
             <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
             AI Recommendations
             </div>
-            <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-2 border-pink-500 pl-3">
+            <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-4 border-red-600 pl-4">
                 "${aiMessage}"
             </span>
         </div>
@@ -305,52 +311,39 @@ async function displayAIResults(titles, aiMessage) {
     currentFetchUrl = "STOP"; 
 
     // 4. Smart Search Loop
-    // We map the titles to search promises, but we process the text first
     const searchPromises = titles.map(async (rawTitle) => {
-        // Step A: Extract Year if present (e.g. "Ejen Ali (2019)")
         let cleanTitle = rawTitle;
         let targetYear = null;
         
-        // Regex to find (YYYY) at the end of the string
         const yearMatch = rawTitle.match(/\((\d{4})\)/);
         if (yearMatch) {
             targetYear = yearMatch[1];
-            // Remove the year from the title so TMDB search works better
             cleanTitle = rawTitle.replace(/\(\d{4}\)/, '').trim();
         }
 
         try {
-            // Step B: Search TMDB with the cleaned title
             const url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=true`;
             const data = await fetchCached(url);
             
             if (!data.results || data.results.length === 0) return null;
 
-            // Step C: Smart Filtering
             let bestMatch = null;
-
-            // Priority 1: Match Title + Year (if year existed)
             if (targetYear) {
                 bestMatch = data.results.find(item => {
                     const date = item.release_date || item.first_air_date;
                     return date && date.substring(0, 4) === targetYear;
                 });
             }
-
-            // Priority 2: Exact Title Match (Case insensitive)
             if (!bestMatch) {
                 bestMatch = data.results.find(item => {
                     const title = item.title || item.name;
                     return title && title.toLowerCase() === cleanTitle.toLowerCase();
                 });
             }
-
-            // Priority 3: Just take the first valid Movie/TV result
             if (!bestMatch) {
                 bestMatch = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
             }
 
-            // Return the result if it's a valid media type
             if (bestMatch && (bestMatch.media_type === 'movie' || bestMatch.media_type === 'tv')) {
                 return bestMatch;
             }
@@ -363,22 +356,53 @@ async function displayAIResults(titles, aiMessage) {
     });
 
     try {
-        // Wait for all searches to finish
         const resultsArray = await Promise.all(searchPromises);
-        
-        // Filter out nulls and create a Map to remove duplicates by ID
         const validResults = resultsArray.filter(i => i !== null);
         const uniqueResults = Array.from(new Map(validResults.map(item => [item.id, item])).values());
 
         trendingContainer.innerHTML = '';
         
         if (uniqueResults.length > 0) {
+            // Scenario A: Database Matches Found
             renderCards(uniqueResults, trendingContainer, true);
         } else {
-            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">AI found suggestions, but no matches in the database.</div>';
+            // Scenario B: No Matches (The "AI List" Fallback)
+            // We create manual cards for every title the AI suggested
+            titles.forEach(title => {
+                const card = document.createElement('div');
+                card.className = 'scroll-card';
+                
+                // Clean the title for the search query (remove year)
+                const cleanQuery = title.replace(/\(\d{4}\)/, '').trim();
+
+                card.innerHTML = `
+                    <div class="poster-wrapper" style="background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border: 1px solid #333;">
+                        <i class="fas fa-search text-3xl text-gray-500 mb-3"></i>
+                        <span class="text-xs text-gray-400 text-center">Search for</span>
+                        <span class="text-xs font-bold text-white text-center line-clamp-2 mt-1">${title}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">${title}</div>
+                        <div class="card-meta">
+                            <span class="text-xs text-orange-400">AI Suggestion</span>
+                        </div>
+                    </div>
+                `;
+                
+                // On click, perform a manual search for this title
+                card.onclick = () => {
+                    const searchInput = document.getElementById('search-input');
+                    searchInput.value = cleanQuery;
+                    searchInput.focus();
+                    performMultiSearch(cleanQuery);
+                };
+                
+                trendingContainer.appendChild(card);
+            });
         }
 
-        // Scroll to results
+        updateScrollButtons(trendingContainer);
+
         setTimeout(() => {
             header.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -685,13 +709,13 @@ function loadHome() {
 }
 
 const SERVER_URLS = [
-    { name: "Server 1 (VidSrc.to)", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 2 (VidLink)", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
-    { name: "Server 3 (SuperEmbed)", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
-    { name: "Server 4 (AutoEmbed)", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
-   { name: "Server 5 (VidSrc VIP)", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 1", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 2", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
+    { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
+    { name: "Server 4", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
+   { name: "Server 5", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
     { 
-        name: "Server 6 (VidKing)", 
+        name: "Server 6", 
         movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914&nextEpisode=true&episodeSelector=true", 
         tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" 
     }
@@ -1003,7 +1027,7 @@ function displayResults(results) {
     });
 }
 
-// --- UPDATED: Accepts gender to display correct icon in header ---
+// --- Accepts gender to display correct icon in header ---
 async function loadActorCredits(personId, personName, profilePath, gender) {
     searchResults.innerHTML = '';
     searchInput.value = '';
@@ -2470,52 +2494,24 @@ async function fetchAIInsight(mode) {
     const resultBox = document.getElementById('ai-insight-result');
     const resultText = resultBox.querySelector('p');
 
+    // Reset UI
     options.classList.add('hidden');
     loader.classList.remove('hidden');
+    resultBox.classList.add('hidden'); // Hide result box initially
 
-    // --- THE POWER MOVE: Send the full sanitized JSON ---
+    // Prepare Data
     const jsonContext = JSON.stringify(currentMovieData, null, 2);
-
     let prompt = "";
-    
+
     switch (mode) {
         case 'hype':
-            prompt = `Analyze the following movie metadata JSON and write an enthusiastic hype paragraph (min 60 words).
-            
-            Use the JSON data to decide whether or not this should be viewed by a person and explain it.
-            
-            JSON DATA:
-            ${jsonContext}
-            
-            Don't mention JSON or data structure. Just act like an analyst. Use emojis if necessary.`;
+            prompt = `Analyze this movie JSON and write a hype paragraph (min 60 words). JSON: ${jsonContext}`;
             break;
-
         case 'trivia':
-            prompt = `Analyze the movie metadata JSON below and generate 3 trivia facts.
-            
-            Look for connections between:
-            - The Director/Writer and their style.
-            - The Production Company (e.g. A24, Marvel) and what that implies.
-            - The Budget vs Revenue (if available).
-            - The Cast choices.
-            
-            JSON DATA:
-            ${jsonContext}
-            
-            Format as a bulleted list.`;
+            prompt = `Generate 3 interesting trivia facts from this movie JSON. JSON: ${jsonContext}`;
             break;
-
         case 'parents':
-            prompt = `Act as a parental guide. Analyze the JSON metadata below to explain the Age Rating.
-            
-            JSON DATA:
-            ${jsonContext}
-            
-            1. State the Age Rating clearly.
-            2. Based on the Genres, Overview, and Rating, warn about specific content (Violence, Language, etc.).
-            3. Suggest the appropriate minimum age.
-            
-            Keep it to 3 helpful sentences.`;
+            prompt = `Explain the Age Rating based on this JSON. JSON: ${jsonContext}`;
             break;
     }
 
@@ -2529,7 +2525,7 @@ async function fetchAIInsight(mode) {
             body: JSON.stringify({
                 model: GROQ_MODEL,
                 messages: [
-                    { role: "system", content: "You are a cinema expert AI." },
+                    { role: "system", content: "You are a movie expert." },
                     { role: "user", content: prompt }
                 ],
                 temperature: 0.7,
@@ -2537,9 +2533,15 @@ async function fetchAIInsight(mode) {
             })
         });
 
-        if (!response.ok) throw new Error("AI API Error");
-
         const data = await response.json();
+
+        // --- NEW ERROR HANDLING ---
+        if (!response.ok) {
+            console.error("Groq API Error Details:", data);
+            // Throw the specific error message from the API
+            throw new Error(data.error?.message || `API Error: ${response.status}`);
+        }
+
         const content = data.choices[0].message.content;
 
         loader.classList.add('hidden');
@@ -2547,13 +2549,19 @@ async function fetchAIInsight(mode) {
         resultText.innerHTML = content.replace(/\n/g, '<br>');
 
     } catch (error) {
-        console.error("AI Insight Error:", error);
+        console.error("AI Insight Failed:", error);
+        
         loader.classList.add('hidden');
         resultBox.classList.remove('hidden');
-        resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
+        
+        // --- DISPLAY THE REAL ERROR ON SCREEN ---
+        resultText.innerHTML = `
+            <strong class="text-red-500"><i class="fas fa-exclamation-circle"></i> AI Error</strong><br>
+            <span class="text-gray-400 text-sm">${error.message}</span>
+        `;
     }
 }
-/* --- OPTIMIZED QUOTE SLIDER (Hardcoded Data) --- */
+
 const quotesData = [
   {
     "quote": "I'm gonna make him an offer he can't refuse.",
