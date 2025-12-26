@@ -392,7 +392,7 @@
     </a>
     
     <a onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
-        <i class="fa-solid fa-angles-up fa-bounce"></i>
+        <i class="fa-solid fa-angles-up"></i>
     </a>
 </div>
         </div>
@@ -434,9 +434,13 @@
                 </div>
             </div>
             <div class="flex gap-3 mt-2">
-                <button onclick="clearFilters()" class="flex-1 p-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-bold transition">Reset</button>
-                <button onclick="applyFilter()" class="flex-1 p-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Apply</button>
-            </div>
+    <button onclick="clearFilters()" class="flex-1 p-3 bg-[#333333] hover:bg-[#555555] rounded-lg text-white font-bold transition">
+        Reset
+    </button> 
+    <button onclick="applyFilter()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
+        Apply
+    </button>
+</div>
         </div>
     </div>
 </div>
@@ -468,28 +472,46 @@
     </div>
 </div>
 
-<div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4">
+<div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4 animate-fade-in">
     <div class="w-full max-w-lg relative flex flex-col items-center">
         
-        <div class="input w-full mb-8 relative" id="ai-input-container">
-    <svg class="svg" onclick="handleAISearch()" style="cursor: pointer; pointer-events: auto;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.5 6C11.3949 6.00006 11.2925 5.96705 11.2073 5.90565C11.1221 5.84425 11.0583 5.75758 11.0251 5.65792L10.7623 4.86908C10.6623 4.57101 10.4288 4.33629 10.13 4.23693L9.34102 3.97354C9.24166 3.94019 9.1553 3.87649 9.09411 3.79142C9.03292 3.70635 9 3.60421 9 3.49943C9 3.39465 9.03292 3.29252 9.09411 3.20745C9.1553 3.12238 9.24166 3.05867 9.34102 3.02532L10.13 2.76193C10.4282 2.66191 10.663 2.42852 10.7623 2.12979L11.0258 1.34094C11.0591 1.24161 11.1229 1.15526 11.2079 1.09409C11.293 1.03291 11.3952 1 11.5 1C11.6048 1 11.707 1.03291 11.7921 1.09409C11.8771 1.15526 11.9409 1.24161 11.9742 1.34094L12.2377 2.12979C12.2868 2.27697 12.3695 2.4107 12.4792 2.52041C12.589 2.63013 12.7227 2.71281 12.87 2.76193L13.659 3.02532C13.7583 3.05867 13.8447 3.12238 13.9059 3.20745C13.9671 3.29252 14 3.39465 14 3.49943C14 3.60421 13.9671 3.70635 13.9059 3.79142C13.8447 3.87649 13.7583 3.94019 13.659 3.97354L12.87 4.23693C12.5718 4.33696 12.337 4.57034 12.2377 4.86908L11.9742 5.65792C11.9411 5.75747 11.8774 5.84406 11.7923 5.90545C11.7072 5.96684 11.6049 5.99992 11.5 6Z" fill="currentColor"></path>
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5005 23C13.3376 23 13.1791 22.9469 13.049 22.8487C12.9189 22.7505 12.8243 22.6127 12.7795 22.456L11.9665 19.61C11.7915 18.9971 11.4631 18.4389 11.0124 17.9882C10.5616 17.5374 10.0035 17.209 9.39054 17.034L6.54454 16.221C6.38795 16.1761 6.25021 16.0815 6.15216 15.9514C6.05411 15.8214 6.00108 15.6629 6.00108 15.5C6.00108 15.3371 6.05411 15.1786 6.15216 15.0486C6.25021 14.9185 6.38795 14.8239 6.54454 14.779L9.39054 13.966C10.0035 13.791 10.5616 13.4626 11.0124 13.0118C11.4631 12.5611 11.7915 12.0029 11.9665 11.39L12.7795 8.544C12.8244 8.38741 12.919 8.24967 13.0491 8.15162C13.1792 8.05357 13.3376 8.00054 13.5005 8.00054C13.6634 8.00054 13.8219 8.05357 13.952 8.15162C14.0821 8.24967 14.1767 8.38741 14.2215 8.544L15.0345 11.39C15.2096 12.0029 15.538 12.5611 15.9887 13.0118C16.4394 13.4626 16.9976 13.791 17.6105 13.966L20.4565 14.779C20.6131 14.8239 20.7509 14.9185 20.8489 15.0486C20.947 15.1786 21 15.3371 21 15.5C21 15.6629 20.947 15.8214 20.8489 15.9514C20.7509 16.0815 20.6131 16.1761 20.4565 16.221L17.6105 17.034C16.9976 17.209 16.4394 17.5374 15.9887 17.9882C15.538 18.4389 15.2096 18.9971 15.0345 19.61L14.2215 22.456C14.1768 22.6127 14.0822 22.7505 13.9521 22.8487C13.822 22.9469 13.6635 23 13.5005 23Z" fill="currentColor"></path>
-    </svg>
-    
-    <input class="search" id="ai-search-input" type="text" placeholder="Type or ask AI... (e.g. 'Scary movies')" onkeydown="if(event.key === 'Enter') handleAISearch()" />
-    
-    <button id="ai-mic-btn" onclick="startVoiceInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
-        <i class="fas fa-microphone text-lg"></i>
-    </button>
-</div>
+        <div class="input w-full mb-6 relative" id="ai-input-container">
+            <svg class="svg" onclick="handleAISearch()" style="cursor: pointer; pointer-events: auto;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M11.5 6C11.3949 6.00006 11.2925 5.96705 11.2073 5.90565C11.1221 5.84425 11.0583 5.75758 11.0251 5.65792L10.7623 4.86908C10.6623 4.57101 10.4288 4.33629 10.13 4.23693L9.34102 3.97354C9.24166 3.94019 9.1553 3.87649 9.09411 3.79142C9.03292 3.70635 9 3.60421 9 3.49943C9 3.39465 9.03292 3.29252 9.09411 3.20745C9.1553 3.12238 9.24166 3.05867 9.34102 3.02532L10.13 2.76193C10.4282 2.66191 10.663 2.42852 10.7623 2.12979L11.0258 1.34094C11.0591 1.24161 11.1229 1.15526 11.2079 1.09409C11.293 1.03291 11.3952 1 11.5 1C11.6048 1 11.707 1.03291 11.7921 1.09409C11.8771 1.15526 11.9409 1.24161 11.9742 1.34094L12.2377 2.12979C12.2868 2.27697 12.3695 2.4107 12.4792 2.52041C12.589 2.63013 12.7227 2.71281 12.87 2.76193L13.659 3.02532C13.7583 3.05867 13.8447 3.12238 13.9059 3.20745C13.9671 3.29252 14 3.39465 14 3.49943C14 3.60421 13.9671 3.70635 13.9059 3.79142C13.8447 3.87649 13.7583 3.94019 13.659 3.97354L12.87 4.23693C12.5718 4.33696 12.337 4.57034 12.2377 4.86908L11.9742 5.65792C11.9411 5.75747 11.8774 5.84406 11.7923 5.90545C11.7072 5.96684 11.6049 5.99992 11.5 6Z" fill="currentColor"></path>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5005 23C13.3376 23 13.1791 22.9469 13.049 22.8487C12.9189 22.7505 12.8243 22.6127 12.7795 22.456L11.9665 19.61C11.7915 18.9971 11.4631 18.4389 11.0124 17.9882C10.5616 17.5374 10.0035 17.209 9.39054 17.034L6.54454 16.221C6.38795 16.1761 6.25021 16.0815 6.15216 15.9514C6.05411 15.8214 6.00108 15.6629 6.00108 15.5C6.00108 15.3371 6.05411 15.1786 6.15216 15.0486C6.25021 14.9185 6.38795 14.8239 6.54454 14.779L9.39054 13.966C10.0035 13.791 10.5616 13.4626 11.0124 13.0118C11.4631 12.5611 11.7915 12.0029 11.9665 11.39L12.7795 8.544C12.8244 8.38741 12.919 8.24967 13.0491 8.15162C13.1792 8.05357 13.3376 8.00054 13.5005 8.00054C13.6634 8.00054 13.8219 8.05357 13.952 8.15162C14.0821 8.24967 14.1767 8.38741 14.2215 8.544L15.0345 11.39C15.2096 12.0029 15.538 12.5611 15.9887 13.0118C16.4394 13.4626 16.9976 13.791 17.6105 13.966L20.4565 14.779C20.6131 14.8239 20.7509 14.9185 20.8489 15.0486C20.947 15.1786 21 15.3371 21 15.5C21 15.6629 20.947 15.8214 20.8489 15.9514C20.7509 16.0815 20.6131 16.1761 20.4565 16.221L17.6105 17.034C16.9976 17.209 16.4394 17.5374 15.9887 17.9882C15.538 18.4389 15.2096 18.9971 15.0345 19.61L14.2215 22.456C14.1768 22.6127 14.0822 22.7505 13.9521 22.8487C13.822 22.9469 13.6635 23 13.5005 23Z" fill="currentColor"></path>
+            </svg>
+            <input class="search" id="ai-search-input" type="text" placeholder="Describe a plot or mood..." onkeydown="if(event.key === 'Enter') handleAISearch()" />
+            <button id="ai-mic-btn" onclick="startVoiceInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+                <i class="fas fa-microphone text-lg"></i>
+            </button>
+        </div>
 
-        <div id="ai-loader" class="loader-wrapper hidden">
+        <div class="w-full rounded-r-xl bg-white/5 border-l-4 border-red-600 p-4 flex items-start gap-4 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] shadow-xl backdrop-blur-sm group cursor-default">
+            
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-600/20 to-black rounded-lg flex items-center justify-center border border-red-500/30 group-hover:border-red-500/60 transition-colors">
+                <svg class="w-8 h-8 text-red-500 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]" viewBox="0 0 48 48" fill="currentColor">
+                    <path d="M18.542,30.532l15.956-11.776 c0.783-0.576,1.902-0.354,2.274,0.545c1.962,4.728,1.084,10.411-2.819,14.315c-3.903,3.901-9.333,4.756-14.299,2.808l-5.423,2.511 c7.778,5.315,17.224,4,23.125-1.903c4.682-4.679,6.131-11.058,4.775-16.812l0.011,0.011c-1.966-8.452,0.482-11.829,5.501-18.735 C47.759,1.332,47.88,1.166,48,1l-6.602,6.599V7.577l-22.86,22.958"/>
+                    <path d="M15.248,33.392c-5.582-5.329-4.619-13.579,0.142-18.339 c3.521-3.522,9.294-4.958,14.331-2.847l5.412-2.497c-0.974-0.704-2.224-1.46-3.659-1.994c-6.478-2.666-14.238-1.34-19.505,3.922 C6.904,16.701,5.31,24.488,8.045,31.133c2.044,4.965-1.307,8.48-4.682,12.023C2.164,44.411,0.967,45.67,0,47l15.241-13.608"/>
+                </svg>
+            </div>
+
+            <div class="flex-grow">
+                <h4 class="text-white font-bold text-sm mb-1 uppercase tracking-wide">Intelligent Search</h4>
+                <p class="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                    Forget keywords. Just describe the plot, a character, or even a vague memory. 
+                    <br><span class="italic text-red-400/80 mt-1 block">"Man stuck on Mars growing potatoes"</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="ai-loader" class="loader-wrapper hidden mt-8">
           <span class="loader-letter">S</span><span class="loader-letter">e</span><span class="loader-letter">a</span><span class="loader-letter">r</span><span class="loader-letter">c</span><span class="loader-letter">h</span><span class="loader-letter">i</span><span class="loader-letter">n</span><span class="loader-letter">g</span>
           <div class="loader"></div>
         </div>
         
-        <p class="text-gray-400 text-sm mt-4 cursor-pointer hover:text-white" onclick="toggleAIModal()"><i class="fa-solid fa-xmark"></i></p>
+        <button class="mt-8 text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2" onclick="toggleAIModal()">
+            <i class="fa-solid fa-xmark"></i> Close
+        </button>
     </div>
 </div>
 
@@ -541,7 +563,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=8"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>
-
