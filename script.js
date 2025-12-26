@@ -1344,7 +1344,9 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
 async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
     try {
-        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles`);
+        // Updated URL to include 'keywords'
+        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords`);
+        
         if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
 
         if (detailData.title) {
@@ -1359,12 +1361,17 @@ async function fetchMovieDetails(id, title) {
 
         playerInterface.classList.remove('hidden');
         updatePlayer();
-    } catch (e) { showMessage("Failed to load details.", true); console.error(e); }
+    } catch (e) { 
+        showMessage("Failed to load details.", true); 
+        console.error(e); 
+    }
 }
 
 async function fetchShowDetails(id, title) {
     try {
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids`);
+        // Updated URL to include 'keywords'
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords`);
+        
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
         if (data.name) {
@@ -1405,7 +1412,10 @@ async function fetchShowDetails(id, title) {
 
         await fetchSeasonDetails(id, currentSeason);
         updatePlayer();
-    } catch (e) { showMessage("Failed to load show details.", true); console.error(e); }
+    } catch (e) { 
+        showMessage("Failed to load show details.", true); 
+        console.error(e); 
+    }
 }
 
 async function loadCollection(collectionId, collectionName) {
@@ -1525,7 +1535,7 @@ function renderDetails(data, title) {
     currentMovieData = aiContext;
     currentTitle = aiContext.title;
 
-    // 2. UI Rendering
+    // 2. UI Rendering - Background & Ambient Color
     if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
     else pageBackground.style.backgroundImage = 'none';
 
@@ -1542,6 +1552,28 @@ function renderDetails(data, title) {
     const logoImg = document.getElementById('detail-logo');
     const textHeading = document.getElementById('detail-heading');
 
+    // --- NEW: Social Media Links ---
+    // Remove old socials if they exist
+    const existingSocials = document.getElementById('detail-socials');
+    if (existingSocials) existingSocials.remove();
+
+    const socialContainer = document.createElement('div');
+    socialContainer.id = 'detail-socials';
+    socialContainer.className = "flex items-center gap-4 mt-3 mb-5";
+    
+    let socialHtml = '';
+    if (data.homepage) {
+        socialHtml += `<a href="${data.homepage}" target="_blank" title="Official Website" class="social-link-btn"><i class="fas fa-link"></i></a>`;
+    }
+    if (data.external_ids) {
+        const ids = data.external_ids;
+        if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><i class="fab fa-imdb text-2xl"></i></a>`;
+        if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><i class="fab fa-facebook"></i></a>`;
+        if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><i class="fab fa-instagram"></i></a>`;
+        if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><i class="fab fa-x-twitter"></i></a>`;
+    }
+
+    // --- Tagline & Social Injection ---
     const taglineEl = document.getElementById('detail-tagline');
     if (data.tagline) {
         taglineEl.textContent = `"${data.tagline}"`;
@@ -1550,6 +1582,12 @@ function renderDetails(data, title) {
         taglineEl.classList.add('hidden');
     }
 
+    if (socialHtml) {
+        socialContainer.innerHTML = socialHtml;
+        taglineEl.parentNode.insertBefore(socialContainer, taglineEl.nextSibling);
+    }
+
+    // --- Status & TV Stats ---
     const statusEl = document.getElementById('detail-status');
     if (data.status) {
         statusEl.querySelector('span').textContent = data.status;
@@ -1569,6 +1607,7 @@ function renderDetails(data, title) {
         statusEl.parentElement.insertBefore(countSpan, statusEl);
     }
 
+    // --- Country ---
     const countryEl = document.getElementById('detail-country');
     if (data.production_countries && data.production_countries.length > 0) {
         const code = data.production_countries[0].iso_3166_1;
@@ -1587,10 +1626,10 @@ function renderDetails(data, title) {
         countryEl.classList.add('hidden');
     }
 
+    // --- Date & Rating ---
     const dateEl = document.getElementById('detail-date');
     const dateSpan = dateEl.querySelector('span');
     dateSpan.textContent = year;
-
     if (year !== "N/A") {
         dateEl.onclick = () => quickFilter('year', year, year);
     }
@@ -1614,6 +1653,7 @@ function renderDetails(data, title) {
         ageEl.classList.add('hidden');
     }
 
+    // --- Logo vs Title ---
     let logoPath = null;
     if (data.images && data.images.logos && data.images.logos.length > 0) {
         const englishLogo = data.images.logos.find(l => l.iso_639_1 === 'en');
@@ -1632,6 +1672,7 @@ function renderDetails(data, title) {
 
     document.getElementById('detail-overview').textContent = data.overview || "No description available.";
 
+    // --- Poster ---
     const posterImg = document.getElementById('detail-poster');
     if (data.poster_path) {
         posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
@@ -1643,6 +1684,7 @@ function renderDetails(data, title) {
         posterImg.classList.remove('skeleton');
     }
 
+    // --- Genres ---
     const genreContainer = document.getElementById('detail-genres');
     genreContainer.innerHTML = '';
     (data.genres || []).forEach(g => {
@@ -1653,6 +1695,34 @@ function renderDetails(data, title) {
         genreContainer.appendChild(tag);
     });
 
+    // --- NEW: Keywords / Story Tags ---
+    const existingTags = document.getElementById('detail-keywords');
+    if (existingTags) existingTags.remove();
+
+    const keywords = data.keywords ? (data.keywords.keywords || data.keywords.results || []) : [];
+
+    if (keywords.length > 0) {
+        const keywordContainer = document.createElement('div');
+        keywordContainer.id = 'detail-keywords';
+        keywordContainer.className = "flex flex-wrap gap-2 mb-6 mt-2";
+        
+        keywords.slice(0, 15).forEach(k => {
+            const span = document.createElement('span');
+            span.className = "keyword-tag";
+            span.innerHTML = `<i class="fas fa-hashtag text-[10px] text-gray-500 mr-1"></i>${k.name}`;
+            span.onclick = () => {
+                const searchInput = document.getElementById('search-input');
+                searchInput.value = k.name;
+                searchInput.focus();
+                performMultiSearch(k.name);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            keywordContainer.appendChild(span);
+        });
+        genreContainer.parentNode.insertBefore(keywordContainer, genreContainer.nextSibling);
+    }
+
+    // --- Interaction Bar ---
     const interactBar = document.getElementById('interaction-bar');
     if (!document.getElementById('btn-ai-intel')) {
         const aiBtn = document.createElement('div');
@@ -1683,7 +1753,6 @@ function renderDetails(data, title) {
             castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
         });
-        // --- NEW: Update Cast Buttons ---
         updateScrollButtons(castList);
     } else {
         castContainer.classList.add('hidden');
@@ -1718,13 +1787,49 @@ function renderDetails(data, title) {
                  crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
                  crewList.appendChild(crewDiv);
             });
-            // --- NEW: Update Crew Buttons ---
             updateScrollButtons(crewList);
         } else {
             crewContainer.classList.add('hidden');
         }
     } else {
         crewContainer.classList.add('hidden');
+    }
+
+    // --- NEW: Visual Gallery (Backdrops) ---
+    const galleryContainer = document.getElementById('gallery-container');
+    const galleryList = document.getElementById('gallery-list');
+    
+    if (galleryContainer && galleryList) {
+        galleryList.innerHTML = '';
+        const images = (data.images && data.images.backdrops && data.images.backdrops.length > 0) 
+            ? data.images.backdrops 
+            : (data.images.posters || []);
+
+        if (images.length > 0) {
+            galleryContainer.classList.remove('hidden');
+            
+            images.slice(0, 15).forEach(img => {
+                const imgUrl = `${TMDB_POSTER_MD}${img.file_path}`;
+                const fullUrl = `${TMDB_BACKDROP_WEB}${img.file_path}`;
+                
+                const div = document.createElement('div');
+                div.className = "gallery-item group relative flex-shrink-0 cursor-pointer w-48 md:w-64";
+                
+                div.innerHTML = `
+                    <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <i class="fas fa-expand-alt text-white text-xl"></i>
+                    </div>
+                `;
+                
+                div.onclick = () => window.open(fullUrl, '_blank');
+                galleryList.appendChild(div);
+            });
+
+            updateScrollButtons(galleryList);
+        } else {
+            galleryContainer.classList.add('hidden');
+        }
     }
 
     renderDetailedInfo(data);
