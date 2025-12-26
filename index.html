@@ -224,7 +224,22 @@
                         <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('crew-list', 200)"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
-
+<div id="gallery-container" class="mt-8 hidden">
+    <h4 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wide flex items-center">
+        <i class="fas fa-image text-purple-500 mr-2 text-lg"></i> Gallery & Wallpapers
+    </h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('gallery-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="gallery-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('gallery-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
                 <div class="info-grid">
                     <div class="info-block">
                         <h5><i class="fas fa-building mr-2"></i> Production</h5>
