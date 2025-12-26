@@ -620,10 +620,10 @@ function loadHome() {
 
 const SERVER_URLS = [
     { name: "Server 1 (VidSrc.to)", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 2 (VidSrc VIP)", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 3 (VidLink)", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
-    { name: "Server 4 (SuperEmbed)", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
-    { name: "Server 5 (AutoEmbed)", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
+    { name: "Server 2 (VidLink)", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
+    { name: "Server 3 (SuperEmbed)", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
+    { name: "Server 4 (AutoEmbed)", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
+   { name: "Server 5 (VidSrc VIP)", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
     { 
         name: "Server 6 (VidKing)", 
         movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914&nextEpisode=true&episodeSelector=true", 
@@ -2437,4 +2437,5 @@ async function fetchAIInsight(mode) {
         resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
     }
 }
+
 
