@@ -873,6 +873,9 @@ function renderTop10(items) {
         card.onclick = () => selectContent(item.id, title, item.media_type);
         top10Container.appendChild(card);
     });
+
+    // --- NEW: Update scroll buttons ---
+    updateScrollButtons(top10Container);
 }
 
 function renderCards(items, container, trackIds) {
@@ -889,7 +892,7 @@ function renderCards(items, container, trackIds) {
         const year = (item.release_date || item.first_air_date || 'N/A').substring(0, 4);
         const type = item.media_type; // 'movie' or 'tv'
 
-        // --- NEW: Generate Badge HTML ---
+        // Badge HTML
         const badgeHtml = type === 'tv' 
             ? `<div class="media-badge tv">TV</div>` 
             : `<div class="media-badge movie">MOVIE</div>`;
@@ -922,6 +925,9 @@ function renderCards(items, container, trackIds) {
         card.onclick = () => selectContent(item.id, title, type);
         container.appendChild(card);
     });
+
+    // --- NEW: Update scroll buttons after content renders ---
+    updateScrollButtons(container);
 }
 
 async function loadRecommendations(type, id) {
@@ -1451,15 +1457,10 @@ function renderEpisodesRich() {
 }
 
 function renderDetails(data, title) {
-    // ----------------------------------------
-    // 1. CREATE SUPER-CONTEXT FOR AI
-    // ----------------------------------------
-    
-    // Calculate basics first
+    // 1. AI Context Construction
     const dateVal = data.release_date || data.first_air_date;
     const year = dateVal ? new Date(dateVal).getFullYear() : "N/A";
     
-    // Calculate Age Rating
     let ageRating = "Not Rated";
     if (mediaType === 'movie' && data.release_dates?.results) {
         const us = data.release_dates.results.find(r => r.iso_3166_1 === 'US');
@@ -1472,7 +1473,6 @@ function renderDetails(data, title) {
         if (us?.rating) ageRating = us.rating;
     }
 
-    // AI Object Construction
     const aiContext = {
         title: data.title || data.name,
         original_title: data.original_title || data.original_name,
@@ -1501,10 +1501,7 @@ function renderDetails(data, title) {
     currentMovieData = aiContext;
     currentTitle = aiContext.title;
 
-    // ----------------------------------------
-    // 2. UI RENDERING
-    // ----------------------------------------
-    
+    // 2. UI Rendering
     if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
     else pageBackground.style.backgroundImage = 'none';
 
@@ -1643,14 +1640,13 @@ function renderDetails(data, title) {
         interactBar.prepend(aiBtn); 
     }
 
-    // --- UPDATED CAST SECTION WITH HIDING ---
+    // --- CAST SECTION ---
     const castContainer = document.getElementById('cast-container');
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
     
-    // Check if cast exists AND has items
     if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
-        castContainer.classList.remove('hidden'); // Show container
+        castContainer.classList.remove('hidden');
         data.credits.cast.forEach(c => {
             const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
             const castDiv = document.createElement('div');
@@ -1663,11 +1659,13 @@ function renderDetails(data, title) {
             castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
         });
+        // --- NEW: Update Cast Buttons ---
+        updateScrollButtons(castList);
     } else {
-        castContainer.classList.add('hidden'); // Hide container
+        castContainer.classList.add('hidden');
     }
 
-    // --- CREW SECTION WITH HIDING ---
+    // --- CREW SECTION ---
     const crewContainer = document.getElementById('crew-container');
     const crewList = document.getElementById('crew-list');
     crewList.innerHTML = '';
@@ -1683,7 +1681,7 @@ function renderDetails(data, title) {
         });
 
         if (uniqueCrew.length > 0) {
-            crewContainer.classList.remove('hidden'); // Show container
+            crewContainer.classList.remove('hidden');
             uniqueCrew.forEach(c => {
                  const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
                  const crewDiv = document.createElement('div');
@@ -1696,11 +1694,13 @@ function renderDetails(data, title) {
                  crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
                  crewList.appendChild(crewDiv);
             });
+            // --- NEW: Update Crew Buttons ---
+            updateScrollButtons(crewList);
         } else {
-            crewContainer.classList.add('hidden'); // Hide if filtered list is empty
+            crewContainer.classList.add('hidden');
         }
     } else {
-        crewContainer.classList.add('hidden'); // Hide if data doesn't exist
+        crewContainer.classList.add('hidden');
     }
 
     renderDetailedInfo(data);
@@ -1975,9 +1975,6 @@ function updateContinueWatchingUI() {
         card.className = 'scroll-card';
 
         const epInfo = item.mediaType === 'tv' ? `S${item.season}:E${item.episode}` : 'Movie';
-
-        // --- NEW: Generate Badge HTML ---
-        // Note: We use 'item.mediaType' here because that is how it is saved in localStorage
         const badgeHtml = item.mediaType === 'tv' 
             ? `<div class="media-badge tv">TV</div>` 
             : `<div class="media-badge movie">MOVIE</div>`;
@@ -2022,6 +2019,9 @@ function updateContinueWatchingUI() {
 
         container.appendChild(card);
     });
+
+    // --- NEW: Update buttons ---
+    updateScrollButtons(container);
 }
 
 window.removeFromHistory = function(id, event) {
@@ -2157,7 +2157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Load "Continue Watching" history if on homepage
+    // Load "Continue Watching" history if on homepage (no specific ID selected)
     if (!urlParams.has('id')) {
         loadProgress();
     }
@@ -2166,7 +2166,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.has('id') && urlParams.has('type')) {
         // Deep Link: Go directly to content
         heroSection.style.display = 'none';
-        document.getElementById('trailers-section').style.display = 'none'; // Ensure trailers are hidden
+        
+        // Ensure trailers section is hidden on detail view
+        const trailerSection = document.getElementById('trailers-section');
+        if(trailerSection) trailerSection.style.display = 'none'; 
         
         const deepId = Number(urlParams.get('id'));
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
@@ -2179,7 +2182,20 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTrending();
     loadGenres();
 
-    // --- 5. Footer & Location Logic ---
+    // --- 5. NEW: Attach Scroll Listeners (Hide/Show Buttons) ---
+    // This finds all scrollable containers (trending, history, cast, etc.)
+    const scrollContainers = document.querySelectorAll('.overflow-x-auto');
+    scrollContainers.forEach(container => {
+        // Run once on load to set initial state (hide left button)
+        updateScrollButtons(container);
+        
+        // Update whenever the user scrolls
+        container.addEventListener('scroll', () => {
+            updateScrollButtons(container);
+        });
+    });
+
+    // --- 6. Footer & Location Logic ---
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
@@ -2208,6 +2224,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 });
 
+// --- NEW: Scroll Button Visibility Logic ---
+function updateScrollButtons(container) {
+    if (!container) return;
+    
+    // In your HTML structure, buttons are the previous and next siblings
+    const leftBtn = container.previousElementSibling;
+    const rightBtn = container.nextElementSibling;
+    
+    // Tolerance buffer (e.g., 5px) to handle browser sub-pixel rendering
+    const tolerance = 5;
+
+    // 1. Check Left Button (Hide if at start)
+    if (leftBtn && leftBtn.classList.contains('scroll-btn')) {
+        if (container.scrollLeft <= tolerance) {
+            leftBtn.classList.add('hidden');
+        } else {
+            leftBtn.classList.remove('hidden');
+        }
+    }
+
+    // 2. Check Right Button (Hide if at end or if content fits)
+    if (rightBtn && rightBtn.classList.contains('scroll-btn')) {
+        // If content is smaller than screen, hide right button immediately
+        if (container.scrollWidth <= container.clientWidth) {
+            rightBtn.classList.add('hidden');
+        } 
+        // Otherwise, check if we reached the end
+        else if (container.scrollLeft + container.clientWidth >= container.scrollWidth - tolerance) {
+            rightBtn.classList.add('hidden');
+        } else {
+            rightBtn.classList.remove('hidden');
+        }
+    }
+}
 /* --- VOICE SEARCH FUNCTIONALITY --- */
 
 function startVoiceInput() {
@@ -2263,10 +2313,10 @@ async function loadLatestTrailers() {
     const container = document.getElementById('trailers-container');
     const section = document.getElementById('trailers-section');
     
-    // Safety check: if elements don't exist in HTML yet, stop
+    // Safety check
     if (!container || !section) return;
 
-    // Show skeletons while loading
+    // Show skeletons
     container.innerHTML = '';
     for (let i = 0; i < 5; i++) {
         container.innerHTML += `
@@ -2276,26 +2326,18 @@ async function loadLatestTrailers() {
     }
 
     try {
-        // Fetch "Upcoming" movies as they usually have the newest trailers
-        // We use fetchCached wrapper from your script to handle caching
         const data = await fetchCached(`${BASE_TMDB_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
-
         container.innerHTML = ''; // Clear skeletons
 
-        // Filter results: must have a backdrop image to look good in landscape
         const items = data.results.filter(i => i.backdrop_path);
 
         if (items.length === 0) {
-            section.style.display = 'none'; // Hide section if no items
+            section.style.display = 'none';
             return;
         }
 
         items.forEach(item => {
-            // Use TMDB_STILL_SZ (w300) which matches card width closely for performance
-            // or you could use a larger size if you added it to variables
             const imgUrl = `${TMDB_STILL_SZ}${item.backdrop_path}`;
-            const title = item.title.replace(/'/g, "&apos;"); // Escape quotes for onclick
-
             const card = document.createElement('div');
             card.className = 'trailer-card';
             card.innerHTML = `
@@ -2306,15 +2348,14 @@ async function loadLatestTrailers() {
                     <div class="trailer-sub">Official Trailer</div>
                 </div>
             `;
-
-            // On click, play trailer directly without navigating away
             card.onclick = () => playTrailerDirectly(item.id, 'movie');
-
             container.appendChild(card);
         });
         
-        // Ensure section is visible
         section.style.display = 'block';
+
+        // --- NEW: Update buttons ---
+        updateScrollButtons(container);
 
     } catch (e) {
         console.error("Trailers Error:", e);
@@ -2728,9 +2769,3 @@ function resetQuoteTimer() {
     clearInterval(quoteTimer);
     startQuoteTimer();
 }
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    // ... your existing init code ...
-    initQuotes(); // Call the new init function
-});
