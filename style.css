@@ -258,13 +258,35 @@ font-family: "Bebas Neue", sans-serif;
 
 /* --- Auth UI --- */
 #user-section { display: flex; align-items: center; gap: 10px; margin-left: 10px; }
-.login-btn {
-    background-color: var(--accent); color: white; padding: 8px 16px;
-    border-radius: 4px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
-    transition: background 0.2s; border: none;
-}
-.login-btn:hover { background-color: #e50914; }
 
+.login-btn {
+    /* Match User Avatar Dimensions */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    
+    /* Border matching the avatar's style */
+    border: 2px solid var(--accent);
+    
+    /* Center the Icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    
+    /* Visuals */
+    background-color: transparent; 
+    color: white; 
+    font-size: 1rem; 
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+    background-color: var(--accent);
+    box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
+    transform: scale(1.05);
+}
 .user-avatar {
     width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid var(--accent);
 }
