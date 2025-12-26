@@ -274,7 +274,7 @@ async function handleAISearch() {
 // In script.js
 
 async function displayAIResults(titles, aiMessage) {
-    // Reset view to Home/Trending layout but cleared
+    // 1. Reset the UI (Hide Hero, Details, etc.)
     searchInput.value = `AI Search`;
     searchResults.innerHTML = '';
     heroSection.style.display = 'none';
@@ -284,9 +284,8 @@ async function displayAIResults(titles, aiMessage) {
     collectionSection.classList.add('hidden');
     document.getElementById('continue-watching-section').classList.add('hidden');
     
+    // 2. Set the Header with the AI's Message
     const header = document.getElementById('trending-header');
-    
-    // UPDATED HEADER: Shows the AI's Message gracefully
     header.innerHTML = `
         <div class="flex flex-col animate-fade-in">
             <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
@@ -298,45 +297,94 @@ async function displayAIResults(titles, aiMessage) {
         </div>
     `;
 
+    // 3. Prepare Container
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
     loadedIds.clear();
     trendingPage = 1;
     currentFetchUrl = "STOP"; 
 
-    // Search TMDB for each title found by AI
-    const searchPromises = titles.map(title => 
-        fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}&include_adult=true`)
-    );
-
-    try {
-        const resultsArray = await Promise.all(searchPromises);
-        let combinedResults = [];
-
-        resultsArray.forEach(data => {
-            if (data.results && data.results.length > 0) {
-                // Prioritize finding the exact match
-                const topResult = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
-                if (topResult) combinedResults.push(topResult);
-            }
-        });
-
-        trendingContainer.innerHTML = '';
-        if (combinedResults.length > 0) {
-            // Filter duplicates (using a Map ensures uniqueness by ID)
-            const uniqueResults = Array.from(new Map(combinedResults.map(item => [item.id, item])).values());
-            renderCards(uniqueResults, trendingContainer, true);
-        } else {
-            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">AI found suggestions, but no matches in database.</div>';
+    // 4. Smart Search Loop
+    // We map the titles to search promises, but we process the text first
+    const searchPromises = titles.map(async (rawTitle) => {
+        // Step A: Extract Year if present (e.g. "Ejen Ali (2019)")
+        let cleanTitle = rawTitle;
+        let targetYear = null;
+        
+        // Regex to find (YYYY) at the end of the string
+        const yearMatch = rawTitle.match(/\((\d{4})\)/);
+        if (yearMatch) {
+            targetYear = yearMatch[1];
+            // Remove the year from the title so TMDB search works better
+            cleanTitle = rawTitle.replace(/\(\d{4}\)/, '').trim();
         }
 
-        // --- NEW: Scroll to the results automatically ---
+        try {
+            // Step B: Search TMDB with the cleaned title
+            const url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=true`;
+            const data = await fetchCached(url);
+            
+            if (!data.results || data.results.length === 0) return null;
+
+            // Step C: Smart Filtering
+            let bestMatch = null;
+
+            // Priority 1: Match Title + Year (if year existed)
+            if (targetYear) {
+                bestMatch = data.results.find(item => {
+                    const date = item.release_date || item.first_air_date;
+                    return date && date.substring(0, 4) === targetYear;
+                });
+            }
+
+            // Priority 2: Exact Title Match (Case insensitive)
+            if (!bestMatch) {
+                bestMatch = data.results.find(item => {
+                    const title = item.title || item.name;
+                    return title && title.toLowerCase() === cleanTitle.toLowerCase();
+                });
+            }
+
+            // Priority 3: Just take the first valid Movie/TV result
+            if (!bestMatch) {
+                bestMatch = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
+            }
+
+            // Return the result if it's a valid media type
+            if (bestMatch && (bestMatch.media_type === 'movie' || bestMatch.media_type === 'tv')) {
+                return bestMatch;
+            }
+            return null;
+
+        } catch (e) {
+            console.error(`Search failed for ${cleanTitle}`, e);
+            return null;
+        }
+    });
+
+    try {
+        // Wait for all searches to finish
+        const resultsArray = await Promise.all(searchPromises);
+        
+        // Filter out nulls and create a Map to remove duplicates by ID
+        const validResults = resultsArray.filter(i => i !== null);
+        const uniqueResults = Array.from(new Map(validResults.map(item => [item.id, item])).values());
+
+        trendingContainer.innerHTML = '';
+        
+        if (uniqueResults.length > 0) {
+            renderCards(uniqueResults, trendingContainer, true);
+        } else {
+            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">AI found suggestions, but no matches in the database.</div>';
+        }
+
+        // Scroll to results
         setTimeout(() => {
             header.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
 
     } catch (e) {
-        console.error("AI Result Fetch Error", e);
+        console.error("AI Result Display Error", e);
         trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading AI results.</div>';
     }
 }
@@ -2454,3 +2502,215 @@ async function fetchAIInsight(mode) {
         resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
     }
 }
+/* --- OPTIMIZED QUOTE SLIDER (Hardcoded Data) --- */
+const quotesData = [
+  {
+    "quote": "I'm gonna make him an offer he can't refuse.",
+    "character": "Michael Corleone",
+    "movie": "The Godfather",
+    "year": "1972",
+    "tmdb_id": 238,
+    "type": "movie"
+  },
+  {
+    "quote": "Why so serious?",
+    "character": "The Joker",
+    "movie": "The Dark Knight",
+    "year": "2008",
+    "tmdb_id": 155,
+    "type": "movie"
+  },
+  {
+    "quote": "Here's looking at you, kid.",
+    "character": "Rick Blaine",
+    "movie": "Casablanca",
+    "year": "1942",
+    "tmdb_id": 289,
+    "type": "movie"
+  },
+  {
+    "quote": "සර්, ඕක Answer කරන්න ම ඕන Call එකක්",
+    "character": "ජෙහාන්",
+    "movie": "කූඹියෝ",
+    "year": "2017",
+    "tmdb_id": 77068,
+    "type": "tv"
+  },
+  {
+    "quote": "May the Force be with you.",
+    "character": "Han Solo",
+    "movie": "Star Wars",
+    "year": "1977",
+    "tmdb_id": 11,
+    "type": "movie"
+  },
+  {
+    "quote": "You talking to me?",
+    "character": "Travis Bickle",
+    "movie": "Taxi Driver",
+    "year": "1976",
+    "tmdb_id": 103,
+    "type": "movie"
+  },
+  {
+    "quote": "I see dead people.",
+    "character": "Cole Sear",
+    "movie": "The Sixth Sense",
+    "year": "1999",
+    "tmdb_id": 745,
+    "type": "movie"
+  },
+  {
+    "quote": "I am the one who knocks!",
+    "character": "Walter White",
+    "movie": "Breaking Bad",
+    "year": "2008",
+    "tmdb_id": 1396,
+    "type": "tv"
+  },
+  {
+    "quote": "Winter is coming.",
+    "character": "Ned Stark",
+    "movie": "Game of Thrones",
+    "year": "2011",
+    "tmdb_id": 1399,
+    "type": "tv"
+  },
+  {
+    "quote": "Houston, we have a problem.",
+    "character": "Jim Lovell",
+    "movie": "Apollo 13",
+    "year": "1995",
+    "tmdb_id": 568,
+    "type": "movie"
+  },
+  {
+    "quote": "Keep your friends close, but your enemies closer.",
+    "character": "Michael Corleone",
+    "movie": "The Godfather Part II",
+    "year": "1974",
+    "tmdb_id": 240,
+    "type": "movie"
+  },
+  {
+    "quote": "Say 'hello' to my little friend!",
+    "character": "Tony Montana",
+    "movie": "Scarface",
+    "year": "1983",
+    "tmdb_id": 111,
+    "type": "movie"
+  },
+  {
+    "quote": "Do, or do not. There is no try.",
+    "character": "Yoda",
+    "movie": "The Empire Strikes Back",
+    "year": "1980",
+    "tmdb_id": 1891,
+    "type": "movie"
+  },
+  {
+    "quote": "It's alive! It's alive!",
+    "character": "Henry Frankenstein",
+    "movie": "Frankenstein",
+    "year": "1931",
+    "tmdb_id": 3035,
+    "type": "movie"
+  },
+  {
+    "quote": "Elementary, my dear Watson.",
+    "character": "Sherlock Holmes",
+    "movie": "The Adventures of Sherlock Holmes",
+    "year": "1939",
+    "tmdb_id": 10526,
+    "type": "movie"
+  },
+  {
+    "quote": "You're gonna need a bigger boat.",
+    "character": "Martin Brody",
+    "movie": "Jaws",
+    "year": "1975",
+    "tmdb_id": 578,
+    "type": "movie"
+  }
+];
+
+let currentQuoteIdx = 0;
+let quoteTimer;
+
+function initQuotes() {
+    const section = document.getElementById('quote-section');
+    if (!section) return; 
+
+    // Randomize order on load
+    quotesData.sort(() => Math.random() - 0.5);
+
+    if (quotesData.length > 0) {
+        displayQuote(0);
+        startQuoteTimer();
+    }
+}
+
+function displayQuote(index) {
+    if (quotesData.length === 0) return;
+    
+    // Ensure index wraps around correctly
+    currentQuoteIdx = (index + quotesData.length) % quotesData.length;
+    const q = quotesData[currentQuoteIdx];
+
+    const card = document.getElementById('quote-card');
+    const textEl = document.getElementById('q-text');
+    const charEl = document.getElementById('q-char');
+    const movieEl = document.getElementById('q-movie');
+    const actorBtn = document.getElementById('q-actor');
+
+    // 1. Fade Out
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(10px)';
+
+    setTimeout(() => {
+        // 2. Change Content
+        textEl.textContent = `"${q.quote}"`;
+        charEl.textContent = q.character;
+        movieEl.textContent = `${q.movie} (${q.year})`;
+        // actorBtn.textContent = "Watch Now"; 
+
+        // 3. Fade In
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, 300);
+}
+
+function nextQuote() {
+    displayQuote(currentQuoteIdx + 1);
+    resetQuoteTimer();
+}
+
+function prevQuote() {
+    displayQuote(currentQuoteIdx - 1);
+    resetQuoteTimer();
+}
+
+function openQuoteMovie() {
+    const q = quotesData[currentQuoteIdx];
+    if (q && q.tmdb_id) {
+        selectContent(q.tmdb_id, q.movie, q.type || 'movie');
+    }
+}
+
+function startQuoteTimer() {
+    if (quoteTimer) clearInterval(quoteTimer);
+    quoteTimer = setInterval(() => {
+        displayQuote(currentQuoteIdx + 1);
+    }, 7000); // 7 seconds
+}
+
+function resetQuoteTimer() {
+    clearInterval(quoteTimer);
+    startQuoteTimer();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    // ... your existing init code ...
+    initQuotes(); // Call the new init function
+});
