@@ -207,15 +207,33 @@ async function handleAISearch() {
                 messages: [
                     {
                         role: "system",
-                        // INTELLIGENT PROMPT: Asks for friendly message + list of movies
-                        content: "You are a movie recommendation assistant. Return ONLY a valid JSON object with two keys: 'message' (a short, friendly, enthusiastic sentence explaining your choices to the user) and 'results' (an array of exactly 5 movie or TV show titles). Example: {\"message\": \"Here are some dark sci-fi movies involving time travel.\", \"results\": [\"Dark\", \"Tenet\"]}"
+                        // --- UPGRADED PROMPT ---
+                        content: `You are an expert Movie Detective and Recommendation Engine. 
+                        
+                        Your Goal:
+                        1. If the user describes a plot (e.g., "boy finds high tech glasses"), IDENTIFY the specific movie/show (e.g., "Ejen Ali").
+                        2. If the user asks for a mood/genre (e.g., "sad movies"), RECOMMEND the best ones.
+                        
+                        Strict Rules:
+                        - Return ONLY a valid JSON object.
+                        - Keys: "message" (a short, enthusiastic confirmation of what you found) and "results" (array of exactly 5 titles).
+                        - Do not add markdown formatting like \`\`\`json.
+                        
+                        Example 1 (Plot Search):
+                        User: "Man stuck on mars grows potatoes"
+                        JSON: {"message": "That sounds exactly like The Martian! Here is that and similar movies.", "results": ["The Martian", "Interstellar", "Gravity", "Moon", "Apollo 13"]}
+                        
+                        Example 2 (Vague Plot):
+                        User: "A boy finds a pair of high-tech glasses"
+                        JSON: {"message": "I found a few matches for that plot description!", "results": ["Ejen Ali", "CJ7", "Spider-Man: Far From Home", "Spy Kids 3-D: Game Over", "Kingsman: The Secret Service"]}`
                     },
                     {
                         role: "user",
                         content: query
                     }
                 ],
-                temperature: 0.7 // Higher temp = more creativity in the message
+                // Lower temperature slightly to make it more factual/accurate for searches
+                temperature: 0.5 
             })
         });
 
@@ -234,9 +252,8 @@ async function handleAISearch() {
             }
         } catch (e) {
             console.error("AI Parse Error", e);
-            // Fallback if AI fails to format JSON correctly
             aiData = { 
-                message: "Here are the movies I found for: " + query, 
+                message: "I couldn't quite identify that, but here are some guesses.", 
                 results: [query] 
             };
         }
@@ -2437,5 +2454,3 @@ async function fetchAIInsight(mode) {
         resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
     }
 }
-
-
