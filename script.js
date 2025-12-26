@@ -2364,18 +2364,18 @@ async function fetchAIInsight(mode) {
     
     switch (mode) {
         case 'hype':
-            prompt = `Analyze the following movie metadata JSON and write a high-energy, enthusiastic hype paragraph (max 60 words).
+            prompt = `Analyze the following movie metadata JSON and write an enthusiastic hype paragraph (min 60 words).
             
-            Use the data (Director, Budget, Cast, Production Company) to make specific, smart observations on why this is a must-watch.
+            Use the JSON data to decide whether or not this should be viewed by a person and explain it.
             
             JSON DATA:
             ${jsonContext}
             
-            Do not mention JSON or data structure. Just act like a super-fan. Use emojis.`;
+            Don't mention JSON or data structure. Just act like an analyst. Use emojis if necessary.`;
             break;
 
         case 'trivia':
-            prompt = `Analyze the movie metadata JSON below and generate 3 fascinating, deep-cut trivia facts.
+            prompt = `Analyze the movie metadata JSON below and generate 3 trivia facts.
             
             Look for connections between:
             - The Director/Writer and their style.
@@ -2437,3 +2437,4 @@ async function fetchAIInsight(mode) {
         resultText.innerHTML = `<span class="text-red-400">Connection failed.</span><br>The AI is currently offline. Please try again later.`;
     }
 }
+
