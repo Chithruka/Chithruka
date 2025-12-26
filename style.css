@@ -507,9 +507,24 @@ input[type=range]::-webkit-slider-thumb {
 .server-btn { background: rgba(255, 255, 255, 0.05); color: #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.05); flex-grow: 1; }
 .server-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 .server-btn.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
-.action-btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-.action-btn:active { transform: scale(0.96); }
-.btn-play { background: #fff; color: #000; }
+.action-btn {
+    padding: 12px 24px;
+    border-radius: 4px; /* Netflix uses slightly squared corners for actions */
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s, opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    gap: 10px;
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+}.btn-play { background: #fff; color: #000; }
 .btn-download { background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; }
 .btn-trailer { background: linear-gradient(135deg, #e50914, #b20710); color: white; }
 .btn-next { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
