@@ -2067,7 +2067,7 @@ function updatePlayer() {
 
         if (seasonData) {
             if (currentEpisode < seasonData.episodes) {
-                nextBtn.innerHTML = '<i class="fa-solid fa-forward-step fa-fade mr-2"></i> Next Episode';
+                nextBtn.innerHTML = '<i class="fa-solid fa-forward-step mr-2"></i> Next Episode';
                 nextBtn.onclick = nextEpisode;
                 nextBtn.classList.remove('hidden');
             }
