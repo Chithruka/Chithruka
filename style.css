@@ -1047,3 +1047,90 @@ input[type=range]::-webkit-slider-thumb {
     letter-spacing: 1px; /* Adds a little space between letters for better readability */
     font-weight: 800; /* Makes it nice and bold */
 }
+/* --- QUOTE SLIDER STYLES (UPDATED) --- */
+.quote-slider-wrapper {
+    display: flex; 
+    align-items: center; 
+    gap: 30px; 
+    justify-content: center;
+    width: 100%; 
+    /* Increased max-width for big screens */
+    max-width: 900px; 
+}
+
+.card {
+    position: relative; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    width: 100%; 
+    min-height: 350px; /* Taller card */
+    padding: 40px; 
+    border-radius: 24px;
+    overflow: hidden; 
+    line-height: 1.6;
+    background: rgba(20, 20, 20, 0.8); 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px); 
+    transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+    cursor: pointer; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Adjust font size on huge screens */
+@media (min-width: 1024px) {
+    .card {
+        min-height: 400px;
+        padding: 50px;
+    }
+}
+
+.content {
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    width: 100%;
+    justify-content: space-between; 
+    gap: 12px;
+    transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.content .footer { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 10px; 
+}
+
+.card:hover {
+    box-shadow: 0 0 30px rgba(229, 9, 20, 0.4); 
+    border-color: #e50914; 
+    transform: scale(1.02); /* Slight scale up instead of translate */
+}
+
+.button {
+    position: relative; font-family: inherit; border: none; background-color: transparent;
+    padding: 4px 0px; font-weight: 700; line-height: 1.6; cursor: pointer;
+    overflow: hidden; transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1); z-index: 1;
+}
+.button::before {
+    position: absolute; content: ""; width: 100%; height: 2px; left: 0; bottom: 0;
+    background: #e50914; transform: scaleX(0); transform-origin: right;
+    transition: transform 0.64s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card:hover .button::before { transform: scaleX(1); transform-origin: left; }
+
+/* Bigger Navigation Arrows */
+.nav-arrow {
+    background: rgba(255,255,255,0.05); color: white; width: 50px; height: 50px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.1);
+    font-size: 1.2rem;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+.nav-arrow:hover { background: #e50914; border-color: #e50914; transform: scale(1.1); }
+
+@media (max-width: 768px) { 
+    .nav-arrow { display: none; } 
+    .quote-slider-wrapper { gap: 0; }
+}
