@@ -449,10 +449,10 @@ input[type=range]::-webkit-slider-thumb {
 
 .scroll-btn {
     position: absolute; top: 40%; transform: translateY(-50%); z-index: 20;
-    background: rgba(20, 20, 20, 0.8); color: white; border-radius: 50%;
-    width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(4px); opacity: 0;
+    background: rgba(45, 45, 45, 0.95); color: rgba(255, 255, 255, 0.9); border-radius: 40px;
+   width: 30px; height: 80px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px); opacity: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.6);
 }
 .group:hover .scroll-btn { opacity: 1; }
 .scroll-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-50%) scale(1.1); }
