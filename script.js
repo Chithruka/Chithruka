@@ -3070,7 +3070,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
 
     // --- NEW: Restore Adult Toggle State ---
-    // Check if the user previously saved the 'include_adult' preference
     const savedAdultState = localStorage.getItem('include_adult') === 'true';
     const adultToggle = document.getElementById('filter-adult');
     if (adultToggle) {
@@ -3133,28 +3132,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- 7. Footer & Location Logic ---
+    // --- 7. Robust Footer & Location Logic (Mobile Fix) ---
     const yearSpan = document.getElementById('footer-year');
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
+    const countryEl = document.getElementById('user-country');
+
+    // Helper to update the UI
+    const updateLocationUI = (name, code) => {
+        if (countryEl && name && code) {
+            countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${name}`;
+            countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
+            countryEl.title = `Browse content from ${name}`;
+            countryEl.onclick = () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                quickFilter('country', code, name);
+            };
+        }
+    };
+
+    // Primary API (ipapi.co)
     fetch('https://ipapi.co/json/')
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Blocked/Error');
+            return res.json();
+        })
         .then(data => {
-            const countryEl = document.getElementById('user-country');
             if (data.country_name && data.country_code) {
-                countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${data.country_name}`;
-                countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
-                countryEl.title = `Browse content from ${data.country_name}`;
-                countryEl.onclick = () => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    quickFilter('country', data.country_code, data.country_name);
-                };
+                updateLocationUI(data.country_name, data.country_code);
             } else {
-                if (countryEl) countryEl.style.display = 'none';
+                throw new Error('Invalid Data');
             }
         })
         .catch(() => {
-            const countryEl = document.getElementById('user-country');
-            if (countryEl) countryEl.innerText = "Location Unavailable";
+            console.warn("Primary location API failed, trying fallback...");
+            
+            // Fallback API (geojs.io) - Better for mobile/ad-blockers
+            fetch('https://get.geojs.io/v1/ip/country/full.json')
+                .then(res => {
+                    if (!res.ok) throw new Error('Fallback Blocked');
+                    return res.json();
+                })
+                .then(data => {
+                    // GeoJS uses 'name' and 'alpha2' (code)
+                    if (data.name && data.alpha2) {
+                        updateLocationUI(data.name, data.alpha2);
+                    } else {
+                        if (countryEl) countryEl.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    // Final fail: Hide element cleanly
+                    if (countryEl) countryEl.style.display = 'none';
+                });
         });
 });
