@@ -1370,3 +1370,87 @@ input[type=range]::-webkit-slider-thumb {
         font-size: 0.55rem;
     }
 }
+
+/* =========================================
+   HORIZONTAL EPISODE SELECTOR (With Buttons)
+   ========================================= */
+
+/* 1. The Accordion Wrapper (Handles Animation Only) */
+#episode-accordion-content {
+    display: block;            /* Revert to block */
+    overflow: hidden;          /* Hide overflow for transition */
+    padding: 0;
+    transition: max-height 0.3s ease-out;
+}
+
+/* 2. The Inner Scrollable List */
+#episodes-scroll-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;          /* Horizontal Scroll */
+    gap: 15px;                 /* Space between cards */
+    padding: 15px 5px;         /* Padding for hover shadows */
+    scroll-behavior: smooth;
+    
+    /* Hide Scrollbar */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+#episodes-scroll-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* 3. The Card Styles (Same as before) */
+.episode-rich-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    max-width: 220px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.episode-rich-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.episode-rich-item.active {
+    background: rgba(229, 9, 20, 0.15); 
+    border: 1px solid rgba(229, 9, 20, 0.6);
+    box-shadow: 0 0 15px rgba(229, 9, 20, 0.2);
+}
+
+.ep-still {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #222;
+}
+
+.ep-info { width: 100%; display: flex; flex-direction: column; }
+
+.ep-title {
+    font-weight: 700; font-size: 0.9rem; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+}
+
+.ep-meta {
+    font-size: 0.7rem; color: #999; margin-bottom: 6px;
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 5px;
+}
+
+.ep-overview {
+    font-size: 0.75rem; color: #aaa; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
