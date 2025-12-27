@@ -1459,7 +1459,8 @@ async function fetchSeasonDetails(tvId, seasonNum) {
 }
 
 function renderEpisodesRich() {
-    let html = '';
+    // 1. Generate the Card HTML
+    let episodesHtml = '';
     seasonEpisodes.forEach(ep => {
         const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
         const isActive = (ep.episode_number === currentEpisode);
@@ -1469,14 +1470,12 @@ function renderEpisodesRich() {
         const runtime = formatRuntime(ep.runtime);
 
         const metaString = `
-                <span class="text-yellow-500 mr-1"><i class="fas fa-star"></i></span> ${rating}
-                <span class="mx-2 text-gray-600">|</span>
-                <span class="text-gray-400 mr-1"><i class="far fa-calendar-alt"></i></span> ${date}
-                <span class="mx-2 text-gray-600">|</span>
-                <span class="text-gray-400 mr-1"><i class="far fa-clock"></i></span> ${runtime}
-            `;
+            <span class="text-yellow-500"><i class="fas fa-star text-[10px]"></i> ${rating}</span>
+            <span class="text-gray-600">|</span>
+            <span>${date}</span>
+        `;
 
-        html += `
+        episodesHtml += `
             <div class="episode-rich-item ${isActive ? 'active' : ''}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
                 <img src="${still}" class="ep-still" loading="lazy">
                 <div class="ep-info">
@@ -1486,8 +1485,46 @@ function renderEpisodesRich() {
                 </div>
             </div>`;
     });
-    episodeAccordionContent.innerHTML = html;
-    if (accordionOpen) episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
+
+    // 2. Inject Wrapper + Buttons + List into the Accordion Content
+    // We assume your 'scroll-btn' class handles opacity/hover (from style.css)
+    episodeAccordionContent.innerHTML = `
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-2 z-10 hidden" id="ep-btn-left" onclick="scrollContainer('episodes-scroll-list', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <div id="episodes-scroll-list">
+                ${episodesHtml}
+            </div>
+
+            <button class="scroll-btn right-0 -mr-2 z-10" id="ep-btn-right" onclick="scrollContainer('episodes-scroll-list', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+
+    // 3. Attach Scroll Listener for Buttons visibility
+    const scrollContainerEl = document.getElementById('episodes-scroll-list');
+    if (scrollContainerEl) {
+        // Initial check
+        updateScrollButtons(scrollContainerEl);
+        // Check on scroll
+        scrollContainerEl.addEventListener('scroll', () => updateScrollButtons(scrollContainerEl));
+    }
+
+    // 4. Update Height if already open
+    if (accordionOpen) {
+        episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
+        
+        // Auto-scroll to active episode
+        setTimeout(() => {
+            const activeEp = scrollContainerEl.querySelector('.active');
+            if (activeEp) {
+                activeEp.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }, 300);
+    }
 }
 
 function renderDetails(data, title) {
@@ -2089,12 +2126,26 @@ function updatePlayer() {
         nextBtn.classList.add('hidden');
     }
 
+    // --- NEW: Highlight & Scroll to Active Episode ---
     document.querySelectorAll('.episode-rich-item').forEach(item => item.classList.remove('active'));
+    
+    // Find the card that matches the current season/episode
     const activeItem = Array.from(document.querySelectorAll('.episode-rich-item')).find(
         el => el.getAttribute('onclick')?.includes(`(${currentSeason}, ${currentEpisode},`)
     );
+
     if (activeItem) {
         activeItem.classList.add('active');
+
+        // Scroll the horizontal list to show this item
+        const scrollList = document.getElementById('episodes-scroll-list');
+        if (scrollList) {
+            activeItem.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest', 
+                inline: 'center'  // This forces it to the center
+            });
+        }
     }
 
     saveProgress();
@@ -2270,10 +2321,30 @@ window.selectEpisode = function(s, e, el) {
 
 window.toggleAccordion = function() {
     if (mediaType !== 'tv') return;
+
     const icon = document.getElementById('accordion-icon');
     accordionOpen = !accordionOpen;
-    episodeAccordionContent.style.maxHeight = accordionOpen ? "500px" : "0";
-    if (accordionOpen) episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
+
+    if (accordionOpen) {
+        // 1. Calculate height + buffer (30px) to ensure scrollbar doesn't cut off content
+        episodeAccordionContent.style.maxHeight = (episodeAccordionContent.scrollHeight + 30) + "px";
+        
+        // 2. Auto-scroll to the active episode card
+        setTimeout(() => {
+            const activeEp = episodeAccordionContent.querySelector('.episode-rich-item.active');
+            if (activeEp) {
+                activeEp.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest', 
+                    inline: 'center' // Centers the card horizontally
+                });
+            }
+        }, 300); // Wait for the open animation to finish
+    } else {
+        episodeAccordionContent.style.maxHeight = "0";
+    }
+
+    // Toggle the arrow icon
     icon.className = `fas fa-chevron-${accordionOpen ? 'up' : 'down'} transition-transform duration-300`;
 }
 
