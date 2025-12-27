@@ -1467,12 +1467,16 @@ function renderEpisodesRich() {
 
         const rating = ep.vote_average ? Math.round(ep.vote_average * 10) + "%" : "NR";
         const date = formatDate(ep.air_date);
+        
+        // Calculate runtime using your existing helper
         const runtime = formatRuntime(ep.runtime);
 
+        // Add runtime to the meta string if it exists
         const metaString = `
             <span class="text-yellow-500"><i class="fas fa-star text-[10px]"></i> ${rating}</span>
             <span class="text-gray-600">|</span>
             <span>${date}</span>
+            ${runtime ? `<span class="text-gray-600">|</span> <span class="text-gray-300"><i class="far fa-clock text-[10px] mr-1"></i>${runtime}</span>` : ''}
         `;
 
         episodesHtml += `
@@ -1487,7 +1491,6 @@ function renderEpisodesRich() {
     });
 
     // 2. Inject Wrapper + Buttons + List into the Accordion Content
-    // We assume your 'scroll-btn' class handles opacity/hover (from style.css)
     episodeAccordionContent.innerHTML = `
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-2 z-10 hidden" id="ep-btn-left" onclick="scrollContainer('episodes-scroll-list', -300)">
