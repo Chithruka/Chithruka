@@ -1132,15 +1132,22 @@ window.quickFilter = function(type, value, label = "", logo = "") {
 }
 
 window.clearFilters = function() {
+    // Reset standard text/select inputs
     document.getElementById('filter-genre').value = "";
     document.getElementById('filter-country').value = "";
     document.getElementById('filter-year').value = "";
     document.getElementById('filter-rating').value = "";
 
+    // --- NEW: Reset Adult Content Toggle to False ---
+    const adultToggle = document.getElementById('filter-adult');
+    if (adultToggle) adultToggle.checked = false;
+
+    // Reset UI styling
     document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
 
     closeFilterModal();
 
+    // Reset Search & Home State
     searchInput.value = '';
     searchResults.innerHTML = '';
     heroSection.style.display = 'block';
@@ -1152,6 +1159,7 @@ window.clearFilters = function() {
     const header = document.getElementById('trending-header');
     header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
 
+    // Reload Default Trending (Adult content is usually filtered by default API trending unless specified)
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
@@ -1167,6 +1175,10 @@ async function applyFilter(overrides = {}) {
     const rating = overrides.rating || document.getElementById('filter-rating').value;
     const company = overrides.company;
 
+    // --- NEW: Read the Adult Content Checkbox ---
+    const adultToggle = document.getElementById('filter-adult');
+    const includeAdult = adultToggle ? adultToggle.checked : false;
+
     closeFilterModal();
     searchResults.innerHTML = '';
     searchInput.value = '';
@@ -1174,6 +1186,7 @@ async function applyFilter(overrides = {}) {
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
+    // --- Header Text Logic ---
     let genreName = "";
     if (genre) {
         if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
@@ -1204,11 +1217,14 @@ async function applyFilter(overrides = {}) {
         if (countryName) mainStr += ` from ${countryName}`;
         if (year) mainStr += ` released in ${year}`;
         if (rating) mainStr += ` rated ${rating}+`;
+        // Optional: Append text if adult content is on
+        if (includeAdult) mainStr += ` (18+)`; 
     }
 
     document.getElementById('trending-header').innerHTML = mainStr;
 
-    let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=true&include_video=false`;
+    // --- NEW: URL Construction with Dynamic Adult Filter ---
+    let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=${includeAdult}&include_video=false`;
 
     if (year) {
         if (type === 'movie') urlBase += `&primary_release_year=${year}`;
