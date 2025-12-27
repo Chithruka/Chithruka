@@ -1132,22 +1132,22 @@ window.quickFilter = function(type, value, label = "", logo = "") {
 }
 
 window.clearFilters = function() {
-    // Reset standard text/select inputs
     document.getElementById('filter-genre').value = "";
     document.getElementById('filter-country').value = "";
     document.getElementById('filter-year').value = "";
     document.getElementById('filter-rating').value = "";
 
-    // --- NEW: Reset Adult Content Toggle to False ---
+    // --- NEW: Reset Adult Toggle and Local Storage ---
     const adultToggle = document.getElementById('filter-adult');
     if (adultToggle) adultToggle.checked = false;
+    
+    // Clear the memory so it defaults to off
+    localStorage.setItem('include_adult', 'false');
 
-    // Reset UI styling
     document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
 
     closeFilterModal();
 
-    // Reset Search & Home State
     searchInput.value = '';
     searchResults.innerHTML = '';
     heroSection.style.display = 'block';
@@ -1159,7 +1159,6 @@ window.clearFilters = function() {
     const header = document.getElementById('trending-header');
     header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
 
-    // Reload Default Trending (Adult content is usually filtered by default API trending unless specified)
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
@@ -1175,9 +1174,12 @@ async function applyFilter(overrides = {}) {
     const rating = overrides.rating || document.getElementById('filter-rating').value;
     const company = overrides.company;
 
-    // --- NEW: Read the Adult Content Checkbox ---
+    // --- NEW: Read & Save Adult Toggle State ---
     const adultToggle = document.getElementById('filter-adult');
     const includeAdult = adultToggle ? adultToggle.checked : false;
+    
+    // Save to browser memory so it persists on reload
+    localStorage.setItem('include_adult', includeAdult);
 
     closeFilterModal();
     searchResults.innerHTML = '';
@@ -1186,7 +1188,6 @@ async function applyFilter(overrides = {}) {
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
-    // --- Header Text Logic ---
     let genreName = "";
     if (genre) {
         if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
@@ -1217,13 +1218,12 @@ async function applyFilter(overrides = {}) {
         if (countryName) mainStr += ` from ${countryName}`;
         if (year) mainStr += ` released in ${year}`;
         if (rating) mainStr += ` rated ${rating}+`;
-        // Optional: Append text if adult content is on
-        if (includeAdult) mainStr += ` (18+)`; 
+        if (includeAdult) mainStr += ` (18+)`;
     }
 
     document.getElementById('trending-header').innerHTML = mainStr;
 
-    // --- NEW: URL Construction with Dynamic Adult Filter ---
+    // Use the variable in the URL
     let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=${includeAdult}&include_video=false`;
 
     if (year) {
@@ -3067,61 +3067,94 @@ function resetQuoteTimer() {
 let activeScrollWrapper = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup Hover Detection for all Scroll Containers
-    // We look for the '.relative.group' div that holds the buttons and the list
-    const setupScrollHover = () => {
-        const scrollWrappers = document.querySelectorAll('.relative.group');
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // --- NEW: Restore Adult Toggle State ---
+    // Check if the user previously saved the 'include_adult' preference
+    const savedAdultState = localStorage.getItem('include_adult') === 'true';
+    const adultToggle = document.getElementById('filter-adult');
+    if (adultToggle) {
+        adultToggle.checked = savedAdultState;
+    }
+
+    // --- 1. Check for TMDB Login Return (Redirect from Auth) ---
+    if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
+        const token = urlParams.get('request_token');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        sessionId = null; 
+        createSession(token);
+    } 
+    else {
+        // --- 2. Standard Page Load ---
+        const storedSession = localStorage.getItem('tmdb_session_id');
+        const storedAccount = localStorage.getItem('tmdb_account_id');
         
-        scrollWrappers.forEach(wrapper => {
-            wrapper.addEventListener('mouseenter', () => {
-                activeScrollWrapper = wrapper;
-            });
-            
-            wrapper.addEventListener('mouseleave', () => {
-                if (activeScrollWrapper === wrapper) {
-                    activeScrollWrapper = null;
-                }
-            });
-        });
-    };
-
-    // Run initially
-    setupScrollHover();
-
-    // 2. Listen for Arrow Keys
-    document.addEventListener('keydown', (e) => {
-        // Ignore if user is typing in the search box
-        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-
-        // Ignore if no list is being hovered
-        if (!activeScrollWrapper) return;
-
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault(); // Stop browser from scrolling the page
-            const leftBtn = activeScrollWrapper.querySelector('.scroll-btn.left-0');
-            // Only click if button exists and isn't hidden
-            if (leftBtn && !leftBtn.classList.contains('hidden')) {
-                leftBtn.click();
-                // Add a visual "press" effect
-                leftBtn.style.transform = "scale(0.9)";
-                setTimeout(() => leftBtn.style.transform = "", 150);
-            }
-        } 
-        
-        else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            const rightBtn = activeScrollWrapper.querySelector('.scroll-btn.right-0');
-            if (rightBtn && !rightBtn.classList.contains('hidden')) {
-                rightBtn.click();
-                rightBtn.style.transform = "scale(0.9)";
-                setTimeout(() => rightBtn.style.transform = "", 150);
-            }
+        if (storedSession && storedAccount) {
+            sessionId = storedSession;
+            accountId = storedAccount;
+            updateAuthUI({ username: "User", avatar: { tmdb: { avatar_path: null } } }); 
+            fetchAccountDetails(); 
         }
+    }
+
+    // Load "Continue Watching" history if on homepage
+    if (!urlParams.has('id')) {
+        loadProgress();
+    }
+
+    // --- 3. Routing Logic ---
+    if (urlParams.has('id') && urlParams.has('type')) {
+        // Deep Link: Go directly to content
+        heroSection.style.display = 'none';
+        
+        const trailerSection = document.getElementById('trailers-section');
+        if(trailerSection) trailerSection.style.display = 'none'; 
+        
+        const deepId = Number(urlParams.get('id'));
+        selectContent(deepId, "Loading Content...", urlParams.get('type'));
+    } else {
+        // Homepage: Load Trailers
+        loadLatestTrailers();
+    }
+
+    // --- 4. Load Global Content ---
+    loadTrending();
+    loadGenres();
+
+    // --- 5. Initialize Quotes ---
+    initQuotes();
+
+    // --- 6. Attach Scroll Listeners ---
+    const scrollContainers = document.querySelectorAll('.overflow-x-auto');
+    scrollContainers.forEach(container => {
+        updateScrollButtons(container);
+        container.addEventListener('scroll', () => {
+            updateScrollButtons(container);
+        });
     });
 
-    const observer = new MutationObserver(() => {
-        setupScrollHover();
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
+    // --- 7. Footer & Location Logic ---
+    const yearSpan = document.getElementById('footer-year');
+    if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+
+    fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(data => {
+            const countryEl = document.getElementById('user-country');
+            if (data.country_name && data.country_code) {
+                countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${data.country_name}`;
+                countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
+                countryEl.title = `Browse content from ${data.country_name}`;
+                countryEl.onclick = () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    quickFilter('country', data.country_code, data.country_name);
+                };
+            } else {
+                if (countryEl) countryEl.style.display = 'none';
+            }
+        })
+        .catch(() => {
+            const countryEl = document.getElementById('user-country');
+            if (countryEl) countryEl.innerText = "Location Unavailable";
+        });
 });
