@@ -772,6 +772,7 @@ async function loadTrending() {
 
     isTrendingLoading = true;
 
+    // Only show skeletons if this is the FIRST page load
     if (trendingPage === 1) {
         renderSkeletons(trendingContainer, 10);
     }
@@ -787,7 +788,7 @@ async function loadTrending() {
             if (trendingPage === 1) {
                 const urlParams = new URLSearchParams(window.location.search);
                 if (!urlParams.has('id')) {
-                    trendingContainer.innerHTML = '';
+                    // Don't clear container here, we handle it below
                     initHero(data.results.slice(0, 5));
                     renderTop10(data.results.slice(0, 10));
                 }
@@ -800,6 +801,12 @@ async function loadTrending() {
         }
 
         if (data.results && data.results.length > 0) {
+            // --- FIX START: Remove Skeletons before showing real data ---
+            if (trendingPage === 1) {
+                trendingContainer.innerHTML = ''; 
+            }
+            // --- FIX END ---
+
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
         } else if (trendingPage === 1) {
@@ -1628,7 +1635,7 @@ function renderDetails(data, title) {
         taglineEl.classList.add('hidden');
     }
 
-    // --- NEW: Social Media Links (Inserted after Tagline) ---
+    // Social Media Links
     const existingSocials = document.getElementById('detail-socials');
     if (existingSocials) existingSocials.remove();
 
@@ -1754,7 +1761,7 @@ function renderDetails(data, title) {
         genreContainer.appendChild(tag);
     });
 
-    // --- NEW: Keywords / Story Tags ---
+    // Keywords / Story Tags
     const existingTags = document.getElementById('detail-keywords');
     if (existingTags) existingTags.remove();
 
@@ -1792,6 +1799,9 @@ function renderDetails(data, title) {
         interactBar.prepend(aiBtn); 
     }
 
+    // ============================================================
+    // 6. CAST SECTION
+    // ============================================================
     const castContainer = document.getElementById('cast-container');
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
@@ -1810,12 +1820,18 @@ function renderDetails(data, title) {
             castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
         });
+        
+        // --- FIX: Attach listener for scroll buttons ---
         updateScrollButtons(castList);
+        castList.addEventListener('scroll', () => updateScrollButtons(castList));
+
     } else {
         castContainer.classList.add('hidden');
     }
 
-    // Crew
+    // ============================================================
+    // 7. CREW SECTION
+    // ============================================================
     const crewContainer = document.getElementById('crew-container');
     const crewList = document.getElementById('crew-list');
     crewList.innerHTML = '';
@@ -1844,7 +1860,11 @@ function renderDetails(data, title) {
                  crewDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
                  crewList.appendChild(crewDiv);
             });
+            
+            // --- FIX: Attach listener for scroll buttons ---
             updateScrollButtons(crewList);
+            crewList.addEventListener('scroll', () => updateScrollButtons(crewList));
+
         } else {
             crewContainer.classList.add('hidden');
         }
@@ -1852,6 +1872,9 @@ function renderDetails(data, title) {
         crewContainer.classList.add('hidden');
     }
 
+    // ============================================================
+    // 8. GALLERY SECTION
+    // ============================================================
     const galleryContainer = document.getElementById('gallery-container');
     const galleryList = document.getElementById('gallery-list');
     
@@ -1882,11 +1905,15 @@ function renderDetails(data, title) {
                 galleryList.appendChild(div);
             });
             updateScrollButtons(galleryList);
+            galleryList.addEventListener('scroll', () => updateScrollButtons(galleryList));
         } else {
             galleryContainer.classList.add('hidden');
         }
     }
 
+    // ============================================================
+    // 9. VIDEOS SECTION
+    // ============================================================
     const videoContainer = document.getElementById('videos-container');
     const videoList = document.getElementById('videos-list');
 
@@ -1907,15 +1934,15 @@ function renderDetails(data, title) {
                 return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
             });
 
-            videos.forEach(video => {
+       videos.forEach(video => {
                 const div = document.createElement('div');
                 div.className = "video-card flex-shrink-0 group";
                 
                 div.innerHTML = `
                     <div class="video-thumbnail">
                         <img src="https://img.youtube.com/vi/${video.key}/hqdefault.jpg" loading="lazy" alt="${video.name}">
-                        <div class="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors flex items-center justify-center">
-                            <i class="fas fa-play-circle text-4xl text-white opacity-80 group-hover:scale-110 transition-transform"></i>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
                         </div>
                     </div>
                     <div class="video-info">
@@ -1934,6 +1961,7 @@ function renderDetails(data, title) {
                 videoList.appendChild(div);
             });
             updateScrollButtons(videoList);
+            videoList.addEventListener('scroll', () => updateScrollButtons(videoList));
         } else {
             videoContainer.classList.add('hidden');
         }
@@ -3014,3 +3042,70 @@ function resetQuoteTimer() {
     clearInterval(quoteTimer);
     startQuoteTimer();
 }
+
+/* ==========================================
+   KEYBOARD NAVIGATION (Arrow Keys to Scroll)
+   ========================================== */
+
+// Track which list the mouse is currently over
+let activeScrollWrapper = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Setup Hover Detection for all Scroll Containers
+    // We look for the '.relative.group' div that holds the buttons and the list
+    const setupScrollHover = () => {
+        const scrollWrappers = document.querySelectorAll('.relative.group');
+        
+        scrollWrappers.forEach(wrapper => {
+            wrapper.addEventListener('mouseenter', () => {
+                activeScrollWrapper = wrapper;
+            });
+            
+            wrapper.addEventListener('mouseleave', () => {
+                if (activeScrollWrapper === wrapper) {
+                    activeScrollWrapper = null;
+                }
+            });
+        });
+    };
+
+    // Run initially
+    setupScrollHover();
+
+    // 2. Listen for Arrow Keys
+    document.addEventListener('keydown', (e) => {
+        // Ignore if user is typing in the search box
+        if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+        // Ignore if no list is being hovered
+        if (!activeScrollWrapper) return;
+
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault(); // Stop browser from scrolling the page
+            const leftBtn = activeScrollWrapper.querySelector('.scroll-btn.left-0');
+            // Only click if button exists and isn't hidden
+            if (leftBtn && !leftBtn.classList.contains('hidden')) {
+                leftBtn.click();
+                // Add a visual "press" effect
+                leftBtn.style.transform = "scale(0.9)";
+                setTimeout(() => leftBtn.style.transform = "", 150);
+            }
+        } 
+        
+        else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            const rightBtn = activeScrollWrapper.querySelector('.scroll-btn.right-0');
+            if (rightBtn && !rightBtn.classList.contains('hidden')) {
+                rightBtn.click();
+                rightBtn.style.transform = "scale(0.9)";
+                setTimeout(() => rightBtn.style.transform = "", 150);
+            }
+        }
+    });
+
+    const observer = new MutationObserver(() => {
+        setupScrollHover();
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+});
