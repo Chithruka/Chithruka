@@ -1315,6 +1315,8 @@ window.closeTrailerModal = () => {
 window.selectContent = async function(id, title, type) {
     TMDB_ID = id;
     mediaType = type;
+    
+    // Set initial title (might be "Loading..." on refresh)
     currentTitle = title;
     document.title = `${title} - Chithruka`;
 
@@ -1341,7 +1343,7 @@ window.selectContent = async function(id, title, type) {
     const sSection = document.getElementById('soundtrack-section');
     const sContainer = document.getElementById('soundtrack-embed-container');
     if (sSection) sSection.classList.add('hidden');
-    if (sContainer) sContainer.innerHTML = ''; // Clear iframe immediately
+    if (sContainer) sContainer.innerHTML = ''; 
 
     const posterImg = document.getElementById('detail-poster');
     posterImg.src = '';
@@ -1354,14 +1356,20 @@ window.selectContent = async function(id, title, type) {
     checkAccountStates(id, type);
 
     // --- LOAD CONTENT ---
+    // These functions update the global 'currentTitle' variable with the REAL name
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
 
     loadRecommendations(mediaType, id);
-    loadSoundtrack(title); // <--- CALL NEW FUNCTION HERE
+    
+    // --- FIX: Use 'currentTitle' instead of the local 'title' argument ---
+    // On refresh, the local 'title' is "Loading Content...", which fails the search.
+    // 'currentTitle' has been updated by fetchMovieDetails/fetchShowDetails to the real name.
+    loadSoundtrack(currentTitle); 
 
     setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
 }
+
 window.scrollTo({ top: 0, behavior: 'smooth' });
 
 async function fetchMovieDetails(id, title) {
@@ -2705,46 +2713,111 @@ async function loadSoundtrack(title) {
 
     if (!section || !container) return;
 
-    // 1. Clean Title: Remove "The", years, and subtitles to broaden search
+    // 1. Clean Title for Search
+    // We remove subtitles (after :) and years (in parens) to get the core title
     let cleanTitle = title.split(':')[0].split('(')[0].trim();
+    
+    // Remove "The" from start to improve search matching
     if (cleanTitle.toLowerCase().startsWith('the ')) {
         cleanTitle = cleanTitle.substring(4);
     }
 
     try {
-        // 2. Search iTunes API (No Key Required)
-        // We search for "Title Soundtrack" in the album category
+        // 2. Search iTunes API
+        // Fetch more results (limit=15) so we can filter through them
         const query = encodeURIComponent(`${cleanTitle} Soundtrack`);
-        
-        // Use 'music' media type and 'album' entity to find full soundtracks
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&entity=album&limit=1`);
+        const res = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&entity=album&limit=15`);
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
-            const album = data.results[0];
-            const albumId = album.collectionId;
             
-            // 3. Create Apple Music Embed URL (Dark Mode)
-            // height=450 allows showing the tracklist
-            container.innerHTML = `
-                <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" 
-                        frameborder="0" 
-                        height="450" 
-                        style="width:100%; max-width:100%; overflow:hidden; border-radius:10px; background:transparent;" 
-                        sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
-                        src="https://embed.music.apple.com/us/album/${albumId}?theme=dark">
-                </iframe>`;
-
-            if (link) {
-                link.href = album.collectionViewUrl;
-                link.innerHTML = `<i class="fab fa-apple mr-1"></i> Listen on Apple Music`;
+            // 3. Smart Filtering
+            // Get movie year from the global variable set by renderDetails()
+            let movieYear = null;
+            if (currentMovieData && currentMovieData.year && currentMovieData.year !== 'N/A') {
+                movieYear = parseInt(currentMovieData.year);
             }
 
-            section.classList.remove('hidden');
-        } else {
-            // No soundtrack found
-            section.classList.add('hidden');
+            // Define "Bad" keywords that indicate it's not the official score
+            const bannedTerms = ["tribute", "karaoke", "cover", "podcast", "inspired by"];
+
+            let bestMatch = null;
+            let minYearDiff = 100; // Start with a large year gap
+
+            for (const album of data.results) {
+                const albumName = album.collectionName.toLowerCase();
+                const artistName = album.artistName.toLowerCase();
+                
+                // A. Check for banned terms
+                if (bannedTerms.some(term => albumName.includes(term) || artistName.includes(term))) {
+                    continue;
+                }
+
+                // B. Title Match Safety Check
+                // The album must actually contain the movie title
+                if (!albumName.includes(cleanTitle.toLowerCase())) {
+                    continue;
+                }
+
+                // C. Year Matching (Crucial for fixing "Wrong" soundtracks)
+                if (movieYear) {
+                    const albumYear = parseInt(album.releaseDate.substring(0, 4));
+                    const diff = Math.abs(albumYear - movieYear);
+
+                    // We look for the album released closest to the movie's release year.
+                    // This filters out same-name movies from decades ago.
+                    if (diff < minYearDiff) {
+                        
+                        // Check if it looks like an official score
+                        const isExplicitOfficial = albumName.includes("original motion picture") || albumName.includes("ost") || albumName.includes("soundtrack");
+                        
+                        // If it's explicitly the OST and the year is very close (within 5 years), pick it immediately
+                        if (isExplicitOfficial && diff <= 5) {
+                            bestMatch = album;
+                            break; 
+                        }
+
+                        // Otherwise, keep this as the best candidate so far
+                        minYearDiff = diff;
+                        bestMatch = album;
+                    }
+                } else {
+                    // If we don't have a movie year, just take the first valid result
+                    bestMatch = album;
+                    break;
+                }
+            }
+
+            // If filtering removed everything, but we have raw results and NO movie year to rely on, fallback to the first one.
+            if (!bestMatch && !movieYear && data.results.length > 0) {
+                 bestMatch = data.results[0];
+            }
+
+            if (bestMatch) {
+                const albumId = bestMatch.collectionId;
+                
+                container.innerHTML = `
+                    <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" 
+                            frameborder="0" 
+                            height="450" 
+                            style="width:100%; max-width:100%; overflow:hidden; border-radius:10px; background:transparent;" 
+                            sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
+                            src="https://embed.music.apple.com/us/album/${albumId}?theme=dark">
+                    </iframe>`;
+
+                if (link) {
+                    link.href = bestMatch.collectionViewUrl;
+                    link.innerHTML = `<i class="fab fa-apple mr-1"></i> Listen on Apple Music`;
+                }
+
+                section.classList.remove('hidden');
+                return;
+            }
         }
+        
+        // No valid soundtrack found
+        section.classList.add('hidden');
+
     } catch (e) {
         console.error("Soundtrack Error:", e);
         section.classList.add('hidden');
@@ -2796,7 +2869,7 @@ async function fetchAIInsight(mode) {
 
     switch (mode) {
         case 'hype':
-            prompt = `Analyze this movie JSON and write a hype paragraph (min 60 words). JSON: ${jsonContext}`;
+            prompt = `Analyze this movie JSON and write a paragraph confirming the user whether to watch the movie or not (min 60 words). JSON: ${jsonContext}`;
             break;
         case 'trivia':
             prompt = `Generate 3 interesting trivia facts from this movie JSON. JSON: ${jsonContext}`;
@@ -2816,7 +2889,7 @@ async function fetchAIInsight(mode) {
             body: JSON.stringify({
                 model: GROQ_MODEL,
                 messages: [
-                    { role: "system", content: "You are a movie expert." },
+                    { role: "system", content: "You are a film critic." },
                     { role: "user", content: prompt }
                 ],
                 temperature: 0.7,
