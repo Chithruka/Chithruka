@@ -2062,14 +2062,15 @@ function renderDetailedInfo(data) {
     // --- ALTERNATIVE TITLES ---
     const altList = document.getElementById('alt-titles-list');
     altList.innerHTML = '';
-    
-    if (data.alternative_titles && (data.alternative_titles.titles || data.alternative_titles.results) && (data.alternative_titles.titles || data.alternative_titles.results).length > 0) {
+    const rawTitles = data.alternative_titles?.titles || data.alternative_titles?.results || [];
+
+    if (rawTitles.length > 0) {
         altList.parentElement.classList.remove('hidden');
-        const titles = data.alternative_titles.titles || data.alternative_titles.results;
-        titles.slice(0, 10).forEach(t => {
+        
+        rawTitles.forEach(t => {
             const div = document.createElement('div');
-            div.className = "mb-1";
-            div.innerHTML = `<span class="text-white">${t.iso_3166_1}:</span> ${t.title}`;
+            div.className = "mb-1 border-b border-white/5 pb-1 last:border-0";
+            div.innerHTML = `<span class="text-white font-bold text-xs uppercase w-8 inline-block">${t.iso_3166_1}:</span> <span class="text-gray-300">${t.title}</span>`;
             altList.appendChild(div);
         });
     } else {
