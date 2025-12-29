@@ -1993,6 +1993,7 @@ function renderDetails(data, title) {
 
     // Finalize Details
     renderDetailedInfo(data);
+    renderLogos(data);
 }
 
 function renderDetailedInfo(data) {
@@ -3260,3 +3261,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
 });
+
+function renderLogos(data) {
+    const container = document.getElementById('logos-container');
+    const list = document.getElementById('logos-list');
+
+    // Safety check
+    if (!container || !list) return;
+
+    list.innerHTML = '';
+    
+    // Get logos from API data
+    const logos = data.images?.logos || [];
+
+    if (logos.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    // --- LOGIC: Filter 1 Logo Per Language ---
+    const uniqueLogos = [];
+    const seenLangs = new Set();
+    const langNames = new Intl.DisplayNames(['en'], { type: 'language' });
+
+    // TMDB sorts logos by rating by default. We iterate and pick 
+    // the first (highest rated) logo for every new language we encounter.
+    logos.forEach(logo => {
+        // If ISO code is null/empty, we treat it as 'xx' (No Language/Universal)
+        const iso = logo.iso_639_1 || 'xx'; 
+        
+        if (!seenLangs.has(iso)) {
+            seenLangs.add(iso);
+            uniqueLogos.push(logo);
+        }
+    });
+
+    // --- RENDER ---
+    if (uniqueLogos.length > 0) {
+        container.classList.remove('hidden');
+
+        uniqueLogos.forEach(logo => {
+            const imgUrl = `${TMDB_POSTER_MD}${logo.file_path}`;
+            const fullUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
+            
+            // Convert code (e.g., 'en') to name (e.g., 'English')
+            let langLabel = "Universal";
+            if (logo.iso_639_1) {
+                try {
+                    langLabel = langNames.of(logo.iso_639_1);
+                } catch (e) {
+                    langLabel = logo.iso_639_1.toUpperCase();
+                }
+            }
+
+            const div = document.createElement('div');
+            // Styling: Dark background card, aspect-video to fit wide logos
+            div.className = "flex-shrink-0 cursor-pointer w-56 aspect-video bg-white/5 border border-white/10 rounded-xl relative group flex items-center justify-center p-4 hover:border-white/30 transition-all";
+
+            div.innerHTML = `
+                <img src="${imgUrl}" loading="lazy" class="max-w-full max-h-full object-contain drop-shadow-lg" alt="${langLabel} Logo">
+                
+                <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10">
+                    ${langLabel}
+                </div>
+
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                    <i class="fas fa-expand-alt text-white text-xl"></i>
+                </div>
+            `;
+
+            // Open full size on click
+            div.onclick = () => window.open(fullUrl, '_blank');
+            list.appendChild(div);
+        });
+
+        // Attach scroll button logic
+        updateScrollButtons(list);
+        list.addEventListener('scroll', () => updateScrollButtons(list));
+    } else {
+        container.classList.add('hidden');
+    }
+}
