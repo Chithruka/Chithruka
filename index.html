@@ -604,6 +604,30 @@
         </div>
     </div>
 </div>
+<div id="image-lightbox" class="fixed inset-0 z-[60] bg-black/90 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+    <div id="lightbox-wrapper" class="relative w-full max-w-5xl h-[85vh] flex flex-col transform scale-95 transition-transform duration-300">
+        
+        <div class="flex items-center justify-between p-4 z-10">
+            <div class="flex items-center gap-4">
+                <a id="lightbox-external-link" href="#" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all group" title="Open Original">
+                    <i class="fas fa-external-link-alt group-hover:scale-110 transition-transform"></i>
+                </a>
+                
+                <span id="lightbox-lang" class="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-bold shadow-lg uppercase tracking-wide">
+                    ENG
+                </span>
+            </div>
+
+            <button onclick="closeLightbox()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 text-white transition-all">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center relative overflow-hidden p-2">
+            <img id="lightbox-img" src="" alt="Full Preview" class="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg">
+        </div>
+    </div>
+</div>
 <script src="script.js?v=8"></script>
 </body>
 </html>
