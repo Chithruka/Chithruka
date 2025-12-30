@@ -1,3 +1,4 @@
+@font-face {
 font-family: 'Netflix Sans'; 
 font-weight: 100;
 display: optional;
@@ -527,8 +528,29 @@ input[type=range]::-webkit-slider-thumb {
 }.btn-play { background: #fff; color: #000; }
 .btn-download { background: #484848; }
 .btn-next { background: #fff; color: #000; }
-.title-logo { max-width: 100%; max-height: 100px; width: auto; object-fit: contain; object-position: left; margin-bottom: 0.5rem; display: none; }
-@media (min-width: 768px) { .title-logo { max-width: 350px; max-height: 120px; } }
+.title-logo {
+    max-width: 100%;
+    max-height: 100px;
+    width: auto;
+    object-fit: contain;
+    
+    /* --- UPDATED FOR MOBILE CENTERING --- */
+    object-position: center;       /* Center the image content */
+    margin: 0 auto 0.5rem auto;    /* Center the element itself horizontally */
+    
+    display: none;
+}
+
+@media (min-width: 768px) { 
+    .title-logo { 
+        max-width: 350px; 
+        max-height: 120px; 
+        
+        /* --- RESET FOR DESKTOP LEFT ALIGNMENT --- */
+        object-position: left;     /* Align content back to the left */
+        margin: 0 0 0.5rem 0;      /* Remove auto margins */
+    } 
+}
 .cast-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
 .cast-card { 
     min-width: 80px; 
