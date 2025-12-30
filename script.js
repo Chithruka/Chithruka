@@ -1052,9 +1052,8 @@ async function loadActorCredits(personId, personName, profilePath, gender) {
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
-    currentFetchUrl = "STOP"; // Stop auto-loader
+    currentFetchUrl = "STOP"; 
     
-    // Hide other sections
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
     detailsSection.classList.add('hidden');
@@ -1062,7 +1061,6 @@ async function loadActorCredits(personId, personName, profilePath, gender) {
     collectionSection.classList.add('hidden');
     document.getElementById('continue-watching-section').classList.add('hidden');
     
-    // Hide Person Details initially
     const personContainer = document.getElementById('person-details-container');
     if (personContainer) {
         personContainer.classList.add('hidden');
@@ -1071,40 +1069,69 @@ async function loadActorCredits(personId, personName, profilePath, gender) {
 
     renderSkeletons(trendingContainer, 10);
 
-    // Header Setup
     const imgHtml = getPersonFace(profilePath, gender, "w-8 h-8 rounded-full mr-3 border border-gray-600 inline-flex", "text-sm");
     document.getElementById('trending-header').innerHTML = `<div class="flex items-center">${imgHtml} <span class="ml-2">Featuring ${personName}</span></div>`;
     document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-        // 2. Fetch Data (Credits + Full Person Details + Combined Credits for Count)
-        const [creditsData, personData, combinedCredits] = await Promise.all([
-            fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`),
+        const [personData, combinedCredits] = await Promise.all([
             fetchCached(`${BASE_TMDB_URL}/person/${personId}?api_key=${TMDB_API_KEY}&append_to_response=external_ids,images`),
             fetchCached(`${BASE_TMDB_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`)
         ]);
 
-        // 3. Render Credits (Slider - Movies Only)
-        const sorted = creditsData.cast.sort((a, b) => b.popularity - a.popularity);
-        const results = sorted.map(i => ({ ...i, media_type: 'movie' }));
+        // --- NEW LOGIC: Merge Cast & Crew ---
+        
+        const uniqueItems = new Map();
+        
+        // 1. Process CAST first (Priority)
+        // We prefer showing the Acting credit because it has the Character Name.
+        if (combinedCredits.cast) {
+            combinedCredits.cast.forEach(item => {
+                if (item.poster_path) {
+                    // Start date is needed for sorting later (release_date for movies, first_air_date for tv)
+                    item.date = new Date(item.release_date || item.first_air_date || '1900-01-01');
+                    uniqueItems.set(item.id, item);
+                }
+            });
+        }
 
+        // 2. Process CREW second
+        // Only add if we don't already have this movie from the Cast list.
+        if (combinedCredits.crew) {
+            combinedCredits.crew.forEach(item => {
+                if (item.poster_path && !uniqueItems.has(item.id)) {
+                    // IMPORTANT: The card renderer uses 'item.character' to show text below the title.
+                    // Since crew don't have character names, we inject their Job (e.g., "Director") there.
+                    item.character = item.job; 
+                    
+                    item.date = new Date(item.release_date || item.first_air_date || '1900-01-01');
+                    uniqueItems.set(item.id, item);
+                }
+            });
+        }
+
+        // 3. Convert Map to Array
+        const results = Array.from(uniqueItems.values());
+
+        // 4. Sort by Popularity (Standard)
+        results.sort((a, b) => b.popularity - a.popularity);
+
+        // Display
         trendingContainer.innerHTML = ''; 
         if (results.length === 0) {
-            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No movies found.</div>';
+            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No credits found.</div>';
         } else {
             renderCards(results, trendingContainer, true);
             trendingContainer.scrollLeft = 0;
         }
         
-        // 4. Render Person Profile (Bottom Section)
-        // Pass the total credit count from combined_credits (movies + tv)
-        const totalCredits = combinedCredits.cast ? combinedCredits.cast.length : 0;
-        renderPersonProfile(personData, totalCredits);
+        // Profile Stats
+        const totalCount = (combinedCredits.cast?.length || 0) + (combinedCredits.crew?.length || 0);
+        renderPersonProfile(personData, totalCount);
 
     } catch (e) { 
         console.error("Actor Load Error", e);
-        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load actor details.</div>';
-        showMessage("Could not load full profile", true); 
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load person details.</div>';
     }
 }
 
