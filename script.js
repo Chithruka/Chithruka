@@ -1166,28 +1166,38 @@ window.clearFilters = function() {
 }
 
 async function applyFilter(overrides = {}) {
-    const type = document.getElementById('filter-type').value;
+    // 1. Get current UI value
+    let type = document.getElementById('filter-type').value;
 
     const genre = overrides.genre || document.getElementById('filter-genre').value;
     const country = overrides.country || document.getElementById('filter-country').value;
     const year = overrides.year || document.getElementById('filter-year').value;
     const rating = overrides.rating || document.getElementById('filter-rating').value;
     const company = overrides.company;
+    const network = overrides.network;
 
-    // --- NEW: Read & Save Adult Toggle State ---
+    // --- FIX: Auto-switch to TV if a Network is selected ---
+    if (network) {
+        type = 'tv';
+        const typeSelect = document.getElementById('filter-type');
+        if (typeSelect) typeSelect.value = 'tv'; // Update the dropdown UI
+    }
+
+    // --- Read Adult Toggle State ---
     const adultToggle = document.getElementById('filter-adult');
     const includeAdult = adultToggle ? adultToggle.checked : false;
-    
-    // Save to browser memory so it persists on reload
     localStorage.setItem('include_adult', includeAdult);
 
     closeFilterModal();
+    
+    // Reset UI for results
     searchResults.innerHTML = '';
     searchInput.value = '';
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
+    // Build Header String
     let genreName = "";
     if (genre) {
         if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
@@ -1209,8 +1219,11 @@ async function applyFilter(overrides = {}) {
     if (countryName === "Any Country") countryName = "";
 
     let mainStr = "";
-    if (company && activeFilterLabel) {
-        mainStr = `Produced by ${activeFilterLabel}`;
+    
+    // Logic for Header Title
+    if ((company || network) && activeFilterLabel) {
+        // If it's a network/company filter, show that name
+        mainStr = `Titles from ${activeFilterLabel}`;
     } else {
         const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
         mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
@@ -1223,7 +1236,8 @@ async function applyFilter(overrides = {}) {
 
     document.getElementById('trending-header').innerHTML = mainStr;
 
-    // Use the variable in the URL
+    // Build API URL
+    // We use the updated 'type' variable here (which is now guaranteed to be 'tv' if network is present)
     let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=${includeAdult}&include_video=false`;
 
     if (year) {
@@ -1235,9 +1249,11 @@ async function applyFilter(overrides = {}) {
     if (rating) urlBase += `&vote_average.gte=${rating}`;
     if (country) urlBase += `&with_origin_country=${country}`;
     if (company) urlBase += `&with_companies=${company}`;
+    if (network) urlBase += `&with_networks=${network}`;
 
     currentFetchUrl = urlBase;
 
+    // Execute Fetch
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
     loadedIds.clear();
@@ -1246,6 +1262,7 @@ async function applyFilter(overrides = {}) {
     try {
         const data = await fetchCached(`${currentFetchUrl}&page=1`);
 
+        // Map results to the correct media type
         let results = data.results.map(i => ({ ...i, media_type: type }));
 
         if (year) {
@@ -1375,7 +1392,7 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
 async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
     try {
-        // Updated URL to include 'keywords'
+        // Ensure 'images' is included in append_to_response
         const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos`);
         
         if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
@@ -1384,7 +1401,11 @@ async function fetchMovieDetails(id, title) {
             currentTitle = detailData.title;
             document.title = `${currentTitle} - Chithruka`;
         }
+        
         renderDetails(detailData, currentTitle);
+        
+        // --- NEW: Render the Gallery ---
+        renderGallery(detailData);
 
         if (detailData.belongs_to_collection) {
             loadCollection(detailData.belongs_to_collection.id, detailData.belongs_to_collection.name);
@@ -1400,7 +1421,7 @@ async function fetchMovieDetails(id, title) {
 
 async function fetchShowDetails(id, title) {
     try {
-        // Updated URL to include 'keywords'
+        // Ensure 'images' is included in append_to_response
         const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords,videos`);
         
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
@@ -1409,7 +1430,11 @@ async function fetchShowDetails(id, title) {
             currentTitle = data.name;
             document.title = `${currentTitle} - Chithruka`;
         }
+        
         renderDetails(data, currentTitle);
+        
+        // --- NEW: Render the Gallery ---
+        renderGallery(data);
 
         episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
             .map(s => ({
@@ -1925,7 +1950,7 @@ function renderDetails(data, title) {
                     </div>
                 `;
                 
-                div.onclick = () => window.open(fullUrl, '_blank');
+                div.onclick = () => openLightbox(fullUrl, langLabel);
                 galleryList.appendChild(div);
             });
             updateScrollButtons(galleryList);
@@ -1997,13 +2022,33 @@ function renderDetails(data, title) {
 }
 
 function renderDetailedInfo(data) {
-    // --- PRODUCTION COMPANIES ---
+    // --- NETWORKS & PRODUCTION ---
     const prodList = document.getElementById('production-list');
+    const prodHeader = prodList.parentElement.querySelector('h5'); 
     prodList.innerHTML = '';
+
+    let entities = [];
+
+    // 1. Add Networks
+    if (data.networks && data.networks.length > 0) {
+        entities = [...entities, ...data.networks.map(n => ({ ...n, type: 'network' }))];
+    }
     
+    // 2. Add Production Companies
     if (data.production_companies && data.production_companies.length > 0) {
-        prodList.parentElement.classList.remove('hidden'); // Show Parent info-block
-        data.production_companies.forEach(p => {
+        entities = [...entities, ...data.production_companies.map(c => ({ ...c, type: 'company' }))];
+    }
+    
+    if (entities.length > 0) {
+        prodList.parentElement.classList.remove('hidden');
+
+        if (data.networks && data.networks.length > 0) {
+             prodHeader.innerHTML = '<i class="fas fa-broadcast-tower mr-2"></i> Networks & Studios';
+        } else {
+             prodHeader.innerHTML = '<i class="fas fa-building mr-2"></i> Production';
+        }
+
+        entities.forEach(p => {
             const div = document.createElement('div');
             div.className = "mb-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all group";
 
@@ -2011,22 +2056,32 @@ function renderDetailedInfo(data) {
             if (p.logo_path) {
                 iconHtml = `<img src="${TMDB_IMG_BASE_URL}${p.logo_path}" class="w-8 h-8 object-contain bg-white rounded-md p-0.5" alt="${p.name}" loading="lazy">`;
             } else {
-                iconHtml = `<div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-md"><i class="fas fa-industry text-gray-400 text-xs"></i></div>`;
+                const iconClass = p.type === 'network' ? 'fa-broadcast-tower' : 'fa-industry';
+                iconHtml = `<div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-md"><i class="fas ${iconClass} text-gray-400 text-xs"></i></div>`;
             }
+
+            const networkBadge = p.type === 'network' 
+                ? '<span class="text-blue-400 font-bold text-[10px] ml-2 border border-blue-400/30 px-1 rounded">NETWORK</span>' 
+                : '';
 
             div.innerHTML = `
                         ${iconHtml}
                         <div class="flex flex-col">
-                            <span class="text-sm font-semibold text-gray-200 group-hover:text-red-500 transition-colors">${p.name}</span>
-                            <span class="text-xs text-gray-500">${p.origin_country}</span>
+                            <span class="text-sm font-semibold text-gray-200 group-hover:text-red-500 transition-colors">
+                                ${p.name}
+                            </span>
+                            <div class="flex items-center">
+                                <span class="text-xs text-gray-500">${p.origin_country || ''}</span>
+                                ${networkBadge}
+                            </div>
                         </div>
                     `;
 
-            div.onclick = () => quickFilter('company', p.id, p.name, p.logo_path);
+            div.onclick = () => quickFilter(p.type, p.id, p.name, p.logo_path);
             prodList.appendChild(div);
         });
     } else {
-        prodList.parentElement.classList.add('hidden'); // Hide Parent info-block
+        prodList.parentElement.classList.add('hidden');
     }
 
     // --- RELEASE DATES ---
@@ -2052,7 +2107,6 @@ function renderDetailedInfo(data) {
         });
     }
     
-    // Toggle Visibility based on content
     if (hasReleaseDates) {
         relList.parentElement.classList.remove('hidden');
     } else {
@@ -2077,10 +2131,19 @@ function renderDetailedInfo(data) {
         altList.parentElement.classList.add('hidden');
     }
 
-    // --- TECH SPECS ---
+    // --- TECH SPECS (UPDATED WITH ORIGINAL TITLE) ---
     const techList = document.getElementById('tech-specs-list');
     techList.innerHTML = '';
+    
+    // 1. Determine titles
+    const originalTitle = data.original_title || data.original_name;
+    const displayTitle = data.title || data.name;
+    
+    // 2. Logic: Only show if it differs from the main title
+    const showOriginal = (originalTitle && originalTitle !== displayTitle) ? originalTitle : null;
+
     const specs = [
+        { label: "Original Title", val: showOriginal }, // <--- New Item
         { label: "Original Language", val: data.original_language ? data.original_language.toUpperCase() : null },
         { label: "Budget", val: data.budget ? `$${data.budget.toLocaleString()}` : null },
         { label: "Revenue", val: data.revenue ? `$${data.revenue.toLocaleString()}` : null },
@@ -2094,7 +2157,10 @@ function renderDetailedInfo(data) {
             hasSpecs = true;
             const div = document.createElement('div');
             div.className = "mb-1 flex justify-between";
-            div.innerHTML = `<span class="text-gray-400">${s.label}</span> <span>${s.val}</span>`;
+            // Highlight "Original Title" slightly differently
+            const valueClass = (s.label === "Original Title") ? "text-white font-semibold italic text-right" : "text-gray-300 text-right";
+            
+            div.innerHTML = `<span class="text-gray-400">${s.label}</span> <span class="${valueClass}">${s.val}</span>`;
             techList.appendChild(div);
         }
     });
@@ -3332,7 +3398,7 @@ function renderLogos(data) {
             `;
 
             // Open full size on click
-            div.onclick = () => window.open(fullUrl, '_blank');
+            div.onclick = () => openLightbox(fullUrl, langLabel);
             list.appendChild(div);
         });
 
@@ -3341,5 +3407,123 @@ function renderLogos(data) {
         list.addEventListener('scroll', () => updateScrollButtons(list));
     } else {
         container.classList.add('hidden');
+    }
+}
+
+// --- LIGHTBOX FUNCTIONS ---
+
+function openLightbox(url, language) {
+    const lightbox = document.getElementById('image-lightbox');
+    const wrapper = document.getElementById('lightbox-wrapper');
+    const img = document.getElementById('lightbox-img');
+    const link = document.getElementById('lightbox-external-link');
+    const langLabel = document.getElementById('lightbox-lang');
+
+    // 1. Set the content
+    img.src = url;
+    link.href = url; // The link icon now points to the original image
+    langLabel.textContent = language; // Display the language
+
+    // 2. Show the lightbox (Animation logic)
+    lightbox.classList.remove('hidden');
+    // Small timeout ensures the transition classes work
+    setTimeout(() => {
+        lightbox.classList.remove('opacity-0');
+        wrapper.classList.remove('scale-95');
+        wrapper.classList.add('scale-100');
+    }, 10);
+    
+    // 3. Disable background scrolling
+    document.body.style.overflow = 'hidden'; 
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('image-lightbox');
+    const wrapper = document.getElementById('lightbox-wrapper');
+
+    // 1. Start hide animation
+    lightbox.classList.add('opacity-0');
+    wrapper.classList.remove('scale-100');
+    wrapper.classList.add('scale-95');
+
+    // 2. Hide element after animation finishes (300ms)
+    setTimeout(() => {
+        lightbox.classList.add('hidden');
+        document.getElementById('lightbox-img').src = ''; 
+        document.body.style.overflow = ''; // Re-enable scrolling
+    }, 300); 
+}
+
+// Close lightbox when clicking the dark background (outside the image)
+document.getElementById('image-lightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'image-lightbox') closeLightbox();
+});
+
+function renderGallery(data) {
+    const container = document.getElementById('gallery-container');
+    const list = document.getElementById('gallery-list');
+
+    // Safety check
+    if (!container || !list) return;
+
+    list.innerHTML = '';
+    
+    // 1. Get Backdrops and Posters
+    const backdrops = data.images?.backdrops || [];
+    const posters = data.images?.posters || [];
+    
+    // Combine them. We usually prefer backdrops first as they look better in horizontal scrolls.
+    const allImages = [...backdrops, ...posters];
+
+    // 2. Hide section if empty
+    if (allImages.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    // 3. Render Images (Limit to 20 to prevent performance lag)
+    allImages.slice(0, 20).forEach(img => {
+        // Construct URLs
+        const imgUrl = `${TMDB_POSTER_MD}${img.file_path}`; // Thumbnail size
+        const fullUrl = `${TMDB_BACKDROP_WEB}${img.file_path}`; // Full size for lightbox
+        
+        // Determine type based on aspect ratio (Posters are vertical < 1, Backdrops horizontal > 1)
+        const isPoster = img.aspect_ratio < 1;
+        const typeLabel = isPoster ? "Poster" : "Backdrop";
+
+        // Create the card container
+        const div = document.createElement('div');
+        
+        // Dynamic classes based on image type
+        // Posters get a narrower width (w-40) and portrait aspect ratio
+        // Backdrops get a wider width (w-64) and video aspect ratio
+        const widthClass = isPoster ? "w-40 aspect-[2/3]" : "w-64 aspect-video"; 
+        
+        div.className = `flex-shrink-0 cursor-pointer ${widthClass} bg-white/5 border border-white/10 rounded-xl relative group overflow-hidden flex items-center justify-center`;
+        
+        div.innerHTML = `
+            <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt="${typeLabel}">
+            
+            <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10 shadow-sm z-10 pointer-events-none">
+                ${typeLabel}
+            </div>
+
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
+                <i class="fas fa-expand-alt text-white text-2xl drop-shadow-md transform scale-0 group-hover:scale-100 transition-transform duration-300"></i>
+            </div>
+        `;
+
+        // ON CLICK: Open Lightbox using the existing function
+        div.onclick = () => openLightbox(fullUrl, typeLabel);
+        
+        list.appendChild(div);
+    });
+
+    // 4. Update Scroll Buttons if they exist
+    if (typeof updateScrollButtons === 'function') {
+        updateScrollButtons(list);
+        list.addEventListener('scroll', () => updateScrollButtons(list));
     }
 }
