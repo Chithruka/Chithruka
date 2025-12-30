@@ -351,7 +351,20 @@
             </button>
         </div>
     </div>
-
+<div id="similar-section" class="mb-8 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            More Like This
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('similar-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="similar-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('similar-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
     <div class="mb-12 relative">
         <h2 id="trending-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title">
             Trending Now
@@ -365,7 +378,11 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
-        </div>
+
+        <div id="person-details-container" class="hidden mt-8 mx-2 md:mx-4 glass-panel p-6 rounded-xl animate-fade-in">
+            </div>
+
+    </div>
 </div>
 
 <footer class="relative bg-black/90 backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10">
@@ -628,6 +645,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=8"></script>
+<script src="script.js?v=9"></script>
 </body>
 </html>
