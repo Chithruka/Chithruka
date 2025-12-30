@@ -928,6 +928,13 @@ function renderCards(items, container, trackIds) {
             ? `<div class="media-badge tv">TV</div>` 
             : `<div class="media-badge movie">MOVIE</div>`;
 
+        // --- NEW: Character Name Logic ---
+        // This checks if the 'character' field exists (it does for Actor Credits) 
+        // and creates a small text line for it.
+        const charHtml = item.character 
+            ? `<div class="text-[11px] text-gray-400 mb-1 truncate" title="as ${item.character}">as <span class="text-gray-200">${item.character}</span></div>` 
+            : '';
+
         const card = document.createElement('div');
         card.className = 'scroll-card';
 
@@ -946,6 +953,7 @@ function renderCards(items, container, trackIds) {
                 </div>
                 <div class="card-body">
                     <div class="card-title" title="${title}">${title}</div>
+                    ${charHtml}
                     <div class="card-meta">
                         <span>${year}</span>
                         <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
@@ -957,8 +965,10 @@ function renderCards(items, container, trackIds) {
         container.appendChild(card);
     });
 
-    // --- NEW: Update scroll buttons after content renders ---
-    updateScrollButtons(container);
+    // Update scroll buttons after content renders
+    if (typeof updateScrollButtons === 'function') {
+        updateScrollButtons(container);
+    }
 }
 
 async function loadRecommendations(type, id) {
@@ -1036,47 +1046,192 @@ function displayResults(results) {
 
 // --- Accepts gender to display correct icon in header ---
 async function loadActorCredits(personId, personName, profilePath, gender) {
+    // 1. Reset UI
     searchResults.innerHTML = '';
     searchInput.value = '';
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
-
-    // IMPORTANT: Stop the trending auto-loader
-    currentFetchUrl = "STOP";
+    currentFetchUrl = "STOP"; // Stop auto-loader
     
-    renderSkeletons(trendingContainer, 10);
-
+    // Hide other sections
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
     detailsSection.classList.add('hidden');
     playerInterface.classList.add('hidden');
     collectionSection.classList.add('hidden');
     document.getElementById('continue-watching-section').classList.add('hidden');
+    
+    // Hide Person Details initially
+    const personContainer = document.getElementById('person-details-container');
+    if (personContainer) {
+        personContainer.classList.add('hidden');
+        personContainer.innerHTML = '';
+    }
 
-    // Use gender icon helper for the header image
+    renderSkeletons(trendingContainer, 10);
+
+    // Header Setup
     const imgHtml = getPersonFace(profilePath, gender, "w-8 h-8 rounded-full mr-3 border border-gray-600 inline-flex", "text-sm");
-
     document.getElementById('trending-header').innerHTML = `<div class="flex items-center">${imgHtml} <span class="ml-2">Featuring ${personName}</span></div>`;
+    document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-        const data = await fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`);
-        const sorted = data.cast.sort((a, b) => b.popularity - a.popularity);
+        // 2. Fetch Data (Credits + Full Person Details + Combined Credits for Count)
+        const [creditsData, personData, combinedCredits] = await Promise.all([
+            fetchCached(`${BASE_TMDB_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}`),
+            fetchCached(`${BASE_TMDB_URL}/person/${personId}?api_key=${TMDB_API_KEY}&append_to_response=external_ids,images`),
+            fetchCached(`${BASE_TMDB_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`)
+        ]);
+
+        // 3. Render Credits (Slider - Movies Only)
+        const sorted = creditsData.cast.sort((a, b) => b.popularity - a.popularity);
         const results = sorted.map(i => ({ ...i, media_type: 'movie' }));
 
         trendingContainer.innerHTML = ''; 
-
         if (results.length === 0) {
             trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No movies found.</div>';
         } else {
             renderCards(results, trendingContainer, true);
             trendingContainer.scrollLeft = 0;
         }
-        document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // 4. Render Person Profile (Bottom Section)
+        // Pass the total credit count from combined_credits (movies + tv)
+        const totalCredits = combinedCredits.cast ? combinedCredits.cast.length : 0;
+        renderPersonProfile(personData, totalCredits);
+
     } catch (e) { 
-        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load content.</div>';
-        showMessage("Could not load filmography", true); 
+        console.error("Actor Load Error", e);
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Failed to load actor details.</div>';
+        showMessage("Could not load full profile", true); 
     }
+}
+
+function renderPersonProfile(data, totalCredits) {
+    const container = document.getElementById('person-details-container');
+    if (!container || !data) return;
+
+    // --- DATA PREPARATION ---
+
+    // 1. Biography
+    const bio = data.biography; // Can be empty or null
+    
+    // 2. Personal Stats
+    const knownFor = data.known_for_department;
+    const birthday = data.birthday ? new Date(data.birthday).toLocaleDateString(undefined, { dateStyle: 'long' }) : null;
+    const place = data.place_of_birth;
+    const deathday = data.deathday ? new Date(data.deathday).toLocaleDateString(undefined, { dateStyle: 'long' }) : null;
+    
+    // Gender Logic (1=Female, 2=Male, 3=Non-binary)
+    let genderStr = null;
+    if (data.gender === 1) genderStr = "Female";
+    else if (data.gender === 2) genderStr = "Male";
+    else if (data.gender === 3) genderStr = "Non-binary";
+
+    // "Also Known As" Logic
+    // Limit to 3 to keep it clean, show only if array exists and has items
+    let aliasesHtml = '';
+    if (data.also_known_as && data.also_known_as.length > 0) {
+        const aliases = data.also_known_as.slice(0, 3).join('<br>');
+        aliasesHtml = aliases;
+    }
+
+    // Age Calculation
+    let ageStr = "";
+    if (data.birthday && !data.deathday) {
+        const birthDate = new Date(data.birthday);
+        const ageDifMs = Date.now() - birthDate.getTime();
+        const ageDate = new Date(ageDifMs);
+        ageStr = ` (${Math.abs(ageDate.getUTCFullYear() - 1970)} years old)`;
+    } else if (data.deathday && data.birthday) {
+        // Calculate age at death
+        const birthDate = new Date(data.birthday);
+        const deathDate = new Date(data.deathday);
+        let age = deathDate.getFullYear() - birthDate.getFullYear();
+        const m = deathDate.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && deathDate.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        ageStr = ` (Died at ${age})`;
+    }
+
+    // Social Links
+    let socialsHtml = '';
+    const ids = data.external_ids;
+    if (ids) {
+        if (ids.imdb_id) socialsHtml += `<a href="https://www.imdb.com/name/${ids.imdb_id}" target="_blank" class="text-yellow-500 hover:text-white transition" title="IMDb"><i class="fab fa-imdb text-2xl"></i></a>`;
+        if (ids.facebook_id) socialsHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" class="text-blue-600 hover:text-white transition" title="Facebook"><i class="fab fa-facebook text-2xl"></i></a>`;
+        if (ids.instagram_id) socialsHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" class="text-pink-500 hover:text-white transition" title="Instagram"><i class="fab fa-instagram text-2xl"></i></a>`;
+        if (ids.twitter_id) socialsHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" class="text-blue-400 hover:text-white transition" title="X (Twitter)"><i class="fab fa-x-twitter text-2xl"></i></a>`;
+        if (ids.tiktok_id) socialsHtml += `<a href="https://www.tiktok.com/@${ids.tiktok_id}" target="_blank" class="text-pink-400 hover:text-white transition" title="TikTok"><i class="fab fa-tiktok text-2xl"></i></a>`;
+        if (ids.youtube_id) socialsHtml += `<a href="https://www.youtube.com/${ids.youtube_id}" target="_blank" class="text-red-600 hover:text-white transition" title="YouTube"><i class="fab fa-youtube text-2xl"></i></a>`;
+    }
+
+    // --- CHECK IF EMPTY ---
+    // If essential fields are ALL missing, do not show the container.
+    const hasData = bio || birthday || place || (totalCredits > 0) || socialsHtml || deathday || aliasesHtml;
+    
+    if (!hasData) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    // --- BUILD HTML SECTIONS ---
+    
+    // Helper to generate a stat block safely (hides if value is null/empty)
+    const createStat = (label, value, subValue = "") => {
+        if (!value) return "";
+        return `
+            <div class="mb-4">
+                <div class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">${label}</div>
+                <div class="text-white text-sm leading-snug">${value}${subValue}</div>
+            </div>
+        `;
+    };
+
+    const statsHtml = `
+        ${createStat("Known For", knownFor)}
+        ${createStat("Known Credits", totalCredits ? totalCredits.toString() : null)}
+        ${createStat("Gender", genderStr)}
+        ${createStat("Born", birthday, ageStr)}
+        ${createStat("Place of Birth", place)}
+        ${createStat("Day of Death", deathday)}
+        ${createStat("Also Known As", aliasesHtml)}
+    `;
+
+    // --- RENDER ---
+    // Note: The Bio section is conditionally hidden using a template literal class check
+    container.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-8">
+            <div class="md:w-1/3 flex-shrink-0">
+                <h3 class="text-2xl font-bold text-white mb-4 border-l-4 border-red-600 pl-3">Personal Info</h3>
+                
+                <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                    ${statsHtml}
+                    
+                    ${socialsHtml ? `
+                    <div class="mt-6 pt-4 border-t border-white/10">
+                        <div class="text-gray-400 text-xs uppercase font-bold tracking-wider mb-3">Social Media</div>
+                        <div class="flex gap-4 flex-wrap">${socialsHtml}</div>
+                    </div>` : ''}
+                </div>
+            </div>
+
+            <div class="md:w-2/3 ${!bio ? 'hidden' : ''}">
+                <h3 class="text-2xl font-bold text-white mb-4 border-l-4 border-red-600 pl-3">Biography</h3>
+                <div class="text-gray-300 leading-relaxed text-sm md:text-base whitespace-pre-line relative">
+                    <p id="person-bio-text" class="line-clamp-[10] transition-all duration-300">${bio || ''}</p>
+                    ${bio && bio.length > 800 ? `
+                        <button onclick="document.getElementById('person-bio-text').classList.toggle('line-clamp-[10]'); this.textContent = this.textContent === 'Read More' ? 'Show Less' : 'Read More'" 
+                        class="text-red-500 text-sm font-bold mt-2 hover:underline focus:outline-none">Read More</button>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.classList.remove('hidden');
 }
 
 window.openFilterModal = () => {
@@ -1089,19 +1244,28 @@ filterModal.addEventListener('click', e => { if (e.target === filterModal) close
 
 async function loadGenres() {
     const type = document.getElementById('filter-type').value;
+    
+    // Check if we already loaded this specific type to avoid unnecessary calls
     if (loadedGenreType === type) return;
-    const select = document.getElementById('filter-genre');
-    select.innerHTML = '<option value="">Any Genre</option>';
+
     try {
         const data = await fetchCached(`${BASE_TMDB_URL}/genre/${type}/list?api_key=${TMDB_API_KEY}`);
+        
+        const select = document.getElementById('filter-genre');
+        // Clear existing options ONLY now that we have new data ready
+        select.innerHTML = '<option value="">Any Genre</option>'; 
+
         data.genres.forEach(g => {
             const opt = document.createElement('option');
             opt.value = g.id;
             opt.textContent = g.name;
             select.appendChild(opt);
         });
-        loadedGenreType = type;
-    } catch (e) { console.error("Genre fetch error", e); }
+        
+        loadedGenreType = type; // Mark this type as loaded
+    } catch (e) { 
+        console.error("Genre fetch error", e); 
+    }
 }
 
 async function loadCountries() {
@@ -1166,10 +1330,12 @@ window.clearFilters = function() {
 }
 
 async function applyFilter(overrides = {}) {
-    // 1. Get current UI value
-    let type = document.getElementById('filter-type').value;
+    // 1. Get current search type (default to 'movie' if null)
+    let type = document.getElementById('filter-type').value || 'movie';
 
-    const genre = overrides.genre || document.getElementById('filter-genre').value;
+    // 2. Extract values from Overrides (clicked tags) OR Filter Modal (dropdowns)
+    // We ensure 'genre' is treated as a String for reliable mapping
+    let genre = overrides.genre ? String(overrides.genre) : document.getElementById('filter-genre').value;
     const country = overrides.country || document.getElementById('filter-country').value;
     const year = overrides.year || document.getElementById('filter-year').value;
     const rating = overrides.rating || document.getElementById('filter-rating').value;
@@ -1177,10 +1343,44 @@ async function applyFilter(overrides = {}) {
     const network = overrides.network;
 
     // --- FIX: Auto-switch to TV if a Network is selected ---
+    // Networks don't exist in movie mode, so force TV mode.
     if (network) {
         type = 'tv';
         const typeSelect = document.getElementById('filter-type');
-        if (typeSelect) typeSelect.value = 'tv'; // Update the dropdown UI
+        if (typeSelect) typeSelect.value = 'tv';
+    }
+
+    // --- SMART GENRE MAPPING ---
+    // This fixes "War & Politics" failing in Movie mode, or "Action" failing in TV mode.
+    // We use pipe '|' for OR logic (e.g., Action OR Adventure).
+    const GENRE_MAPPING = {
+        // TV ID (Source) -> Movie ID (Target)
+        '10759': '28|12',      // Action & Adventure -> Action | Adventure
+        '10765': '878|14',     // Sci-Fi & Fantasy -> Sci-Fi | Fantasy
+        '10768': '10752',      // War & Politics -> War
+        '10762': '10751',      // Kids -> Family
+
+        // Movie ID (Source) -> TV ID (Target)
+        '28': '10759',         // Action -> Action & Adventure
+        '12': '10759',         // Adventure -> Action & Adventure
+        '878': '10765',        // Sci-Fi -> Sci-Fi & Fantasy
+        '14': '10765',         // Fantasy -> Sci-Fi & Fantasy
+        '10752': '10768',      // War -> War & Politics
+    };
+
+    if (genre && GENRE_MAPPING[genre]) {
+        // Scenario A: User is searching MOVIES, but passed a TV-only genre ID
+        if (type === 'movie') {
+            if (['10759', '10765', '10768', '10762'].includes(genre)) {
+                genre = GENRE_MAPPING[genre];
+            }
+        }
+        // Scenario B: User is searching TV, but passed a Movie-only genre ID
+        else if (type === 'tv') {
+            if (['28', '12', '878', '14', '10752'].includes(genre)) {
+                genre = GENRE_MAPPING[genre];
+            }
+        }
     }
 
     // --- Read Adult Toggle State ---
@@ -1188,22 +1388,24 @@ async function applyFilter(overrides = {}) {
     const includeAdult = adultToggle ? adultToggle.checked : false;
     localStorage.setItem('include_adult', includeAdult);
 
+    // Close Modal & Reset UI
     closeFilterModal();
-    
-    // Reset UI for results
     searchResults.innerHTML = '';
     searchInput.value = '';
     heroSection.style.display = 'none';
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
-    // Build Header String
+    // --- Build Header String ---
     let genreName = "";
     if (genre) {
+        // If we used an override label, use it. Otherwise try to find name in dropdown.
         if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
         else {
             const genreSelect = document.getElementById('filter-genre');
-            genreName = genreSelect.options?.[genreSelect.selectedIndex]?.text;
+            // Try to find the text of the selected option
+            const selectedOption = genreSelect.querySelector(`option[value="${genre}"]`);
+            genreName = selectedOption ? selectedOption.text : (activeFilterLabel || "Genre");
         }
     }
     if (genreName === "Any Genre") genreName = "";
@@ -1213,16 +1415,15 @@ async function applyFilter(overrides = {}) {
         if (overrides.country && activeFilterLabel) countryName = activeFilterLabel;
         else {
             const countrySelect = document.getElementById('filter-country');
-            countryName = countrySelect.options?.[countrySelect.selectedIndex]?.text;
+            const selectedOption = countrySelect.options[countrySelect.selectedIndex];
+            countryName = selectedOption ? selectedOption.text : "Country";
         }
     }
     if (countryName === "Any Country") countryName = "";
 
+    // Generate Display Header
     let mainStr = "";
-    
-    // Logic for Header Title
     if ((company || network) && activeFilterLabel) {
-        // If it's a network/company filter, show that name
         mainStr = `Titles from ${activeFilterLabel}`;
     } else {
         const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
@@ -1236,8 +1437,9 @@ async function applyFilter(overrides = {}) {
 
     document.getElementById('trending-header').innerHTML = mainStr;
 
-    // Build API URL
-    // We use the updated 'type' variable here (which is now guaranteed to be 'tv' if network is present)
+    // --- Build API URL ---
+    // IMPORTANT: Note the encodeURIComponent isn't needed for IDs, but good practice for queries. 
+    // IDs with pipes (28|12) are valid in URL strings.
     let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=${includeAdult}&include_video=false`;
 
     if (year) {
@@ -1253,7 +1455,7 @@ async function applyFilter(overrides = {}) {
 
     currentFetchUrl = urlBase;
 
-    // Execute Fetch
+    // --- Execute Fetch ---
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
     loadedIds.clear();
@@ -1262,8 +1464,8 @@ async function applyFilter(overrides = {}) {
     try {
         const data = await fetchCached(`${currentFetchUrl}&page=1`);
 
-        // Map results to the correct media type
-        let results = data.results.map(i => ({ ...i, media_type: type }));
+        // Ensure results have the correct media_type property for the cards to work
+        let results = (data.results || []).map(i => ({ ...i, media_type: type }));
 
         if (year) {
             results = results.filter(item => {
@@ -1279,12 +1481,13 @@ async function applyFilter(overrides = {}) {
             currentFetchUrl = "STOP";
         } else {
             renderCards(results, trendingContainer, true);
-            trendingPage = 2;
+            trendingPage = 2; // Prepare for next page scroll
         }
         document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
     } catch (e) {
-        console.error(e);
+        console.error("Filter Error:", e);
         showMessage("Filter failed", true);
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading results.</div>';
     }
 
     activeFilterLabel = "";
@@ -1392,8 +1595,8 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
 async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
     try {
-        // Ensure 'images' is included in append_to_response
-        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos`);
+        // Updated URL includes: similar, translations
+        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos,similar,translations`);
         
         if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
 
@@ -1404,7 +1607,6 @@ async function fetchMovieDetails(id, title) {
         
         renderDetails(detailData, currentTitle);
         
-        // --- NEW: Render the Gallery ---
         renderGallery(detailData);
 
         if (detailData.belongs_to_collection) {
@@ -1421,8 +1623,8 @@ async function fetchMovieDetails(id, title) {
 
 async function fetchShowDetails(id, title) {
     try {
-        // Ensure 'images' is included in append_to_response
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords,videos`);
+        // Updated URL includes: similar, translations
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations`);
         
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
@@ -1433,7 +1635,6 @@ async function fetchShowDetails(id, title) {
         
         renderDetails(data, currentTitle);
         
-        // --- NEW: Render the Gallery ---
         renderGallery(data);
 
         episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
@@ -2019,6 +2220,8 @@ function renderDetails(data, title) {
     // Finalize Details
     renderDetailedInfo(data);
     renderLogos(data);
+    if (data.similar) renderSimilar(data.similar);
+    if (data.translations) handleTranslations(data);
 }
 
 function renderDetailedInfo(data) {
@@ -3525,5 +3728,105 @@ function renderGallery(data) {
     if (typeof updateScrollButtons === 'function') {
         updateScrollButtons(list);
         list.addEventListener('scroll', () => updateScrollButtons(list));
+    }
+}
+
+// --- NEW FEATURE: SIMILAR TITLES ---
+function renderSimilar(data) {
+    const container = document.getElementById('similar-container');
+    const section = document.getElementById('similar-section');
+    
+    // Safety Check: Hide section if no data
+    if (!data || !data.results || data.results.length === 0) {
+        if(section) section.classList.add('hidden');
+        return;
+    }
+
+    // Clear previous content
+    if(container) container.innerHTML = '';
+    if(section) section.classList.remove('hidden');
+
+    // Reuse existing card renderer
+    // We explicitly set media_type because 'similar' endpoints return specific types
+    const results = data.results.map(item => ({ ...item, media_type: mediaType }));
+    
+    if(container) renderCards(results, container, false);
+}
+
+// --- NEW FEATURE: SINHALA TRANSLATION TOGGLE ---
+function handleTranslations(data) {
+    if (!data.translations || !data.translations.translations) return;
+
+    // TMDB uses 'si' for Sinhala
+    const sinhala = data.translations.translations.find(t => t.iso_639_1 === 'si');
+    
+    // UI Elements
+    const overviewEl = document.getElementById('detail-overview');
+    const titleEl = document.getElementById('detail-heading');
+    const taglineEl = document.getElementById('detail-tagline');
+    
+    // Clean up old button if it exists
+    const existingBtn = document.getElementById('lang-toggle-btn');
+    if (existingBtn) existingBtn.remove();
+
+    // Only proceed if we actually have translated text
+    if (!sinhala || !sinhala.data || (!sinhala.data.overview && !sinhala.data.title)) return;
+
+    // Store Original (English)
+    const originalText = {
+        title: titleEl.innerText,
+        overview: overviewEl.innerText,
+        tagline: taglineEl.innerText
+    };
+
+    // Store Translated (Sinhala)
+    const translatedText = {
+        title: sinhala.data.title || sinhala.data.name || originalText.title,
+        overview: sinhala.data.overview || originalText.overview,
+        tagline: sinhala.data.tagline || ""
+    };
+
+    // Create Button Wrapper
+    const btnContainer = document.createElement('div');
+    btnContainer.id = 'lang-toggle-btn';
+    btnContainer.className = "mb-4 animate-fade-in";
+    
+    // Create Button
+    const btn = document.createElement('button');
+    btn.className = "text-xs font-bold px-4 py-2 rounded-full border border-gray-600 bg-black/20 text-gray-400 hover:text-white hover:border-white hover:bg-white/10 transition-all flex items-center gap-2";
+    btn.innerHTML = `<i class="fas fa-language text-lg"></i> <span>Read in Sinhala (සිංහල)</span>`;
+    
+    let isSinhala = false;
+
+    btn.onclick = () => {
+        isSinhala = !isSinhala;
+        
+        // Swap Text
+        overviewEl.innerText = isSinhala ? translatedText.overview : originalText.overview;
+        titleEl.innerText = isSinhala ? translatedText.title : originalText.title;
+        
+        if (translatedText.tagline) {
+            taglineEl.innerText = isSinhala ? translatedText.tagline : originalText.tagline;
+        }
+
+        // Update Button Style
+        if (isSinhala) {
+            btn.classList.replace('border-gray-600', 'border-green-500');
+            btn.classList.replace('text-gray-400', 'text-green-400');
+            btn.classList.add('bg-green-500/10');
+            btn.innerHTML = `<i class="fas fa-check"></i> <span>English (ඉංග්‍රීසි)</span>`;
+        } else {
+            btn.classList.replace('border-green-500', 'border-gray-600');
+            btn.classList.replace('text-green-400', 'text-gray-400');
+            btn.classList.remove('bg-green-500/10');
+            btn.innerHTML = `<i class="fas fa-language text-lg"></i> <span>Read in Sinhala (සිංහල)</span>`;
+        }
+    };
+
+    btnContainer.appendChild(btn);
+    
+    // Insert button right above the overview text
+    if(overviewEl.parentNode) {
+        overviewEl.parentNode.insertBefore(btnContainer, overviewEl);
     }
 }
