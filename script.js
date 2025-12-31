@@ -6,10 +6,15 @@ const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300';
 const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
 const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280';
 const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
-// --- GROQ AI CONFIGURATION ---
-const GROQ_API_KEY = "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"; // Add your key here
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+
+// --- GEMINI AI CONFIGURATION ---
+const ENCODED_KEY = "QUl6YVN5QTVGRmxtOVo5VFM5Vk9pYXNBVkxRVDdrNEdzeWNNMG8w"; 
+function getGeminiKey() {
+    return atob(ENCODED_KEY);
+}
+
+const GEMINI_API_KEY = getGeminiKey();
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // --- State Variables ---
 let mediaType = 'movie';
@@ -195,54 +200,44 @@ async function handleAISearch() {
     inputCont.classList.add('hidden');
     loader.classList.remove('hidden');
 
+    // Construct the Prompt
+    const systemInstruction = `You are an expert Movie Recommendation Engine. 
+    Strict Rules:
+    1. Return ONLY a valid JSON object. Do not add intro text or markdown formatting.
+    2. Structure: { "message": "Short comment", "results": ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"] }
+    3. If you can't find movies, return results as empty array.
+    4. Do not mention that you are an AI. Just provide the recommendations.`;
+
+    const fullPrompt = `${systemInstruction}\n\nUser Query: ${query}`;
+
     try {
-        const response = await fetch(GROQ_API_URL, {
+        const response = await fetch(GEMINI_API_URL, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                model: GROQ_MODEL,
-                messages: [
-                    {
-                        role: "system",
-                        content: `You are an expert Movie Recommendation Engine. 
-                        
-                        Strict Rules:
-                        1. Return ONLY a valid JSON object. Do not add intro text.
-                        2. Structure: { "message": "Short comment", "results": ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"] }
-                        3. If you can't find movies, return results as empty array.
-                        
-                        User Query: ${query}`
-                    },
-                    {
-                        role: "user",
-                        content: query
-                    }
-                ],
-                temperature: 0.3 // Lower temperature for more consistent JSON
+                contents: [{
+                    parts: [{ text: fullPrompt }]
+                }]
             })
         });
 
         const data = await response.json();
 
-        // 1. Check for API Errors (e.g., Invalid Key)
-        if (!response.ok) {
-            console.error("Groq API Error:", data);
+        // 1. Check for API Errors
+        if (!response.ok || data.error) {
+            console.error("Gemini API Error:", data);
             throw new Error(data.error?.message || "API request failed");
         }
 
-        const content = data.choices[0].message.content;
-        console.log("Raw AI Response:", content); // Debugging line
+        // 2. Parse Gemini Response (Deeply nested JSON)
+        const rawText = data.candidates[0].content.parts[0].text;
 
-        // 2. Robust JSON Parsing (Removes Markdown ```json ... ``` wrapper if present)
+        // 3. Robust JSON Cleaning (Strip Markdown blocks)
+        let cleanContent = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
         let aiData = {};
         try {
-            // Remove markdown code blocks if AI added them
-            const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
-            
-            // Find the first '{' and last '}' to isolate JSON
+            // Isolate JSON using brackets in case of extra text
             const firstBracket = cleanContent.indexOf('{');
             const lastBracket = cleanContent.lastIndexOf('}');
             
@@ -253,25 +248,24 @@ async function handleAISearch() {
                 aiData = JSON.parse(cleanContent);
             }
         } catch (e) {
-            console.error("JSON Parse Error. Raw content:", content);
+            console.error("JSON Parse Error", e);
             aiData = { 
-                message: "I found something, but the format was a bit off.", 
-                results: [query] 
+                message: "Here are some results based on your search.", 
+                results: [query] // Fallback to raw query
             };
         }
 
         // Close AI Modal
         toggleAIModal();
 
-        // Pass both the list and the message to the display function
+        // Pass results to display function
         displayAIResults(aiData.results || [], aiData.message);
 
     } catch (error) {
         console.error("AI Logic Failed:", error);
-        // Show the specific error in the alert so you know what's wrong
         showMessage(`AI Error: ${error.message}`, true);
         
-        // Reset UI
+        // Reset UI on error
         loader.classList.add('hidden');
         inputCont.classList.remove('hidden');
     }
@@ -3159,55 +3153,48 @@ async function fetchAIInsight(mode) {
     // Reset UI
     options.classList.add('hidden');
     loader.classList.remove('hidden');
-    resultBox.classList.add('hidden'); // Hide result box initially
+    resultBox.classList.add('hidden');
 
     // Prepare Data
     const jsonContext = JSON.stringify(currentMovieData, null, 2);
-    let prompt = "";
+    let promptInstruction = "";
 
     switch (mode) {
         case 'hype':
-            prompt = `Analyze this movie JSON and write a paragraph confirming the user whether to watch the movie or not (min 60 words). JSON: ${jsonContext}`;
+            promptInstruction = `Analyze this movie JSON and write a short, high-energy paragraph (max 60 words) telling the user why they absolutely MUST watch this. Focus on the plot hooks and actors. JSON: ${jsonContext}`;
             break;
         case 'trivia':
-            prompt = `Generate 3 interesting trivia facts from this movie JSON. JSON: ${jsonContext}`;
+            promptInstruction = `Generate 3 interesting, obscure trivia facts based on this movie JSON. Format them as a simple bulleted list. JSON: ${jsonContext}`;
             break;
         case 'parents':
-            prompt = `Explain the Age Rating based on this JSON. JSON: ${jsonContext}`;
+            promptInstruction = `Act as a strict Parent's Guide. Explain the Age Rating and content warnings (violence, language, etc) based on this JSON. Keep it concise. JSON: ${jsonContext}`;
             break;
     }
 
     try {
-        const response = await fetch(GROQ_API_URL, {
+        const response = await fetch(GEMINI_API_URL, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                model: GROQ_MODEL,
-                messages: [
-                    { role: "system", content: "You are a film critic." },
-                    { role: "user", content: prompt }
-                ],
-                temperature: 0.7,
-                max_tokens: 400
+                contents: [{
+                    parts: [{ text: promptInstruction }]
+                }]
             })
         });
 
         const data = await response.json();
 
-        // --- NEW ERROR HANDLING ---
-        if (!response.ok) {
-            console.error("Groq API Error Details:", data);
-            // Throw the specific error message from the API
-            throw new Error(data.error?.message || `API Error: ${response.status}`);
+        if (!response.ok || data.error) {
+            console.error("Gemini Error:", data);
+            throw new Error(data.error?.message || "API Error");
         }
 
-        const content = data.choices[0].message.content;
+        const content = data.candidates[0].content.parts[0].text;
 
         loader.classList.add('hidden');
         resultBox.classList.remove('hidden');
+        
+        // Format newlines for HTML
         resultText.innerHTML = content.replace(/\n/g, '<br>');
 
     } catch (error) {
@@ -3216,7 +3203,6 @@ async function fetchAIInsight(mode) {
         loader.classList.add('hidden');
         resultBox.classList.remove('hidden');
         
-        // --- DISPLAY THE REAL ERROR ON SCREEN ---
         resultText.innerHTML = `
             <strong class="text-red-500"><i class="fas fa-exclamation-circle"></i> AI Error</strong><br>
             <span class="text-gray-400 text-sm">${error.message}</span>
