@@ -204,13 +204,22 @@ async function handleAISearch() {
     inputCont.classList.add('hidden');
     loader.classList.remove('hidden');
 
-    // Construct the Prompt
-    const systemInstruction = `You are an expert Movie Recommendation Engine. 
+    // --- UPDATED PROMPT ---
+    const systemInstruction = `You are an expert Media Recommendation Engine. 
     Strict Rules:
-    1. Return ONLY a valid JSON object. Do not add intro text or markdown formatting.
-    2. Structure: { "message": "Short comment", "results": ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"] }
-    3. If you can't find movies, return results as empty array.
-    4. Do not mention that you are an AI. Just provide the recommendations.`;
+    1. Return ONLY a valid JSON object.
+    2. Structure: { 
+         "message": "Short comment", 
+         "results": [
+            { "name": "Title or Name", "type": "movie" }, 
+            { "name": "Name", "type": "person" },
+            { "name": "Company/Network", "type": "company" }
+         ] 
+       }
+    3. Allowed types: 'movie' (for movies/tv), 'person' (actors/directors), 'company' (networks/studios).
+    4. If the user asks for a specific person (e.g. "Tom Cruise"), return type: "person".
+    5. If the user asks for a network/studio (e.g. "HBO", "A24"), return type: "company".
+    6. Do not mention that you are an AI.`;
 
     const fullPrompt = `${systemInstruction}\n\nUser Query: ${query}`;
 
@@ -227,49 +236,37 @@ async function handleAISearch() {
 
         const data = await response.json();
 
-        // 1. Check for API Errors
         if (!response.ok || data.error) {
             console.error("Gemini API Error:", data);
             throw new Error(data.error?.message || "API request failed");
         }
 
-        // 2. Parse Gemini Response (Deeply nested JSON)
         const rawText = data.candidates[0].content.parts[0].text;
-
-        // 3. Robust JSON Cleaning (Strip Markdown blocks)
         let cleanContent = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         
         let aiData = {};
         try {
-            // Isolate JSON using brackets in case of extra text
             const firstBracket = cleanContent.indexOf('{');
             const lastBracket = cleanContent.lastIndexOf('}');
-            
             if (firstBracket !== -1 && lastBracket !== -1) {
-                const jsonString = cleanContent.substring(firstBracket, lastBracket + 1);
-                aiData = JSON.parse(jsonString);
+                aiData = JSON.parse(cleanContent.substring(firstBracket, lastBracket + 1));
             } else {
                 aiData = JSON.parse(cleanContent);
             }
         } catch (e) {
-            console.error("JSON Parse Error", e);
+            // Fallback for parsing errors
             aiData = { 
-                message: "Here are some results based on your search.", 
-                results: [query] // Fallback to raw query
+                message: "Here are some results.", 
+                results: [{ name: query, type: "movie" }] 
             };
         }
 
-        // Close AI Modal
         toggleAIModal();
-
-        // Pass results to display function
         displayAIResults(aiData.results || [], aiData.message);
 
     } catch (error) {
         console.error("AI Logic Failed:", error);
         showMessage(`AI Error: ${error.message}`, true);
-        
-        // Reset UI on error
         loader.classList.add('hidden');
         inputCont.classList.remove('hidden');
     }
@@ -277,8 +274,8 @@ async function handleAISearch() {
 
 // In script.js
 
-async function displayAIResults(titles, aiMessage) {
-    // 1. Reset the UI (Hide Hero, Details, etc.)
+async function displayAIResults(resultsList, aiMessage) {
+    // 1. Reset UI
     searchInput.value = `AI Search`;
     searchResults.innerHTML = '';
     heroSection.style.display = 'none';
@@ -288,7 +285,7 @@ async function displayAIResults(titles, aiMessage) {
     collectionSection.classList.add('hidden');
     document.getElementById('continue-watching-section').classList.add('hidden');
     
-    // 2. Set the Header with the AI's Message
+    // 2. Set Header
     const header = document.getElementById('trending-header');
     header.innerHTML = `
         <div class="flex flex-col animate-fade-in">
@@ -308,47 +305,36 @@ async function displayAIResults(titles, aiMessage) {
     trendingPage = 1;
     currentFetchUrl = "STOP"; 
 
-    // 4. Smart Search Loop
-    const searchPromises = titles.map(async (rawTitle) => {
-        let cleanTitle = rawTitle;
-        let targetYear = null;
+    // 4. Smart Fetch Loop
+    const searchPromises = resultsList.map(async (item) => {
+        const cleanName = item.name;
         
-        const yearMatch = rawTitle.match(/\((\d{4})\)/);
-        if (yearMatch) {
-            targetYear = yearMatch[1];
-            cleanTitle = rawTitle.replace(/\(\d{4}\)/, '').trim();
-        }
-
         try {
-            const url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=true`;
-            const data = await fetchCached(url);
+            let url = "";
             
+            // ROUTE TO CORRECT ENDPOINT BASED ON TYPE
+            if (item.type === 'company') {
+                url = `${BASE_TMDB_URL}/search/company?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}`;
+            } else {
+                // 'movie', 'tv', 'person' are all handled by multi search
+                url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}&include_adult=true`;
+            }
+
+            const data = await fetchCached(url);
             if (!data.results || data.results.length === 0) return null;
 
-            let bestMatch = null;
-            if (targetYear) {
-                bestMatch = data.results.find(item => {
-                    const date = item.release_date || item.first_air_date;
-                    return date && date.substring(0, 4) === targetYear;
-                });
-            }
-            if (!bestMatch) {
-                bestMatch = data.results.find(item => {
-                    const title = item.title || item.name;
-                    return title && title.toLowerCase() === cleanTitle.toLowerCase();
-                });
-            }
-            if (!bestMatch) {
-                bestMatch = data.results.find(i => i.media_type === 'movie' || i.media_type === 'tv') || data.results[0];
-            }
+            // Find best match
+            const bestMatch = data.results[0];
 
-            if (bestMatch && (bestMatch.media_type === 'movie' || bestMatch.media_type === 'tv')) {
+            if (bestMatch) {
+                // Ensure media_type is set correctly for the renderer
+                if (item.type === 'company') bestMatch.media_type = 'company';
                 return bestMatch;
             }
             return null;
 
         } catch (e) {
-            console.error(`Search failed for ${cleanTitle}`, e);
+            console.error(`Search failed for ${cleanName}`, e);
             return null;
         }
     });
@@ -356,51 +342,19 @@ async function displayAIResults(titles, aiMessage) {
     try {
         const resultsArray = await Promise.all(searchPromises);
         const validResults = resultsArray.filter(i => i !== null);
+        
+        // Remove duplicates
         const uniqueResults = Array.from(new Map(validResults.map(item => [item.id, item])).values());
 
         trendingContainer.innerHTML = '';
         
         if (uniqueResults.length > 0) {
-            // Scenario A: Database Matches Found
             renderCards(uniqueResults, trendingContainer, true);
         } else {
-            // Scenario B: No Matches (The "AI List" Fallback)
-            // We create manual cards for every title the AI suggested
-            titles.forEach(title => {
-                const card = document.createElement('div');
-                card.className = 'scroll-card';
-                
-                // Clean the title for the search query (remove year)
-                const cleanQuery = title.replace(/\(\d{4}\)/, '').trim();
-
-                card.innerHTML = `
-                    <div class="poster-wrapper" style="background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border: 1px solid #333;">
-                        <i class="fas fa-search text-3xl text-gray-500 mb-3"></i>
-                        <span class="text-xs text-gray-400 text-center">Search for</span>
-                        <span class="text-xs font-bold text-white text-center line-clamp-2 mt-1">${title}</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-title">${title}</div>
-                        <div class="card-meta">
-                            <span class="text-xs text-orange-400">AI Suggestion</span>
-                        </div>
-                    </div>
-                `;
-                
-                // On click, perform a manual search for this title
-                card.onclick = () => {
-                    const searchInput = document.getElementById('search-input');
-                    searchInput.value = cleanQuery;
-                    searchInput.focus();
-                    performMultiSearch(cleanQuery);
-                };
-                
-                trendingContainer.appendChild(card);
-            });
+            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No matches found.</div>';
         }
 
         updateScrollButtons(trendingContainer);
-
         setTimeout(() => {
             header.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -909,61 +863,115 @@ function renderTop10(items) {
 
 function renderCards(items, container, trackIds) {
     items.forEach(item => {
-        if (trackIds) {
-            if (loadedIds.has(item.id) || item.media_type === 'person') return;
+        // Track IDs to prevent duplicates (only for Movies/TV/Person)
+        if (trackIds && item.media_type !== 'company') {
+            if (loadedIds.has(item.id)) return;
             loadedIds.add(item.id);
-        } else if (item.media_type === 'person') return;
+        }
 
         const title = item.title || item.name;
-        const poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : 'missing_image_force_error';
+        let poster = "";
+        let isPerson = false;
+        let isCompany = false;
+
+        // --- DETERMINE IMAGE & TYPE ---
+        if (item.media_type === 'person') {
+            isPerson = true;
+            poster = item.profile_path ? `${TMDB_POSTER_MD}${item.profile_path}` : null;
+        } else if (item.media_type === 'company') {
+            isCompany = true;
+            poster = item.logo_path ? `${TMDB_IMG_BASE_URL}${item.logo_path}` : null;
+        } else {
+            poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
+        }
+
+        // Fallback Image
+        if (!poster) {
+            // If it's a person/company without image, you might want to skip or show placeholder
+            // For now, let's skip empty companies to keep UI clean
+            if (isCompany) return; 
+            poster = 'https://placehold.co/150x225/222/999?text=No+Image';
+        }
 
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'NR';
         const year = (item.release_date || item.first_air_date || 'N/A').substring(0, 4);
-        const type = item.media_type; // 'movie' or 'tv'
 
-        // Badge HTML
-        const badgeHtml = type === 'tv' 
-            ? `<div class="media-badge tv">TV</div>` 
-            : `<div class="media-badge movie">MOVIE</div>`;
+        // --- BADGE LOGIC ---
+        let badgeHtml = "";
+        if (item.media_type === 'tv') badgeHtml = `<div class="media-badge tv">TV</div>`;
+        else if (item.media_type === 'movie') badgeHtml = `<div class="media-badge movie">MOVIE</div>`;
+        else if (isCompany) badgeHtml = `<div class="media-badge" style="background:#666">STUDIO</div>`;
 
-        // --- NEW: Character Name Logic ---
-        // This checks if the 'character' field exists (it does for Actor Credits) 
-        // and creates a small text line for it.
-        const charHtml = item.character 
-            ? `<div class="text-[11px] text-gray-400 mb-1 truncate" title="as ${item.character}">as <span class="text-gray-200">${item.character}</span></div>` 
-            : '';
-
+        // --- CARD CLICK ACTION ---
         const card = document.createElement('div');
         card.className = 'scroll-card';
 
-        card.innerHTML = `
+        // Custom HTML for Person (Round Image) vs Standard (Poster)
+        if (isPerson) {
+             card.innerHTML = `
+                <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333;">
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
+                         onload="this.classList.remove('skeleton')"
+                         style="border-radius: 50%;">
+                </div>
+                <div class="card-body" style="text-align: center;">
+                    <div class="card-title">${title}</div>
+                    <div class="card-meta" style="justify-content: center;">
+                        <span class="text-xs text-gray-400">Actor / Crew</span>
+                    </div>
+                </div>
+            `;
+            // Click -> Load Profile
+            card.onclick = () => loadActorCredits(item.id, title, item.profile_path, item.gender);
+
+        } else if (isCompany) {
+             // Company Card (Logo centered)
+             card.innerHTML = `
+                <div class="poster-wrapper" style="background: #fff; padding: 20px;">
+                    ${badgeHtml}
+                    <img src="${poster}" class="poster-img" loading="lazy" alt="${title}" 
+                         style="object-fit: contain; filter: none;">
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${title}</div>
+                    <div class="card-meta">
+                        <span class="text-xs text-gray-400">Production</span>
+                    </div>
+                </div>
+            `;
+            // Click -> Filter by this company
+            card.onclick = () => {
+                // 'quickFilter' accepts (type, value, label, logo)
+                // We map 'company' to 'company' type logic in quickFilter
+                quickFilter('company', item.id, title, item.logo_path);
+            };
+
+        } else {
+            // Standard Movie/TV Card (Existing Logic)
+            card.innerHTML = `
                 <div class="poster-wrapper">
-                    ${badgeHtml} <img src="${poster}" 
-                         class="poster-img skeleton" 
-                         loading="lazy" 
-                         alt="${title}" 
+                    ${badgeHtml} 
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
                          onerror="this.style.display='none'">
-                         
                     <div class="play-overlay">
                         <div class="play-icon-circle"><i class="fas fa-play"></i></div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="card-title" title="${title}">${title}</div>
-                    ${charHtml}
                     <div class="card-meta">
                         <span>${year}</span>
                         <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
                     </div>
                 </div>
             `;
+            card.onclick = () => selectContent(item.id, title, item.media_type);
+        }
 
-        card.onclick = () => selectContent(item.id, title, type);
         container.appendChild(card);
     });
 
-    // Update scroll buttons after content renders
     if (typeof updateScrollButtons === 'function') {
         updateScrollButtons(container);
     }
