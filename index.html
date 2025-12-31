@@ -486,6 +486,16 @@
                     <input type="number" step="0.1" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
                 </div>
             </div>
+            <div>
+    <label class="block text-xs text-gray-400 mb-1">Sort By</label>
+    <select id="filter-sort" class="glass-select w-full p-2 rounded-lg">
+        <option value="popularity.desc">Most Popular</option>
+        <option value="vote_average.desc">Top Rated</option>
+        <option value="primary_release_date.desc">Newest First</option>
+        <option value="primary_release_date.asc">Oldest First</option>
+        <option value="revenue.desc">Box Office</option>
+    </select>
+</div>
             <div class="flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10">
                 <span class="text-xs text-gray-400">Content Safety</span>
                 <label class="flex items-center cursor-pointer gap-2">
@@ -645,7 +655,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=10"></script>
+<script src="script.js?v=9"></script>
 </body>
 </html>
-
