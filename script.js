@@ -1266,7 +1266,9 @@ async function loadActorCredits(personId, personName, profilePath, gender) {
         }
         
         // Profile Stats
-        const totalCount = (combinedCredits.cast?.length || 0) + (combinedCredits.crew?.length || 0);
+        // UPDATED: Use results.length to match the slider exactly (excludes items without posters)
+        const totalCount = results.length;
+
         renderPersonProfile(personData, totalCount);
 
     } catch (e) { 
