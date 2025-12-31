@@ -1,4 +1,6 @@
-const TMDB_API_KEY = '92850a79e50917b8cc19623455ae2240';
+// --- TMDB CONFIGURATION ---
+const TMDB_ENCODED = "OTI4NTBhNzllNTA5MTdiOGNjMTk2MjM0NTVhZTIyNDA=";
+const TMDB_API_KEY = getTmdbKey();
 const BASE_TMDB_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92';
 const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342';
@@ -12,7 +14,9 @@ const ENCODED_KEY = "QUl6YVN5QTVGRmxtOVo5VFM5Vk9pYXNBVkxRVDdrNEdzeWNNMG8w";
 function getGeminiKey() {
     return atob(ENCODED_KEY);
 }
-
+function getTmdbKey() {
+    return atob(TMDB_ENCODED);
+}
 const GEMINI_API_KEY = getGeminiKey();
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
