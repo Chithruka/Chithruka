@@ -50,12 +50,50 @@ let accountId = localStorage.getItem('tmdb_account_id');
 const requestCache = new Map();
 
 async function fetchCached(url) {
-    if (requestCache.has(url)) return requestCache.get(url);
+    // 1. Create a clean cache key (remove keys to avoid duplicates in key name)
+    const cacheKey = "tmdb_" + url.replace(TMDB_API_KEY, "").replace(GEMINI_API_KEY, "");
+    
+    // 2. Cache Duration: 1 Hour (in milliseconds)
+    const CACHE_DURATION = 1000 * 60 * 60; 
+
+    // 3. Try Local Storage
+    try {
+        const cachedRecord = localStorage.getItem(cacheKey);
+        if (cachedRecord) {
+            const { timestamp, data } = JSON.parse(cachedRecord);
+            // Check if expired
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                return data;
+            }
+        }
+    } catch (e) {
+        console.warn("Cache read error", e);
+    }
+
+    // 4. Fetch Network
     try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
-        requestCache.set(url, data);
+
+        // 5. Save to Local Storage
+        try {
+            // Only cache if valid data
+            if (data) {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: data
+                }));
+            }
+        } catch (e) {
+            // Storage likely full
+            console.warn("Storage full, clearing old TMDB cache...");
+            // Clear only keys starting with "tmdb_"
+            Object.keys(localStorage).forEach(key => {
+                if(key.startsWith("tmdb_")) localStorage.removeItem(key);
+            });
+        }
+
         return data;
     } catch (e) {
         throw e;
@@ -204,10 +242,10 @@ async function handleAISearch() {
     inputCont.classList.add('hidden');
     loader.classList.remove('hidden');
 
-    // --- UPDATED PROMPT ---
+    // --- UPDATED PROMPT: Asks for Type ---
     const systemInstruction = `You are an expert Media Recommendation Engine. 
     Strict Rules:
-    1. Return ONLY a valid JSON object.
+    1. Return ONLY a valid JSON object. Do not add intro text or markdown formatting.
     2. Structure: { 
          "message": "Short comment", 
          "results": [
@@ -217,8 +255,8 @@ async function handleAISearch() {
          ] 
        }
     3. Allowed types: 'movie' (for movies/tv), 'person' (actors/directors), 'company' (networks/studios).
-    4. If the user asks for a specific person (e.g. "Tom Cruise"), return type: "person".
-    5. If the user asks for a network/studio (e.g. "HBO", "A24"), return type: "company".
+    4. If the user asks for a specific person (e.g. "Tom Cruise", "Director of Tenet"), return type: "person".
+    5. If the user asks for a network/studio (e.g. "HBO", "A24", "Marvel"), return type: "company".
     6. Do not mention that you are an AI.`;
 
     const fullPrompt = `${systemInstruction}\n\nUser Query: ${query}`;
@@ -242,6 +280,8 @@ async function handleAISearch() {
         }
 
         const rawText = data.candidates[0].content.parts[0].text;
+        
+        // Clean JSON
         let cleanContent = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         
         let aiData = {};
@@ -254,10 +294,10 @@ async function handleAISearch() {
                 aiData = JSON.parse(cleanContent);
             }
         } catch (e) {
-            // Fallback for parsing errors
+            console.error("JSON Parse Error", e);
             aiData = { 
-                message: "Here are some results.", 
-                results: [{ name: query, type: "movie" }] 
+                message: "Here are some results based on your search.", 
+                results: [{ name: query, type: "movie" }] // Fallback
             };
         }
 
@@ -269,6 +309,98 @@ async function handleAISearch() {
         showMessage(`AI Error: ${error.message}`, true);
         loader.classList.add('hidden');
         inputCont.classList.remove('hidden');
+    }
+}
+
+async function displayAIResults(resultsList, aiMessage) {
+    // 1. Reset the UI
+    searchInput.value = `AI Search`;
+    searchResults.innerHTML = '';
+    heroSection.style.display = 'none';
+    document.getElementById('top10-section').style.display = 'none';
+    detailsSection.classList.add('hidden');
+    playerInterface.classList.add('hidden');
+    collectionSection.classList.add('hidden');
+    document.getElementById('continue-watching-section').classList.add('hidden');
+    
+    // 2. Set the Header
+    const header = document.getElementById('trending-header');
+    header.innerHTML = `
+        <div class="flex flex-col animate-fade-in">
+            <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
+            AI Recommendations
+            </div>
+            <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-4 border-red-600 pl-4">
+                "${aiMessage}"
+            </span>
+        </div>
+    `;
+
+    // 3. Prepare Container
+    trendingContainer.innerHTML = '';
+    renderSkeletons(trendingContainer, 10);
+    loadedIds.clear();
+    trendingPage = 1;
+    currentFetchUrl = "STOP"; 
+
+    // 4. Smart Search Loop
+    const searchPromises = resultsList.map(async (item) => {
+        // Handle case where item might be just a string (legacy support)
+        const cleanName = item.name || item; 
+        const type = item.type || 'movie';
+
+        try {
+            let url = "";
+            
+            // ROUTE TO CORRECT ENDPOINT
+            if (type === 'company') {
+                url = `${BASE_TMDB_URL}/search/company?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}`;
+            } else {
+                // Multi search handles 'movie', 'tv', and 'person'
+                url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}&include_adult=true`;
+            }
+
+            const data = await fetchCached(url);
+            
+            if (!data.results || data.results.length === 0) return null;
+
+            // Take the best match
+            const bestMatch = data.results[0];
+
+            if (bestMatch) {
+                // Force media_type for companies since API doesn't always return it in 'search/company'
+                if (type === 'company') bestMatch.media_type = 'company';
+                return bestMatch;
+            }
+            return null;
+
+        } catch (e) {
+            console.error(`Search failed for ${cleanName}`, e);
+            return null;
+        }
+    });
+
+    try {
+        const resultsArray = await Promise.all(searchPromises);
+        const validResults = resultsArray.filter(i => i !== null);
+        const uniqueResults = Array.from(new Map(validResults.map(item => [item.id, item])).values());
+
+        trendingContainer.innerHTML = '';
+        
+        if (uniqueResults.length > 0) {
+            renderCards(uniqueResults, trendingContainer, true);
+        } else {
+            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No results found.</div>';
+        }
+
+        updateScrollButtons(trendingContainer);
+        setTimeout(() => {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
+    } catch (e) {
+        console.error("AI Result Display Error", e);
+        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading AI results.</div>';
     }
 }
 
@@ -867,6 +999,9 @@ function renderCards(items, container, trackIds) {
         if (trackIds && item.media_type !== 'company') {
             if (loadedIds.has(item.id)) return;
             loadedIds.add(item.id);
+        } else if (item.media_type === 'person' && !trackIds) {
+            // Skip persons in contexts where we don't want them (like "Similar Movies")
+             return;
         }
 
         const title = item.title || item.name;
@@ -885,13 +1020,9 @@ function renderCards(items, container, trackIds) {
             poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
         }
 
-        // Fallback Image
-        if (!poster) {
-            // If it's a person/company without image, you might want to skip or show placeholder
-            // For now, let's skip empty companies to keep UI clean
-            if (isCompany) return; 
-            poster = 'https://placehold.co/150x225/222/999?text=No+Image';
-        }
+        // Fallback Image URL
+        const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
+        if (!poster) poster = fallbackImage;
 
         const rating = item.vote_average ? item.vote_average.toFixed(1) : 'NR';
         const year = (item.release_date || item.first_air_date || 'N/A').substring(0, 4);
@@ -900,37 +1031,38 @@ function renderCards(items, container, trackIds) {
         let badgeHtml = "";
         if (item.media_type === 'tv') badgeHtml = `<div class="media-badge tv">TV</div>`;
         else if (item.media_type === 'movie') badgeHtml = `<div class="media-badge movie">MOVIE</div>`;
-        else if (isCompany) badgeHtml = `<div class="media-badge" style="background:#666">STUDIO</div>`;
+        // We don't usually put badges on Company/Person, but you can if you want
 
-        // --- CARD CLICK ACTION ---
         const card = document.createElement('div');
         card.className = 'scroll-card';
 
-        // Custom HTML for Person (Round Image) vs Standard (Poster)
+        // --- RENDER BASED ON TYPE ---
+
         if (isPerson) {
              card.innerHTML = `
-                <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333;">
+                <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333; overflow: hidden;">
                     <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
+                         onerror="this.onerror=null; this.src='${fallbackImage}'"
                          style="border-radius: 50%;">
                 </div>
                 <div class="card-body" style="text-align: center;">
                     <div class="card-title">${title}</div>
                     <div class="card-meta" style="justify-content: center;">
-                        <span class="text-xs text-gray-400">Actor / Crew</span>
+                        <span class="text-xs text-gray-400">Person</span>
                     </div>
                 </div>
             `;
-            // Click -> Load Profile
             card.onclick = () => loadActorCredits(item.id, title, item.profile_path, item.gender);
 
         } else if (isCompany) {
-             // Company Card (Logo centered)
+             // Skip companies with no logo to keep UI clean
+             if (poster === fallbackImage) return;
+
              card.innerHTML = `
-                <div class="poster-wrapper" style="background: #fff; padding: 20px;">
-                    ${badgeHtml}
+                <div class="poster-wrapper" style="background: #fff; padding: 20px; display:flex; align-items:center; justify-content:center;">
                     <img src="${poster}" class="poster-img" loading="lazy" alt="${title}" 
-                         style="object-fit: contain; filter: none;">
+                         style="object-fit: contain; filter: none; width:auto; height:auto; max-width:80%; max-height:80%;">
                 </div>
                 <div class="card-body">
                     <div class="card-title">${title}</div>
@@ -939,27 +1071,29 @@ function renderCards(items, container, trackIds) {
                     </div>
                 </div>
             `;
-            // Click -> Filter by this company
-            card.onclick = () => {
-                // 'quickFilter' accepts (type, value, label, logo)
-                // We map 'company' to 'company' type logic in quickFilter
-                quickFilter('company', item.id, title, item.logo_path);
-            };
+            // 'quickFilter' needs to be mapped to 'company' search logic
+            card.onclick = () => quickFilter('company', item.id, title, item.logo_path);
 
         } else {
-            // Standard Movie/TV Card (Existing Logic)
+            // Standard Movie/TV
+            // --- NEW: Character Name Logic ---
+            const charHtml = item.character 
+                ? `<div class="text-[11px] text-gray-400 mb-1 truncate" title="as ${item.character}">as <span class="text-gray-200">${item.character}</span></div>` 
+                : '';
+
             card.innerHTML = `
                 <div class="poster-wrapper">
                     ${badgeHtml} 
                     <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
-                         onerror="this.style.display='none'">
+                         onerror="this.onerror=null; this.src='${fallbackImage}'">
                     <div class="play-overlay">
                         <div class="play-icon-circle"><i class="fas fa-play"></i></div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="card-title" title="${title}">${title}</div>
+                    ${charHtml}
                     <div class="card-meta">
                         <span>${year}</span>
                         <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
@@ -1363,65 +1497,43 @@ window.clearFilters = function() {
 }
 
 async function applyFilter(overrides = {}) {
-    // 1. Get current search type (default to 'movie' if null)
+    // 1. Get current search type
     let type = document.getElementById('filter-type').value || 'movie';
 
-    // 2. Extract values from Overrides (clicked tags) OR Filter Modal (dropdowns)
-    // We ensure 'genre' is treated as a String for reliable mapping
+    // 2. Extract values (Prioritize overrides -> then DOM elements)
     let genre = overrides.genre ? String(overrides.genre) : document.getElementById('filter-genre').value;
     const country = overrides.country || document.getElementById('filter-country').value;
     const year = overrides.year || document.getElementById('filter-year').value;
     const rating = overrides.rating || document.getElementById('filter-rating').value;
     const company = overrides.company;
     const network = overrides.network;
+    
+    // NEW: Get Sort Value (Default to popularity)
+    const sortValue = document.getElementById('filter-sort') ? document.getElementById('filter-sort').value : 'popularity.desc';
 
-    // --- FIX: Auto-switch to TV if a Network is selected ---
-    // Networks don't exist in movie mode, so force TV mode.
+    // Auto-switch to TV for networks
     if (network) {
         type = 'tv';
         const typeSelect = document.getElementById('filter-type');
         if (typeSelect) typeSelect.value = 'tv';
     }
 
-    // --- SMART GENRE MAPPING ---
-    // This fixes "War & Politics" failing in Movie mode, or "Action" failing in TV mode.
-    // We use pipe '|' for OR logic (e.g., Action OR Adventure).
+    // --- GENRE MAPPING LOGIC (Keep existing) ---
     const GENRE_MAPPING = {
-        // TV ID (Source) -> Movie ID (Target)
-        '10759': '28|12',      // Action & Adventure -> Action | Adventure
-        '10765': '878|14',     // Sci-Fi & Fantasy -> Sci-Fi | Fantasy
-        '10768': '10752',      // War & Politics -> War
-        '10762': '10751',      // Kids -> Family
-
-        // Movie ID (Source) -> TV ID (Target)
-        '28': '10759',         // Action -> Action & Adventure
-        '12': '10759',         // Adventure -> Action & Adventure
-        '878': '10765',        // Sci-Fi -> Sci-Fi & Fantasy
-        '14': '10765',         // Fantasy -> Sci-Fi & Fantasy
-        '10752': '10768',      // War -> War & Politics
+        '10759': '28|12', '10765': '878|14', '10768': '10752', '10762': '10751',
+        '28': '10759', '12': '10759', '878': '10765', '14': '10765', '10752': '10768',
     };
-
     if (genre && GENRE_MAPPING[genre]) {
-        // Scenario A: User is searching MOVIES, but passed a TV-only genre ID
-        if (type === 'movie') {
-            if (['10759', '10765', '10768', '10762'].includes(genre)) {
-                genre = GENRE_MAPPING[genre];
-            }
-        }
-        // Scenario B: User is searching TV, but passed a Movie-only genre ID
-        else if (type === 'tv') {
-            if (['28', '12', '878', '14', '10752'].includes(genre)) {
-                genre = GENRE_MAPPING[genre];
-            }
-        }
+        if (type === 'movie' && ['10759', '10765', '10768', '10762'].includes(genre)) genre = GENRE_MAPPING[genre];
+        else if (type === 'tv' && ['28', '12', '878', '14', '10752'].includes(genre)) genre = GENRE_MAPPING[genre];
     }
 
-    // --- Read Adult Toggle State ---
+    // --- Adult Toggle ---
     const adultToggle = document.getElementById('filter-adult');
     const includeAdult = adultToggle ? adultToggle.checked : false;
     localStorage.setItem('include_adult', includeAdult);
 
-    // Close Modal & Reset UI
+    // Close UI
     closeFilterModal();
     searchResults.innerHTML = '';
     searchInput.value = '';
@@ -1430,50 +1542,26 @@ async function applyFilter(overrides = {}) {
     document.getElementById('continue-watching-section').classList.add('hidden');
 
     // --- Build Header String ---
-    let genreName = "";
-    if (genre) {
-        // If we used an override label, use it. Otherwise try to find name in dropdown.
-        if (overrides.genre && activeFilterLabel) genreName = activeFilterLabel;
-        else {
-            const genreSelect = document.getElementById('filter-genre');
-            // Try to find the text of the selected option
-            const selectedOption = genreSelect.querySelector(`option[value="${genre}"]`);
-            genreName = selectedOption ? selectedOption.text : (activeFilterLabel || "Genre");
-        }
-    }
-    if (genreName === "Any Genre") genreName = "";
-
-    let countryName = "";
-    if (country) {
-        if (overrides.country && activeFilterLabel) countryName = activeFilterLabel;
-        else {
-            const countrySelect = document.getElementById('filter-country');
-            const selectedOption = countrySelect.options[countrySelect.selectedIndex];
-            countryName = selectedOption ? selectedOption.text : "Country";
-        }
-    }
-    if (countryName === "Any Country") countryName = "";
-
-    // Generate Display Header
-    let mainStr = "";
-    if ((company || network) && activeFilterLabel) {
-        mainStr = `Titles from ${activeFilterLabel}`;
+    let headerStr = "";
+    if (overrides.company || overrides.network) {
+        headerStr = activeFilterLabel ? `Titles from ${activeFilterLabel}` : "Production Search";
     } else {
-        const mediaStr = (type === 'movie' ? "Movies" : "TV Shows");
-        mainStr = genreName ? `${genreName} ${mediaStr}` : `All ${mediaStr}`;
-
-        if (countryName) mainStr += ` from ${countryName}`;
-        if (year) mainStr += ` released in ${year}`;
-        if (rating) mainStr += ` rated ${rating}+`;
-        if (includeAdult) mainStr += ` (18+)`;
+        const genreText = genre && activeFilterLabel ? activeFilterLabel : 
+            (genre ? document.querySelector(`#filter-genre option[value="${genre}"]`)?.text : "");
+            
+        headerStr = `${genreText || "All"} ${type === 'movie' ? "Movies" : "TV Shows"}`;
+        if (year) headerStr += ` (${year})`;
+        if (rating) headerStr += ` Rated ${rating}+`;
     }
+    document.getElementById('trending-header').innerHTML = headerStr;
 
-    document.getElementById('trending-header').innerHTML = mainStr;
+    // --- BUILD URL WITH SORTING ---
+    let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&include_adult=${includeAdult}&include_video=false`;
 
-    // --- Build API URL ---
-    // IMPORTANT: Note the encodeURIComponent isn't needed for IDs, but good practice for queries. 
-    // IDs with pipes (28|12) are valid in URL strings.
-    let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=${includeAdult}&include_video=false`;
+    // Add Sorting
+    urlBase += `&sort_by=${sortValue}`;
+    // Fix for "Top Rated": Filter out movies with very few votes to avoid 1-vote wonders
+    if (sortValue === 'vote_average.desc') urlBase += '&vote_count.gte=200';
 
     if (year) {
         if (type === 'movie') urlBase += `&primary_release_year=${year}`;
@@ -1496,10 +1584,9 @@ async function applyFilter(overrides = {}) {
 
     try {
         const data = await fetchCached(`${currentFetchUrl}&page=1`);
-
-        // Ensure results have the correct media_type property for the cards to work
         let results = (data.results || []).map(i => ({ ...i, media_type: type }));
 
+        // Strict Year Filter (API handles primary year, but sometimes leaks others)
         if (year) {
             results = results.filter(item => {
                 const date = item.release_date || item.first_air_date;
@@ -1514,16 +1601,53 @@ async function applyFilter(overrides = {}) {
             currentFetchUrl = "STOP";
         } else {
             renderCards(results, trendingContainer, true);
-            trendingPage = 2; // Prepare for next page scroll
+            trendingPage = 2; 
         }
         document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
     } catch (e) {
         console.error("Filter Error:", e);
-        showMessage("Filter failed", true);
         trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading results.</div>';
     }
+}
 
-    activeFilterLabel = "";
+window.clearFilters = function() {
+    document.getElementById('filter-genre').value = "";
+    document.getElementById('filter-country').value = "";
+    document.getElementById('filter-year').value = "";
+    document.getElementById('filter-rating').value = "";
+    
+    // Reset Sort
+    if(document.getElementById('filter-sort')) {
+        document.getElementById('filter-sort').value = "popularity.desc";
+    }
+
+    // Reset Adult
+    const adultToggle = document.getElementById('filter-adult');
+    if (adultToggle) adultToggle.checked = false;
+    localStorage.setItem('include_adult', 'false');
+
+    document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
+
+    closeFilterModal();
+
+    searchInput.value = '';
+    searchResults.innerHTML = '';
+    heroSection.style.display = 'block';
+    document.getElementById('top10-section').style.display = 'block';
+
+    const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+    if (history.length > 0) document.getElementById('continue-watching-section').classList.remove('hidden');
+
+    const header = document.getElementById('trending-header');
+    header.innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+
+    trendingContainer.innerHTML = '';
+    loadedIds.clear();
+    trendingPage = 1;
+    
+    // Important: Reset URL so scroll pagination works for trending again
+    currentFetchUrl = ""; 
+    loadTrending();
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
