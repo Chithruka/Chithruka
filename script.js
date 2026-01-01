@@ -208,7 +208,6 @@ function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
                 ${icon}
             </div>`;
 }
-
 // --- NEW: AI FUNCTIONS ---
 
 function toggleAIModal() {
@@ -3916,12 +3915,12 @@ function renderSimilar(data) {
     if(container) renderCards(results, container, false);
 }
 
-// --- UPDATED: FULL LOCALIZATION (Text, Credits, & Images) ---
-// --- UPDATED: FULL LOCALIZATION (Fixed Title Bug) ---
+// --- UPDATED: HYBRID TRANSLATION (TMDB + Google) ---
+// --- UPDATED: FULL DICTIONARY TRANSLATION ---
 function handleTranslations(data) {
     if (!data.translations || !data.translations.translations) return;
 
-    // 1. Elements to Update
+    // 1. Elements
     const overviewEl = document.getElementById('detail-overview');
     const titleEl = document.getElementById('detail-heading');
     const taglineEl = document.getElementById('detail-tagline');
@@ -3929,7 +3928,6 @@ function handleTranslations(data) {
     const bgContainer = document.getElementById('page-background');
     const logoImg = document.getElementById('detail-logo');
     
-    // Remove existing selector
     const existingSelector = document.getElementById('lang-selector-container');
     if (existingSelector) existingSelector.remove();
 
@@ -3941,12 +3939,12 @@ function handleTranslations(data) {
 
     if (availableTranslations.length === 0) return;
 
-    // 3. Store Original Data (English/Default)
-    // FIX: Use 'currentTitle' global fallback so we don't capture an empty string if the text is hidden.
+    // 3. Store Original Data
     const originalData = {
-        title: currentTitle || titleEl.innerText, 
-        overview: overviewEl.innerText,
-        tagline: taglineEl.innerText,
+        title: currentTitle || titleEl.textContent, 
+        overview: overviewEl.textContent,
+        tagline: taglineEl.textContent, 
+        hasTagline: taglineEl.textContent.trim() !== "",
         poster: posterImg.src,
         backdrop: bgContainer.style.backgroundImage,
         logoSrc: logoImg.src,
@@ -3971,7 +3969,7 @@ function handleTranslations(data) {
     defaultOption.text = 'English (Original)';
     select.appendChild(defaultOption);
 
-    // 5. Sort & Populate (Sinhala First)
+    // 5. Populate Options
     const langNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
     availableTranslations.sort((a, b) => {
@@ -3985,6 +3983,10 @@ function handleTranslations(data) {
         opt.value = t.iso_639_1;
         let displayName = t.english_name;
         try { displayName = langNames.of(t.iso_639_1); } catch (e) {}
+        
+        // Add native name for Sinhala specifically
+        if(t.iso_639_1 === 'si') displayName = "Sinhala (සිංහල)";
+
         opt.textContent = displayName;
         select.appendChild(opt);
     });
@@ -3993,39 +3995,47 @@ function handleTranslations(data) {
     select.onchange = async () => {
         const selectedLang = select.value;
 
+        // --- TRIGGER DICTIONARY TRANSLATION ---
+        // This is the new magic line
+        applyUITranslations(selectedLang);
+
         // --- A. REVERT TO ORIGINAL ---
         if (selectedLang === 'en-US') {
             titleEl.innerText = originalData.title;
             overviewEl.innerText = originalData.overview;
-            taglineEl.innerText = originalData.tagline;
-            taglineEl.classList.remove('hidden');
+            
+            if (originalData.hasTagline) {
+                taglineEl.innerText = originalData.tagline;
+                taglineEl.classList.remove('hidden');
+            } else {
+                taglineEl.classList.add('hidden');
+            }
             
             posterImg.src = originalData.poster;
             bgContainer.style.backgroundImage = originalData.backdrop;
-            
             logoImg.src = originalData.logoSrc;
             logoImg.style.display = originalData.logoDisplay;
             titleEl.style.display = originalData.titleDisplay;
             
-            if(originalData.poster) {
-                getDominantColor(originalData.poster).then(rgb => {
-                    document.documentElement.style.setProperty('--ambient-color', rgb);
-                });
-            }
+            // Revert UI to English (Hardcoded restore)
+             const dlBtn = document.querySelector('.btn-download');
+             if(dlBtn) dlBtn.innerHTML = `<i class="fas fa-download mr-2"></i> Download`;
+             const nextBtn = document.getElementById('next-ep-btn');
+             if(nextBtn) nextBtn.innerHTML = nextBtn.innerHTML.replace(/.*?Next.*/, '<i class="fas fa-step-forward mr-2"></i> Next');
+             // (We rely on standard DOM refresh for other elements if user switches back entirely, 
+             // or you can add an 'en' entry to the dictionary)
+
             return;
         }
 
-        // --- B. APPLY TRANSLATION ---
-        
-        // 1. Text Swap
+        // --- B. APPLY TMDB TRANSLATION ---
         const translation = availableTranslations.find(t => t.iso_639_1 === selectedLang);
         if (translation) {
-            // Use translated title, or fallback to the ROBUST original title
             titleEl.innerText = translation.data.title || originalData.title;
-            
             overviewEl.innerText = translation.data.overview || originalData.overview;
-            if (translation.data.tagline) {
-                taglineEl.innerText = translation.data.tagline;
+            
+            if (translation.data.tagline && translation.data.tagline.trim() !== "") {
+                taglineEl.innerText = `"${translation.data.tagline}"`; 
                 taglineEl.classList.remove('hidden');
             } else {
                 taglineEl.classList.add('hidden');
@@ -4034,7 +4044,6 @@ function handleTranslations(data) {
 
         if (!TMDB_ID || !mediaType) return;
 
-        // Visual loading feedback
         const castList = document.getElementById('cast-list');
         const crewList = document.getElementById('crew-list');
         castList.style.opacity = '0.5';
@@ -4047,7 +4056,7 @@ function handleTranslations(data) {
                 fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/images?api_key=${TMDB_API_KEY}&include_image_language=${selectedLang},null,en`)
             ]);
 
-            // --- 2. IMAGE SWAP ---
+            // Images
             const newPoster = imageData.posters.find(p => p.iso_639_1 === selectedLang) || imageData.posters[0];
             if (newPoster) {
                 const newPosterUrl = `${TMDB_POSTER_LG}${newPoster.file_path}`;
@@ -4062,7 +4071,6 @@ function handleTranslations(data) {
                 bgContainer.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${newBackdrop.file_path}')`;
             }
 
-            // Logo Logic
             const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
             if (newLogo) {
                 logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
@@ -4070,10 +4078,10 @@ function handleTranslations(data) {
                 titleEl.style.display = 'none';
             } else {
                 logoImg.style.display = 'none';
-                titleEl.style.display = 'block'; // Ensure title is visible if logo missing
+                titleEl.style.display = 'block'; 
             }
 
-            // --- 3. CREDITS SWAP ---
+            // Credits
             castList.innerHTML = '';
             if (creditsData.cast && creditsData.cast.length > 0) {
                 creditsData.cast.forEach(c => {
@@ -4128,4 +4136,37 @@ function handleTranslations(data) {
     if (overviewEl.parentNode) {
         overviewEl.parentNode.insertBefore(container, overviewEl);
     }
+}
+
+// --- GOOGLE TRANSLATE TRIGGER (SAFE MODE) ---
+function triggerGoogleTranslate(langCode) {
+    // 1. Safety Check: Is the Google Widget actually loaded?
+    const googleCombo = document.querySelector('.goog-te-combo');
+    
+    if (!window.google || !google.translate || !googleCombo) {
+        console.warn("Google Translate Script is blocked or not loaded. Skipping UI translation.");
+        return; // Exit function, but don't break the app
+    }
+
+    // 2. Helper to actually change the value
+    const changeLanguage = () => {
+        // If already selected, do nothing
+        if (googleCombo.value === langCode) return true;
+
+        googleCombo.value = langCode;
+        googleCombo.dispatchEvent(new Event('change'));
+        return true;
+    };
+
+    // 3. Try immediately
+    if (changeLanguage()) return;
+
+    // 4. Retry loop (only if widget exists but isn't ready)
+    let attempts = 0;
+    const interval = setInterval(() => {
+        attempts++;
+        if (changeLanguage() || attempts > 10) {
+            clearInterval(interval);
+        }
+    }, 500);
 }
