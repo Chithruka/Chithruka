@@ -1695,7 +1695,6 @@ window.selectContent = async function(id, title, type) {
     TMDB_ID = id;
     mediaType = type;
     
-    // Set initial title (might be "Loading..." on refresh)
     currentTitle = title;
     document.title = `${title} - Chithruka`;
 
@@ -1718,6 +1717,24 @@ window.selectContent = async function(id, title, type) {
     collectionSection.classList.add('hidden');
     playerIframe.src = "about:blank";
     
+    // --- FIX: Explicitly Clear Title, Logo AND Tagline ---
+    const logoImg = document.getElementById('detail-logo');
+    const textHeading = document.getElementById('detail-heading');
+    const taglineEl = document.getElementById('detail-tagline');
+    
+    if (logoImg) {
+        logoImg.src = ''; 
+        logoImg.style.display = 'none';
+    }
+    if (textHeading) {
+        textHeading.textContent = ''; 
+        textHeading.style.display = 'none';
+    }
+    if (taglineEl) {
+        taglineEl.textContent = ''; // Clear tagline text
+        taglineEl.classList.add('hidden'); // Hide it
+    }
+
     // --- RESET SOUNDTRACK ---
     const sSection = document.getElementById('soundtrack-section');
     const sContainer = document.getElementById('soundtrack-embed-container');
@@ -1735,15 +1752,10 @@ window.selectContent = async function(id, title, type) {
     checkAccountStates(id, type);
 
     // --- LOAD CONTENT ---
-    // These functions update the global 'currentTitle' variable with the REAL name
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
 
     loadRecommendations(mediaType, id);
-    
-    // --- FIX: Use 'currentTitle' instead of the local 'title' argument ---
-    // On refresh, the local 'title' is "Loading Content...", which fails the search.
-    // 'currentTitle' has been updated by fetchMovieDetails/fetchShowDetails to the real name.
     loadSoundtrack(currentTitle); 
 
     setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
@@ -3904,80 +3916,216 @@ function renderSimilar(data) {
     if(container) renderCards(results, container, false);
 }
 
-// --- NEW FEATURE: SINHALA TRANSLATION TOGGLE ---
+// --- UPDATED: FULL LOCALIZATION (Text, Credits, & Images) ---
+// --- UPDATED: FULL LOCALIZATION (Fixed Title Bug) ---
 function handleTranslations(data) {
     if (!data.translations || !data.translations.translations) return;
 
-    // TMDB uses 'si' for Sinhala
-    const sinhala = data.translations.translations.find(t => t.iso_639_1 === 'si');
-    
-    // UI Elements
+    // 1. Elements to Update
     const overviewEl = document.getElementById('detail-overview');
     const titleEl = document.getElementById('detail-heading');
     const taglineEl = document.getElementById('detail-tagline');
+    const posterImg = document.getElementById('detail-poster');
+    const bgContainer = document.getElementById('page-background');
+    const logoImg = document.getElementById('detail-logo');
     
-    // Clean up old button if it exists
-    const existingBtn = document.getElementById('lang-toggle-btn');
-    if (existingBtn) existingBtn.remove();
+    // Remove existing selector
+    const existingSelector = document.getElementById('lang-selector-container');
+    if (existingSelector) existingSelector.remove();
 
-    // Only proceed if we actually have translated text
-    if (!sinhala || !sinhala.data || (!sinhala.data.overview && !sinhala.data.title)) return;
+    // 2. Filter Valid Translations
+    const availableTranslations = data.translations.translations.filter(t => 
+        (t.data.overview && t.data.overview.trim() !== "") || 
+        (t.data.title && t.data.title.trim() !== "")
+    );
 
-    // Store Original (English)
-    const originalText = {
-        title: titleEl.innerText,
+    if (availableTranslations.length === 0) return;
+
+    // 3. Store Original Data (English/Default)
+    // FIX: Use 'currentTitle' global fallback so we don't capture an empty string if the text is hidden.
+    const originalData = {
+        title: currentTitle || titleEl.innerText, 
         overview: overviewEl.innerText,
-        tagline: taglineEl.innerText
+        tagline: taglineEl.innerText,
+        poster: posterImg.src,
+        backdrop: bgContainer.style.backgroundImage,
+        logoSrc: logoImg.src,
+        logoDisplay: logoImg.style.display,
+        titleDisplay: titleEl.style.display
     };
 
-    // Store Translated (Sinhala)
-    const translatedText = {
-        title: sinhala.data.title || sinhala.data.name || originalText.title,
-        overview: sinhala.data.overview || originalText.overview,
-        tagline: sinhala.data.tagline || ""
-    };
+    // 4. Create UI
+    const container = document.createElement('div');
+    container.id = 'lang-selector-container';
+    container.className = "mb-4 animate-fade-in flex items-center gap-3";
 
-    // Create Button Wrapper
-    const btnContainer = document.createElement('div');
-    btnContainer.id = 'lang-toggle-btn';
-    btnContainer.className = "mb-4 animate-fade-in";
+    const iconLabel = document.createElement('div');
+    iconLabel.innerHTML = `<i class="fas fa-language text-xl text-gray-400"></i>`;
     
-    // Create Button
-    const btn = document.createElement('button');
-    btn.className = "text-xs font-bold px-4 py-2 rounded-full border border-gray-600 bg-black/20 text-gray-400 hover:text-white hover:border-white hover:bg-white/10 transition-all flex items-center gap-2";
-    btn.innerHTML = `<i class="fas fa-language text-lg"></i> <span>Read in Sinhala (සිංහල)</span>`;
-    
-    let isSinhala = false;
+    const select = document.createElement('select');
+    select.className = "glass-select p-2 rounded-lg text-sm cursor-pointer outline-none focus:border-red-500 transition-colors";
+    select.style.minWidth = "160px";
 
-    btn.onclick = () => {
-        isSinhala = !isSinhala;
-        
-        // Swap Text
-        overviewEl.innerText = isSinhala ? translatedText.overview : originalText.overview;
-        titleEl.innerText = isSinhala ? translatedText.title : originalText.title;
-        
-        if (translatedText.tagline) {
-            taglineEl.innerText = isSinhala ? translatedText.tagline : originalText.tagline;
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'en-US';
+    defaultOption.text = 'English (Original)';
+    select.appendChild(defaultOption);
+
+    // 5. Sort & Populate (Sinhala First)
+    const langNames = new Intl.DisplayNames(['en'], { type: 'language' });
+
+    availableTranslations.sort((a, b) => {
+        if (a.iso_639_1 === 'si') return -1;
+        if (b.iso_639_1 === 'si') return 1;
+        return a.english_name.localeCompare(b.english_name);
+    });
+
+    availableTranslations.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.iso_639_1;
+        let displayName = t.english_name;
+        try { displayName = langNames.of(t.iso_639_1); } catch (e) {}
+        opt.textContent = displayName;
+        select.appendChild(opt);
+    });
+
+    // 6. Handle Change
+    select.onchange = async () => {
+        const selectedLang = select.value;
+
+        // --- A. REVERT TO ORIGINAL ---
+        if (selectedLang === 'en-US') {
+            titleEl.innerText = originalData.title;
+            overviewEl.innerText = originalData.overview;
+            taglineEl.innerText = originalData.tagline;
+            taglineEl.classList.remove('hidden');
+            
+            posterImg.src = originalData.poster;
+            bgContainer.style.backgroundImage = originalData.backdrop;
+            
+            logoImg.src = originalData.logoSrc;
+            logoImg.style.display = originalData.logoDisplay;
+            titleEl.style.display = originalData.titleDisplay;
+            
+            if(originalData.poster) {
+                getDominantColor(originalData.poster).then(rgb => {
+                    document.documentElement.style.setProperty('--ambient-color', rgb);
+                });
+            }
+            return;
         }
 
-        // Update Button Style
-        if (isSinhala) {
-            btn.classList.replace('border-gray-600', 'border-green-500');
-            btn.classList.replace('text-gray-400', 'text-green-400');
-            btn.classList.add('bg-green-500/10');
-            btn.innerHTML = `<i class="fas fa-check"></i> <span>English (ඉංග්‍රීසි)</span>`;
-        } else {
-            btn.classList.replace('border-green-500', 'border-gray-600');
-            btn.classList.replace('text-green-400', 'text-gray-400');
-            btn.classList.remove('bg-green-500/10');
-            btn.innerHTML = `<i class="fas fa-language text-lg"></i> <span>Read in Sinhala (සිංහල)</span>`;
+        // --- B. APPLY TRANSLATION ---
+        
+        // 1. Text Swap
+        const translation = availableTranslations.find(t => t.iso_639_1 === selectedLang);
+        if (translation) {
+            // Use translated title, or fallback to the ROBUST original title
+            titleEl.innerText = translation.data.title || originalData.title;
+            
+            overviewEl.innerText = translation.data.overview || originalData.overview;
+            if (translation.data.tagline) {
+                taglineEl.innerText = translation.data.tagline;
+                taglineEl.classList.remove('hidden');
+            } else {
+                taglineEl.classList.add('hidden');
+            }
+        }
+
+        if (!TMDB_ID || !mediaType) return;
+
+        // Visual loading feedback
+        const castList = document.getElementById('cast-list');
+        const crewList = document.getElementById('crew-list');
+        castList.style.opacity = '0.5';
+        crewList.style.opacity = '0.5';
+        posterImg.style.opacity = '0.7'; 
+
+        try {
+            const [creditsData, imageData] = await Promise.all([
+                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/credits?api_key=${TMDB_API_KEY}&language=${selectedLang}`),
+                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/images?api_key=${TMDB_API_KEY}&include_image_language=${selectedLang},null,en`)
+            ]);
+
+            // --- 2. IMAGE SWAP ---
+            const newPoster = imageData.posters.find(p => p.iso_639_1 === selectedLang) || imageData.posters[0];
+            if (newPoster) {
+                const newPosterUrl = `${TMDB_POSTER_LG}${newPoster.file_path}`;
+                posterImg.src = newPosterUrl;
+                getDominantColor(newPosterUrl).then(rgb => {
+                    document.documentElement.style.setProperty('--ambient-color', rgb);
+                });
+            }
+
+            const newBackdrop = imageData.backdrops.find(b => b.iso_639_1 === selectedLang) || imageData.backdrops[0];
+            if (newBackdrop) {
+                bgContainer.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${newBackdrop.file_path}')`;
+            }
+
+            // Logo Logic
+            const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
+            if (newLogo) {
+                logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
+                logoImg.style.display = 'block';
+                titleEl.style.display = 'none';
+            } else {
+                logoImg.style.display = 'none';
+                titleEl.style.display = 'block'; // Ensure title is visible if logo missing
+            }
+
+            // --- 3. CREDITS SWAP ---
+            castList.innerHTML = '';
+            if (creditsData.cast && creditsData.cast.length > 0) {
+                creditsData.cast.forEach(c => {
+                    const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
+                    const div = document.createElement('div');
+                    div.className = 'cast-card';
+                    div.innerHTML = `
+                        ${picHtml}
+                        <div class="cast-name">${c.name}</div>
+                        <div class="cast-char">${c.character}</div>
+                    `;
+                    div.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
+                    castList.appendChild(div);
+                });
+            } else {
+                castList.innerHTML = '<div class="text-gray-500 text-sm p-2">No cast info in this language.</div>';
+            }
+
+            crewList.innerHTML = '';
+            if (creditsData.crew && creditsData.crew.length > 0) {
+                const uniqueCrew = [];
+                const map = new Map();
+                creditsData.crew.forEach(c => {
+                    if (!map.has(c.id)) { map.set(c.id, true); uniqueCrew.push(c); }
+                });
+                uniqueCrew.slice(0, 20).forEach(c => {
+                    const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
+                    const div = document.createElement('div');
+                    div.className = 'cast-card';
+                    div.innerHTML = `
+                        ${picHtml}
+                        <div class="cast-name">${c.name}</div>
+                        <div class="crew-job">${c.job}</div>
+                    `;
+                    div.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
+                    crewList.appendChild(div);
+                });
+            }
+
+        } catch (e) {
+            console.error("Translation fetch failed", e);
+        } finally {
+            castList.style.opacity = '1';
+            crewList.style.opacity = '1';
+            posterImg.style.opacity = '1';
         }
     };
 
-    btnContainer.appendChild(btn);
-    
-    // Insert button right above the overview text
-    if(overviewEl.parentNode) {
-        overviewEl.parentNode.insertBefore(btnContainer, overviewEl);
+    container.appendChild(iconLabel);
+    container.appendChild(select);
+
+    if (overviewEl.parentNode) {
+        overviewEl.parentNode.insertBefore(container, overviewEl);
     }
 }
