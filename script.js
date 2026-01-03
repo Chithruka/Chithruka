@@ -1407,6 +1407,7 @@ window.openFilterModal = () => {
     filterModal.classList.remove('hidden');
     loadGenres();
     loadCountries();
+    loadLanguages();
 };
 window.closeFilterModal = () => filterModal.classList.add('hidden');
 filterModal.addEventListener('click', e => { if (e.target === filterModal) closeFilterModal(); });
@@ -1454,6 +1455,25 @@ async function loadCountries() {
     } catch (e) { console.error("Countries fetch error", e); }
 }
 
+async function loadLanguages() {
+    const select = document.getElementById('filter-language');
+    if (select.children.length > 1) return; // Stop if already loaded
+
+    try {
+        const data = await fetchCached(`${BASE_TMDB_URL}/configuration/languages?api_key=${TMDB_API_KEY}`);
+        
+        // Sort by English Name
+        data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+
+        data.forEach(l => {
+            const opt = document.createElement('option');
+            opt.value = l.iso_639_1;
+            opt.textContent = l.english_name;
+            select.appendChild(opt);
+        });
+    } catch (e) { console.error("Language fetch error", e); }
+}
+
 window.quickFilter = function(type, value, label = "", logo = "") {
     activeFilterLabel = label;
     document.getElementById('filter-genre').value = "";
@@ -1465,36 +1485,51 @@ window.quickFilter = function(type, value, label = "", logo = "") {
 }
 
 window.clearFilters = function() {
+    // --- Reset Input Fields ---
     document.getElementById('filter-genre').value = "";
     document.getElementById('filter-country').value = "";
+    document.getElementById('filter-language').value = ""; // --- FIX ADDED HERE ---
     document.getElementById('filter-year').value = "";
     document.getElementById('filter-rating').value = "";
+    
+    // --- Reset Sort (if element exists) ---
+    if(document.getElementById('filter-sort')) {
+        document.getElementById('filter-sort').value = "popularity.desc";
+    }
 
-    // --- NEW: Reset Adult Toggle and Local Storage ---
+    // --- Reset Adult Toggle and Local Storage ---
     const adultToggle = document.getElementById('filter-adult');
     if (adultToggle) adultToggle.checked = false;
-    
-    // Clear the memory so it defaults to off
     localStorage.setItem('include_adult', 'false');
 
+    // --- Reset Aesthetics & Modal ---
     document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
-
     closeFilterModal();
 
+    // --- Reset Layout Sections ---
     searchInput.value = '';
     searchResults.innerHTML = '';
     heroSection.style.display = 'block';
     document.getElementById('top10-section').style.display = 'block';
 
+    // --- Check Watch History ---
     const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
-    if (history.length > 0) document.getElementById('continue-watching-section').classList.remove('hidden');
+    if (history.length > 0) {
+        document.getElementById('continue-watching-section').classList.remove('hidden');
+    }
 
+    // --- Reset Header Title ---
     const header = document.getElementById('trending-header');
     header.innerHTML = '<i class="fas fa-fire text-orange-500 mr-3"></i> Trending Now';
 
+    // --- Reset Trending Data & Pagination ---
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
+    
+    // Important: Reset URL so scroll pagination works for trending again
+    currentFetchUrl = ""; 
+    
     loadTrending();
 }
 
@@ -1505,12 +1540,15 @@ async function applyFilter(overrides = {}) {
     // 2. Extract values (Prioritize overrides -> then DOM elements)
     let genre = overrides.genre ? String(overrides.genre) : document.getElementById('filter-genre').value;
     const country = overrides.country || document.getElementById('filter-country').value;
+    // --- FIX: Read Language Value ---
+    const language = overrides.language || document.getElementById('filter-language').value; 
+    
     const year = overrides.year || document.getElementById('filter-year').value;
     const rating = overrides.rating || document.getElementById('filter-rating').value;
     const company = overrides.company;
     const network = overrides.network;
     
-    // NEW: Get Sort Value (Default to popularity)
+    // Get Sort Value
     const sortValue = document.getElementById('filter-sort') ? document.getElementById('filter-sort').value : 'popularity.desc';
 
     // Auto-switch to TV for networks
@@ -1520,7 +1558,7 @@ async function applyFilter(overrides = {}) {
         if (typeSelect) typeSelect.value = 'tv';
     }
 
-    // --- GENRE MAPPING LOGIC (Keep existing) ---
+    // --- GENRE MAPPING LOGIC ---
     const GENRE_MAPPING = {
         '10759': '28|12', '10765': '878|14', '10768': '10752', '10762': '10751',
         '28': '10759', '12': '10759', '878': '10765', '14': '10765', '10752': '10768',
@@ -1535,7 +1573,7 @@ async function applyFilter(overrides = {}) {
     const includeAdult = adultToggle ? adultToggle.checked : false;
     localStorage.setItem('include_adult', includeAdult);
 
-    // Close UI
+    // Close UI & Reset Views
     closeFilterModal();
     searchResults.innerHTML = '';
     searchInput.value = '';
@@ -1543,42 +1581,63 @@ async function applyFilter(overrides = {}) {
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
-    // --- Build Header String ---
+    // --- Header String Logic ---
     let headerStr = "";
     if (overrides.company || overrides.network) {
         headerStr = activeFilterLabel ? `Titles from ${activeFilterLabel}` : "Production Search";
     } else {
         const genreText = genre && activeFilterLabel ? activeFilterLabel : 
             (genre ? document.querySelector(`#filter-genre option[value="${genre}"]`)?.text : "");
-            
         headerStr = `${genreText || "All"} ${type === 'movie' ? "Movies" : "TV Shows"}`;
+        
+        // --- FIX: Add Language to Header ---
+        if (language) {
+            const langName = document.querySelector(`#filter-language option[value="${language}"]`)?.text || language;
+            headerStr += ` in ${langName}`;
+        }
+        
         if (year) headerStr += ` (${year})`;
         if (rating) headerStr += ` Rated ${rating}+`;
     }
     document.getElementById('trending-header').innerHTML = headerStr;
 
-    // --- BUILD URL WITH SORTING ---
+    // ==========================================
+    // 1. BUILD URL (Fix Sort Keys)
+    // ==========================================
     let urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&include_adult=${includeAdult}&include_video=false`;
 
-    // Add Sorting
-    urlBase += `&sort_by=${sortValue}`;
-    // Fix for "Top Rated": Filter out movies with very few votes to avoid 1-vote wonders
-    if (sortValue === 'vote_average.desc') urlBase += '&vote_count.gte=200';
+    let finalSort = sortValue;
+    // Fix: TV API uses 'first_air_date' instead of 'primary_release_date'
+    if (type === 'tv' && sortValue.includes('primary_release_date')) {
+        finalSort = sortValue.replace('primary_release_date', 'first_air_date');
+    }
 
+    urlBase += `&sort_by=${finalSort}`;
+    
+    // Optional: Keep "Top Rated" clean (min votes) to avoid 1-vote wonders
+    if (finalSort.startsWith('vote_average')) {
+        urlBase += '&vote_count.gte=200';
+    }
+
+    // Append Filters
     if (year) {
         if (type === 'movie') urlBase += `&primary_release_year=${year}`;
         else urlBase += `&first_air_date_year=${year}`;
     }
-
     if (genre) urlBase += `&with_genres=${genre}`;
     if (rating) urlBase += `&vote_average.gte=${rating}`;
     if (country) urlBase += `&with_origin_country=${country}`;
     if (company) urlBase += `&with_companies=${company}`;
     if (network) urlBase += `&with_networks=${network}`;
+    
+    // --- FIX: Append Language Parameter ---
+    if (language) urlBase += `&with_original_language=${language}`;
 
     currentFetchUrl = urlBase;
 
-    // --- Execute Fetch ---
+    // ==========================================
+    // 2. FETCH & SORT (Reorder Logic)
+    // ==========================================
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
     loadedIds.clear();
@@ -1588,11 +1647,26 @@ async function applyFilter(overrides = {}) {
         const data = await fetchCached(`${currentFetchUrl}&page=1`);
         let results = (data.results || []).map(i => ({ ...i, media_type: type }));
 
-        // Strict Year Filter (API handles primary year, but sometimes leaks others)
+        // Strict Year Filter
         if (year) {
             results = results.filter(item => {
                 const date = item.release_date || item.first_air_date;
                 return date && date.substring(0, 4) === year.toString();
+            });
+        }
+
+        // --- NEW: Reorder "Oldest First" to push No Date items to bottom ---
+        if (finalSort.includes('.asc') && (finalSort.includes('date') || finalSort.includes('release'))) {
+            results.sort((a, b) => {
+                const dateA = a.release_date || a.first_air_date;
+                const dateB = b.release_date || b.first_air_date;
+
+                // Logic: Valid dates come first. Null dates go to the end (return 1).
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+
+                return new Date(dateA) - new Date(dateB);
             });
         }
 
@@ -1610,46 +1684,6 @@ async function applyFilter(overrides = {}) {
         console.error("Filter Error:", e);
         trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading results.</div>';
     }
-}
-
-window.clearFilters = function() {
-    document.getElementById('filter-genre').value = "";
-    document.getElementById('filter-country').value = "";
-    document.getElementById('filter-year').value = "";
-    document.getElementById('filter-rating').value = "";
-    
-    // Reset Sort
-    if(document.getElementById('filter-sort')) {
-        document.getElementById('filter-sort').value = "popularity.desc";
-    }
-
-    // Reset Adult
-    const adultToggle = document.getElementById('filter-adult');
-    if (adultToggle) adultToggle.checked = false;
-    localStorage.setItem('include_adult', 'false');
-
-    document.documentElement.style.setProperty('--ambient-color', '0, 0, 0');
-
-    closeFilterModal();
-
-    searchInput.value = '';
-    searchResults.innerHTML = '';
-    heroSection.style.display = 'block';
-    document.getElementById('top10-section').style.display = 'block';
-
-    const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
-    if (history.length > 0) document.getElementById('continue-watching-section').classList.remove('hidden');
-
-    const header = document.getElementById('trending-header');
-    header.innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
-
-    trendingContainer.innerHTML = '';
-    loadedIds.clear();
-    trendingPage = 1;
-    
-    // Important: Reset URL so scroll pagination works for trending again
-    currentFetchUrl = ""; 
-    loadTrending();
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
