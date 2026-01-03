@@ -1990,6 +1990,12 @@ function renderEpisodesRich() {
             }
         }, 300);
     }
+
+    // 5. Sync status badge with the currently selected episode immediately
+    const currentEpData = seasonEpisodes.find(ep => ep.episode_number === currentEpisode);
+    if (currentEpData) {
+        updateSeasonStatusUI(currentEpData.air_date);
+    }
 }
 
 function renderDetails(data, title) {
@@ -2861,7 +2867,17 @@ window.switchServer = function(index, btn) {
 }
 
 window.selectEpisode = function(s, e, el) {
-    currentSeason = s; currentEpisode = e;
+    currentSeason = s; 
+    currentEpisode = e;
+
+    // --- NEW: Update Release Status for this specific Episode ---
+    if (typeof seasonEpisodes !== 'undefined' && seasonEpisodes.length > 0) {
+        const epData = seasonEpisodes.find(ep => ep.episode_number === e);
+        if (epData) {
+            updateSeasonStatusUI(epData.air_date);
+        }
+    }
+
     updatePlayer();
 }
 
