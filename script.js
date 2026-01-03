@@ -2341,9 +2341,9 @@ function renderDetails(data, title) {
     if (videoContainer && videoList) {
         videoList.innerHTML = '';
         
-        // Filter for YouTube videos only
+        // 1. UPDATE: Filter for both YouTube AND Vimeo
         const videos = (data.videos && data.videos.results) 
-            ? data.videos.results.filter(v => v.site === "YouTube") 
+            ? data.videos.results.filter(v => v.site === "YouTube" || v.site === "Vimeo") 
             : [];
 
         if (videos.length > 0) {
@@ -2355,13 +2355,22 @@ function renderDetails(data, title) {
                 return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
             });
 
-       videos.forEach(video => {
+            videos.forEach(video => {
                 const div = document.createElement('div');
                 div.className = "video-card flex-shrink-0 group";
                 
+                // 2. UPDATE: Handle Thumbnails dynamically
+                let thumbSrc = "";
+                if (video.site === "YouTube") {
+                    thumbSrc = `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`;
+                } else {
+                    // Vimeo requires an API call to get a real thumbnail, so we use a fallback placeholder
+                    thumbSrc = "https://placehold.co/480x360/1f1f1f/ffffff?text=Vimeo+Video";
+                }
+
                 div.innerHTML = `
                     <div class="video-thumbnail">
-                        <img src="https://img.youtube.com/vi/${video.key}/hqdefault.jpg" loading="lazy" alt="${video.name}">
+                        <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
                         </div>
@@ -2372,11 +2381,17 @@ function renderDetails(data, title) {
                     </div>
                 `;
 
+                // 3. UPDATE: Handle Player Logic for different sites
                 div.onclick = () => {
                     const modal = document.getElementById('trailer-modal');
                     const iframe = document.getElementById('trailer-iframe');
                     modal.classList.remove('hidden');
-                    iframe.src = `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0`;
+                    
+                    if (video.site === "YouTube") {
+                        iframe.src = `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0`;
+                    } else if (video.site === "Vimeo") {
+                        iframe.src = `https://player.vimeo.com/video/${video.key}?autoplay=1`;
+                    }
                 };
 
                 videoList.appendChild(div);
