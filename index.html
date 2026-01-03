@@ -470,11 +470,20 @@
                     <option value="">Any Genre</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">Country</label>
-                <select id="filter-country" class="glass-select w-full p-2 rounded-lg">
-                    <option value="">Any Country</option>
-                </select>
+
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Country</label>
+                    <select id="filter-country" class="glass-select w-full p-2 rounded-lg">
+                        <option value="">Any Country</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Language</label>
+                    <select id="filter-language" class="glass-select w-full p-2 rounded-lg">
+                        <option value="">Any Language</option>
+                    </select>
+                </div>
             </div>
             <div class="flex gap-4">
                 <div class="flex-1">
@@ -487,15 +496,15 @@
                 </div>
             </div>
             <div>
-    <label class="block text-xs text-gray-400 mb-1">Sort By</label>
-    <select id="filter-sort" class="glass-select w-full p-2 rounded-lg">
-        <option value="popularity.desc">Most Popular</option>
-        <option value="vote_average.desc">Top Rated</option>
-        <option value="primary_release_date.desc">Newest First</option>
-        <option value="primary_release_date.asc">Oldest First</option>
-        <option value="revenue.desc">Box Office</option>
-    </select>
-</div>
+                <label class="block text-xs text-gray-400 mb-1">Sort By</label>
+                <select id="filter-sort" class="glass-select w-full p-2 rounded-lg">
+                    <option value="popularity.desc">Most Popular</option>
+                    <option value="vote_average.desc">Top Rated</option>
+                    <option value="primary_release_date.desc">Newest First</option>
+                    <option value="primary_release_date.asc">Oldest First</option>
+                    <option value="revenue.desc">Box Office</option>
+                </select>
+            </div>
             <div class="flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10">
                 <span class="text-xs text-gray-400">Content Safety</span>
                 <label class="flex items-center cursor-pointer gap-2">
@@ -504,13 +513,13 @@
                 </label>
             </div>
             <div class="flex gap-3 mt-2">
-    <button onclick="clearFilters()" class="flex-1 p-3 bg-[#333333] hover:bg-[#555555] rounded-lg text-white font-bold transition">
-        Reset
-    </button> 
-    <button onclick="applyFilter()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
-        Apply
-    </button>
-</div>
+                <button onclick="clearFilters()" class="flex-1 p-3 bg-[#333333] hover:bg-[#555555] rounded-lg text-white font-bold transition">
+                    Reset
+                </button> 
+                <button onclick="applyFilter()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
+                    Apply
+                </button>
+            </div>
         </div>
     </div>
 </div>
