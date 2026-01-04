@@ -1828,8 +1828,8 @@ async function fetchMovieDetails(id, title) {
 
 async function fetchShowDetails(id, title) {
     try {
-        // Updated URL includes: similar, translations
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations`);
+        // Updated URL includes: aggregate_credits (vital for full TV cast), similar, translations
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,aggregate_credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations`);
         
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
@@ -1921,19 +1921,40 @@ async function fetchSeasonDetails(tvId, seasonNum) {
 }
 
 function renderEpisodesRich() {
-    // 1. Generate the Card HTML
+    // 1. Determine the Total Number of Seasons (to check for Series Finale)
+    // We look at the global 'episodeData' array which contains all season info
+    const lastAvailableSeason = episodeData.length > 0 
+        ? Math.max(...episodeData.map(s => s.season)) 
+        : 0;
+
+    // 2. Generate the Card HTML
     let episodesHtml = '';
-    seasonEpisodes.forEach(ep => {
+    
+    seasonEpisodes.forEach((ep, index) => {
         const still = ep.still_path ? `${TMDB_STILL_SZ}${ep.still_path}` : 'https://placehold.co/120x68/333/999?text=No+Img';
         const isActive = (ep.episode_number === currentEpisode);
 
         const rating = ep.vote_average ? Math.round(ep.vote_average * 10) + "%" : "NR";
         const date = formatDate(ep.air_date);
-        
-        // Calculate runtime using your existing helper
         const runtime = formatRuntime(ep.runtime);
 
-        // Add runtime to the meta string if it exists
+        // --- NEW: Episode Type Logic ---
+        let typeBadge = '';
+        const isLastEpisode = index === seasonEpisodes.length - 1; // Is this the last one in the list?
+
+        // Logic Check
+        if (currentSeason === lastAvailableSeason && isLastEpisode) {
+            // Last episode of the last season = Series Finale
+            typeBadge = `<span class="ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded border border-yellow-500/50 text-yellow-500 bg-yellow-500/10">Series Finale</span>`;
+        } else if (isLastEpisode) {
+            // Last episode of any other season = Season Finale
+            typeBadge = `<span class="ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded border border-blue-400/50 text-blue-400 bg-blue-400/10">Season Finale</span>`;
+        } else if (ep.episode_number === 1) {
+            // First episode = Premiere
+            typeBadge = `<span class="ml-2 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-wider rounded border border-green-400/50 text-green-400 bg-green-400/10">Premiere</span>`;
+        }
+        // -------------------------------
+
         const metaString = `
             <span class="text-yellow-500"><i class="fas fa-star text-[10px]"></i> ${rating}</span>
             <span class="text-gray-600">|</span>
@@ -1945,14 +1966,16 @@ function renderEpisodesRich() {
             <div class="episode-rich-item ${isActive ? 'active' : ''}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
                 <img src="${still}" class="ep-still" loading="lazy">
                 <div class="ep-info">
-                    <div class="ep-title">${ep.episode_number}. ${ep.name}</div>
+                    <div class="flex items-center mb-1">
+                        <div class="ep-title">${ep.episode_number}. ${ep.name}</div>
+                        ${typeBadge} </div>
                     <div class="ep-meta">${metaString}</div>
                     <div class="ep-overview">${ep.overview || 'No overview available.'}</div>
                 </div>
             </div>`;
     });
 
-    // 2. Inject Wrapper + Buttons + List into the Accordion Content
+    // 3. Inject Wrapper + Buttons + List into the Accordion Content
     episodeAccordionContent.innerHTML = `
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-2 z-10 hidden" id="ep-btn-left" onclick="scrollContainer('episodes-scroll-list', -300)">
@@ -1969,16 +1992,14 @@ function renderEpisodesRich() {
         </div>
     `;
 
-    // 3. Attach Scroll Listener for Buttons visibility
+    // 4. Attach Scroll Listener
     const scrollContainerEl = document.getElementById('episodes-scroll-list');
     if (scrollContainerEl) {
-        // Initial check
         updateScrollButtons(scrollContainerEl);
-        // Check on scroll
         scrollContainerEl.addEventListener('scroll', () => updateScrollButtons(scrollContainerEl));
     }
 
-    // 4. Update Height if already open
+    // 5. Update Height if already open
     if (accordionOpen) {
         episodeAccordionContent.style.maxHeight = episodeAccordionContent.scrollHeight + "px";
         
@@ -1991,7 +2012,7 @@ function renderEpisodesRich() {
         }, 300);
     }
 
-    // 5. Sync status badge with the currently selected episode immediately
+    // 6. Sync status badge with the currently selected episode immediately
     const currentEpData = seasonEpisodes.find(ep => ep.episode_number === currentEpisode);
     if (currentEpData) {
         updateSeasonStatusUI(currentEpData.air_date);
@@ -2267,16 +2288,38 @@ function renderDetails(data, title) {
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
     
-    if (data.credits && data.credits.cast && data.credits.cast.length > 0) {
+    // --- NEW: Handle Aggregate Credits for TV (Full Cast) vs Standard Credits for Movies ---
+    let displayCast = [];
+
+    if (data.aggregate_credits && data.aggregate_credits.cast && data.aggregate_credits.cast.length > 0) {
+        // TV Shows: Use Aggregate Credits & normalize structure
+        displayCast = data.aggregate_credits.cast.map(c => ({
+            ...c,
+            // TV credits have a 'roles' array; join them or take the first one
+            character: c.roles ? c.roles.map(r => r.character).join(' / ') : (c.character || "")
+        }));
+    } else if (data.credits && data.credits.cast) {
+        // Movies: Use standard credits
+        displayCast = data.credits.cast;
+    }
+    
+    // Optional: Limit to top 50 to prevent performance issues on massive shows
+    if (displayCast.length > 50) displayCast = displayCast.slice(0, 50);
+
+    if (displayCast.length > 0) {
         castContainer.classList.remove('hidden');
-        data.credits.cast.forEach(c => {
+        displayCast.forEach(c => {
             const picHtml = getPersonFace(c.profile_path, c.gender, "cast-img");
             const castDiv = document.createElement('div');
             castDiv.className = 'cast-card';
+            
+            // Truncate overly long character names (common in TV aggregate credits)
+            const charName = (c.character && c.character.length > 30) ? c.character.substring(0, 30) + "..." : (c.character || "");
+
             castDiv.innerHTML = `
                     ${picHtml}
                     <div class="cast-name">${c.name}</div>
-                    <div class="cast-char">${c.character}</div>
+                    <div class="cast-char" title="${c.character || ''}">${charName}</div>
                 `;
             castDiv.onclick = () => loadActorCredits(c.id, c.name, c.profile_path, c.gender);
             castList.appendChild(castDiv);
@@ -2289,7 +2332,6 @@ function renderDetails(data, title) {
     } else {
         castContainer.classList.add('hidden');
     }
-
     // ============================================================
     // 7. CREW SECTION
     // ============================================================
