@@ -1001,7 +1001,6 @@ function renderCards(items, container, trackIds) {
             if (loadedIds.has(item.id)) return;
             loadedIds.add(item.id);
         } else if (item.media_type === 'person' && !trackIds) {
-            // Skip persons in contexts where we don't want them (like "Similar Movies")
              return;
         }
 
@@ -1032,12 +1031,22 @@ function renderCards(items, container, trackIds) {
         let badgeHtml = "";
         if (item.media_type === 'tv') badgeHtml = `<div class="media-badge tv">TV</div>`;
         else if (item.media_type === 'movie') badgeHtml = `<div class="media-badge movie">MOVIE</div>`;
-        // We don't usually put badges on Company/Person, but you can if you want
+        
+        // --- NEW CONTENT LOGIC (Added) ---
+        // Checks if release date is within the last 30 days
+        const releaseDate = new Date(item.release_date || item.first_air_date);
+        const now = new Date();
+        const diffTime = Math.abs(now - releaseDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // If released in the last 30 days and not in the future
+        if (diffDays <= 30 && releaseDate <= now) {
+            badgeHtml += `<div class="media-badge new">NEW</div>`;
+        }
+        // ---------------------------------
 
         const card = document.createElement('div');
         card.className = 'scroll-card';
-
-        // --- RENDER BASED ON TYPE ---
 
         if (isPerson) {
              card.innerHTML = `
@@ -1057,7 +1066,6 @@ function renderCards(items, container, trackIds) {
             card.onclick = () => loadActorCredits(item.id, title, item.profile_path, item.gender);
 
         } else if (isCompany) {
-             // Skip companies with no logo to keep UI clean
              if (poster === fallbackImage) return;
 
              card.innerHTML = `
@@ -1072,12 +1080,9 @@ function renderCards(items, container, trackIds) {
                     </div>
                 </div>
             `;
-            // 'quickFilter' needs to be mapped to 'company' search logic
             card.onclick = () => quickFilter('company', item.id, title, item.logo_path);
 
         } else {
-            // Standard Movie/TV
-            // --- NEW: Character Name Logic ---
             const charHtml = item.character 
                 ? `<div class="text-[11px] text-gray-400 mb-1 truncate" title="as ${item.character}">as <span class="text-gray-200">${item.character}</span></div>` 
                 : '';
