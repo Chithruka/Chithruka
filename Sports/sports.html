@@ -333,17 +333,150 @@
 
         // --- Premium Data ---
         const premiumChannels = [
-            { name: "Sky Sports Mix", type: "iframe", src: "https://streamcrichd.com/update/skysmix.php", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", isPremium: true },
-            { name: "Sky Sports 2", type: "iframe", src: "https://streamcrichd.com/update/skys2.php", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", isPremium: true },
-            { name: "Star Sports 1", type: "iframe", src: "https://streamcrichd.com/update/star.php", logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", isPremium: true },
-            { name: "Star Sports 1 Hindi", type: "iframe", src: "https://streamcrichd.com/update/star1hi.php", logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", isPremium: true },
-            { name: "Star Sports 2", type: "iframe", src: "https://streamcrichd.com/update/star2.php", logo: "https://static.wikia.nocookie.net/logopedia/images/f/f4/Star_Sports_2013.png", isPremium: true },
-            { name: "A Sports HD", type: "iframe", src: "https://streamcrichd.com/update/asportshd.php", logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/A_Sports_Logo.png", isPremium: true },
-            { name: "PTV Sports", type: "iframe", src: "https://streamcrichd.com/update/ptv.php", logo: "https://upload.wikimedia.org/wikipedia/en/e/e4/PTV_Sports.png", isPremium: true },
-            { name: "Ten Sports", type: "iframe", src: "https://streamcrichd.com/update/tensp.php", logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", isPremium: true },
-            { name: "ESPN", type: "iframe", src: "https://streamcrichd.com/update/espn.php", logo: "https://logos-world.net/wp-content/uploads/2020/01/ESPN-Logo.png", isPremium: true },
-            { name: "Sony Ten 1", type: "iframe", src: "https://streamcrichd.com/update/sonyten1.php", logo: "https://static.wikia.nocookie.net/logopedia/images/e/ed/Sony_Sports_Ten_1.png", isPremium: true }
-        ];
+    // Sky Sports Group  
+    { 
+        name: "Sky Sports Mix", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/skysmix.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", 
+        isPremium: true 
+    },
+{ 
+        name: "Sky Sports 2", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/skys2.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", 
+        isPremium: true 
+    },
+    { 
+        name: "Sky Sport 3 NZ", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/sky3nz.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", 
+        isPremium: true 
+    },
+    // Star Sports Group
+    { 
+        name: "Star Sports 1", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/star.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", 
+        isPremium: true 
+    },
+    { 
+        name: "Star Sports 1 Hindi", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/star1hi.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", 
+        isPremium: true 
+    },
+    { 
+        name: "Star Sports 2", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/star2.php", 
+        logo: "https://static.wikia.nocookie.net/logopedia/images/f/f4/Star_Sports_2013.png", 
+        isPremium: true 
+    },
+
+    // Sony Group
+    { 
+        name: "Sony Max", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/sonymax.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Sony_MAX_Logo_%282022%29.png", 
+        isPremium: true 
+    },
+    { 
+        name: "Sony Ten 1", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/sonyten1.php", 
+        logo: "https://static.wikia.nocookie.net/logopedia/images/e/ed/Sony_Sports_Ten_1.png", 
+        isPremium: true 
+    },
+
+    // Willow Group
+    { 
+        name: "Willow Cricket", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/willowcricket.php", 
+        logo: "https://static.wikia.nocookie.net/logopedia/images/7/7d/Willow_2023_stacked.svg", 
+        isPremium: true 
+    },
+    { 
+        name: "Willow Extra", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/willowextra.php", 
+        logo: "https://static.wikia.nocookie.net/logopedia/images/b/b6/Willow_Xtra_2023_stacked.svg", 
+        isPremium: true 
+    },
+
+    // BT Sport Group
+    { 
+        name: "BT Sport 2", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/bt2.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/e/ea/BT_Sport_logo_2019.svg", 
+        isPremium: true 
+    },
+    { 
+        name: "BT Sport Europe", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/bteu.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/e/ea/BT_Sport_logo_2019.svg", 
+        isPremium: true 
+    },
+
+    // Others (Standalones)
+    { 
+        name: "A Sports HD", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/asportshd.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/A_Sports_Logo.png", 
+        isPremium: true 
+    },
+    { 
+        name: "BeIN Sports 1 Max", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/bein1max.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/6/6d/BeIN_LaLiga_MAX_1_HD.png", 
+        isPremium: true 
+    },
+    { 
+        name: "ESPN", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/espn.php", 
+        logo: "https://logos-world.net/wp-content/uploads/2020/01/ESPN-Logo.png", 
+        isPremium: true 
+    },
+    { 
+        name: "Fox 501", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/fox501.php", 
+        logo: "https://static.wikia.nocookie.net/logopedia/images/c/c2/Fox_Sports_501.svg", 
+        isPremium: true 
+    },
+    { 
+        name: "PTV Sports", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/ptv.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/en/e/e4/PTV_Sports.png", 
+        isPremium: true 
+    },
+    { 
+        name: "SuperSport Cricket", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/sscricket.php", 
+        logo: "https://r2.thesportsdb.com/images/media/channel/logo/srtijz1643382350.png", 
+        isPremium: true 
+    },
+    { 
+        name: "Ten Sports", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/tensp.php", 
+        logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", 
+        isPremium: true 
+    }
+];
 
         // --- Core Functions ---
         function resetPage(e) {
