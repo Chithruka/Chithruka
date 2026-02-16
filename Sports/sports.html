@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHITHRUKA | Live Sports</title>
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* --- Root Variables --- */
+        :root {
+            --primary-red: #E50914;
+            --bg-black: #141414;
+            --bg-dark: #0f0f0f;
+            --text-gray: #b3b3b3;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* --- Global Reset --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-black); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-red); }
+
+        body {
+            background-color: var(--bg-black);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Video.js Theme Overrides --- */
+        .video-js { width: 100%; height: 100%; }
+        .vjs-theme-netflix .vjs-big-play-button {
+            background-color: var(--primary-red) !important;
+            border: none !important;
+            width: 2.5em; height: 1.5em; border-radius: 0.3em;
+            transition: transform 0.2s;
+        }
+        .vjs-theme-netflix .vjs-big-play-button:hover { transform: scale(1.1); }
+        .video-js .vjs-play-progress, .video-js .vjs-volume-level { background-color: var(--primary-red) !important; }
+
+        /* --- Header & Navigation --- */
+        header {
+            position: fixed; top: 0; width: 100%; height: 70px;
+            padding: 0 4%;
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            z-index: 1000;
+            transition: background 0.4s ease;
+        }
+        header.scrolled { background-color: var(--bg-black); box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem;
+            color: var(--primary-red); letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
+            cursor: pointer; text-decoration: none;
+            transition: transform 0.3s;
+        }
+        .logo:hover { transform: scale(1.05); }
+
+        .nav-links { display: flex; gap: 25px; margin-left: 40px; }
+        .nav-links a {
+            color: var(--text-gray); font-size: 0.95rem; font-weight: 500;
+            text-decoration: none; transition: color 0.3s;
+        }
+        .nav-links a:hover { color: white; }
+
+        /* Mobile Menu */
+        /* Mobile Menu Overlay - FIXED Z-INDEX */
+#mobile-menu-overlay {
+    position: fixed; 
+    top: 70px; 
+    left: 0; 
+    right: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    display: none; 
+    flex-direction: column; 
+    gap: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    animation: slideDown 0.3s ease-out;
+    z-index: 1001; /* This must be higher than the header (1000) */
+}
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #mobile-menu-overlay a {
+            font-size: 1.1rem; color: white; padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- Search & Avatar --- */
+        .search-box {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 12px; border-radius: 20px;
+            display: flex; align-items: center; transition: var(--transition);
+        }
+        .search-box:focus-within { border-color: white; background: rgba(0,0,0,0.9); }
+        .search-box input {
+            background: transparent; border: none; color: white;
+            padding-left: 10px; width: 0; transition: width 0.4s;
+        }
+        .search-box:hover input, .search-box input:focus { width: 220px; }
+
+        .avatar {
+            width: 36px; height: 36px; border-radius: 6px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png') center/cover;
+            cursor: pointer; border: 2px solid transparent; transition: var(--transition);
+        }
+        .avatar:hover { border-color: white; }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 75vh; width: 100%; position: relative;
+            background-image: url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2805');
+            background-size: cover; background-position: center;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+        .hero-overlay {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 70% 20%, transparent 0%, var(--bg-black) 90%),
+                        linear-gradient(to right, var(--bg-black) 0%, transparent 60%);
+            display: flex; flex-direction: column; justify-content: center; padding-left: 5%;
+        }
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 0.9;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .hero-subtitle { color: var(--primary-red); font-size: 3rem; margin-bottom: 1rem; }
+        
+        .btn {
+            padding: 10px 32px; border-radius: 4px; font-weight: 700; font-size: 1.1rem;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+            transition: var(--transition); border: none;
+        }
+        .btn-play { background: white; color: black; }
+        .btn-play:hover { background: rgba(255,255,255,0.85); transform: translateY(-2px); }
+        .btn-info { background: rgba(109, 109, 110, 0.7); color: white; backdrop-filter: blur(5px); }
+        .btn-info:hover { background: rgba(109, 109, 110, 0.5); transform: translateY(-2px); }
+
+        /* --- Grid Layout --- */
+        .infinite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px; padding: 20px 4%; margin-top: -80px; position: relative; z-index: 10;
+        }
+
+        .poster {
+            position: relative; aspect-ratio: 16/9;
+            background: #1a1a1a; border-radius: 6px; overflow: hidden;
+            cursor: pointer; transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .poster:hover {
+            transform: scale(1.05); z-index: 20;
+            border-color: rgba(255,255,255,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .poster img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
+        
+        .poster-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%);
+            display: flex; align-items: flex-end; padding: 10px;
+            opacity: 0.9;
+        }
+        .poster-title { font-size: 0.9rem; font-weight: 600; text-shadow: 0 2px 4px black; }
+
+        .premium-badge {
+            position: absolute; top: 8px; right: 8px;
+            background: linear-gradient(45deg, var(--primary-red), #b20710);
+            color: white; font-size: 0.65rem; padding: 3px 8px;
+            border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* --- Player Overlay --- */
+        #player-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black; z-index: 2000; display: none; flex-direction: column;
+        }
+        .player-header {
+            padding: 15px 4%; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: white; font-size: 1rem; padding: 8px 20px; border-radius: 30px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: var(--transition); backdrop-filter: blur(5px);
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-3px); }
+        
+        #video-container { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 50px; padding: 40px 4%;
+            background: rgba(0,0,0,0.8); text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .socials { font-size: 1.5rem; display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
+        .socials i:hover { color: white; transform: scale(1.1); transition: 0.3s; }
+
+        /* --- Responsive Queries --- */
+        @media (max-width: 768px) {
+            header { height: 65px; padding: 0 5%; background: rgba(0,0,0,0.95); }
+            .nav-links { display: none; }
+            #mobile-menu-toggle { display: block; }
+            
+            .hero { height: 55vh; }
+            .hero-title { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.5rem; }
+            .btn { font-size: 0.9rem; padding: 8px 16px; }
+
+            .infinite-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 12px; margin-top: -20px;
+            }
+            .poster { aspect-ratio: 16/10; }
+            .poster-title { font-size: 0.75rem; }
+            
+            #search-input { width: 140px; }
+            
+            /* Player Adjustments */
+            .player-header { padding: 10px 15px; }
+            .back-btn { font-size: 0.85rem; padding: 6px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="navbar">
+        <a href="#" class="logo" onclick="resetPage(event)">CHITHRUKA</a>
+        
+        <nav class="nav-links">
+            <a href="https://chithruka.github.io/Chithruka/">Movies</a>
+            <a href="https://chithruka.github.io/Chithruka/TV/tv.html">Live TV</a>
+            <a href="https://chithruka.github.io/Chithruka/Radio/radio.html">Live Radio</a>
+        </nav>
+
+        <div style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
+            <div class="search-box">
+                <i class="fas fa-search" style="color: white; font-size: 0.9rem;"></i>
+                <input type="text" id="search-input" placeholder="Search sports...">
+            </div>
+            <div class="avatar" onclick="toggleMobileMenu()"></div>
+        </div>
+    </header>
+
+    <div id="mobile-menu-overlay">
+        <a href="https://chithruka.github.io/Chithruka/">Movies</a>
+        <a href="https://chithruka.github.io/Chithruka/TV/tv.html">Live TV</a>
+        <a href="https://chithruka.github.io/Chithruka/Radio/radio.html">Live Radio</a>
+        <a href="#" onclick="toggleMobileMenu()" style="color: var(--primary-red); font-size: 0.9rem;">Close Menu</a>
+    </div>
+
+    <div class="hero">
+        <div class="hero-overlay">
+            <h1 class="hero-title text-white font-extrabold mb-2" style="font-family: 'Bebas Neue', sans-serif;">LIVE SPORT</h1>
+            <h2 class="hero-subtitle font-bold text-red-600 mb-4" style="font-family: 'Bebas Neue', sans-serif;">UNLIMITED</h2>
+            <p class="text-gray-300 text-sm md:text-lg max-w-lg mb-6 leading-relaxed drop-shadow-md">
+                Stream the biggest matches in Cricket, Football, Tennis and more. High definition, zero buffering.
+            </p>
+            <div class="flex gap-4">
+                <button class="btn btn-play shadow-lg" onclick="playRandom()">
+                    <i class="fas fa-play mr-2"></i> Play Now
+                </button>
+                <button class="btn btn-info shadow-lg">
+                    <i class="fas fa-info-circle mr-2"></i> More Info
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div class="flex justify-center mt-12 mb-12">
+            <div class="w-10 h-10 border-4 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="socials text-gray-400">
+            <i class="fab fa-facebook-f cursor-pointer transition hover:text-white"></i>
+            <i class="fab fa-instagram cursor-pointer transition hover:text-white"></i>
+            <i class="fab fa-twitter cursor-pointer transition hover:text-white"></i>
+            <i class="fab fa-youtube cursor-pointer transition hover:text-white"></i>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-500 max-w-4xl mx-auto mb-6 text-left">
+            <span>Audio Description</span><span>Help Center</span><span>Gift Cards</span><span>Media Center</span>
+            <span>Investor Relations</span><span>Jobs</span><span>Terms of Use</span><span>Privacy</span>
+        </div>
+        <p class="text-xs text-gray-600 font-medium">
+            &copy; 2026 Chithruka. All Rights Reserved.
+        </p>
+    </footer>
+
+    <div id="player-overlay">
+        <div class="player-header">
+            <button class="back-btn" onclick="closePlayer()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <span id="player-title" class="font-bold text-lg text-gray-200 tracking-wide">Channel Name</span>
+            <div style="width: 20px;"></div>
+        </div>
+        <div id="video-container"></div>
+    </div>
+
+    <script>
+        // --- State ---
+        let apiChannels = []; 
+        let allChannels = []; 
+        let filteredChannels = []; 
+        let displayedCount = 40; 
+        let player = null;
+        const M3U_URL = 'https://iptv-org.github.io/iptv/categories/sports.m3u';
+
+        // --- Premium Data ---
+        const premiumChannels = [
+            { name: "Sky Sports Mix", type: "iframe", src: "https://streamcrichd.com/update/skysmix.php", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", isPremium: true },
+            { name: "Sky Sports 2", type: "iframe", src: "https://streamcrichd.com/update/skys2.php", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", isPremium: true },
+            { name: "Star Sports 1", type: "iframe", src: "https://streamcrichd.com/update/star.php", logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", isPremium: true },
+            { name: "Star Sports 1 Hindi", type: "iframe", src: "https://streamcrichd.com/update/star1hi.php", logo: "https://upload.wikimedia.org/wikipedia/commons/7/73/Star_Sports_1_HD.png", isPremium: true },
+            { name: "Star Sports 2", type: "iframe", src: "https://streamcrichd.com/update/star2.php", logo: "https://static.wikia.nocookie.net/logopedia/images/f/f4/Star_Sports_2013.png", isPremium: true },
+            { name: "A Sports HD", type: "iframe", src: "https://streamcrichd.com/update/asportshd.php", logo: "https://upload.wikimedia.org/wikipedia/en/0/0c/A_Sports_Logo.png", isPremium: true },
+            { name: "PTV Sports", type: "iframe", src: "https://streamcrichd.com/update/ptv.php", logo: "https://upload.wikimedia.org/wikipedia/en/e/e4/PTV_Sports.png", isPremium: true },
+            { name: "Ten Sports", type: "iframe", src: "https://streamcrichd.com/update/tensp.php", logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", isPremium: true },
+            { name: "ESPN", type: "iframe", src: "https://streamcrichd.com/update/espn.php", logo: "https://logos-world.net/wp-content/uploads/2020/01/ESPN-Logo.png", isPremium: true },
+            { name: "Sony Ten 1", type: "iframe", src: "https://streamcrichd.com/update/sonyten1.php", logo: "https://static.wikia.nocookie.net/logopedia/images/e/ed/Sony_Sports_Ten_1.png", isPremium: true }
+        ];
+
+        // --- Core Functions ---
+        function resetPage(e) {
+            if(e) e.preventDefault();
+            document.getElementById('search-input').value = '';
+            filteredChannels = [...allChannels];
+            renderGrid(filteredChannels.slice(0, 40), true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu-overlay');
+            if (menu.style.display === 'flex') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'flex';
+            }
+        }
+
+        function renderGrid(channels, clear = false) {
+            const container = document.getElementById('main-content');
+            if (clear) container.innerHTML = '<div id="infinite-grid" class="infinite-grid"></div>';
+            
+            const grid = document.getElementById('infinite-grid');
+            if(!grid) return;
+
+            channels.forEach(channel => {
+                const poster = document.createElement('div');
+                poster.className = 'poster';
+                poster.onclick = () => openPlayer(channel);
+
+                const logoSrc = channel.logo || `https://via.placeholder.com/300x168?text=${encodeURIComponent(channel.name)}`;
+                
+                let badge = channel.isPremium ? '<span class="premium-badge">PREMIUM</span>' : '';
+                
+                poster.innerHTML = `
+                    ${badge}
+                    <img src="${logoSrc}" onerror="this.src='https://via.placeholder.com/300x168?text=Live'" loading="lazy" alt="${channel.name}">
+                    <div class="poster-overlay">
+                        <div class="poster-title truncate w-full text-white drop-shadow-md">${channel.name}</div>
+                    </div>
+                `;
+                grid.appendChild(poster);
+            });
+        }
+
+        async function fetchChannels() {
+            try {
+                const response = await fetch(M3U_URL);
+                const text = await response.text();
+                const lines = text.split('\n');
+                let current = {};
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line.startsWith('#EXTINF')) {
+                        const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                        const name = line.split(',').pop();
+                        current = { name, logo: logoMatch ? logoMatch[1] : '', type: 'hls' };
+                    } else if (line.startsWith('http')) {
+                        current.url = line;
+                        if (current.url.includes('.m3u8')) apiChannels.push(current);
+                    }
+                }
+                allChannels = [...premiumChannels, ...apiChannels];
+                filteredChannels = [...allChannels];
+                renderGrid(filteredChannels.slice(0, 40), true);
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Search ---
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            filteredChannels = allChannels.filter(c => c.name.toLowerCase().includes(query));
+            displayedCount = 40; 
+            renderGrid(filteredChannels.slice(0, 40), true);
+        });
+
+        // --- Player ---
+        function openPlayer(channel) {
+            const overlay = document.getElementById('player-overlay');
+            const vidContainer = document.getElementById('video-container');
+            const title = document.getElementById('player-title');
+            
+            overlay.style.display = 'flex';
+            title.innerText = channel.name;
+            
+            // Clean slate
+            if (player) { player.dispose(); player = null; }
+            vidContainer.innerHTML = '';
+
+            // Mobile Sizing Logic
+            if (window.innerWidth < 768) {
+                vidContainer.style.height = "35vh"; 
+                vidContainer.style.marginTop = "60px"; // Push down below header
+                vidContainer.style.alignItems = "flex-start";
+            } else {
+                vidContainer.style.height = "100%";
+                vidContainer.style.marginTop = "0";
+                vidContainer.style.alignItems = "center";
+            }
+
+            if (channel.type === 'iframe') {
+                const ifr = document.createElement('iframe');
+                ifr.src = channel.src;
+                ifr.setAttribute('allowfullscreen', 'true');
+                ifr.setAttribute('frameborder', '0');
+                ifr.setAttribute('scrolling', 'no');
+                ifr.style.width = "100%";
+                ifr.style.height = "100%";
+                ifr.style.background = "#000";
+                vidContainer.appendChild(ifr);
+            } else {
+                const videoEl = document.createElement('video');
+                videoEl.id = 'live-player';
+                videoEl.className = 'video-js vjs-default-skin vjs-big-play-centered vjs-theme-netflix';
+                vidContainer.appendChild(videoEl);
+                player = videojs('live-player', {
+                    autoplay: true, controls: true, fill: true,
+                    sources: [{ src: channel.url, type: 'application/x-mpegURL' }]
+                });
+            }
+        }
+
+        function closePlayer() {
+            const overlay = document.getElementById('player-overlay');
+            const vidContainer = document.getElementById('video-container');
+
+            overlay.style.display = 'none';
+
+            // 1. Dispose Video.js if active
+            if (player) {
+                try {
+                    player.pause();
+                    player.dispose();
+                } catch(e) { console.log(e); }
+                player = null;
+            }
+
+            // 2. Nuke the container HTML (stops iframes instantly)
+            vidContainer.innerHTML = '';
+        }
+
+        function playRandom() {
+            if(allChannels.length > 0) {
+                const random = allChannels[Math.floor(Math.random() * allChannels.length)];
+                openPlayer(random);
+            }
+        }
+
+        // --- Infinite Scroll ---
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
+                if (displayedCount < filteredChannels.length) {
+                    const nextBatch = filteredChannels.slice(displayedCount, displayedCount + 20);
+                    renderGrid(nextBatch);
+                    displayedCount += 20;
+                }
+            }
+        });
+
+        // Initialize
+        fetchChannels();
+    </script>
+</body>
+</html>
