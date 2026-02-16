@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Retro IPTV Multi-Source</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<style>
+    /* Ensure Video.js fills our screen-wrapper */
+    .video-js {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    /* Hide the default big play button for the "TV" feel */
+    .vjs-big-play-button { display: none !important; }
+</style>
     <style>
         /* --- CORE LAYOUT --- */
         body {
@@ -184,12 +195,21 @@
     <div id="tv-station">
         <div id="tv-chassis">
             <div id="screen-wrapper">
-                <div id="rec-overlay" class="blink">● REC</div>
-                <div class="scanlines"></div>
-                <div class="noise"></div>
-                <div class="vignette"></div>
-                <video id="video" controls autoplay crossorigin="anonymous" playsinline></video>
-            </div>
+    <div id="rec-overlay" class="blink">● REC</div>
+    <div class="scanlines"></div>
+    <div class="noise"></div>
+    <div class="vignette"></div>
+    
+    <video 
+        id="video-player" 
+        class="video-js vjs-default-skin vjs-big-play-centered" 
+        controls 
+        preload="auto" 
+        autoplay 
+        muted 
+        playsinline>
+    </video>
+</div>
 
             <div class="tv-controls-bar">
                 <div class="brand">
@@ -224,253 +244,261 @@
         </ul>
     </div>
 
-    <script>
-        // --- MULTI-SOURCE CONFIGURATION ---
-        // You can add more .m3u or .m3u8 links here
-        const PLAYLIST_SOURCES = [
-            'https://iptv-org.github.io/iptv/index.m3u',              // Main Source
-            'https://i.mjh.nz/SamsungTVPlus/all.m3u8',               // Samsung TV Plus
-            'https://i.mjh.nz/PlutoTV/all.m3u8'                      // Pluto TV
-        ];
-        
-        const video = document.getElementById('video');
-        const tvChassis = document.getElementById('tv-chassis'); 
-        const screenWrapper = document.getElementById('screen-wrapper');
-        const fsBtn = document.getElementById('fs-btn');
-        const channelList = document.getElementById('channel-list');
-        const channelDisplay = document.getElementById('current-channel-display');
-        const countrySelect = document.getElementById('country-filter');
-        const categorySelect = document.getElementById('category-filter');
-        const searchBox = document.getElementById('search-box');
-        const vfxBtn = document.getElementById('vfx-btn');
-        
-        const recBtn = document.getElementById('rec-btn');
-        const recOverlay = document.getElementById('rec-overlay');
-        let mediaRecorder;
-        let recordedChunks = [];
-        let isRecording = false;
-        let currentChannelName = "Unknown_Channel";
-        let allChannels = []; 
-        let hls = null;
+    <script>// --- INITIALIZE VIDEO.JS PLAYER ---
+// We initialize Video.js with standard HLS support and basic retro-friendly settings
+const player = videojs('video-player', {
+    fluid: false,
+    autoplay: true,
+    controls: true,
+    responsive: true,
+    playbackRates: [0.5, 1, 1.5, 2]
+});
 
-        // --- FETCHING MULTIPLE SOURCES ---
-        const statusMsg = document.querySelector('#channel-list li');
-        if(statusMsg) statusMsg.innerText = "Scanning Frequencies (Loading multiple sources)...";
+// --- CONFIGURATION & STATE ---
+const PLAYLIST_SOURCES = [
+    'https://iptv-org.github.io/iptv/index.m3u',              
+    'https://i.mjh.nz/SamsungTVPlus/all.m3u8',               
+    'https://i.mjh.nz/PlutoTV/all.m3u8'                      
+];
 
-        // We use Promise.allSettled so if one link fails, the others still load.
-        Promise.allSettled(PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text())))
-            .then(results => {
-                let combinedData = [];
-                
-                results.forEach((result, index) => {
-                    if (result.status === 'fulfilled') {
-                        console.log(`Source ${index + 1} loaded successfully.`);
-                        const channels = parseM3U(result.value);
-                        combinedData = [...combinedData, ...channels];
-                    } else {
-                        console.error(`Source ${index + 1} failed to load:`, result.reason);
-                    }
-                });
+const tvChassis = document.getElementById('tv-chassis'); 
+const screenWrapper = document.getElementById('screen-wrapper');
+const fsBtn = document.getElementById('fs-btn');
+const channelList = document.getElementById('channel-list');
+const channelDisplay = document.getElementById('current-channel-display');
+const countrySelect = document.getElementById('country-filter');
+const categorySelect = document.getElementById('category-filter');
+const searchBox = document.getElementById('search-box');
+const vfxBtn = document.getElementById('vfx-btn');
+const recBtn = document.getElementById('rec-btn');
+const recOverlay = document.getElementById('rec-overlay');
 
-                allChannels = combinedData;
-                populateDropdowns(allChannels);
-                applyFilters(); // Render the combined list
-                
-                // Update status if empty
-                if(allChannels.length === 0) {
-                    channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists loaded.</li>';
-                }
-            });
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
+let currentChannelName = "Unknown_Channel";
+let allChannels = []; 
 
-        // --- PARSER ---
-        function parseM3U(content) {
-            const lines = content.split('\n');
-            const channels = [];
-            let currentChannel = {};
-            lines.forEach(line => {
-                line = line.trim();
-                if (line.startsWith('#EXTINF:')) {
-                    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-                    const groupMatch = line.match(/group-title="([^"]*)"/);
-                    const countryMatch = line.match(/tvg-country="([^"]*)"/);
-                    const nameParts = line.split(',');
-                    const name = nameParts[nameParts.length - 1];
-                    currentChannel = {
-                        name: name ? name.trim() : "Unknown",
-                        logo: logoMatch ? logoMatch[1] : null,
-                        group: groupMatch ? groupMatch[1] : 'Uncategorized',
-                        country: countryMatch ? countryMatch[1] : 'INT',
-                    };
-                } else if (line.startsWith('http')) {
-                    currentChannel.url = line;
-                    channels.push(currentChannel);
-                    currentChannel = {}; 
-                }
-            });
-            return channels;
-        }
+// --- BOOTSTRAP: FETCH MULTIPLE SOURCES ---
+const statusMsg = document.querySelector('#channel-list li');
+if(statusMsg) statusMsg.innerText = "Scanning Frequencies (Loading sources)...";
 
-        // --- FULLSCREEN ---
-        async function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                try {
-                    await tvChassis.requestFullscreen();
-                    if (screen.orientation && screen.orientation.lock) {
-                        try { await screen.orientation.lock('landscape'); } catch (e) {}
-                    }
-                } catch (err) { alert("Fullscreen error: " + err.message); }
-            } else {
-                document.exitFullscreen();
-                if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-            }
-        }
-
-        document.addEventListener('fullscreenchange', () => {
-            if (document.fullscreenElement) {
-                fsBtn.innerText = "[X] EXIT FULL";
-            } else {
-                fsBtn.innerText = "[ ] FULLSCREEN";
+Promise.allSettled(PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text())))
+    .then(results => {
+        let combinedData = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                const channels = parseM3U(result.value);
+                combinedData = [...combinedData, ...channels];
             }
         });
 
-        // --- RECORDING ---
-        function toggleRecording() {
-            if (!isRecording) startRecording();
-            else stopRecording();
+        allChannels = combinedData;
+        populateDropdowns(allChannels);
+        applyFilters(); 
+        
+        if(allChannels.length === 0) {
+            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists loaded.</li>';
         }
+    });
 
-        function startRecording() {
-            if (video.paused || !video.src) { alert("No active video stream!"); return; }
-            let stream;
-            try {
-                if (video.captureStream) stream = video.captureStream();
-                else if (video.mozCaptureStream) stream = video.mozCaptureStream();
-                else { alert("Browser not supported."); return; }
-            } catch (e) { alert("CORS Security restriction."); return; }
-
-            recordedChunks = [];
-            const options = { mimeType: 'video/webm; codecs=vp9' };
-            try { mediaRecorder = new MediaRecorder(stream, options); }
-            catch (e) { mediaRecorder = new MediaRecorder(stream); }
-
-            mediaRecorder.ondataavailable = function(event) {
-                if (event.data.size > 0) recordedChunks.push(event.data);
+// --- M3U PARSER ---
+function parseM3U(content) {
+    const lines = content.split('\n');
+    const channels = [];
+    let currentChannel = {};
+    lines.forEach(line => {
+        line = line.trim();
+        if (line.startsWith('#EXTINF:')) {
+            const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+            const groupMatch = line.match(/group-title="([^"]*)"/);
+            const countryMatch = line.match(/tvg-country="([^"]*)"/);
+            const nameParts = line.split(',');
+            currentChannel = {
+                name: nameParts[nameParts.length - 1]?.trim() || "Unknown",
+                logo: logoMatch ? logoMatch[1] : null,
+                group: groupMatch ? groupMatch[1] : 'Uncategorized',
+                country: countryMatch ? countryMatch[1] : 'INT',
             };
-            mediaRecorder.onstop = saveRecording;
-            mediaRecorder.start();
-            isRecording = true;
-            recBtn.innerText = "■ STOP";
-            recBtn.classList.add('recording');
-            recOverlay.style.display = 'block';
+        } else if (line.startsWith('http')) {
+            currentChannel.url = line;
+            channels.push(currentChannel);
+            currentChannel = {}; 
         }
+    });
+    return channels;
+}
 
-        function stopRecording() {
-            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-            isRecording = false;
-            recBtn.innerText = "● RECORD";
-            recBtn.classList.remove('recording');
-            recOverlay.style.display = 'none';
+// --- CHANNEL CONTROLS ---
+function playStream(channel, element) {
+    currentChannelName = channel.name;
+    channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
+    
+    if(isRecording) { 
+        stopRecording(); 
+        alert("Recording stopped: Channel Changed."); 
+    }
+
+    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+    if(element) element.classList.add('active');
+
+    // Update Video.js Source
+    player.src({
+        src: channel.url,
+        type: 'application/x-mpegURL'
+    });
+    
+    player.play().catch(e => console.log("Auto-play blocked or source issue."));
+}
+
+// --- RECORDING ENGINE ---
+function toggleRecording() {
+    if (!isRecording) startRecording();
+    else stopRecording();
+}
+
+function startRecording() {
+    // Video.js generates an internal video element with this ID suffix
+    const rawVideo = document.querySelector('#video-player_html5_api');
+    
+    if (!rawVideo || rawVideo.paused) { 
+        alert("No active video stream to record!"); 
+        return; 
+    }
+    
+    let stream;
+    try {
+        // Capture stream from the underlying video element
+        stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream();
+    } catch (e) { 
+        alert("CORS Security restriction. Some streams cannot be recorded via browser."); 
+        return; 
+    }
+
+    recordedChunks = [];
+    const options = { mimeType: 'video/webm; codecs=vp9' };
+    
+    try { 
+        mediaRecorder = new MediaRecorder(stream, options); 
+    } catch (e) { 
+        mediaRecorder = new MediaRecorder(stream); 
+    }
+
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start();
+    
+    isRecording = true;
+    recBtn.innerText = "■ STOP";
+    recBtn.classList.add('recording');
+    recOverlay.style.display = 'block';
+}
+
+function stopRecording() {
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    isRecording = false;
+    recBtn.innerText = "● RECORD";
+    recBtn.classList.remove('recording');
+    recOverlay.style.display = 'none';
+}
+
+function saveRecording() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    let safeName = currentChannelName.replace(/[^a-zA-Z0-9 \-_]/g, "");
+    let width = player.videoWidth();
+    let height = player.videoHeight();
+    let res = (width && height) ? ` [${width}x${height}]` : "";
+    
+    a.href = url;
+    a.download = `${safeName}${res} ${new Date().toISOString().slice(0, 10)}.webm`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// --- UI HELPERS ---
+function toggleVFX() {
+    screenWrapper.classList.toggle('retro-mode');
+    const isActive = screenWrapper.classList.contains('retro-mode');
+    vfxBtn.innerText = isActive ? "VCR FX: ON" : "VCR FX: OFF";
+    vfxBtn.classList.toggle('active-btn');
+}
+
+async function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        try {
+            await tvChassis.requestFullscreen();
+            if (screen.orientation?.lock) await screen.orientation.lock('landscape');
+        } catch (err) { console.error(err); }
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    fsBtn.innerText = document.fullscreenElement ? "[X] EXIT FULL" : "[ ] FULLSCREEN";
+});
+
+// --- FILTERING LOGIC ---
+function populateDropdowns(channels) {
+    const countries = [...new Set(channels.map(c => c.country))].sort();
+    const categories = [...new Set(channels.map(c => c.group))].sort();
+    
+    countries.forEach(c => {
+        if(c){
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = c.toUpperCase();
+            countrySelect.appendChild(opt);
         }
-
-        function saveRecording() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            document.body.appendChild(a);
-            a.style.display = 'none';
-            a.href = url;
-            
-            let safeName = currentChannelName.replace(/[^a-zA-Z0-9 \-_]/g, "");
-            let width = video.videoWidth;
-            let height = video.videoHeight;
-            let resolutionStr = (width && height) ? ` [${width}x${height}]` : "";
-            const timeStr = new Date().toISOString().slice(0, 10);
-            
-            a.download = `${safeName}${resolutionStr} ${timeStr}.webm`;
-            a.click();
-            window.URL.revokeObjectURL(url);
+    });
+    categories.forEach(c => {
+        if(c && c !== 'Uncategorized'){
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = c;
+            categorySelect.appendChild(opt);
         }
+    });
+}
 
-        // --- UI & DATA ---
-        function toggleVFX() {
-            screenWrapper.classList.toggle('retro-mode');
-            const isActive = screenWrapper.classList.contains('retro-mode');
-            vfxBtn.innerText = isActive ? "VCR FX: ON" : "VCR FX: OFF";
-            vfxBtn.classList.toggle('active-btn');
-        }
+function applyFilters() {
+    const countryVal = countrySelect.value;
+    const categoryVal = categorySelect.value;
+    const searchVal = searchBox.value.toLowerCase();
+    
+    const filtered = allChannels.filter(ch => {
+        const matchesCountry = (countryVal === 'all') || (ch.country === countryVal);
+        const matchesCategory = (categoryVal === 'all') || (ch.group === categoryVal);
+        const matchesSearch = ch.name.toLowerCase().includes(searchVal);
+        return matchesCountry && matchesCategory && matchesSearch;
+    });
+    renderChannels(filtered);
+}
 
-        function populateDropdowns(channels) {
-            const countries = [...new Set(channels.map(c => c.country))].sort();
-            const categories = [...new Set(channels.map(c => c.group))].sort();
-            countries.forEach(c => {
-                if(c){
-                    const opt = document.createElement('option');
-                    opt.value = c; opt.innerText = c.toUpperCase();
-                    countrySelect.appendChild(opt);
-                }
-            });
-            categories.forEach(c => {
-                if(c && c !== 'Uncategorized'){
-                    const opt = document.createElement('option');
-                    opt.value = c; opt.innerText = c;
-                    categorySelect.appendChild(opt);
-                }
-            });
-        }
-
-        function applyFilters() {
-            const countryVal = countrySelect.value;
-            const categoryVal = categorySelect.value;
-            const searchVal = searchBox.value.toLowerCase();
-            const filtered = allChannels.filter(ch => {
-                const matchesCountry = (countryVal === 'all') || (ch.country === countryVal);
-                const matchesCategory = (categoryVal === 'all') || (ch.group === categoryVal);
-                const matchesSearch = ch.name.toLowerCase().includes(searchVal);
-                return matchesCountry && matchesCategory && matchesSearch;
-            });
-            renderChannels(filtered);
-        }
-
-        function renderChannels(channels) {
-            channelList.innerHTML = '';
-            document.getElementById('channel-count').innerText = channels.length;
-            const displayList = channels.slice(0, 200);
-            displayList.forEach(channel => {
-                const li = document.createElement('li');
-                li.className = 'channel-item';
-                li.onclick = () => playStream(channel, li);
-                const img = document.createElement('img');
-                img.src = channel.logo || 'https://via.placeholder.com/30?text=TV';
-                img.className = 'channel-logo';
-                img.onerror = function() { this.style.display = 'none'; };
-                const div = document.createElement('div');
-                div.className = 'channel-info';
-                div.innerHTML = `<span>${channel.name}</span><span style="color:#666; font-size:0.8em">${channel.country.toUpperCase()}</span>`;
-                li.appendChild(img);
-                li.appendChild(div);
-                channelList.appendChild(li);
-            });
-        }
-
-        function playStream(channel, element) {
-            currentChannelName = channel.name;
-            channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
-            if(isRecording) { stopRecording(); alert("Recording stopped: Channel Changed."); }
-
-            document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-            if(element) element.classList.add('active');
-
-            if (Hls.isSupported()) {
-                if (hls) hls.destroy();
-                hls = new Hls();
-                hls.loadSource(channel.url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = channel.url;
-                video.play();
-            }
-        }
-    </script>
+function renderChannels(channels) {
+    channelList.innerHTML = '';
+    document.getElementById('channel-count').innerText = channels.length;
+    
+    // Virtualization: only render first 200 for performance
+    channels.slice(0, 200).forEach(channel => {
+        const li = document.createElement('li');
+        li.className = 'channel-item';
+        li.onclick = () => playStream(channel, li);
+        
+        const img = document.createElement('img');
+        img.src = channel.logo || 'https://via.placeholder.com/30?text=TV';
+        img.className = 'channel-logo';
+        img.onerror = function() { this.style.display = 'none'; };
+        
+        const div = document.createElement('div');
+        div.className = 'channel-info';
+        div.innerHTML = `<span>${channel.name}</span><span style="color:#666; font-size:0.8em">${channel.country.toUpperCase()}</span>`;
+        
+        li.appendChild(img);
+        li.appendChild(div);
+        channelList.appendChild(li);
+    });
+}</script>
 </body>
 </html>
