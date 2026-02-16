@@ -242,6 +242,17 @@
             .player-header { padding: 10px 15px; }
             .back-btn { font-size: 0.85rem; padding: 6px 14px; }
         }
+        /* Fallback Icon Styling */
+.poster-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    font-size: 3rem;
+    color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+    background: #1a1a1a;
+}
     </style>
 </head>
 <body>
@@ -393,7 +404,13 @@
         logo: "https://static.wikia.nocookie.net/logopedia/images/e/ed/Sony_Sports_Ten_1.png", 
         isPremium: true 
     },
-
+{ 
+        name: "ESPN", 
+        type: "iframe", 
+        src: "https://streamcrichd.com/update/espn.php", 
+        logo: "https://logos-world.net/wp-content/uploads/2020/01/ESPN-Logo.png", 
+        isPremium: true 
+    },
     // Willow Group
     { 
         name: "Willow Cricket", 
@@ -442,13 +459,6 @@
         isPremium: true 
     },
     { 
-        name: "ESPN", 
-        type: "iframe", 
-        src: "https://streamcrichd.com/update/espn.php", 
-        logo: "https://logos-world.net/wp-content/uploads/2020/01/ESPN-Logo.png", 
-        isPremium: true 
-    },
-    { 
         name: "Fox 501", 
         type: "iframe", 
         src: "https://streamcrichd.com/update/fox501.php", 
@@ -475,7 +485,14 @@
         src: "https://streamcrichd.com/update/tensp.php", 
         logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", 
         isPremium: true 
-    }
+    },
+{ 
+    name: "Red Bull TV", 
+    type: "hls", 
+    url: "https://rbmn-live.akamaized.net/hls/live/709025/WoRB-Int-EN-linear-BU/master_6660.m3u8", 
+    logo: "https://img.redbull.com/images/w_300/q_auto,f_auto/redbullcom/2021/3/8/v1viztxjab9e9a6of4by/redbulltv", 
+    isPremium: true 
+},
 ];
 
         // --- Core Functions ---
@@ -496,33 +513,48 @@
             }
         }
 
-        function renderGrid(channels, clear = false) {
-            const container = document.getElementById('main-content');
-            if (clear) container.innerHTML = '<div id="infinite-grid" class="infinite-grid"></div>';
-            
-            const grid = document.getElementById('infinite-grid');
-            if(!grid) return;
+function renderGrid(channels, clear = false) {
+    const container = document.getElementById('main-content');
+    if (clear) container.innerHTML = '<div id="infinite-grid" class="infinite-grid"></div>';
+    
+    const grid = document.getElementById('infinite-grid');
+    if(!grid) return;
 
-            channels.forEach(channel => {
-                const poster = document.createElement('div');
-                poster.className = 'poster';
-                poster.onclick = () => openPlayer(channel);
+    channels.forEach(channel => {
+        const poster = document.createElement('div');
+        poster.className = 'poster';
+        poster.onclick = () => openPlayer(channel);
 
-                const logoSrc = channel.logo || `https://via.placeholder.com/300x168?text=${encodeURIComponent(channel.name)}`;
-                
-                let badge = channel.isPremium ? '<span class="premium-badge">PREMIUM</span>' : '';
-                
-                poster.innerHTML = `
-                    ${badge}
-                    <img src="${logoSrc}" onerror="this.src='https://via.placeholder.com/300x168?text=Live'" loading="lazy" alt="${channel.name}">
-                    <div class="poster-overlay">
-                        <div class="poster-title truncate w-full text-white drop-shadow-md">${channel.name}</div>
-                    </div>
-                `;
-                grid.appendChild(poster);
-            });
-        }
+        // Check if logo exists, otherwise use a placeholder to trigger the onerror fix
+        const logoSrc = channel.logo || "";
+        let badge = channel.isPremium ? '<span class="premium-badge">PREMIUM</span>' : '';
+        
+        poster.innerHTML = `
+            ${badge}
+            <img src="${logoSrc}" 
+                 loading="lazy" 
+                 style="${!logoSrc ? 'display:none' : ''}"
+                 onerror="handleImageError(this)">
+            <div id="fallback" class="poster-fallback" style="${logoSrc ? 'display:none' : 'display:flex'}">
+                <i class="fa-brands fa-contao"></i>
+            </div>
+            <div class="poster-overlay">
+                <div class="poster-title truncate w-full text-white drop-shadow-md">${channel.name}</div>
+            </div>
+        `;
+        grid.appendChild(poster);
+    });
+}
 
+// Add this helper function to handle broken image links
+function handleImageError(img) {
+    const poster = img.parentElement;
+    const fallback = poster.querySelector('.poster-fallback');
+    img.style.display = 'none';
+    if(fallback) {
+        fallback.style.display = 'flex';
+    }
+}
         async function fetchChannels() {
             try {
                 const response = await fetch(M3U_URL);
