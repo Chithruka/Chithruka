@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chithruka - Game Streaming</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-dark: #141414;
+            --netflix-black: #000000;
+            --text-white: #ffffff;
+            --text-gray: #b3b3b3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--netflix-dark);
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        /* --- Header / Navbar --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 4%;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            transition: background-color 0.3s;
+        }
+
+        header.scrolled {
+            background-color: var(--netflix-dark);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--netflix-red);
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--text-gray);
+            padding: 5px 10px;
+            border-radius: 4px; /* Netflix uses square buttons mostly, but slight radius handles mobile better */
+        }
+
+        .search-container input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 5px;
+            font-size: 1rem;
+            outline: none;
+            width: 0;
+            transition: width 0.4s ease;
+            cursor: pointer;
+        }
+
+        .search-container:hover input, .search-container input:focus, .search-container input:not(:placeholder-shown) {
+            width: 200px;
+            cursor: text;
+        }
+
+        .search-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 70vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding-left: 4%;
+            background-image: linear-gradient(to right, rgba(20,20,20,1) 10%, rgba(20,20,20,0) 50%), url('https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/c1f0c7c3-3611-4f93-49ae-3b779e216c00/enlarged');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-content {
+            max-width: 500px;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .btn-play {
+            background-color: white;
+            color: black;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-play:hover {
+            opacity: 0.8;
+        }
+
+        /* --- Game Rows --- */
+        .category-title {
+            margin: 30px 4% 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #e5e5e5;
+        }
+
+        .row-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 4%;
+            gap: 10px;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .row-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
+        .game-card {
+            flex: 0 0 auto;
+            width: 250px;
+            aspect-ratio: 16/9;
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, z-index 0.3s;
+        }
+
+        .game-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .game-card:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .card-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .game-card:hover .card-info {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* --- Search Results Area --- */
+        #search-results {
+            display: none;
+            padding: 80px 4%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        #search-results.active {
+            display: grid;
+        }
+        
+        #main-view.hidden {
+            display: none;
+        }
+
+        /* --- Game Modal / Player --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            width: 90%;
+            height: 80%;
+            max-width: 1000px;
+            background: #000;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2001;
+        }
+
+        .modal-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Helper for the raw script games */
+        .script-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white; /* Some script games need white bg */
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.5rem; }
+            .game-card { width: 160px; }
+            .search-container input:focus { width: 120px; }
+            .logo { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="navbar">
+        <a href="#" class="logo" onclick="resetHome()">CHITHRUKA</a>
+        <div class="search-container">
+            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+            <input type="text" id="searchInput" placeholder="Titles, people, genres">
+        </div>
+    </header>
+
+    <div id="main-view">
+        <div class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">HAZMOB FPS</h1>
+                <p class="hero-desc">Experience intense tactical combat in this high-octane online shooter. Dominate the battlefield now.</p>
+                <button class="btn-play" onclick="playGame(9)">
+                    <i class="fa-solid fa-play"></i> Play
+                </button>
+                <button class="btn-play" style="background:rgba(109, 109, 110, 0.7); color: white; margin-left: 10px;">
+                    <i class="fa-solid fa-circle-info"></i> More Info
+                </button>
+            </div>
+        </div>
+
+        <h3 class="category-title">Trending Now</h3>
+        <div class="row-container" id="row-trending">
+            </div>
+
+        <h3 class="category-title">Action & Adventure</h3>
+        <div class="row-container" id="row-action">
+            </div>
+
+        <h3 class="category-title">Strategy & Puzzle</h3>
+        <div class="row-container" id="row-strategy">
+            </div>
+    </div>
+
+    <div id="search-results">
+        </div>
+
+    <div id="gameModal" class="modal">
+        <span class="close-modal" onclick="closeGame()">&times;</span>
+        <div class="modal-content" id="modalBody">
+            </div>
+    </div>
+
+    <script>
+        // Game Database
+        const games = [
+            {
+                id: 1,
+                title: "Ninja Breakout",
+                category: "action",
+                poster: "https://www.htmlgames.com/uploaded/game/thumb800/ninjabreakout800450.webp",
+                type: "script",
+                code: `<iframe src="https://htmlgames.com/NinjaBreakout/" width="100%" height="100%" frameborder="0"></iframe>` 
+            },
+            {
+                id: 2,
+                title: "Bus Puzzle",
+                category: "strategy",
+                poster: "https://www.htmlgames.com/uploaded/game/thumb800/buspuzzle800450.webp",
+                type: "script",
+                code: `<iframe src="https://htmlgames.com/BusPuzzle/" width="100%" height="100%" frameborder="0"></iframe>`
+            },
+            {
+                id: 3,
+                title: "Super Mario Bros",
+                category: "classic",
+                poster: "https://enam.mariogames.be/articles/title-screen.png",
+                type: "iframe",
+                url: "https://www.mariogames.be/Super_Mario_Bros_Game"
+            },
+            {
+                id: 4,
+                title: "Sri Lankan Pol. Mario",
+                category: "trending",
+                poster: "https://i.ytimg.com/vi/uaJ1pFVaXw0/hq720.jpg",
+                type: "iframe",
+                url: "https://chithruka.github.io/Mahi-Run/"
+            },
+            {
+                id: 5,
+                title: "Cat Survivors",
+                category: "action",
+                poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTL1wHXptDooOXV1p0b_LdIFo1QRgGttGGAK-jSWkudJQ&s",
+                type: "iframe",
+                url: "https://play.js13kgames.com/cat-survivors/"
+            },
+            {
+                id: 6,
+                title: "Gas Station Simulator",
+                category: "trending",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/5efc382f-b4f3-45c6-86e9-de1cd4015300/w=800,fit=cover",
+                type: "iframe",
+                url: "https://playgama.com/export/game/gas-station-simulator",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+            },
+            {
+                id: 7,
+                title: "Stickman Kombat 2D",
+                category: "action",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/0c888413-a125-4ef5-56cd-89a6a329e900/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/stickman-kombat-2d",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+            },
+            {
+                id: 8,
+                title: "Deadly Descent",
+                category: "action",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/79d71efd-42d5-48c6-4e91-532faf999f00/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/deadly-descent",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+            },
+            {
+                id: 9,
+                title: "Hazmob FPS",
+                category: "trending",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/c1f0c7c3-3611-4f93-49ae-3b779e216c00/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/hazmob-fps-online-shooter",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+            },
+            {
+                id: 10,
+                title: "Chess 3D",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/1x1/chess-1x1-300.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/chess/index.html"
+            },
+            {
+                id: 11,
+                title: "Checkers",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/checkers/Checkers-1x1-300.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/checkers/index.html"
+            },
+            {
+                id: 12,
+                title: "Solitaire",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/scorpion/scorpion-solitaire-300-1x1.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/solitaire/index.html"
+            }
+        ];
+
+        // --- Render Functions ---
+
+        function createGameCard(game) {
+            return `
+                <div class="game-card" onclick="playGame(${game.id})">
+                    <img src="${game.poster}" alt="${game.title}">
+                    <div class="card-info">
+                        <div class="card-title">${game.title}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRows() {
+            const trendingContainer = document.getElementById('row-trending');
+            const actionContainer = document.getElementById('row-action');
+            const strategyContainer = document.getElementById('row-strategy');
+
+            games.forEach(game => {
+                const cardHtml = createGameCard(game);
+                
+                // Logic to distribute games (simplified for demo)
+                if(game.category === 'trending') trendingContainer.innerHTML += cardHtml;
+                if(game.category === 'action') actionContainer.innerHTML += cardHtml;
+                if(game.category === 'strategy' || game.category === 'classic') strategyContainer.innerHTML += cardHtml;
+                
+                // Add everything to trending if the row is empty (fallback)
+                if (game.category !== 'trending' && trendingContainer.children.length < 3) {
+                     trendingContainer.innerHTML += cardHtml;
+                }
+            });
+        }
+
+        // --- Search Logic ---
+
+        const searchInput = document.getElementById('searchInput');
+        const mainView = document.getElementById('main-view');
+        const searchResults = document.getElementById('search-results');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            if (query.length > 0) {
+                mainView.classList.add('hidden');
+                searchResults.classList.add('active');
+                
+                const filteredGames = games.filter(game => game.title.toLowerCase().includes(query));
+                
+                if (filteredGames.length > 0) {
+                    searchResults.innerHTML = filteredGames.map(game => createGameCard(game)).join('');
+                    // Fix styling for grid items to look good in search view
+                    document.querySelectorAll('#search-results .game-card').forEach(el => {
+                        el.style.width = '100%'; 
+                    });
+                } else {
+                    searchResults.innerHTML = '<p style="text-align:center; width:100%; color: gray;">No games found matching "' + query + '"</p>';
+                }
+            } else {
+                resetHome();
+            }
+        });
+
+        function resetHome() {
+            searchInput.value = '';
+            mainView.classList.remove('hidden');
+            searchResults.classList.remove('active');
+        }
+
+        // --- Game Player Logic ---
+
+        function playGame(id) {
+            const game = games.find(g => g.id === id);
+            const modal = document.getElementById('gameModal');
+            const body = document.getElementById('modalBody');
+            
+            modal.style.display = "flex";
+            body.innerHTML = ''; // Clear previous
+
+            if (game.type === 'iframe') {
+                const attr = game.attributes ? game.attributes : '';
+                body.innerHTML = `<iframe src="${game.url}" ${attr} width="100%" height="100%" frameborder="0"></iframe>`;
+            } else if (game.type === 'script') {
+                // For script embeds, we inject the iframe code derived in the data object
+                body.innerHTML = game.code;
+            }
+        }
+
+        function closeGame() {
+            const modal = document.getElementById('gameModal');
+            const body = document.getElementById('modalBody');
+            
+            modal.style.display = "none";
+            body.innerHTML = ''; // Stop the game audio/video
+        }
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Initialize
+        renderRows();
+
+    </script>
+</body>
+</html>
