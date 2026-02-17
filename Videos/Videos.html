@@ -14,6 +14,77 @@
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     <style>
+    /* Blur the main container by default */
+.container, header {
+    filter: blur(20px);
+    transition: filter 0.5s ease;
+}
+
+.age-gate-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.age-gate-content {
+    background-color: var(--bg-panel);
+    padding: 50px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    max-width: 500px;
+    width: 90%;
+}
+
+.age-gate-content h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.age-gate-content p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+.age-gate-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.age-gate-buttons button {
+    padding: 12px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+.btn-yes {
+    background-color: var(--netflix-red);
+    color: white;
+}
+
+.btn-no {
+    background-color: #333;
+    color: white;
+}
+
+.age-gate-buttons button:hover {
+    transform: scale(1.05);
+}
+
+/* Class to remove blur */
+.unblur {
+    filter: blur(0) !important;
+}
+
         :root {
             --netflix-red: #E50914;
             --bg-dark: #141414;
@@ -327,17 +398,30 @@
     </style>
 </head>
 <body>
+<div id="ageGate" class="age-gate-overlay">
+    <div class="age-gate-content">
+        <div class="logo" style="margin-bottom: 20px; font-size: 50px; justify-content: center;">
+            <i class="fa-solid fa-play"></i> CHITHRUKA
+        </div>
+        <h1>Are you 18 or older?</h1>
+        <p>This site may contain content intended for mature audiences.</p>
+        <div class="age-gate-buttons">
+            <button class="btn-yes" onclick="verifyAge(true)">YES, I AM</button>
+            <button class="btn-no" onclick="verifyAge(false)">NO, EXIT</button>
+        </div>
+    </div>
+</div>
 
     <header>
         <div class="logo" onclick="loadMain()">
-            <i class="fa-solid fa-play"></i> CHITHRUKA
+         Corn <i class="fa-solid fa-xmarks-lines"></i>
         </div>
         <div class="controls">
             <div class="filter-wrapper">
                 <i class="fa-solid fa-filter"></i>
                 <select id="typeFilter">
-                    <option value="live">Live IPTV</option>
-                    <option value="videos">Videos (VOD)</option>
+                    <option value="live">live</option>
+                    <option value="videos">videos</option>
                 </select>
             </div>
             <div class="search-wrapper">
@@ -371,35 +455,89 @@
 
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 
-    <script>// --- Data Sources & Configuration ---
-const M3U_BASE = 'http://adultiptv.net/';
+   <script>
+     function verifyAge(isAdult) {
+    if (isAdult) {
+        // Hide the age gate
+        document.getElementById('ageGate').style.display = 'none';
+        
+        // Remove blur from header and main container
+        document.querySelector('header').classList.add('unblur');
+        document.querySelector('.container').classList.add('unblur');
+        
+        // Optional: Save to local storage so they don't see it every refresh
+        localStorage.setItem('ageVerified', 'true');
+    } else {
+        // Redirect to YouTube
+        window.location.href = "https://www.youtube.com";
+    }
+}
 
-// Categories now support multiple M3U links in the 'sources' array
+// Optional: Check if already verified on page load
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('ageVerified') === 'true') {
+        verifyAge(true);
+    }
+});
+/**
+ * CHITHRUKA - Agnostic Multi-Source JS
+ * This script handles any m3u8 link from any domain and any iframe source.
+ */
+
+// --- Data Sources ---
 const categories = [
     { 
         name: 'Anal', 
         sources: [
-            M3U_BASE + 'anal.m3u',
-            M3U_BASE + 'categories/classic.m3u'
+            // Standard Playlist
+            'https://live.mycamtv.com/anal.m3u8',
+            // Manual Single Channel with Poster
+            { 
+                title: 'Live Anal', 
+                url: 'https://cdn.adultiptv.net/anal.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
         ], 
-        img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=225&fit=crop', 
-        icon: 'fa-clapperboard' 
-    },
+        img: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220', 
+        icon: 'fa-0' 
+    }, 
     { 
-        name: 'Animation', 
-        sources: [M3U_BASE + 'categories/animation.m3u'], 
-        img: 'https://images.unsplash.com/photo-1620336655055-088d08646b5a?w=400&h=225&fit=crop', 
-        icon: 'fa-wand-magic-sparkles' 
-    },
-    { 
-        name: 'Business', 
-        sources: [M3U_BASE + 'categories/business.m3u'], 
-        img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=225&fit=crop', 
-        icon: 'fa-briefcase' 
-    }
+    name: 'Livecams', // The text shown on the sidebar
+    sources: [
+        // Option 1: A full external playlist
+        'https://cdn.adultiptv.net/livecams.m3u8',
+        
+        // Option 2: A manual single channel with a custom poster
+        { 
+            title: 'Live Football Stream', 
+            url: 'http://109.71.163.112:1935/live/hd.jasminchannel.stream/playlist.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
+            type: 'm3u8' 
+        }
+    ], 
+    img: 'https://images.unsplash.com/photo-1461896756981-93e5850983ad?w=400', // Sidebar background image
+    icon: 'fa-basketball' // FontAwesome icon name
+}, { 
+    name: 'Squirt', // The text shown on the sidebar
+    sources: [
+        // Option 1: A full external playlist
+        'https://live.mycamtv.com/squirt.m3u8',
+        
+        // Option 2: A manual single channel with a custom poster
+        { 
+            title: 'Live Football Stream', 
+            url: 'https://example.com/live.m3u8', 
+            poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
+            type: 'm3u8' 
+        }
+    ], 
+    img: 'https://images.unsplash.com/photo-1461896756981-93e5850983ad?w=400', // Sidebar background image
+    icon: 'fa-basketball' // FontAwesome icon name
+}
 ];
 
-// Mixed VODs: use type 'iframe' for YouTube/Vimeo/etc, and 'm3u8' for raw streams
+
 const videoVods = [
     { 
         title: 'YouTube Example', 
@@ -408,29 +546,40 @@ const videoVods = [
         type: 'iframe' 
     },
     { 
-        title: 'Tears of Steel', 
-        url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', 
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Tears_of_Steel_poster.jpg/320px-Tears_of_Steel_poster.jpg', 
+        title: 'Vimeo Example', 
+        url: 'https://player.vimeo.com/video/76979871', 
+        logo: 'https://vumbnail.com/76979871.jpg', 
+        type: 'iframe' 
+    },
+    { 
+        title: 'Big Buck Bunny (m3u8)', 
+        url: 'http://cdn.adultiptv.net/videos.m3u8', 
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg', 
         type: 'm3u8' 
     }
 ];
 
-// --- State Management ---
+// --- Application State ---
 let currentStreams = [];
 let playerInstance = null;
-let currentViewContext = 'live'; // 'live' or 'videos' - prevents race conditions
+let currentViewContext = 'live'; 
 
-// --- Core Logic ---
-
+/**
+ * Initialize App
+ */
 function init() {
     renderSidebar();
-    loadMultiPlaylist([M3U_BASE + 'index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
+    // Start with the main global playlist
+    loadMultiPlaylist(['http://cdn.adultiptv.net/chs.m3u'], 'Main Playlist', 'fa-tower-broadcast');
     setupEventListeners();
 }
 
+/**
+ * Sidebar Generator
+ */
 function renderSidebar() {
     const sidebar = document.getElementById('sidebar');
-    sidebar.innerHTML = ''; // Clear existing
+    sidebar.innerHTML = ''; 
     categories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category';
@@ -445,34 +594,61 @@ function renderSidebar() {
     });
 }
 
+/**
+ * Agnostic Multi-Source Loader
+ * Fetches multiple absolute URLs and merges them.
+ */
 async function loadMultiPlaylist(urls, title, iconClass) {
     currentViewContext = 'live'; 
     document.getElementById('currentSectionTitle').innerHTML = `<i class="fa-solid ${iconClass}"></i> ${title}`;
-    document.getElementById('grid').innerHTML = '<div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Merging Playlists...</div>';
-    document.getElementById('searchInput').value = '';
+    document.getElementById('grid').innerHTML = '<div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading...</div>';
+    
+    let combined = [];
 
     try {
-        // Fetch all sources in parallel
-        const responses = await Promise.all(urls.map(url => fetch(url).then(res => res.text())));
-        
-        // Race condition check: if user switched to 'Videos' while fetching, abort.
+        for (const item of urls) {
+            // Check if item is a Manual Object
+            if (typeof item === 'object' && item !== null) {
+                combined.push({
+                    title: item.title || 'Untitled Stream',
+                    url: item.url,
+                    logo: item.poster || '', // Uses your manual poster
+                    type: item.type || 'm3u8'
+                });
+            } 
+            // Check if item is a direct URL string
+            else if (typeof item === 'string') {
+                if (item.toLowerCase().endsWith('.m3u8')) {
+                    combined.push({
+                        title: title + " Live",
+                        url: item,
+                        logo: '', 
+                        type: 'm3u8'
+                    });
+                } else {
+                    const res = await fetch(item);
+                    if (res.ok) {
+                        const text = await res.text();
+                        combined = [...combined, ...parseM3U(text)];
+                    }
+                }
+            }
+        }
+
         if (currentViewContext !== 'live') return;
-
-        let combined = [];
-        responses.forEach(text => {
-            combined = [...combined, ...parseM3U(text)];
-        });
-
         currentStreams = combined;
         renderGrid(currentStreams);
     } catch (error) {
-        console.error('Fetch Error:', error);
-        if (currentViewContext === 'live') {
-            document.getElementById('grid').innerHTML = '<div class="loader">Error loading playlists. Please check CORS/Network.</div>';
-        }
+        console.error('Error:', error);
+        document.getElementById('grid').innerHTML = '<div class="loader">Error loading streams.</div>';
     }
 }
 
+
+
+/**
+ * M3U Parser (Absolute Path Friendly)
+ */
 function parseM3U(data) {
     const lines = data.split('\n');
     const result = [];
@@ -487,6 +663,7 @@ function parseM3U(data) {
             const parts = trimmed.split(',');
             currentItem.title = parts[parts.length - 1].trim();
         } else if (trimmed && !trimmed.startsWith('#') && currentItem) {
+            // Store the full URL provided in the M3U file
             currentItem.url = trimmed;
             if(trimmed.startsWith('http')) result.push(currentItem);
             currentItem = null;
@@ -495,21 +672,25 @@ function parseM3U(data) {
     return result;
 }
 
+/**
+ * Grid Renderer
+ */
 function renderGrid(streams) {
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
 
     if (streams.length === 0) {
-        grid.innerHTML = '<div class="loader">No streams found.</div>';
+        grid.innerHTML = '<div class="loader">No results found.</div>';
         return;
     }
 
-    streams.slice(0, 200).forEach(stream => {
+    // Limit to 300 for browser stability
+    streams.slice(0, 300).forEach(stream => {
         const card = document.createElement('div');
         card.className = 'card';
         card.onclick = () => openPlayer(stream.url, stream.type);
         
-        const fallback = `https://via.placeholder.com/400x225/222/E50914?text=Stream`;
+        const fallback = `https://via.placeholder.com/400x225/1a1a1a/E50914?text=Stream`;
         card.innerHTML = `
             <div class="card-img">
                 <img src="${stream.logo || fallback}" onerror="this.src='${fallback}'" loading="lazy">
@@ -521,26 +702,27 @@ function renderGrid(streams) {
     });
 }
 
+/**
+ * Universal Player (Iframe or VideoJS)
+ */
 function openPlayer(url, type) {
     const modal = document.getElementById('playerModal');
     const container = document.getElementById('videoContainer');
     modal.style.display = 'flex';
-    container.innerHTML = ''; // Reset
+    container.innerHTML = ''; 
 
     if (type === 'iframe') {
-        // Universal Iframe Handler
         const iframe = document.createElement('iframe');
-        // Ensure autoplay is appended correctly
-        const separator = url.includes('?') ? '&' : '?';
-        iframe.src = `${url}${separator}autoplay=1`;
+        // Handle autoplay parameter dynamically
+        const sep = url.includes('?') ? '&' : '?';
+        iframe.src = `${url}${sep}autoplay=1`;
         iframe.setAttribute('allowfullscreen', '');
         iframe.setAttribute('frameborder', '0');
         iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
         container.appendChild(iframe);
     } else {
-        // Video.js for m3u8
-        container.innerHTML = `<video id="vjs-p" class="video-js vjs-theme-city" controls preload="auto" width="100%"></video>`;
-        playerInstance = videojs('vjs-p', { fluid: true, autoplay: true });
+        container.innerHTML = `<video id="main-player" class="video-js vjs-theme-city" controls preload="auto" width="100%"></video>`;
+        playerInstance = videojs('main-player', { fluid: true, autoplay: true });
         playerInstance.src({ src: url, type: 'application/x-mpegURL' });
     }
 }
@@ -554,16 +736,23 @@ function closePlayer() {
     document.getElementById('videoContainer').innerHTML = '';
 }
 
+/**
+ * UI Listeners
+ */
 function setupEventListeners() {
     document.getElementById('typeFilter').addEventListener('change', (e) => {
         if (e.target.value === 'videos') {
             currentViewContext = 'videos';
-            toggleSidebarState(false);
+            toggleSidebarState(false); // Dim and disable sidebar
             currentStreams = videoVods;
             document.getElementById('currentSectionTitle').innerHTML = '<i class="fa-solid fa-film"></i> Videos';
             renderGrid(currentStreams);
         } else {
-            loadMultiPlaylist([M3U_BASE + 'index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
+            // --- FIX IS HERE ---
+            currentViewContext = 'live';
+            toggleSidebarState(true); // Re-enable the sidebar interactions
+            // Reload the primary main playlist
+            loadMultiPlaylist(['https://live.mycamtv.com/latina.m3u8'], 'Main Playlist', 'fa-tower-broadcast');
         }
     });
 
@@ -572,6 +761,7 @@ function setupEventListeners() {
         renderGrid(currentStreams.filter(s => s.title.toLowerCase().includes(q)));
     });
 }
+
 
 function toggleSidebarState(active) {
     const s = document.getElementById('sidebar');
