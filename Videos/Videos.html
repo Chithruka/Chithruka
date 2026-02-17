@@ -1,1 +1,585 @@
-123
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chithruka</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --bg-dark: #141414;
+            --bg-panel: #000000;
+            --text-main: #FFFFFF;
+            --text-muted: #AAAAAA;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: var(--bg-panel);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--netflix-red);
+            font-size: 40px;
+            letter-spacing: 2px;
+            text-decoration: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filter-wrapper, .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-wrapper i, .search-wrapper i {
+            position: absolute;
+            left: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        select, input {
+            padding: 10px 15px 10px 35px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background-color: #222;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        select { cursor: pointer; appearance: none; padding-right: 30px; }
+        select:focus, input:focus { border-color: var(--netflix-red); }
+
+        /* --- Main Layout --- */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar (Categories) --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-panel);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        .category {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-size: cover;
+            background-position: center;
+            border-radius: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .category:hover {
+            transform: scale(1.04);
+            border: 2px solid var(--netflix-red);
+        }
+
+        .category::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            transition: background 0.2s ease;
+        }
+
+        .category:hover::after { background: rgba(0,0,0,0.3); }
+
+        .category span {
+            position: relative;
+            z-index: 1;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 5px #000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- Main Content (Grid) --- */
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .content::-webkit-scrollbar { width: 8px; }
+        .content::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        .section-title {
+            margin-bottom: 20px;
+            font-size: 22px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .card:hover { transform: scale(1.05); z-index: 2; box-shadow: 0 8px 20px rgba(0,0,0,0.8); }
+
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            font-size: 40px;
+            color: rgba(255,255,255,0.8);
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .card:hover .play-icon {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            color: var(--netflix-red);
+        }
+
+        .card-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            position: relative;
+        }
+
+        .card-img::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+        }
+
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-title {
+            padding: 12px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+            text-align: center;
+            background: #1a1a1a;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+            font-size: 18px;
+        }
+
+        .loader i { color: var(--netflix-red); margin-right: 10px; }
+
+        /* --- Video Player Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.95);
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 20px 30px;
+        }
+
+        .close-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 35px;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+            transform: scale(1);
+        }
+
+        .close-btn:hover { color: var(--netflix-red); transform: scale(1.1); }
+
+        .video-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 40px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .video-container iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: stretch; gap: 15px; padding: 15px; }
+            .controls { flex-direction: column; width: 100%; }
+            .filter-wrapper, .search-wrapper { width: 100%; }
+            .controls select, .controls input { width: 100%; }
+            .container { flex-direction: column; }
+            .sidebar { 
+                width: 100%; 
+                flex-direction: row; 
+                overflow-x: auto; 
+                padding: 10px 15px; 
+                height: auto; 
+                border-bottom: 1px solid #333;
+            }
+            .sidebar::-webkit-scrollbar { height: 4px; }
+            .category { min-width: 180px; }
+            .content { padding: 15px; }
+            .video-container { padding: 0 10px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" onclick="loadMain()">
+            <i class="fa-solid fa-play"></i> CHITHRUKA
+        </div>
+        <div class="controls">
+            <div class="filter-wrapper">
+                <i class="fa-solid fa-filter"></i>
+                <select id="typeFilter">
+                    <option value="live">Live IPTV</option>
+                    <option value="videos">Videos (VOD)</option>
+                </select>
+            </div>
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search streams...">
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar" id="sidebar">
+            </aside>
+
+        <main class="content">
+            <h2 class="section-title" id="currentSectionTitle">
+                <i class="fa-solid fa-tower-broadcast"></i> Main Playlist
+            </h2>
+            <div class="grid" id="grid">
+                <div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading streams...</div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="playerModal">
+        <div class="modal-header">
+            <button class="close-btn" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="video-container" id="videoContainer">
+            </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
+    <script>// --- Data Sources & Configuration ---
+const M3U_BASE = 'http://adultiptv.net/';
+
+// Categories now support multiple M3U links in the 'sources' array
+const categories = [
+    { 
+        name: 'Anal', 
+        sources: [
+            M3U_BASE + 'anal.m3u',
+            M3U_BASE + 'categories/classic.m3u'
+        ], 
+        img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=225&fit=crop', 
+        icon: 'fa-clapperboard' 
+    },
+    { 
+        name: 'Animation', 
+        sources: [M3U_BASE + 'categories/animation.m3u'], 
+        img: 'https://images.unsplash.com/photo-1620336655055-088d08646b5a?w=400&h=225&fit=crop', 
+        icon: 'fa-wand-magic-sparkles' 
+    },
+    { 
+        name: 'Business', 
+        sources: [M3U_BASE + 'categories/business.m3u'], 
+        img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=225&fit=crop', 
+        icon: 'fa-briefcase' 
+    }
+];
+
+// Mixed VODs: use type 'iframe' for YouTube/Vimeo/etc, and 'm3u8' for raw streams
+const videoVods = [
+    { 
+        title: 'YouTube Example', 
+        url: 'https://www.youtube.com/embed/8kZ6diqfxN4', 
+        logo: 'https://img.youtube.com/vi/8kZ6diqfxN4/maxresdefault.jpg', 
+        type: 'iframe' 
+    },
+    { 
+        title: 'Tears of Steel', 
+        url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', 
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Tears_of_Steel_poster.jpg/320px-Tears_of_Steel_poster.jpg', 
+        type: 'm3u8' 
+    }
+];
+
+// --- State Management ---
+let currentStreams = [];
+let playerInstance = null;
+let currentViewContext = 'live'; // 'live' or 'videos' - prevents race conditions
+
+// --- Core Logic ---
+
+function init() {
+    renderSidebar();
+    loadMultiPlaylist([M3U_BASE + 'index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
+    setupEventListeners();
+}
+
+function renderSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.innerHTML = ''; // Clear existing
+    categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'category';
+        div.style.backgroundImage = `url('${cat.img}')`;
+        div.innerHTML = `<span><i class="fa-solid ${cat.icon}"></i> ${cat.name}</span>`;
+        div.onclick = () => {
+            document.getElementById('typeFilter').value = 'live';
+            toggleSidebarState(true);
+            loadMultiPlaylist(cat.sources, cat.name, cat.icon);
+        };
+        sidebar.appendChild(div);
+    });
+}
+
+async function loadMultiPlaylist(urls, title, iconClass) {
+    currentViewContext = 'live'; 
+    document.getElementById('currentSectionTitle').innerHTML = `<i class="fa-solid ${iconClass}"></i> ${title}`;
+    document.getElementById('grid').innerHTML = '<div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Merging Playlists...</div>';
+    document.getElementById('searchInput').value = '';
+
+    try {
+        // Fetch all sources in parallel
+        const responses = await Promise.all(urls.map(url => fetch(url).then(res => res.text())));
+        
+        // Race condition check: if user switched to 'Videos' while fetching, abort.
+        if (currentViewContext !== 'live') return;
+
+        let combined = [];
+        responses.forEach(text => {
+            combined = [...combined, ...parseM3U(text)];
+        });
+
+        currentStreams = combined;
+        renderGrid(currentStreams);
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        if (currentViewContext === 'live') {
+            document.getElementById('grid').innerHTML = '<div class="loader">Error loading playlists. Please check CORS/Network.</div>';
+        }
+    }
+}
+
+function parseM3U(data) {
+    const lines = data.split('\n');
+    const result = [];
+    let currentItem = null;
+
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('#EXTINF:')) {
+            currentItem = { type: 'm3u8' };
+            const logoMatch = trimmed.match(/tvg-logo="([^"]+)"/);
+            currentItem.logo = logoMatch ? logoMatch[1] : '';
+            const parts = trimmed.split(',');
+            currentItem.title = parts[parts.length - 1].trim();
+        } else if (trimmed && !trimmed.startsWith('#') && currentItem) {
+            currentItem.url = trimmed;
+            if(trimmed.startsWith('http')) result.push(currentItem);
+            currentItem = null;
+        }
+    });
+    return result;
+}
+
+function renderGrid(streams) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+
+    if (streams.length === 0) {
+        grid.innerHTML = '<div class="loader">No streams found.</div>';
+        return;
+    }
+
+    streams.slice(0, 200).forEach(stream => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => openPlayer(stream.url, stream.type);
+        
+        const fallback = `https://via.placeholder.com/400x225/222/E50914?text=Stream`;
+        card.innerHTML = `
+            <div class="card-img">
+                <img src="${stream.logo || fallback}" onerror="this.src='${fallback}'" loading="lazy">
+                <i class="fa-solid fa-circle-play play-icon"></i>
+            </div>
+            <div class="card-title">${stream.title}</div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function openPlayer(url, type) {
+    const modal = document.getElementById('playerModal');
+    const container = document.getElementById('videoContainer');
+    modal.style.display = 'flex';
+    container.innerHTML = ''; // Reset
+
+    if (type === 'iframe') {
+        // Universal Iframe Handler
+        const iframe = document.createElement('iframe');
+        // Ensure autoplay is appended correctly
+        const separator = url.includes('?') ? '&' : '?';
+        iframe.src = `${url}${separator}autoplay=1`;
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+        container.appendChild(iframe);
+    } else {
+        // Video.js for m3u8
+        container.innerHTML = `<video id="vjs-p" class="video-js vjs-theme-city" controls preload="auto" width="100%"></video>`;
+        playerInstance = videojs('vjs-p', { fluid: true, autoplay: true });
+        playerInstance.src({ src: url, type: 'application/x-mpegURL' });
+    }
+}
+
+function closePlayer() {
+    document.getElementById('playerModal').style.display = 'none';
+    if (playerInstance) {
+        playerInstance.dispose();
+        playerInstance = null;
+    }
+    document.getElementById('videoContainer').innerHTML = '';
+}
+
+function setupEventListeners() {
+    document.getElementById('typeFilter').addEventListener('change', (e) => {
+        if (e.target.value === 'videos') {
+            currentViewContext = 'videos';
+            toggleSidebarState(false);
+            currentStreams = videoVods;
+            document.getElementById('currentSectionTitle').innerHTML = '<i class="fa-solid fa-film"></i> Videos';
+            renderGrid(currentStreams);
+        } else {
+            loadMultiPlaylist([M3U_BASE + 'index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
+        }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        renderGrid(currentStreams.filter(s => s.title.toLowerCase().includes(q)));
+    });
+}
+
+function toggleSidebarState(active) {
+    const s = document.getElementById('sidebar');
+    s.style.opacity = active ? '1' : '0.3';
+    s.style.pointerEvents = active ? 'auto' : 'none';
+}
+
+init();
+</script>
+</body>
+</html>
