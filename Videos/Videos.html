@@ -530,7 +530,7 @@ async function fetchLocation() {
 function init() {
     renderSidebar();
     fetchLocation(); 
-    loadMultiPlaylist(['https://chithruka.github.io/Chithruka/Videos/playlist.m3u8'], 'Main Playlist', 'fa-tower-broadcast');
+    loadMultiPlaylist(['https://iptv-org.github.io/iptv/index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
     setupEventListeners();
 }
 
@@ -539,7 +539,7 @@ function init() {
 function init() {
     renderSidebar();
     fetchLocation(); // New function call
-    loadMultiPlaylist(['https://chithruka.github.io/Chithruka/Videos/playlist.m3u8'], 'Main Playlist', 'fa-tower-broadcast');
+    loadMultiPlaylist(['https://iptv-org.github.io/iptv/index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
     setupEventListeners();
 }
 
@@ -570,35 +570,125 @@ const categories = [
         { 
             title: 'Live Chat', 
             url: 'https://cdn.adultiptv.net/livecams.m3u8', 
-            poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
+            poster: 'https://ei.phncdn.com/static/images/categories/(m=q2P256TbeqM48zjadOf)(mh=_YmyRarczxV5SeqQ)roku_105.jpg?cache=1538054454',
             type: 'm3u8' 
         },
         { 
-            title: 'Live Football Stream', 
+            title: 'Live Stream', 
             url: 'http://109.71.163.112:1935/live/hd.jasminchannel.stream/playlist.m3u8', 
             poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
             type: 'm3u8' 
         }
     ], 
-    img: 'https://ei.phncdn.com/static/images/categories/(m=q34656TbeqM48zjadOf)(mh=n__kH49K4YWiauop)roku_61.jpg?cache=1538059031', // Sidebar background image
-    icon: 'fa-face-grin-hearts' // FontAwesome icon name
+    img: 'https://ei.phncdn.com/static/images/categories/(m=q34656TbeqM48zjadOf)(mh=n__kH49K4YWiauop)roku_61.jpg?cache=1538059031'
 }, { 
     name: 'Squirt', // The text shown on the sidebar
     sources: [
-        // Option 1: A full external playlist
-        'https://live.mycamtv.com/squirt.m3u8',
-        
-        // Option 2: A manual single channel with a custom poster
+ { 
+            title: 'Live Squirting', 
+            url: 'https://cdn.adultiptv.net/squirt.m3u8', 
+            poster: 'https://ei.phncdn.com/static/images/categories/(m=q0U656TbeqM48zjadOf)(mh=4eNG1T7JSLdCNs7F)roku_69.jpg?cache=1538058708',
+            type: 'm3u8' 
+        },
         { 
-            title: 'Live Football Stream', 
-            url: 'https://example.com/live.m3u8', 
-            poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
+            title: 'Live Squirting', 
+            url: 'https://.mycamtv.com/squirt.m3u8', 
+            poster: 'https://ei.phncdn.com/static/images/categories/(m=qLJ656TbeqM48zjadOf)(mh=lQExjPgqwNNU0uKW)roku_211.jpg?cache=1538058341',
             type: 'm3u8' 
         }
     ], 
     img: 'https://ei.phncdn.com/static/images/categories/(m=q0U656TbeqM48zjadOf)(mh=4eNG1T7JSLdCNs7F)roku_69.jpg?cache=1538058708', // Sidebar background image
     icon: 'fa-droplet' // FontAwesome icon name
-}
+}, { 
+        name: 'Asian', 
+        sources: [
+            { 
+                title: 'Live Asian', 
+                url: 'https://cdn.adultiptv.net/asian.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=qKV256TbeqM48zjadOf)(mh=RnLrV2LBlmKG7bOR)roku_1.jpg?cache=1538054628',
+                type: 'm3u8' 
+            },
+            { 
+                title: 'Live asian', 
+                url: 'https://live.mycamtv.com/asian.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
+        ], 
+        img: 'https://ei.phncdn.com/static/images/categories/(m=q22556TbeqM48zjadOf)(mh=1fy3WQ06uP5DJS02)roku_502.jpg?cache=1538057942', 
+        icon: 'fa-earth-asia' 
+},
+{ 
+        name: 'Big Tits', 
+        sources: [
+            { 
+                title: 'Live Big Tits', 
+                url: 'https://live.mycamtv.com/bigtits.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=qL1556TbeqM48zjadOf)(mh=ZKs7Ijqh4WdFwrMw)roku_78.jpg?cache=1538057893',
+                type: 'm3u8' 
+            },
+            { 
+                title: 'Live Big Tits', 
+                url: 'https://cdn.adultiptv.net/bigtits.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
+        ], 
+        img: 'https://ei.phncdn.com/static/images/categories/(m=qL1556TbeqM48zjadOf)(mh=ZKs7Ijqh4WdFwrMw)roku_78.jpg?cache=1538057893'
+    }, 
+    { 
+        name: 'Big Ass', 
+        sources: [
+            { 
+                title: 'Live Big Ass', 
+                url: 'https://live.mycamtv.com/bigass.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220',
+                type: 'm3u8' 
+            },
+            { 
+                title: 'Live Big Ass', 
+                url: 'https://cdn.adultiptv.net/bigass.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
+        ], 
+        img: 'https://ei.phncdn.com/static/images/categories/(m=q_G356TbeqM48zjadOf)(mh=g7Ncog36nAtxm5tB)roku_4.jpg?cache=1538055198'
+    }, 
+    { 
+        name: 'Big Dick',
+        sources: [
+            { 
+                title: 'Live Big Dick', 
+                url: 'https://live.mycamtv.com/bigdick.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6_556TbeqM48zjadOf)(mh=u8mI2w8CNq9BlajQ)roku_20.jpg?cache=1538058202',
+                type: 'm3u8' 
+            },
+            { 
+                title: 'Live Anal', 
+                url: 'https://cdn.adultiptv.net/bigdick.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
+        ], 
+        img: 'https://ei.phncdn.com/static/images/categories/(m=qYQ356TbeqM48zjadOf)(mh=huvUzHCwhG1DvBRU)roku_7.jpg?cache=1538055506'
+    }, { 
+        name: 'Blonde', 
+        sources: [
+            { 
+                title: 'Live Blonde', 
+                url: 'https://live.mycamtv.com/blonde.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q9NJ36TbeqM48zjadOf)(mh=z8jt8cUx9j7TuUJ7)roku_73.jpg?cache=1537969405',
+                type: 'm3u8' 
+            },
+            { 
+                title: 'Live Anal', 
+                url: 'https://cdn.adultiptv.net/blonde.m3u8', 
+                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
+                type: 'm3u8' 
+            }
+        ], 
+        img: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220'
+    }
 ];
 
 
