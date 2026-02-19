@@ -4,922 +4,738 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C|XXX</title>
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    
     <style>
-    /* Blur the main container by default */
-.container, header {
-    filter: blur(20px);
-    transition: filter 0.5s ease;
-}
+        /* --- Root Variables --- */
+        :root {
+            --primary-red: #E50914;
+            --bg-black: #141414;
+            --bg-dark: #0f0f0f;
+            --text-gray: #b3b3b3;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
-.age-gate-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.9);
-    z-index: 9999;
+        /* --- Global Reset --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-black); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-red); }
+
+        body {
+            background-color: var(--bg-black);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- Video.js Theme Overrides --- */
+        .video-js { width: 100%; height: 100%; }
+        .vjs-theme-netflix .vjs-big-play-button {
+            background-color: var(--primary-red) !important;
+            border: none !important;
+            width: 2.5em; height: 1.5em; border-radius: 0.3em;
+            transition: transform 0.2s;
+        }
+        .vjs-theme-netflix .vjs-big-play-button:hover { transform: scale(1.1); }
+        .video-js .vjs-play-progress, .video-js .vjs-volume-level { background-color: var(--primary-red) !important; }
+
+        /* --- Header & Navigation --- */
+        header {
+            position: fixed; top: 0; width: 100%; height: 70px;
+            padding: 0 4%;
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+            z-index: 1000;
+            transition: background 0.4s ease;
+        }
+        header.scrolled { background-color: var(--bg-black); box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem;
+            color: var(--primary-red); letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
+            cursor: pointer; text-decoration: none;
+            transition: transform 0.3s;
+        }
+        .logo:hover { transform: scale(1.05); }
+
+        .nav-links { display: flex; gap: 25px; margin-left: 40px; }
+        .nav-links a {
+            color: var(--text-gray); font-size: 0.95rem; font-weight: 500;
+            text-decoration: none; transition: color 0.3s;
+        }
+        .nav-links a:hover { color: white; }
+
+        /* Mobile Menu */
+        /* Mobile Menu Overlay - FIXED Z-INDEX */
+#mobile-menu-overlay {
+    position: fixed; 
+    top: 70px; 
+    left: 0; 
+    right: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    display: none; 
+    flex-direction: column; 
+    gap: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    animation: slideDown 0.3s ease-out;
+    z-index: 1001; /* This must be higher than the header (1000) */
+}
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #mobile-menu-overlay a {
+            font-size: 1.1rem; color: white; padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- Search & Avatar --- */
+        .search-box {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 12px; border-radius: 20px;
+            display: flex; align-items: center; transition: var(--transition);
+        }
+        .search-box:focus-within { border-color: white; background: rgba(0,0,0,0.9); }
+        .search-box input {
+            background: transparent; border: none; color: white;
+            padding-left: 10px; width: 0; transition: width 0.4s;
+        }
+        .search-box:hover input, .search-box input:focus { width: 220px; }
+
+        .avatar {
+            width: 36px; height: 36px; border-radius: 6px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png') center/cover;
+            cursor: pointer; border: 2px solid transparent; transition: var(--transition);
+        }
+        .avatar:hover { border-color: white; }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 75vh; width: 100%; position: relative;
+            background-image: url('https://thumb-cdn77.xvideos-cdn.com/1962f4fb-b4af-4898-afe9-91d9a91c84f7/0/xv_22_p.jpg');
+            background-size: cover; background-position: center;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+        .hero-overlay {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 70% 20%, transparent 0%, var(--bg-black) 90%),
+                        linear-gradient(to right, var(--bg-black) 0%, transparent 60%);
+            display: flex; flex-direction: column; justify-content: center; padding-left: 5%;
+        }
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 0.9;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .hero-subtitle { color: var(--primary-red); font-size: 3rem; margin-bottom: 1rem; }
+        
+        .btn {
+            padding: 10px 32px; border-radius: 4px; font-weight: 700; font-size: 1.1rem;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+            transition: var(--transition); border: none;
+        }
+        .btn-play { background: white; color: black; }
+        .btn-play:hover { background: rgba(255,255,255,0.85); transform: translateY(-2px); }
+        .btn-info { background: rgba(109, 109, 110, 0.7); color: white; backdrop-filter: blur(5px); }
+        .btn-info:hover { background: rgba(109, 109, 110, 0.5); transform: translateY(-2px); }
+
+        /* --- Grid Layout --- */
+        .infinite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px; padding: 20px 4%; margin-top: -80px; position: relative; z-index: 10;
+        }
+
+        .poster {
+            position: relative; aspect-ratio: 16/9;
+            background: #1a1a1a; border-radius: 6px; overflow: hidden;
+            cursor: pointer; transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .poster:hover {
+            transform: scale(1.05); z-index: 20;
+            border-color: rgba(255,255,255,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .poster img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
+        
+        .poster-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%);
+            display: flex; align-items: flex-end; padding: 10px;
+            opacity: 0.9;
+        }
+        .poster-title { font-size: 0.9rem; font-weight: 600; text-shadow: 0 2px 4px black; }
+
+        .premium-badge {
+            position: absolute; top: 8px; right: 8px;
+            background: linear-gradient(45deg, var(--primary-red), #22c55e);
+            color: white; font-size: 0.65rem; padding: 3px 8px;
+            border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* --- Player Overlay --- */
+        #player-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black; z-index: 2000; display: none; flex-direction: column;
+        }
+        .player-header {
+            padding: 15px 4%; display: flex; justify-content: space-between; align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: white; font-size: 1rem; padding: 8px 20px; border-radius: 30px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: var(--transition); backdrop-filter: blur(5px);
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-3px); }
+        
+        #video-container { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 50px; padding: 40px 4%;
+            background: rgba(0,0,0,0.8); text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .socials { font-size: 1.5rem; display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
+        .socials i:hover { color: white; transform: scale(1.1); transition: 0.3s; }
+
+        /* --- Responsive Queries --- */
+        @media (max-width: 768px) {
+            header { height: 65px; padding: 0 5%; background: rgba(0,0,0,0.95); }
+            .nav-links { display: none; }
+            #mobile-menu-toggle { display: block; }
+            
+            .hero { height: 55vh; }
+            .hero-title { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.5rem; }
+            .btn { font-size: 0.9rem; padding: 8px 16px; }
+
+            .infinite-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 12px; margin-top: -20px;
+            }
+            .poster { aspect-ratio: 16/10; }
+            .poster-title { font-size: 0.75rem; }
+            
+            #search-input { width: 140px; }
+            
+            /* Player Adjustments */
+            .player-header { padding: 10px 15px; }
+            .back-btn { font-size: 0.85rem; padding: 6px 14px; }
+        }
+        /* Fallback Icon Styling */
+.poster-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
-    text-align: center;
+    height: 100%;
+    width: 100%;
+    font-size: 3rem;
+    color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+    background: #1a1a1a;
 }
-
-.age-gate-content {
-    background-color: var(--bg-panel);
-    padding: 50px;
-    border-radius: 8px;
-    border: 1px solid #333;
-    max-width: 500px;
+/* Info Modal Styles */
+.info-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90%;
+    max-width: 600px;
+    background: #181818;
+    border-radius: 12px;
+    z-index: 2000;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    border: 1px solid #333;
+    padding: 2rem;
+    color: white;
+}
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 1999;
+}
+.info-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: var(--primary-red);
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #333;
+}
+.info-body { font-size: 0.95rem; line-height: 1.6; color: #ccc; }
+/* Ensure the player background is always black */
+.video-js {
+    background-color: #000 !important;
 }
 
-.age-gate-content h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
+/* Hide the big play button during the initial load to stop the "YouTube icon" flicker */
+.vjs-custom-loading .vjs-big-play-button {
+    display: none !important;
 }
 
-.age-gate-content p {
-    color: var(--text-muted);
-    margin-bottom: 30px;
+/* Customize the loading spinner to match your red theme */
+.vjs-loading-spinner {
+    border: 3px solid rgba(229, 9, 20, 0.5) !important;
+    border-top-color: #E50914 !important;
+}
+.live-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: #b20710; /* Green color for Live */
+    color: white; font-size: 0.65rem; padding: 3px 8px;
+    border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    z-index: 5;
+}
+/* --- Age Verification Modal --- */
+body.no-scroll {
+    overflow: hidden;
 }
 
-.age-gate-buttons {
+#age-verify-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    z-index: 99999; /* Highest priority to cover everything */
     display: flex;
-    gap: 20px;
+    align-items: center;
     justify-content: center;
 }
 
-.age-gate-buttons button {
-    padding: 12px 40px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    transition: transform 0.2s;
-}
-
-.btn-yes {
-    background-color: var(--netflix-red);
-    color: white;
-}
-
-.btn-no {
-    background-color: #333;
-    color: white;
-}
-
-.age-gate-buttons button:hover {
-    transform: scale(1.05);
-}
-
-/* Class to remove blur */
-.unblur {
-    filter: blur(0) !important;
-}
-
-        :root {
-            --netflix-red: #E50914;
-            --bg-dark: #141414;
-            --bg-panel: #000000;
-            --text-main: #FFFFFF;
-            --text-muted: #AAAAAA;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* --- Header --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            background-color: var(--bg-panel);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
-
-        .logo {
-            font-family: 'Bebas Neue', sans-serif;
-            color: var(--netflix-red);
-            font-size: 40px;
-            letter-spacing: 2px;
-            text-decoration: none;
-            cursor: pointer;
-            display: flex;
-    align-items: baseline;
-            gap: 10px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .filter-wrapper, .search-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .filter-wrapper i, .search-wrapper i {
-            position: absolute;
-            left: 12px;
-            color: var(--text-muted);
-            pointer-events: none;
-        }
-
-        select, input {
-            padding: 10px 15px 10px 35px;
-            border-radius: 4px;
-            border: 1px solid #333;
-            background-color: #222;
-            color: white;
-            font-size: 14px;
-            outline: none;
-            transition: border 0.3s;
-        }
-
-        select { cursor: pointer; appearance: none; padding-right: 30px; }
-        select:focus, input:focus { border-color: var(--netflix-red); }
-
-        /* --- Main Layout --- */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* --- Sidebar (Categories) --- */
-        .sidebar {
-            width: 260px;
-            background-color: var(--bg-panel);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            transition: opacity 0.3s;
-        }
-
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-
-        .category {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background-size: cover;
-            background-position: center;
-            border-radius: 6px;
-            cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .category:hover {
-            transform: scale(1.04);
-            border: 2px solid var(--netflix-red);
-        }
-
-        .category::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.65);
-            transition: background 0.2s ease;
-        }
-
-        .category:hover::after { background: rgba(0,0,0,0.3); }
-
-        .category span {
-            position: relative;
-            z-index: 1;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 26px;
-            letter-spacing: 1px;
-            text-shadow: 2px 2px 5px #000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* --- Main Content (Grid) --- */
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .content::-webkit-scrollbar { width: 8px; }
-        .content::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-
-        .section-title {
-            margin-bottom: 20px;
-            font-size: 22px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background-color: #222;
-            border-radius: 6px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .card:hover { transform: scale(1.05); z-index: 2; box-shadow: 0 8px 20px rgba(0,0,0,0.8); }
-
-        .play-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.5);
-            font-size: 40px;
-            color: rgba(255,255,255,0.8);
-            opacity: 0;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-
-        .card:hover .play-icon {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-            color: var(--netflix-red);
-        }
-
-        .card-img {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background-color: #111;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            position: relative;
-        }
-
-        .card-img::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
-        }
-
-        .card-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .card-title {
-            padding: 12px;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-main);
-            text-align: center;
-            background: #1a1a1a;
-        }
-
-        .loader {
-            text-align: center;
-            padding: 50px;
-            color: var(--text-muted);
-            grid-column: 1 / -1;
-            font-size: 18px;
-        }
-
-        .loader i { color: var(--netflix-red); margin-right: 10px; }
-
-        /* --- Video Player Modal --- */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0,0,0,0.95);
-            z-index: 100;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: flex-end;
-            padding: 20px 30px;
-        }
-
-        .close-btn {
-            background: transparent;
-            color: white;
-            border: none;
-            font-size: 35px;
-            cursor: pointer;
-            line-height: 1;
-            transition: color 0.2s;
-            transform: scale(1);
-        }
-
-        .close-btn:hover { color: var(--netflix-red); transform: scale(1.1); }
-
-        .video-container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 40px 40px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .video-container iframe {
-            width: 100%;
-            aspect-ratio: 16/9;
-            max-height: 80vh;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-
-        /* --- Mobile Responsiveness --- */
-        @media (max-width: 768px) {
-            header { flex-direction: column; align-items: stretch; gap: 15px; padding: 15px; }
-            .controls { flex-direction: column; width: 100%; }
-            .filter-wrapper, .search-wrapper { width: 100%; }
-            .controls select, .controls input { width: 100%; }
-            .container { flex-direction: column; }
-            .sidebar { 
-                width: 100%; 
-                flex-direction: row; 
-                overflow-x: auto; 
-                padding: 10px 15px; 
-                height: auto; 
-                border-bottom: 1px solid #333;
-            }
-            .sidebar::-webkit-scrollbar { height: 4px; }
-            .category { min-width: 180px; }
-            .content { padding: 15px; }
-            .video-container { padding: 0 10px 20px; }
-        }
-        .main-footer {
-    background-color: var(--bg-panel);
-    padding: 20px;
-    border-top: 1px solid #333;
+.age-verify-modal {
+    background: #141414;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 2.5rem;
+    max-width: 550px;
+    width: 90%;
     text-align: center;
-    color: var(--text-muted);
-    font-size: 14px;
-    z-index: 5;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+    color: white;
 }
 
-.footer-content p {
-    margin: 5px 0;
-}
-
-#geoDisplay {
-    color: var(--text-main);
-    font-weight: 600;
-    text-transform: uppercase;
+.age-verify-modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--primary-red);
+    margin-bottom: 0.5rem;
     letter-spacing: 1px;
 }
 
+.age-verify-modal h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.age-verify-modal p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-gray);
+    margin-bottom: 2rem;
+}
+
+.age-verify-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-enter {
+    background: var(--primary-red);
+    color: white;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-enter:hover {
+    background: #b20710;
+    transform: translateY(-2px);
+}
+
+.btn-exit {
+    background: transparent;
+    color: var(--text-gray);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 14px 24px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-exit:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-color: white;
+}
     </style>
 </head>
 <body>
-<div id="ageGate" class="age-gate-overlay">
-    <div class="age-gate-content">
-        <div class="logo" style="margin-bottom: 20px; font-size: 50px; justify-content: center;">
-            <i class="fa-solid fa-play"></i> CHITHRUKA
-        </div>
-        <h1>This is an adult website</h1>
-        <p>This website contains age-restricted materials including nudity and explicit depictions of sexual activity. By entering, you affirm that you are at least 18 years of age or the age of majority in the jurisdiction you are accessing the website from and you consent to viewing sexually explicit content.</p>
-        <div class="age-gate-buttons">
-            <button class="btn-yes" onclick="verifyAge(true)">I am 18 or older - Enter</button>
-            <button class="btn-no" onclick="verifyAge(false)">I am under 18 - Exit</button>
+      <div id="age-verify-overlay">
+        <div class="age-verify-modal">
+            <h2>This is an adult website</h2>
+            <h3>Notice to Users</h3>
+            <p>This website contains age-restricted materials including nudity and explicit depictions of sexual activity. By entering, you affirm that you are at least 18 years of age or the age of majority in the jurisdiction you are accessing the website from and you consent to viewing sexually explicit content.</p>
+            <div class="age-verify-buttons">
+                <button class="btn-enter" onclick="enterSite()">I am 18 or older - Enter</button>
+                <button class="btn-exit" onclick="exitSite()">I am under 18 - Exit</button>
+            </div>
         </div>
     </div>
-</div>
+    <header id="navbar">
+        <a href="#" class="logo" onclick="resetPage(event)">Corn<i class="fa-solid fa-xmarks-lines"></i></a>
+        
+        <nav class="nav-links">
+            <a href="pornhub.com">PH</a>
+        </nav>
 
-    <header><div class="logo" onclick="loadMain()">
-    Corn <i class="fa-solid fa-xmarks-lines"></i><sup id="countryCode" style="font-size: 14px; margin-left: 5px; color: var(--text-muted);"></sup>
-</div>
-
-        <div class="controls">
-            <div class="filter-wrapper">
-                <i class="fa-solid fa-filter"></i>
-                <select id="typeFilter">
-                    <option value="live">live</option>
-                    <option value="videos">videos</option>
-                </select>
+        <div style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
+            <div class="search-box">
+                <i class="fas fa-search" style="color: white; font-size: 0.9rem;"></i>
+                <input type="text" id="search-input" placeholder="Search...">
             </div>
-            <div class="search-wrapper">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Search streams...">
-            </div>
+            <div class="avatar" onclick="toggleMobileMenu()"></div>
         </div>
     </header>
 
-    <div class="container">
-        <aside class="sidebar" id="sidebar">
-            </aside>
-
-        <main class="content">
-            <h2 class="section-title" id="currentSectionTitle">
-                <i class="fa-solid fa-tower-broadcast"></i> Main Playlist
-            </h2>
-            <div class="grid" id="grid">
-                <div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading streams...</div>
-            </div>
-        </main>
+    <div id="mobile-menu-overlay">
+        <a href="pornhub.com">Movies</a>
+        <a href="pornhub.com/TV/tv.html">Live TV</a>
+        <a href="pornhub.com/Radio/radio.html">Live Radio</a>
+        <a href="#" onclick="toggleMobileMenu()" style="color: var(--primary-red); font-size: 0.9rem;">Close Menu</a>
     </div>
 
-    <div class="modal" id="playerModal">
-        <div class="modal-header">
-            <button class="close-btn" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="hero">
+        <div class="hero-overlay">
+            <h1 class="hero-title text-white font-extrabold mb-2" style="font-family: 'Bebas Neue', sans-serif;">LIVE</i></h1>
+            <h2 class="hero-subtitle font-bold text-red-600 mb-4" style="font-family: 'Bebas Neue', sans-serif;">UNLIMITED</h2>
+            <p class="text-gray-300 text-sm md:text-lg max-w-lg mb-6 leading-relaxed drop-shadow-md">
+                Stream in High definition, zero buffering.
+            </p>
+            <div class="flex gap-4">
+                <button class="btn btn-play shadow-lg" onclick="playRandom()">
+                    <i class="fa-solid fa-shuffle"></i> Random
+                </button>
+            </div>
         </div>
-        <div class="video-container" id="videoContainer">
-            </div>
     </div>
 
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <div id="main-content">
+        <div class="flex justify-center mt-12 mb-12">
+            <div class="w-10 h-10 border-4 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+        </div>
+    </div>
 
-   <script>
-     function verifyAge(isAdult) {
-    if (isAdult) {
-        // Hide the age gate
-        document.getElementById('ageGate').style.display = 'none';
-        
-        // Remove blur from header and main container
-        document.querySelector('header').classList.add('unblur');
-        document.querySelector('.container').classList.add('unblur');
-        
-        // Optional: Save to local storage so they don't see it every refresh
-        localStorage.setItem('ageVerified', 'true');
-    } else {
-        // Redirect to YouTube
-        window.location.href = "https://chithruka.github.io/Chithruka/";
-    }
+    <footer>
+        <div class="socials text-gray-400">
+           <a href="https://www.youtube.com/live"><i class="fab fa-youtube cursor-pointer transition hover:text-white"></i></a>
+           <a href="https://www.twitch.tv/"><i class="fa-brands fa-twitch cursor-pointer transition hover:text-white"></i></a>
+           <a href="https://www.facebook.com/watch"><i class="fa-brands fa-facebook cursor-pointer transition hover:text-white"></i></a>
+           <a href="https://www.dailymotion.com/search/tv/lives"><i class="fa-brands fa-dailymotion cursor-pointer transition hover:text-white"></i></a>
+        <a href="https://vimeo.com/search?type=clip&q=tv&live=now"><i class="fa-brands fa-vimeo cursor-pointer transition hover:text-white"></i></a>
+        </div>
+        <p class="text-xs text-gray-600 font-medium">
+            &copy; 2026 Chithruka. All Rights Reserved.
+        </p>
+    </footer>
+
+    <div id="player-overlay">
+        <div class="player-header">
+            <button class="back-btn" onclick="closePlayer()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <span id="player-title" class="font-bold text-lg text-gray-200 tracking-wide">Channel Name</span>
+            <div style="width: 20px;"></div>
+        </div>
+        <div id="video-container"></div>
+    </div>
+<div id="modal-overlay" class="modal-overlay" onclick="closeInfo()"></div>
+<div id="info-modal" class="info-modal">
+    <div class="flex justify-between items-start">
+        <h2 id="modal-title" class="info-header">Loading...</h2>
+        <button onclick="closeInfo()" class="text-white text-2xl">&times;</button>
+    </div>
+    <div id="modal-content" class="info-body">
+        <p>Fetching latest sports information...</p>
+    </div>
+</div>
+<script>
+  // --- Age Verification Functions ---
+// Disable scrolling on initial load
+document.body.classList.add('no-scroll');
+
+function enterSite() {
+    // Hide the overlay and restore scrolling
+    document.getElementById('age-verify-overlay').style.display = 'none';
+    document.body.classList.remove('no-scroll');
 }
 
-// Optional: Check if already verified on page load
-window.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem('ageVerified') === 'true') {
-        verifyAge(true);
-    }
-});
-
-async function fetchLocation() {
-    // 1. Set the dynamic year
-    document.getElementById('currentYear').innerText = new Date().getFullYear();
-
-    try {
-        const response = await fetch('https://ipapi.co/json/');
-        if (response.ok) {
-            const data = await response.json();
-            
-            // 2. Update Logo Superscript (Country Code)
-            if (data.country_code) {
-                document.getElementById('countryCode').innerText = data.country_code;
-            }
-            
-            // 3. Update Footer Text (Full Country Name)
-            if (data.country_name) {
-                document.getElementById('geoDisplay').innerText = `Viewing from ${data.country_name}`;
-            }
-        }
-    } catch (error) {
-        console.error('Location Fetch Error:', error);
-        document.getElementById('geoDisplay').innerText = "Content available globally";
-    }
+function exitSite() {
+    // Redirect to Google
+    window.location.href = 'https://www.google.com';
 }
 
-// Ensure fetchLocation() is called inside your init() function
-function init() {
-    renderSidebar();
-    fetchLocation(); 
-    loadMultiPlaylist(['https://iptv-org.github.io/iptv/index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
-    setupEventListeners();
-}
+  // --- State ---
+let apiChannels = []; 
+let allChannels = []; 
+let filteredChannels = []; 
+let displayedCount = 40; 
+let player = null;
 
-
-// Modify your existing init function
-function init() {
-    renderSidebar();
-    fetchLocation(); // New function call
-    loadMultiPlaylist(['https://iptv-org.github.io/iptv/index.m3u'], 'Main Playlist', 'fa-tower-broadcast');
-    setupEventListeners();
-}
-
-// --- Data Sources ---
-const categories = [
-    { 
-        name: 'Anal', 
-        sources: [
-            { 
-                title: 'Live Anal', 
-                url: 'https://live.mycamtv.com/anal.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live Anal', 
-                url: 'https://cdn.adultiptv.net/anal.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220', 
-        icon: 'fa-0' 
-    }, 
-    { 
-    name: 'Livecams', // The text shown on the sidebar
-    sources: [
-        { 
-            title: 'Live Chat', 
-            url: 'https://cdn.adultiptv.net/livecams.m3u8', 
-            poster: 'https://ei.phncdn.com/static/images/categories/(m=q2P256TbeqM48zjadOf)(mh=_YmyRarczxV5SeqQ)roku_105.jpg?cache=1538054454',
-            type: 'm3u8' 
-        },
-        { 
-            title: 'Live Stream', 
-            url: 'http://109.71.163.112:1935/live/hd.jasminchannel.stream/playlist.m3u8', 
-            poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',
-            type: 'm3u8' 
-        }
-    ], 
-    img: 'https://ei.phncdn.com/static/images/categories/(m=q34656TbeqM48zjadOf)(mh=n__kH49K4YWiauop)roku_61.jpg?cache=1538059031'
-}, { 
-    name: 'Squirt', // The text shown on the sidebar
-    sources: [
- { 
-            title: 'Live Squirting', 
-            url: 'https://cdn.adultiptv.net/squirt.m3u8', 
-            poster: 'https://ei.phncdn.com/static/images/categories/(m=q0U656TbeqM48zjadOf)(mh=4eNG1T7JSLdCNs7F)roku_69.jpg?cache=1538058708',
-            type: 'm3u8' 
-        },
-        { 
-            title: 'Live Squirting', 
-            url: 'https://.mycamtv.com/squirt.m3u8', 
-            poster: 'https://ei.phncdn.com/static/images/categories/(m=qLJ656TbeqM48zjadOf)(mh=lQExjPgqwNNU0uKW)roku_211.jpg?cache=1538058341',
-            type: 'm3u8' 
-        }
-    ], 
-    img: 'https://ei.phncdn.com/static/images/categories/(m=q0U656TbeqM48zjadOf)(mh=4eNG1T7JSLdCNs7F)roku_69.jpg?cache=1538058708', // Sidebar background image
-    icon: 'fa-droplet' // FontAwesome icon name
-}, { 
-        name: 'Asian', 
-        sources: [
-            { 
-                title: 'Live Asian', 
-                url: 'https://cdn.adultiptv.net/asian.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=qKV256TbeqM48zjadOf)(mh=RnLrV2LBlmKG7bOR)roku_1.jpg?cache=1538054628',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live asian', 
-                url: 'https://live.mycamtv.com/asian.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=q22556TbeqM48zjadOf)(mh=1fy3WQ06uP5DJS02)roku_502.jpg?cache=1538057942', 
-        icon: 'fa-earth-asia' 
-},
-{ 
-        name: 'Big Tits', 
-        sources: [
-            { 
-                title: 'Live Big Tits', 
-                url: 'https://live.mycamtv.com/bigtits.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=qL1556TbeqM48zjadOf)(mh=ZKs7Ijqh4WdFwrMw)roku_78.jpg?cache=1538057893',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live Big Tits', 
-                url: 'https://cdn.adultiptv.net/bigtits.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=qL1556TbeqM48zjadOf)(mh=ZKs7Ijqh4WdFwrMw)roku_78.jpg?cache=1538057893'
-    }, 
-    { 
-        name: 'Big Ass', 
-        sources: [
-            { 
-                title: 'Live Big Ass', 
-                url: 'https://live.mycamtv.com/bigass.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live Big Ass', 
-                url: 'https://cdn.adultiptv.net/bigass.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=q_G356TbeqM48zjadOf)(mh=g7Ncog36nAtxm5tB)roku_4.jpg?cache=1538055198'
-    }, 
-    { 
-        name: 'Big Dick',
-        sources: [
-            { 
-                title: 'Live Big Dick', 
-                url: 'https://live.mycamtv.com/bigdick.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6_556TbeqM48zjadOf)(mh=u8mI2w8CNq9BlajQ)roku_20.jpg?cache=1538058202',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live Anal', 
-                url: 'https://cdn.adultiptv.net/bigdick.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=qYQ356TbeqM48zjadOf)(mh=huvUzHCwhG1DvBRU)roku_7.jpg?cache=1538055506'
-    }, { 
-        name: 'Blonde', 
-        sources: [
-            { 
-                title: 'Live Blonde', 
-                url: 'https://live.mycamtv.com/blonde.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q9NJ36TbeqM48zjadOf)(mh=z8jt8cUx9j7TuUJ7)roku_73.jpg?cache=1537969405',
-                type: 'm3u8' 
-            },
-            { 
-                title: 'Live Anal', 
-                url: 'https://cdn.adultiptv.net/blonde.m3u8', 
-                poster: 'https://ei.phncdn.com/static/images/categories/(m=q6S256TbeqM48zjadOf)(mh=i0gmcmAFuChChyMW)roku_35.jpg?cache=1538054554',
-                type: 'm3u8' 
-            }
-        ], 
-        img: 'https://ei.phncdn.com/static/images/categories/(m=qS-556TbeqM48zjadOf)(mh=a0Ig6sAVO0EPU25S)roku_21.jpg?cache=1538058220'
-    }
+// --- M3U Playlist URLs ---
+const M3U_URLS = [
+    'https://chithruka.github.io/Chithruka/Videos/playlist.m3u8',
 ];
 
-
-const videoVods = [
+// --- Premium Data ---
+const premiumChannels = [
     { 
-        title: 'Wicked - Brunette Babe Gets A Good Dicking From The DIRECTOR HIMSELF', 
-        url: 'https://www.pornhub.com/embed/66673ee153eb7', 
-        logo: 'https://ei.phncdn.com/videos/202406/10/453641491/original/(m=eaAaGwObaaaa)(mh=oM3mh3L-B1g8JA40)12.jpg', 
-        type: 'iframe' 
+        name: "Wicked - Brunette Babe Gets A Good Dicking From The DIRECTOR HIMSELF", 
+        type: "iframe", 
+        src: "https://www.pornhub.com/embed/66673ee153eb7", 
+        logo: "https://ei.phncdn.com/videos/202406/10/453641491/original/(m=eaAaGwObaaaa)(mh=oM3mh3L-B1g8JA40)12.jpg", 
+        isPremium: true 
     },
     { 
-        title: 'Vimeo Example', 
-        url: 'https://player.vimeo.com/video/76979871', 
-        logo: 'https://vumbnail.com/76979871.jpg', 
-        type: 'iframe' 
+        name: "Intense Getting Raped By a Dog", 
+        type: "hls", 
+        url: "https://vidcont.life/upd2/ansexpornnet/5184___bee7d07cf2287108418d3fd9d182bed7.mp4", 
+        logo: "https://img.redbull.com/images/w_300/q_auto,f_auto/redbullcom/2021/3/8/v1viztxjab9e9a6of4by/redbulltv", 
+        isPremium: false 
     },
-    { 
-        title: 'mycamtv.com (live)', 
-        url: 'http://cdn.adultiptv.net/videos.m3u8', 
-        logo: 'https://assets.chapturist.com/assets/icons/headerlogo_mycamtv.com.png?v=4d141388', 
-        type: 'm3u8' 
-    }
 ];
 
-// --- Application State ---
-let currentStreams = [];
-let playerInstance = null;
-let currentViewContext = 'live'; 
-
-/**
- * Initialize App
- */
-function init() {
-    renderSidebar();
-    // Start with the main global playlist
-    loadMultiPlaylist(['http://cdn.adultiptv.net/chs.m3u'], 'Main Playlist', 'fa-tower-broadcast');
-    setupEventListeners();
+// --- Core Functions ---
+function resetPage(e) {
+    if(e) e.preventDefault();
+    document.getElementById('search-input').value = '';
+    filteredChannels = [...allChannels];
+    renderGrid(filteredChannels.slice(0, 40), true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/**
- * Sidebar Generator
- */
-function renderSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.innerHTML = ''; 
-    categories.forEach(cat => {
-        const div = document.createElement('div');
-        div.className = 'category';
-        div.style.backgroundImage = `url('${cat.img}')`;
-        div.innerHTML = `<span><i class="fa-solid ${cat.icon}"></i> ${cat.name}</span>`;
-        div.onclick = () => {
-            document.getElementById('typeFilter').value = 'live';
-            toggleSidebarState(true);
-            loadMultiPlaylist(cat.sources, cat.name, cat.icon);
-        };
-        sidebar.appendChild(div);
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu-overlay');
+    menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function renderGrid(channels, clear = false) {
+    const container = document.getElementById('main-content');
+    if (clear) container.innerHTML = '<div id="infinite-grid" class="infinite-grid"></div>';
+    
+    const grid = document.getElementById('infinite-grid');
+    if (!grid) return;
+
+    channels.forEach(channel => {
+        const poster = document.createElement('div');
+        poster.className = 'poster';
+        poster.onclick = () => openPlayer(channel);
+
+        const logoSrc = channel.logo || "";
+        
+        // --- Badge Logic ---
+        let premiumBadge = channel.isPremium ? '<span class="premium-badge">Premium</span>' : '';
+        
+        // Check if the URL exists and ends with .m3u8 to show the Live badge
+        let isStream = channel.url && channel.url.toLowerCase().includes('.m3u8');
+        let liveBadge = isStream ? '<span class="live-badge"><i class="fa-solid fa-circle text-[6px] mr-1 mb-[1px]"></i> LIVE</span>' : '';
+        
+        poster.innerHTML = `
+            ${premiumBadge}
+            ${liveBadge}
+            <img src="${logoSrc}" 
+                 loading="lazy" 
+                 style="${!logoSrc ? 'display:none' : ''}"
+                 onerror="handleImageError(this)">
+            <div class="poster-fallback" style="${logoSrc ? 'display:none' : 'display:flex'}">
+                <i class="fa-solid fa-xmarks-lines"></i>
+            </div>
+            <div class="poster-overlay">
+                <div class="poster-title truncate w-full text-white drop-shadow-md">${channel.name}</div>
+            </div>
+        `;
+        grid.appendChild(poster);
     });
 }
 
-/**
- * Agnostic Multi-Source Loader
- * Fetches multiple absolute URLs and merges them.
- */
-async function loadMultiPlaylist(urls, title, iconClass) {
-    currentViewContext = 'live'; 
-    document.getElementById('currentSectionTitle').innerHTML = `<i class="fa-solid ${iconClass}"></i> ${title}`;
-    document.getElementById('grid').innerHTML = '<div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading...</div>';
-    
-    let combined = [];
 
-    try {
-        for (const item of urls) {
-            // Check if item is a Manual Object
-            if (typeof item === 'object' && item !== null) {
-                combined.push({
-                    title: item.title || 'Untitled Stream',
-                    url: item.url,
-                    logo: item.poster || '', // Uses your manual poster
-                    type: item.type || 'm3u8'
-                });
-            } 
-            // Check if item is a direct URL string
-            else if (typeof item === 'string') {
-                if (item.toLowerCase().endsWith('.m3u8')) {
-                    combined.push({
-                        title: title + " Live",
-                        url: item,
-                        logo: '', 
-                        type: 'm3u8'
-                    });
-                } else {
-                    const res = await fetch(item);
-                    if (res.ok) {
-                        const text = await res.text();
-                        combined = [...combined, ...parseM3U(text)];
+function handleImageError(img) {
+    const poster = img.parentElement;
+    const fallback = poster.querySelector('.poster-fallback');
+    img.style.display = 'none';
+    if (fallback) fallback.style.display = 'flex';
+}
+
+// Updated to support both HLS (.m3u8) and MP4 (.mp4) from playlists
+async function fetchChannels() {
+    for (const url of M3U_URLS) {
+        try {
+            const response = await fetch(url);
+            const text = await response.text();
+            const lines = text.split('\n');
+            let current = {};
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF')) {
+                    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                    const name = line.split(',').pop();
+                    current = { name, logo: logoMatch ? logoMatch[1] : '', type: 'hls' };
+                } else if (line.startsWith('http')) {
+                    current.url = line;
+                    // Recognize both streaming and static video file extensions
+                    if (current.url.includes('.m3u8') || current.url.includes('.mp4')) {
+                        apiChannels.push({ ...current });
                     }
                 }
             }
+        } catch (e) {
+            console.error(`Failed to fetch playlist: ${url}`, e);
         }
-
-        if (currentViewContext !== 'live') return;
-        currentStreams = combined;
-        renderGrid(currentStreams);
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('grid').innerHTML = '<div class="loader">Error loading streams.</div>';
     }
+
+    allChannels = [...premiumChannels, ...apiChannels];
+    filteredChannels = [...allChannels];
+    renderGrid(filteredChannels.slice(0, 40), true);
 }
 
-function parseM3U(data) {
-    const lines = data.split('\n');
-    const result = [];
-    let currentItem = null;
+// --- Search ---
+document.getElementById('search-input').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    filteredChannels = allChannels.filter(c => c.name.toLowerCase().includes(query));
+    displayedCount = 40; 
+    renderGrid(filteredChannels.slice(0, 40), true);
+});
 
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('#EXTINF:')) {
-            currentItem = { type: 'm3u8' };
-            const logoMatch = trimmed.match(/tvg-logo="([^"]+)"/);
-            currentItem.logo = logoMatch ? logoMatch[1] : '';
-            const parts = trimmed.split(',');
-            currentItem.title = parts[parts.length - 1].trim();
-        } else if (trimmed && !trimmed.startsWith('#') && currentItem) {
-            // Store the full URL provided in the M3U file
-            currentItem.url = trimmed;
-            if(trimmed.startsWith('http')) result.push(currentItem);
-            currentItem = null;
-        }
-    });
-    return result;
-}
-/**
- * Grid Renderer
- */
-function renderGrid(streams) {
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
+// --- Player ---
+function openPlayer(channel) {
+    const overlay = document.getElementById('player-overlay');
+    const title = document.getElementById('player-title');
+    const vidContainer = document.getElementById('video-container');
 
-    if (streams.length === 0) {
-        grid.innerHTML = '<div class="loader">No results found.</div>';
-        return;
-    }
-    // Limit to 300 for browser stability
-    streams.slice(0, 300).forEach(stream => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.onclick = () => openPlayer(stream.url, stream.type);
-        
-        const fallback = `https://via.placeholder.com/400x225/1a1a1a/E50914?text=Stream`;
-        card.innerHTML = `
-            <div class="card-img">
-                <img src="${stream.logo || fallback}" onerror="this.src='${fallback}'" loading="lazy">
-                <i class="fa-solid fa-circle-play play-icon"></i>
-            </div>
-            <div class="card-title">${stream.title}</div>
-        `;
-        grid.appendChild(card);
-    });
-}
+    overlay.style.display = 'flex';
+    title.innerText = channel.name;
+    vidContainer.innerHTML = '';
 
-function openPlayer(url, type) {
-    const modal = document.getElementById('playerModal');
-    const container = document.getElementById('videoContainer');
-    modal.style.display = 'flex';
-    container.innerHTML = ''; 
-
-    if (type === 'iframe') {
+    if (channel.type === 'iframe') {
         const iframe = document.createElement('iframe');
-        // Handle autoplay parameter dynamically
-        const sep = url.includes('?') ? '&' : '?';
-        iframe.src = `${url}${sep}autoplay=1`;
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
-        container.appendChild(iframe);
-    } else {
-        container.innerHTML = `<video id="main-player" class="video-js vjs-theme-city" controls preload="auto" width="100%"></video>`;
-        playerInstance = videojs('main-player', { fluid: true, autoplay: true });
-        playerInstance.src({ src: url, type: 'application/x-mpegURL' });
+        iframe.src = channel.src;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.backgroundColor = "black";
+        iframe.allowFullscreen = true;
+        iframe.allow = "autoplay; encrypted-media"; 
+        vidContainer.appendChild(iframe);
+    } else if (channel.type === 'hls') {
+        // Dynamically detect MIME type based on file extension
+        const isMp4 = channel.url.toLowerCase().includes('.mp4');
+        const mimeType = isMp4 ? 'video/mp4' : 'application/x-mpegURL';
+
+        const videoHtml = `
+            <video id="main-player" 
+                   class="video-js vjs-theme-netflix vjs-big-play-centered" 
+                   controls 
+                   preload="auto" 
+                   poster="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=">
+                <source src="${channel.url}" type="${mimeType}">
+            </video>
+        `;
+        vidContainer.innerHTML = videoHtml;
+
+        player = videojs('main-player', {
+            fluid: true,
+            autoplay: true,
+            responsive: true
+        });
+
+        player.on('loadstart', function() {
+            this.addClass('vjs-custom-loading');
+        });
+
+        player.on('playing', function() {
+            this.removeClass('vjs-custom-loading');
+        });
     }
 }
 
 function closePlayer() {
-    document.getElementById('playerModal').style.display = 'none';
-    if (playerInstance) {
-        playerInstance.dispose();
-        playerInstance = null;
+    const overlay = document.getElementById('player-overlay');
+    const vidContainer = document.getElementById('video-container');
+
+    overlay.style.display = 'none';
+
+    if (player) {
+        try {
+            player.pause();
+            player.dispose();
+        } catch(e) { console.log(e); }
+        player = null;
     }
-    document.getElementById('videoContainer').innerHTML = '';
+
+    vidContainer.innerHTML = '';
 }
 
-/**
- * UI Listeners
- */
-function setupEventListeners() {
-    document.getElementById('typeFilter').addEventListener('change', (e) => {
-        if (e.target.value === 'videos') {
-            currentViewContext = 'videos';
-            toggleSidebarState(false); // Dim and disable sidebar
-            currentStreams = videoVods;
-            document.getElementById('currentSectionTitle').innerHTML = '<i class="fa-solid fa-film"></i> Videos';
-            renderGrid(currentStreams);
-        } else {
-            // --- FIX IS HERE ---
-            currentViewContext = 'live';
-            toggleSidebarState(true); // Re-enable the sidebar interactions
-            // Reload the primary main playlist
-            loadMultiPlaylist(['https://live.mycamtv.com/latina.m3u8'], 'Main Playlist', 'fa-tower-broadcast');
+function playRandom() {
+    if (allChannels.length > 0) {
+        const random = allChannels[Math.floor(Math.random() * allChannels.length)];
+        openPlayer(random);
+    }
+}
+
+// --- Infinite Scroll ---
+window.addEventListener('scroll', () => {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
+        if (displayedCount < filteredChannels.length) {
+            const nextBatch = filteredChannels.slice(displayedCount, displayedCount + 20);
+            renderGrid(nextBatch);
+            displayedCount += 20;
         }
-    });
+    }
+});
 
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const q = e.target.value.toLowerCase();
-        renderGrid(currentStreams.filter(s => s.title.toLowerCase().includes(q)));
-    });
-}
+// --- Header scroll effect ---
+window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+});
 
-
-function toggleSidebarState(active) {
-    const s = document.getElementById('sidebar');
-    s.style.opacity = active ? '1' : '0.3';
-    s.style.pointerEvents = active ? 'auto' : 'none';
-}
-init();
+// Initialize
+fetchChannels();
 </script>
-<footer class="main-footer">
-    <div class="footer-content">
-        <p id="geoDisplay">Locating...</p>
-        <p>&copy; <span id="currentYear"></span> Chithruka. All Rights Reserved.</p>
-    </div>
-</footer>
 
 </body>
 </html>
