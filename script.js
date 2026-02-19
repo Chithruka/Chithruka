@@ -794,7 +794,7 @@ function loadHome() {
 }
 
 const SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidsrcme.ru/embed/movie/[ID]", tv: "https://vidsrcme.ru/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 1", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
     { name: "Server 2", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
@@ -4282,4 +4282,5 @@ function handleSearchSubmit(query) {
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 
