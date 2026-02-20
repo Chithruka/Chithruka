@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -42,18 +42,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- Video.js Theme Overrides --- */
-        .video-js { width: 100%; height: 100%; }
-        .vjs-theme-netflix .vjs-big-play-button {
-            background-color: var(--primary-red) !important;
-            border: none !important;
-            width: 2.5em; height: 1.5em; border-radius: 0.3em;
-            transition: transform 0.2s;
-        }
-        .vjs-theme-netflix .vjs-big-play-button:hover { transform: scale(1.1); }
-        .video-js .vjs-play-progress, .video-js .vjs-volume-level { background-color: var(--primary-red) !important; }
-
-        /* --- Header & Navigation --- */
+/* --- Header & Navigation --- */
         header {
             position: fixed; top: 0; width: 100%; height: 70px;
             padding: 0 4%;
@@ -184,7 +173,7 @@
 
         .premium-badge {
             position: absolute; top: 8px; right: 8px;
-            background: linear-gradient(45deg, var(--primary-red), #22c55e);
+            background: #22c55e;
             color: white; font-size: 0.65rem; padding: 3px 8px;
             border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
@@ -303,7 +292,7 @@
 }
 .live-badge {
     position: absolute; top: 8px; left: 8px;
-    background: #b20710; /* Green color for Live */
+    background: linear-gradient(45deg, var(--primary-red), #b20710); /* Green color for Live */
     color: white; font-size: 0.65rem; padding: 3px 8px;
     border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
@@ -490,9 +479,6 @@ body.no-scroll {
         <h2 id="modal-title" class="info-header">Loading...</h2>
         <button onclick="closeInfo()" class="text-white text-2xl">&times;</button>
     </div>
-    <div id="modal-content" class="info-body">
-        <p>Fetching latest sports information...</p>
-    </div>
 </div>
 <script>
   // --- Age Verification Functions ---
@@ -644,54 +630,51 @@ document.getElementById('search-input').addEventListener('input', (e) => {
 // --- Player ---
 function openPlayer(channel) {
     const overlay = document.getElementById('player-overlay');
-    const title = document.getElementById('player-title');
     const vidContainer = document.getElementById('video-container');
+    const title = document.getElementById('player-title');
 
-    overlay.style.display = 'flex';
     title.innerText = channel.name;
-    vidContainer.innerHTML = '';
+    overlay.style.display = 'flex';
+    vidContainer.innerHTML = ''; // Clear previous player
 
     if (channel.type === 'iframe') {
-        const iframe = document.createElement('iframe');
-        iframe.src = channel.src;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.backgroundColor = "black";
-        iframe.allowFullscreen = true;
-        iframe.allow = "autoplay; encrypted-media"; 
-        vidContainer.appendChild(iframe);
-    } else if (channel.type === 'hls') {
-        // Dynamically detect MIME type based on file extension
-        const isMp4 = channel.url.toLowerCase().includes('.mp4');
-        const mimeType = isMp4 ? 'video/mp4' : 'application/x-mpegURL';
-
+        vidContainer.innerHTML = `<iframe src="${channel.src}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
+    } 
+    else if (channel.type === 'hls') {
+        // 1. Create the Shaka Player structure
         const videoHtml = `
-            <video id="main-player" 
-                   class="video-js vjs-theme-netflix vjs-big-play-centered" 
-                   controls 
-                   preload="auto" 
-                   poster="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=">
-                <source src="${channel.url}" type="${mimeType}">
-            </video>
+            <div id="shaka-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #000;">
+                <video id="main-player" autoplay style="width: 100%; height: 100%;"></video>
+            </div>
         `;
         vidContainer.innerHTML = videoHtml;
 
-        player = videojs('main-player', {
-            fluid: true,
-            autoplay: true,
-            responsive: true
-        });
+        const video = document.getElementById('main-player');
+        const videoContainer = document.getElementById('shaka-container');
 
-        player.on('loadstart', function() {
-            this.addClass('vjs-custom-loading');
-        });
+        // 2. Install polyfills and check browser support
+        shaka.polyfill.installAll();
 
-        player.on('playing', function() {
-            this.removeClass('vjs-custom-loading');
-        });
+        if (shaka.Player.isBrowserSupported()) {
+            // 3. Initialize player and UI
+            player = new shaka.Player(video);
+            const ui = new shaka.ui.Overlay(player, videoContainer, video);
+
+            // Error handling
+            player.addEventListener('error', (event) => {
+                console.error('Shaka Error:', event.detail);
+            });
+
+            // 4. Load the stream
+            player.load(channel.url).catch((e) => {
+                console.error('Error loading video', e);
+            });
+        } else {
+            alert('Your browser does not support Shaka Player.');
+        }
     }
 }
+
 
 function closePlayer() {
     const overlay = document.getElementById('player-overlay');
@@ -701,14 +684,17 @@ function closePlayer() {
 
     if (player) {
         try {
-            player.pause();
-            player.dispose();
-        } catch(e) { console.log(e); }
+            // Properly destroy the Shaka Player instance
+            player.destroy(); 
+        } catch(e) { 
+            console.error('Error destroying player:', e); 
+        }
         player = null;
     }
 
     vidContainer.innerHTML = '';
 }
+
 
 function playRandom() {
     if (allChannels.length > 0) {
@@ -736,6 +722,5 @@ window.addEventListener('scroll', () => {
 // Initialize
 fetchChannels();
 </script>
-
 </body>
 </html>
