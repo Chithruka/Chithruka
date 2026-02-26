@@ -389,7 +389,27 @@ input[type=range]::-webkit-slider-thumb {
     position: absolute;
     z-index: 0; 
 }
-
+.card-n-logo {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 15px; /* Small "N" icon */
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+.card-tag-right {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 2px;
+    z-index: 10;
+    text-transform: uppercase;
+}
 .poster-img {
     width: 100%; 
     height: 100%; 
@@ -1477,4 +1497,15 @@ input[type=range]::-webkit-slider-thumb {
 .ep-overview {
     font-size: 0.75rem; color: #aaa; line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hero-badge-container {
+    margin-bottom: 4px; /* Pulls the badge closer to the logo */
+    display: flex;
+    justify-content: flex-start;
+}
+
+.hero-type-badge {
+    height: 20px; /* Adjust size as needed */
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
