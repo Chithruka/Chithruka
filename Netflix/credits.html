@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits & Disclaimer - Chithruka</title>
+    
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=5">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Highlight style for the local search */
+        .highlight {
+            background-color: #e50914;
+            color: white;
+            border-radius: 2px;
+            padding: 0 2px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="page-background"></div>
+
+<div class="container mx-auto px-4 flex flex-col min-h-screen">
+
+   <nav class="navbar">
+        <div class="logo-text text-4xl md:text-6xl" onclick="location.href='index.html';">Chithruka</div>
+
+        <div class="search-group flex-grow justify-center mx-4 md:mx-10">
+            <div class="relative w-full max-w-[400px]">
+                <input type="text" id="local-search-input" class="glass-input w-full py-2 px-4 rounded-full" placeholder="Find text on this page...">
+                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+            </div>
+        </div>
+
+        <div id="user-section">
+            <button onclick="location.href='index.html';" class="interact-btn" title="Back to Home">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="flex-grow flex items-center justify-center py-10">
+        <div id="searchable-content" class="glass-panel p-8 md:p-12 rounded-2xl max-w-4xl w-full shadow-2xl relative overflow-hidden">
+            
+            <div class="mb-12 border-l-4 border-red-600 pl-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-white mb-4 section-title" style="margin-left:0; padding-left:0; border:none;">
+                    Disclaimer
+                </h1>
+                <p class="text-gray-300 leading-relaxed text-sm md:text-base">
+                    This site does not host or store any media files. All content is sourced from third-party services and platforms. We act as an aggregator and streaming interface, connecting users with publicly available content sources.
+                    <br><br>
+                    We respect intellectual property rights and comply with all applicable laws and regulations, including DMCA guidelines. If you have concerns about content availability or copyright issues, please contact us through our support channels.
+                </p>
+            </div>
+
+            <hr class="border-white/10 mb-10">
+
+            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <i class="fas fa-network-wired text-red-500"></i> Non-Affiliated Third Parties
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="bg-white/5 p-5 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
+                    <h3 class="font-bold text-lg text-white mb-2">Data & Metadata</h3>
+                    <ul class="text-gray-400 text-sm space-y-2">
+                        <li class="flex items-center gap-2"><i class="fas fa-database text-blue-400"></i> The Movie Database (TMDB)</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-music text-pink-500"></i> Apple Music / iTunes API</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-globe text-green-400"></i> Ipapi.co / GeoJS (Geolocation)</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white/5 p-5 rounded-xl border border-white/5 hover:border-white/20 transition-colors">
+                    <h3 class="font-bold text-lg text-white mb-2">Artificial Intelligence</h3>
+                    <ul class="text-gray-400 text-sm space-y-2">
+                        <li class="flex items-center gap-2"><i class="fas fa-brain text-purple-500"></i> Groq API</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-microchip text-yellow-500"></i> Llama 3.3 Model</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white/5 p-5 rounded-xl border border-white/5 hover:border-white/20 transition-colors md:col-span-2">
+                    <h3 class="font-bold text-lg text-white mb-2">Streaming Aggregators</h3>
+                    <p class="text-xs text-gray-500 mb-3">These services provide the embedded video players.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-400">
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> VidSrc.to</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> VidLink.pro</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> MultiEmbed.mov</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> AutoEmbed.co</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> VidKing.net</div>
+                        <div class="flex items-center gap-2"><i class="fas fa-play-circle"></i> VidSrc.vip</div>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 p-5 rounded-xl border border-white/5 hover:border-white/20 transition-colors md:col-span-2">
+                    <h3 class="font-bold text-lg text-white mb-2">Technology Stack</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <span class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs border border-orange-500/20">HTML5</span>
+                        <span class="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs border border-blue-500/20">Tailwind CSS</span>
+                        <span class="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-xs border border-yellow-500/20">JavaScript (Vanilla)</span>
+                        <span class="px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs border border-green-500/20">FontAwesome</span>
+                        <span class="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-xs border border-red-500/20">Netflix Sans (Fonts)</span>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-12 text-center">
+                 <p class="text-xs text-gray-500">
+                    &copy; <span id="year"></span> Chithruka. All Rights Reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Dynamic Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // 2. Set Background (Re-using logic from script.js)
+    const bg = document.getElementById('page-background');
+    bg.style.backgroundImage = "url('https://assets.nflxext.com/ffe/siteui/vlv3/ab180a27-b661-44cd-9579-9dcaf32d2652/d94cf201-41f8-4f01-8baf-13d207299304/IN-en-20231009-popsignuptwoweeks-perspective_alpha_website_large.jpg')";
+    bg.style.opacity = "0.3"; // Dim it for readability
+
+    // 3. Local Search & Highlight Script
+    const searchInput = document.getElementById('local-search-input');
+    const contentArea = document.getElementById('searchable-content');
+    let originalContent = contentArea.innerHTML; // Save original HTML
+
+    searchInput.addEventListener('input', function(e) {
+        const query = this.value.trim();
+        
+        // Reset if empty
+        if (!query) {
+            contentArea.innerHTML = originalContent;
+            return;
+        }
+
+        // Create a regex for the query (case insensitive)
+        // We carefully avoid replacing text inside HTML tags
+        const regex = new RegExp(`(?<!<[^>]*)(${escapeRegExp(query)})`, 'gi');
+
+        // Restore original to clear previous highlights
+        contentArea.innerHTML = originalContent;
+
+        // Apply new highlights using TreeWalker to safely touch only text nodes
+        highlightText(contentArea, query);
+    });
+
+    function highlightText(element, text) {
+        if (!text) return;
+        
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        const nodes = [];
+        
+        while(walker.nextNode()) {
+            nodes.push(walker.currentNode);
+        }
+
+        nodes.forEach(node => {
+            const nodeValue = node.nodeValue;
+            if (nodeValue.toLowerCase().includes(text.toLowerCase())) {
+                const span = document.createElement('span');
+                const regex = new RegExp(`(${escapeRegExp(text)})`, 'gi');
+                span.innerHTML = nodeValue.replace(regex, '<span class="highlight">$1</span>');
+                
+                // Replace text node with the new span
+                node.parentNode.replaceChild(span, node);
+            }
+        });
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+</script>
+
+</body>
+</html>
