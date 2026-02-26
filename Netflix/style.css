@@ -367,28 +367,35 @@ input[type=range]::-webkit-slider-thumb {
 
 /* --- Wrapper acts as the 'No Image' placeholder --- */
 .poster-wrapper {
-    width: 100%;
-    aspect-ratio: 2/3;
-    border-radius: 12px;
-    overflow: hidden;
     position: relative;
-    background: #1f1f1f;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    transition: box-shadow 0.3s ease;
+    overflow: hidden; /* This clips any bars or boxes sticking out */
+    border-radius: 4px;
+}
+.poster-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Darken on hover */
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.3s ease;
+    z-index: 20;
 }
 
-.poster-wrapper::before {
-    content: '\f03e';
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 2.5rem;
-    color: #333;
-    position: absolute;
-    z-index: 0; 
+.poster-wrapper:hover .poster-overlay {
+    opacity: 1; /* Show on hover */
 }
+
+.poster-overlay i {
+    color: white;
+    font-size: 2.5rem;
+}
+
+
 .card-n-logo {
     position: absolute;
     top: 8px;
@@ -401,15 +408,18 @@ input[type=range]::-webkit-slider-thumb {
     position: absolute;
     top: 8px;
     right: 8px;
-    background: var(--accent);
+    background: #e50914; /* Netflix Red */
     color: white;
     font-size: 10px;
     font-weight: bold;
     padding: 2px 6px;
     border-radius: 2px;
-    z-index: 10;
+    z-index: 25; /* Higher than overlay */
     text-transform: uppercase;
+    line-height: 1; /* Prevents vertical stretching */
+    display: inline-block; /* Keeps it from being a full-width bar */
 }
+
 .poster-img {
     width: 100%; 
     height: 100%; 
