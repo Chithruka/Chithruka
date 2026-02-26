@@ -1824,7 +1824,7 @@ window.selectContent = async function(id, title, type) {
     mediaType = type;
     
     currentTitle = title;
-    document.title = `${title} - Chithruka`;
+    document.title = `${title} - Netflix`;
 
     const newUrl = `?id=${id}&type=${type}`;
     window.history.pushState({ id, type, title }, '', newUrl);
@@ -1901,7 +1901,7 @@ async function fetchMovieDetails(id, title) {
 
         if (detailData.title) {
             currentTitle = detailData.title;
-            document.title = `${currentTitle} - Chithruka`;
+            document.title = `${currentTitle} - Netflix`;
         }
         
         renderDetails(detailData, currentTitle);
@@ -1929,7 +1929,7 @@ async function fetchShowDetails(id, title) {
 
         if (data.name) {
             currentTitle = data.name;
-            document.title = `${currentTitle} - Chithruka`;
+            document.title = `${currentTitle} - Netflix`;
         }
         
         renderDetails(data, currentTitle);
@@ -3056,7 +3056,7 @@ async function shareMovie() {
         try {
             await navigator.share({
                 title: movieTitle,
-                text: `Watch ${movieTitle} on Chithruka:`,
+                text: `Watch ${movieTitle} on Netflix:`,
                 url: movieUrl
             });
         } catch (err) {
@@ -4249,3 +4249,5 @@ function handleSearchSubmit(query) {
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+
