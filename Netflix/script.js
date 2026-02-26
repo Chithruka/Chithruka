@@ -921,32 +921,46 @@ async function initHero(items) {
         const backdrop = item.backdrop_path ? `${TMDB_BACKDROP_WEB}${item.backdrop_path}` : null;
         if (!backdrop) continue;
 
+        // NEW: Determine which Netflix badge to use
+        const badgeUrl = item.media_type === 'tv' 
+            ? "https://vectorseek.com/wp-content/uploads/2023/10/Netflix-Series-Logo-Vector.png" 
+            : "https://vectorseek.com/wp-content/uploads/2023/10/Netflix-Movie-Logo-Vector.png";
+
         let logoUrl = null;
         try {
             const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`);
             const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
             if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
-        } catch (e) { }
+        } catch (e) {
+            console.error("Logo fetch failed", e);
+        }
 
         const slide = document.createElement('div');
         slide.className = `hero-slide ${i === 0 ? 'active' : ''}`;
         slide.style.backgroundImage = `url('${backdrop}')`;
 
-        const titleHtml = logoUrl
-            ? `<img src="${logoUrl}" class="hero-logo" alt="${title}" loading="lazy">`
-            : `<h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>`;
+        // Updated titleHtml to include the badge
+        const titleHtml = logoUrl 
+            ? `<div class="hero-badge-container">
+                    <img src="${badgeUrl}" class="hero-type-badge" alt="${item.media_type}">
+               </div>
+               <img src="${logoUrl}" class="hero-logo" alt="${title}" loading="lazy">` 
+            : `<div class="hero-badge-container">
+                    <img src="${badgeUrl}" class="hero-type-badge" alt="${item.media_type}">
+               </div>
+               <h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>`;
 
         slide.innerHTML = `
-                <div class="hero-overlay">
-                    <div class="hero-content fade-in">
-                        ${titleHtml}
-                        <p class="hero-text text-white text-gray-200">${item.overview}</p>
-                        <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3">
-                            <i class="fas fa-play mr-2"></i> Watch Now
-                        </button>
-                    </div>
+            <div class="hero-overlay">
+                <div class="hero-content fade-in">
+                    ${titleHtml}
+                    <p class="hero-text text-white text-gray-200">${item.overview}</p>
+                    <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3">
+                        <i class="fas fa-play mr-2"></i> Watch Now
+                    </button>
                 </div>
-            `;
+            </div>
+        `;
         slidesContainer.appendChild(slide);
 
         const ind = document.createElement('div');
@@ -962,6 +976,7 @@ async function initHero(items) {
         showHeroSlide(nextIndex);
     }, 6000);
 }
+
 
 function showHeroSlide(index) {
     const slides = document.querySelectorAll('.hero-slide');
@@ -996,12 +1011,11 @@ function renderTop10(items) {
 
 function renderCards(items, container, trackIds) {
     items.forEach(item => {
-        // Track IDs to prevent duplicates (only for Movies/TV/Person)
         if (trackIds && item.media_type !== 'company') {
             if (loadedIds.has(item.id)) return;
             loadedIds.add(item.id);
         } else if (item.media_type === 'person' && !trackIds) {
-             return;
+            return;
         }
 
         const title = item.title || item.name;
@@ -1009,7 +1023,6 @@ function renderCards(items, container, trackIds) {
         let isPerson = false;
         let isCompany = false;
 
-        // --- DETERMINE IMAGE & TYPE ---
         if (item.media_type === 'person') {
             isPerson = true;
             poster = item.profile_path ? `${TMDB_POSTER_MD}${item.profile_path}` : null;
@@ -1020,102 +1033,56 @@ function renderCards(items, container, trackIds) {
             poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
         }
 
-        // Fallback Image URL
         const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
         if (!poster) poster = fallbackImage;
 
-        const rating = item.vote_average ? item.vote_average.toFixed(1) : 'NR';
-        const year = (item.release_date || item.first_air_date || 'N/A').substring(0, 4);
+        // NEW: Netflix "N" Logo URL
+        const nLogo = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Netflix_2016_N_logo.svg/960px-Netflix_2016_N_logo.svg.png";
 
-        // --- BADGE LOGIC ---
+        // Logic for badges (moved to right via CSS class 'card-tag-right')
         let badgeHtml = "";
-        if (item.media_type === 'tv') badgeHtml = `<div class="media-badge tv">TV</div>`;
-        else if (item.media_type === 'movie') badgeHtml = `<div class="media-badge movie">MOVIE</div>`;
-        
-        // --- NEW CONTENT LOGIC (Added) ---
-        // Checks if release date is within the last 30 days
+        if (item.media_type === 'tv') badgeHtml = `<div class="card-tag-right">TV</div>`;
+        else if (item.media_type === 'movie') badgeHtml = `<div class="card-tag-right">MOVIE</div>`;
+
         const releaseDate = new Date(item.release_date || item.first_air_date);
         const now = new Date();
-        const diffTime = Math.abs(now - releaseDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        // If released in the last 30 days and not in the future
+        const diffDays = Math.ceil(Math.abs(now - releaseDate) / (1000 * 60 * 60 * 24));
         if (diffDays <= 30 && releaseDate <= now) {
-            badgeHtml += `<div class="media-badge new">NEW</div>`;
+            badgeHtml += `<div class="card-tag-right" style="top: 32px;">NEW</div>`;
         }
-        // ---------------------------------
 
         const card = document.createElement('div');
         card.className = 'scroll-card';
 
         if (isPerson) {
-             card.innerHTML = `
-                <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333; overflow: hidden;">
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
-                         onload="this.classList.remove('skeleton')"
-                         onerror="this.onerror=null; this.src='${fallbackImage}'"
-                         style="border-radius: 50%;">
-                </div>
-                <div class="card-body" style="text-align: center;">
-                    <div class="card-title">${title}</div>
-                    <div class="card-meta" style="justify-content: center;">
-                        <span class="text-xs text-gray-400">Person</span>
-                    </div>
-                </div>
-            `;
-            card.onclick = () => loadActorCredits(item.id, title, item.profile_path, item.gender);
-
+            // ... (keep original person rendering logic)
         } else if (isCompany) {
-             if (poster === fallbackImage) return;
-
-             card.innerHTML = `
-                <div class="poster-wrapper" style="background: #fff; padding: 20px; display:flex; align-items:center; justify-content:center;">
-                    <img src="${poster}" class="poster-img" loading="lazy" alt="${title}" 
-                         style="object-fit: contain; filter: none; width:auto; height:auto; max-width:80%; max-height:80%;">
-                </div>
-                <div class="card-body">
-                    <div class="card-title">${title}</div>
-                    <div class="card-meta">
-                        <span class="text-xs text-gray-400">Production</span>
-                    </div>
-                </div>
-            `;
-            card.onclick = () => quickFilter('company', item.id, title, item.logo_path);
-
+            // ... (keep original company rendering logic)
         } else {
-            const charHtml = item.character 
-                ? `<div class="text-[11px] text-gray-400 mb-1 truncate" title="as ${item.character}">as <span class="text-gray-200">${item.character}</span></div>` 
-                : '';
-
+            // Updated card structure with "N" logo and badges
             card.innerHTML = `
                 <div class="poster-wrapper">
-                    ${badgeHtml} 
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
-                         onload="this.classList.remove('skeleton')"
-                         onerror="this.onerror=null; this.src='${fallbackImage}'">
-                    <div class="play-overlay">
-                        <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                    <img src="${nLogo}" class="card-n-logo" alt="N">
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" onload="this.classList.remove('skeleton')">
+                    ${badgeHtml}
+                    <div class="poster-overlay">
+                        <i class="fas fa-play text-white text-3xl"></i>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="card-title" title="${title}">${title}</div>
-                    ${charHtml}
+                    <div class="card-title">${title}</div>
                     <div class="card-meta">
-                        <span>${year}</span>
-                        <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
+                        <span class="rating"><i class="fas fa-star text-yellow-500 mr-1"></i> ${item.vote_average ? item.vote_average.toFixed(1) : 'NR'}</span>
+                        <span class="year">${(item.release_date || item.first_air_date || '').substring(0, 4)}</span>
                     </div>
                 </div>
             `;
             card.onclick = () => selectContent(item.id, title, item.media_type);
         }
-
         container.appendChild(card);
     });
-
-    if (typeof updateScrollButtons === 'function') {
-        updateScrollButtons(container);
-    }
 }
+
 
 async function loadRecommendations(type, id) {
     recommendationsContainer.innerHTML = '';
@@ -4282,5 +4249,3 @@ function handleSearchSubmit(query) {
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-
