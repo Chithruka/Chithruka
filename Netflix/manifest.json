@@ -1,15 +1,16 @@
 {
-    "name": "Chithruka Streamer",
-    "short_name": "Chithruka",
-    "start_url": "/Chithruka/",
+    "name": "Netflix",
+    "short_name": "Netflix",
+    "start_url": "/Netflix/",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#e50914",
     "icons": [
       {
-        "src": "https://www.appcreator24.com/srv/imgs/gen/3851372_ico.png?v=1", 
+        "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Netflix_2016_N_logo.svg/960px-Netflix_2016_N_logo.svg.png", 
         "sizes": "192x192",
         "type": "image/png"
       }
     ]
   }
+
