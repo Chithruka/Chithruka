@@ -3,20 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Dubbed Movie</title>
+    <title>Download Dubbed Versions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="dubbed-registry.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Montserrat', sans-serif; background-color: #0f172a; color: white; }
-        .backdrop-overlay { background: linear-gradient(to top, #0f172a 10%, rgba(15, 23, 42, 0.8) 50%, rgba(15, 23, 42, 0.3) 100%); }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --netflix-red: #E50914;
+        --netflix-black: #141414;
+        --netflix-dark-gray: #181818;
+    }
+
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: var(--netflix-black); 
+        color: white; 
+        margin: 0;
+    }
+
+    /* Bebas Neue Logo Style */
+    .netflix-logo { 
+        font-family: 'Bebas Neue', sans-serif; 
+        color: var(--netflix-red); 
+        font-size: 2.2rem; 
+        letter-spacing: 1px; 
+        text-decoration: none;
+        transition: transform 0.3s ease;
+    }
+    .netflix-logo:hover { transform: scale(1.05); }
+
+    /* Netflix Gradient Overlay */
+    .backdrop-overlay { 
+        background: linear-gradient(to top, var(--netflix-black) 10%, rgba(20, 20, 20, 0.8) 50%, rgba(20, 20, 20, 0.3) 100%); 
+    }
+
+    /* Red Focus for Search Bar */
+    #search-input:focus {
+        border-color: var(--netflix-red) !important;
+        box-shadow: 0 0 0 1px var(--netflix-red) !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--netflix-red); }
+</style>
+
 </head>
 <body class="relative min-h-screen flex flex-col">
 
@@ -24,11 +59,11 @@
     <div class="fixed inset-0 z-[-1] backdrop-overlay"></div>
 
     <header class="w-full p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
-        <a href="download.html" class="text-2xl font-bold tracking-wider text-white hover:text-purple-400 transition-colors">
+        <a href="download.html" class="netflix-logo">
     CHITHRUKA
 </a>
       <div class="relative w-full max-w-md">
-    <input type="text" id="search-input" autocomplete="off" placeholder="Search for other movies..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+    <input type="text" id="search-input" autocomplete="off" placeholder="Search for dubbed content..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
     <button onclick="handleSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
         <i class="fas fa-search"></i>
     </button>
@@ -68,10 +103,9 @@
     </div>
 
     <div id="grid-view" class="hidden">
-        <h2 id="grid-title" class="text-3xl font-bold mb-8 text-center md:text-left text-white">Explore Dubbed Content</h2>
         <div id="movie-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             </div>
-    </div>
+    </div>    
 </main>
 
 <footer class="w-full py-8 mt-10 bg-gray-900/80 border-t border-gray-800 text-center text-gray-500 text-sm">
