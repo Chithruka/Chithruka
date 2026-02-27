@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=5">
     <script src="https://cdn.tailwindcss.com"></script>
+     <script src="dubbed-registry.js"></script>
 </head>
 <body>
 
@@ -547,16 +548,18 @@
         <button onclick="closeDownloadModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
         <h3 class="text-xl font-bold mb-2 text-center text-white">Download</h3>
         <p class="text-gray-400 text-sm text-center mb-6" id="download-modal-subtitle">Select a source</p>
-        <div class="flex flex-col gap-3">
-            <a id="dl-link-1" href="#" target="_blank" class="block w-full p-4 bg-gray-800/50 hover:bg-green-600/20 border border-gray-600 hover:border-green-500 rounded-xl text-center transition-all group">
-                <div class="font-bold text-white mb-1">Source 1 (VidSrc)</div>
-                <div class="text-xs text-gray-400 group-hover:text-green-300">Standard Quality</div>
-            </a>
-            <a id="dl-link-2" href="#" target="_blank" class="block w-full p-4 bg-gray-800/50 hover:bg-blue-600/20 border border-gray-600 hover:border-blue-500 rounded-xl text-center transition-all group">
-                <div class="font-bold text-white mb-1">Source 2 (GoDrive)</div>
-                <div class="text-xs text-gray-400 group-hover:text-blue-300">Fast Server</div>
-            </a>
-        </div>
+       <div class="flex flex-col gap-3">
+    <a id="dl-link-1" href="#" target="_blank" class="block w-full p-4 bg-gray-800/50 border border-gray-600 rounded-xl text-center hover:bg-blue-600/20">
+        <div class="font-bold text-white">Source 1 (Fast Server)</div>
+    </a>
+    
+    <a id="dl-link-dubbed" href="#" class="hidden block w-full p-4 bg-purple-900/30 border border-purple-500 rounded-xl text-center hover:bg-purple-600/40 transition-all">
+        <div class="font-bold text-white">🎬 Sinhala Dubbed Version</div>
+        <div class="text-xs text-purple-300">Available Now</div>
+    </a>
+</div>
+
+
     </div>
 </div>
 

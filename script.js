@@ -23,7 +23,7 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 // --- State Variables ---
 let mediaType = 'movie';
 let TMDB_ID = null;
-let IMDB_ID = null;
+let activeMediaType = null;
 let currentFetchUrl = "";
 let currentTitle = "";
 let currentSeason = 1;
@@ -3063,16 +3063,67 @@ window.toggleAccordion = function() {
     // Toggle the arrow icon
     icon.className = `fas fa-chevron-${accordionOpen ? 'up' : 'down'} transition-transform duration-300`;
 }
+// ==========================================
+// DOWNLOAD MODAL LOGIC
+// ==========================================
 
 window.openDownloadModal = function() {
-    if (!TMDB_ID) return;
-    document.getElementById('dl-link-1').href = buildUrl(DOWNLOAD_URLS.source1);
-    document.getElementById('dl-link-2').href = buildUrl(DOWNLOAD_URLS.source2);
-    document.getElementById('download-modal-subtitle').textContent = mediaType === 'tv' ? `S${currentSeason}:E${currentEpisode}` : "Full Movie";
-    downloadModal.classList.remove('hidden');
+    // 1. Ensure a movie/show is actually selected using the correct global variables
+    if (!TMDB_ID || !mediaType) {
+        showMessage("No content selected to download.", true);
+        return;
+    }
+
+    const modal = document.getElementById('download-modal');
+    const dlLink1 = document.getElementById('dl-link-1');
+    const dubbedBtn = document.getElementById('dl-link-dubbed');
+    const subtitle = document.getElementById('download-modal-subtitle');
+
+    // 2. Setup Source 1 (VidSrc / Default Download)
+    if (dlLink1) {
+        dlLink1.href = buildUrl(DOWNLOAD_URLS.source1);
+    }
+
+    // 3. Logic to check the Dubbed Registry
+    if (dubbedBtn) {
+        // Check if the current TMDB_ID exists in our dubbed registry
+        if (typeof DUBBED_REGISTRY !== 'undefined' && DUBBED_REGISTRY[TMDB_ID]) {
+            // Set link to your download.html with the correct parameters
+            dubbedBtn.href = `download.html?id=${TMDB_ID}&type=${mediaType}`;
+            dubbedBtn.classList.remove('hidden');
+        } else {
+            // Hide the dubbed button if we don't have it in the registry
+            dubbedBtn.classList.add('hidden');
+        }
+    }
+
+    // 4. Update the subtitle text to show Season/Episode or Movie
+    if (subtitle) {
+        subtitle.textContent = mediaType === 'tv' ? `S${currentSeason}:E${currentEpisode}` : "Full Movie";
+    }
+
+    // 5. Show the Modal and prevent background scrolling
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; 
+    }
+};
+
+window.closeDownloadModal = function() {
+    const modal = document.getElementById('download-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore background scrolling
+    }
+};
+
+// Close the modal if the user clicks the dark background outside the modal box
+const downloadModalEl = document.getElementById('download-modal');
+if (downloadModalEl) {
+    downloadModalEl.addEventListener('click', e => { 
+        if (e.target === downloadModalEl) closeDownloadModal(); 
+    });
 }
-window.closeDownloadModal = () => downloadModal.classList.add('hidden');
-downloadModal.addEventListener('click', e => { if (e.target === downloadModal) closeDownloadModal(); });
 
 function clearHistory() {
     if (!confirm("Are you sure you want to clear your watch history?")) return;
