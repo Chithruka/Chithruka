@@ -44,6 +44,37 @@ const DUBBED_REGISTRY = {
               { language: "Sinhala", quality: "1080p x265 10-bit HDR", size: "2.08GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Shrek.2001.1080p.10bit.UHD.BluRay.x265.HDR.HEVC-DubZoneLK.mkv" }
         ]
     },
+    "308697": {
+        type: "tv",
+        title: "Kanha - Morpankh Samraat",
+        links: [
+            { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://ginisisilacartoon.net/more.php?cat=958" }
+        ]
+    },
+      "70058": {
+        type: "tv",
+        title: "Motu Patlu",
+        links: [
+            { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://ginisisilacartoon.net/more.php?cat=1030" }
+        ]
+    },
+    "86310": {
+        type: "tv",
+        title: "RadhaKrishn",
+        links: [
+            { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://col3negoriginal.lk/page/morevideoForName/305/Krishna" }
+        ]
+    },
+ "75288": {
+        type: "tv",
+        title: "Paramavatar Shri Krishna",
+        links: [
+            { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://col3negoriginal.tv/more.php?show=879" },
+             { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://varunamultimedia.com/videos/btv/vmtube2/maharaja-kansa.html" },
+             { language: "Sinhala", quality: "480p", size: "≈200MB", url: "https://lakfreedom.info/search/1-Kansa" }         
+        ]
+    },
+     
     "413881": {
         type: "movie",
         title: "According to Matthew",

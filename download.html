@@ -24,46 +24,53 @@
     <div class="fixed inset-0 z-[-1] backdrop-overlay"></div>
 
     <header class="w-full p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
-        <a href="index.html" class="text-2xl font-bold tracking-wider text-white hover:text-purple-400 transition-colors">
-            <i class="fas fa-home mr-2"></i>CHITHRUKA
-        </a>
-        <div class="relative w-full max-w-md">
-            <input type="text" id="search-input" placeholder="Search for other movies..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
-            <button onclick="handleSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
+        <a href="download.html" class="text-2xl font-bold tracking-wider text-white hover:text-purple-400 transition-colors">
+    CHITHRUKA
+</a>
+      <div class="relative w-full max-w-md">
+    <input type="text" id="search-input" autocomplete="off" placeholder="Search for other movies..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+    <button onclick="handleSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
+        <i class="fas fa-search"></i>
+    </button>
+    
+    <ul id="search-dropdown" class="absolute left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto hidden">
+        </ul>
+</div>
+
     </header>
 
-   <main class="flex-grow container mx-auto px-4 py-10 max-w-6xl flex flex-col md:flex-row gap-8 items-start">
-    <div class="w-full md:w-1/3 flex-shrink-0">
-        <img id="movie-poster" src="" alt="Movie Poster" class="w-full rounded-2xl shadow-2xl shadow-black/50 hidden border border-gray-700">
-        <div id="poster-skeleton" class="w-full aspect-[2/3] bg-gray-800 animate-pulse rounded-2xl"></div>
+<main class="flex-grow container mx-auto px-4 py-10 max-w-6xl">
+    <div id="details-view" class="hidden flex flex-col md:flex-row gap-8 items-start">
+        <div class="w-full md:w-1/3 flex-shrink-0">
+            <img id="movie-poster" src="" alt="Movie Poster" class="w-full rounded-2xl shadow-2xl shadow-black/50 hidden border border-gray-700">
+            <div id="poster-skeleton" class="w-full aspect-[2/3] bg-gray-800 animate-pulse rounded-2xl"></div>
+        </div>
+
+        <div class="w-full md:w-2/3 flex flex-col gap-6">
+            <div>
+                <img id="movie-logo" src="" alt="Movie Logo" class="h-24 object-contain mb-4 hidden">
+                <h1 id="movie-title" class="text-4xl md:text-5xl font-extrabold mb-2 hidden"></h1>
+                <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300 font-semibold mb-4">
+                    <span id="movie-year" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
+                    <span id="movie-runtime" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
+                    <span class="bg-purple-600/20 text-purple-300 px-3 py-1 rounded-md border border-purple-500/30">DUBBED</span>
+                </div>
+                <p id="movie-overview" class="text-gray-300 leading-relaxed text-lg"></p>
+            </div>
+            <hr class="border-gray-800 my-2">
+            <div id="download-section">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-download text-purple-500"></i> Download Links
+                </h2>
+                <div id="download-links-container" class="flex flex-col gap-8"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="w-full md:w-2/3 flex flex-col gap-6">
-        <div>
-            <img id="movie-logo" src="" alt="Movie Logo" class="h-24 object-contain mb-4 hidden">
-            <h1 id="movie-title" class="text-4xl md:text-5xl font-extrabold mb-2 hidden"></h1>
-            
-            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300 font-semibold mb-4">
-                <span id="movie-year" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
-                <span id="movie-runtime" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
-                <span class="bg-purple-600/20 text-purple-300 px-3 py-1 rounded-md border border-purple-500/30">DUBBED</span>
+    <div id="grid-view" class="hidden">
+        <h2 id="grid-title" class="text-3xl font-bold mb-8 text-center md:text-left text-white">Explore Dubbed Content</h2>
+        <div id="movie-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             </div>
-            
-            <p id="movie-overview" class="text-gray-300 leading-relaxed text-lg"></p>
-        </div>
-
-        <hr class="border-gray-800 my-2">
-
-        <div id="download-section">
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
-                <i class="fas fa-download text-purple-500"></i> Download Links
-            </h2>
-            <div id="download-links-container" class="flex flex-col gap-8">
-                </div>
-        </div>
     </div>
 </main>
 
@@ -72,101 +79,262 @@
 </footer>
 
 <script>
-    const TMDB_API_KEY = "92850a79e50917b8cc19623455ae2240"; 
-    const urlParams = new URLSearchParams(window.location.search);
-    const movieIdParam = urlParams.get('id');
-    const typeParam = urlParams.get('type');
-    const MOVIE_ID = movieIdParam ? parseInt(movieIdParam) : null;
+const TMDB_API_KEY = "92850a79e50917b8cc19623455ae2240"; 
+const urlParams = new URLSearchParams(window.location.search);
+const movieIdParam = urlParams.get('id');
+const typeParam = urlParams.get('type');
+const searchQuery = urlParams.get('search'); 
+const MOVIE_ID = movieIdParam ? parseInt(movieIdParam) : null;
 
-    let tmdbLogos = [];
+let tmdbLogos = [];
+window.tmdbTranslations = [];
+window.tmdbAltTitles = [];
 
-    // 1. Fetch Movie Details and Image Assets
-  // 1. Fetch Movie Details and Image Assets
+// --- UTILITY FUNCTIONS ---
+
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+        const icon = btn.querySelector('i');
+        if (icon) {
+            const oldClass = icon.className;
+            icon.className = 'fas fa-check text-green-400';
+            setTimeout(() => icon.className = oldClass, 2000);
+        }
+    });
+}
+
+function handleSearch() {
+    const input = document.getElementById('search-input');
+    if (!input) return;
+    const query = input.value.trim();
+    if (query) {
+        window.location.href = `download.html?search=${encodeURIComponent(query)}`;
+    }
+}
+
+// --- LIVE SEARCH DROPDOWN ---
+
+function setupLiveSearch() {
+    const searchInput = document.getElementById('search-input');
+    const searchDropdown = document.getElementById('search-dropdown');
+
+    if (!searchInput || !searchDropdown) return;
+
+    const handleSearchInput = async (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        if (query.length === 0) {
+            searchDropdown.classList.add('hidden');
+            searchDropdown.innerHTML = '';
+            return;
+        }
+
+        searchDropdown.innerHTML = '<li class="p-3 text-gray-400 text-sm text-center">Searching...</li>';
+        searchDropdown.classList.remove('hidden');
+
+        const results = [];
+        for (const [id, data] of Object.entries(DUBBED_REGISTRY)) {
+            if (data.title.toLowerCase().includes(query)) {
+                results.push({ id, ...data });
+            }
+        }
+
+        if (results.length === 0) {
+            searchDropdown.innerHTML = '<li class="p-3 text-gray-400 text-sm text-center italic">No results found</li>';
+            return;
+        }
+
+        searchDropdown.innerHTML = ''; 
+
+        for (const result of results) {
+            const li = document.createElement('li');
+            li.className = "p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0 transition-colors flex items-center gap-3";
+            
+            li.addEventListener('click', () => {
+                window.location.href = `download.html?id=${result.id}&type=${result.type || 'movie'}`;
+            });
+            
+            li.innerHTML = `
+                <div class="w-10 h-14 bg-gray-600 rounded flex-shrink-0 animate-pulse"></div>
+                <div class="flex-grow min-w-0">
+                    <div class="text-white font-medium text-sm truncate">${result.title}</div>
+                    <div class="text-[10px] text-gray-400 uppercase mt-0.5 tracking-wider font-semibold">${result.type || 'movie'}</div>
+                </div>
+            `;
+            searchDropdown.appendChild(li);
+
+            try {
+                const mediaType = result.type || 'movie';
+                const tmdbResp = await fetch(`https://api.themoviedb.org/3/${mediaType}/${result.id}?api_key=${TMDB_API_KEY}`);
+                const tmdbData = await tmdbResp.json();
+                
+                const posterPath = tmdbData.poster_path 
+                    ? `https://image.tmdb.org/t/p/w92${tmdbData.poster_path}` 
+                    : 'https://via.placeholder.com/92x138?text=N/A';
+
+                li.innerHTML = `
+                    <img src="${posterPath}" alt="${result.title}" class="w-10 h-14 object-cover rounded shadow-md border border-gray-600 flex-shrink-0">
+                    <div class="flex-grow min-w-0">
+                        <div class="text-white font-medium text-sm truncate">${result.title}</div>
+                        <div class="text-[10px] text-gray-400 uppercase mt-0.5 tracking-wider font-semibold">${result.type || 'movie'}</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error(`Error fetching thumbnail:`, error);
+            }
+        }
+    };
+
+    searchInput.addEventListener('input', debounce(handleSearchInput, 300));
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            searchDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// --- CORE LOGIC & INITIALIZATION ---
+
+async function init() {
+    const detailsView = document.getElementById('details-view');
+    const gridView = document.getElementById('grid-view');
+    const yearSpan = document.getElementById('current-year');
+    const searchInput = document.getElementById('search-input');
+
+    if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+
+    if (!detailsView || !gridView) return;
+
+    setupLiveSearch();
+
+    // Check if we should show a specific movie OR the home grid
+    if (MOVIE_ID && DUBBED_REGISTRY[MOVIE_ID]) {
+        detailsView.classList.remove('hidden');
+        gridView.classList.add('hidden');
+        await fetchMovieDetails();
+    } else {
+        gridView.classList.remove('hidden');
+        detailsView.classList.add('hidden');
+        await renderMovieGrid(searchQuery);
+    }
+}
+
+async function renderMovieGrid(filter = "") {
+    const grid = document.getElementById('movie-grid');
+    const titleHeader = document.getElementById('grid-title');
+    if (!grid) return;
+
+    grid.innerHTML = ''; 
+    if (titleHeader) {
+        titleHeader.textContent = filter ? `Results for: "${filter}"` : "Explore Dubbed Content";
+    }
+
+    for (const [id, data] of Object.entries(DUBBED_REGISTRY)) {
+        if (filter && !data.title.toLowerCase().includes(filter.toLowerCase())) continue;
+
+        const mediaType = data.type || 'movie';
+        
+        try {
+            const resp = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${TMDB_API_KEY}`);
+            const tmdb = await resp.json();
+            const posterPath = tmdb.poster_path 
+                ? `https://image.tmdb.org/t/p/w342${tmdb.poster_path}` 
+                : 'https://via.placeholder.com/342x513?text=No+Poster';
+
+            const card = document.createElement('a');
+            card.href = `?id=${id}&type=${mediaType}`;
+            card.className = "group block bg-gray-900 rounded-xl overflow-hidden border border-gray-800 hover:border-purple-500 transition-all hover:-translate-y-2 shadow-lg";
+            card.innerHTML = `
+                <div class="relative aspect-[2/3] overflow-hidden">
+                    <img src="${posterPath}" alt="${data.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent opacity-60"></div>
+                    <span class="absolute top-2 right-2 bg-purple-600 text-[10px] font-bold px-2 py-1 rounded text-white uppercase">${mediaType}</span>
+                </div>
+                <div class="p-3">
+                    <h3 class="font-semibold text-sm truncate group-hover:text-purple-400 transition-colors">${data.title}</h3>
+                </div>
+            `;
+            grid.appendChild(card);
+        } catch (err) {
+            console.error(`Error loading grid item ${id}:`, err);
+        }
+    }
+}
+
 async function fetchMovieDetails() {
-    if (!MOVIE_ID) return;
-
-    // Determine if we are looking for a 'movie' or 'tv' series
     let mediaType = typeParam || (DUBBED_REGISTRY[MOVIE_ID]?.type) || 'movie';
 
     try {
-        // We append 'images' for logos, and 'translations'/'alternative_titles' for native text fallbacks
         const response = await fetch(`https://api.themoviedb.org/3/${mediaType}/${MOVIE_ID}?api_key=${TMDB_API_KEY}&append_to_response=images,translations,alternative_titles`);
         const data = await response.json();
 
-        // Store data globally for the renderGroupedLinks function to access
         tmdbLogos = data.images?.logos || [];
         window.tmdbTranslations = data.translations?.translations || [];
-        // TV shows use .results, movies usually use .titles for alt_titles
         window.tmdbAltTitles = data.alternative_titles?.titles || data.alternative_titles?.results || [];
 
-        // --- UI Population ---
-
-        // 1. Poster Image Logic
         const posterImg = document.getElementById('movie-poster');
-        if (data.poster_path) {
+        const posterSkeleton = document.getElementById('poster-skeleton');
+        if (data.poster_path && posterImg) {
             posterImg.src = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
             posterImg.onload = () => {
-                document.getElementById('poster-skeleton').classList.add('hidden');
+                if (posterSkeleton) posterSkeleton.classList.add('hidden');
                 posterImg.classList.remove('hidden');
             };
         }
 
-        // 2. Background Backdrop
-        if (data.backdrop_path) {
-            document.getElementById('backdrop-bg').style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${data.backdrop_path})`;
+        const backdrop = document.getElementById('backdrop-bg');
+        if (data.backdrop_path && backdrop) {
+            backdrop.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${data.backdrop_path})`;
         }
 
-        // 3. Main Title Logo (Defaulting to English logo for the top header)
+        const movieLogo = document.getElementById('movie-logo');
+        const movieTitle = document.getElementById('movie-title');
         const mainLogo = tmdbLogos.find(l => l.iso_639_1 === 'en') || tmdbLogos[0];
-        if (mainLogo) {
-            document.getElementById('movie-logo').src = `https://image.tmdb.org/t/p/w500${mainLogo.file_path}`;
-            document.getElementById('movie-logo').classList.remove('hidden');
-            document.getElementById('movie-title').classList.add('hidden');
-        } else {
-            document.getElementById('movie-title').textContent = data.title || data.name;
-            document.getElementById('movie-title').classList.remove('hidden');
-            document.getElementById('movie-logo').classList.add('hidden');
+
+        if (mainLogo && movieLogo) {
+            movieLogo.src = `https://image.tmdb.org/t/p/w500${mainLogo.file_path}`;
+            movieLogo.classList.remove('hidden');
+            if (movieTitle) movieTitle.classList.add('hidden');
+        } else if (movieTitle) {
+            movieTitle.textContent = data.title || data.name;
+            movieTitle.classList.remove('hidden');
+            if (movieLogo) movieLogo.classList.add('hidden');
         }
 
-        // 4. Meta Information (Year, Runtime, Overview)
+        const yearEl = document.getElementById('movie-year');
+        const runtimeEl = document.getElementById('movie-runtime');
+        const overviewEl = document.getElementById('movie-overview');
+        
         const releaseDate = data.release_date || data.first_air_date;
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        document.getElementById('movie-year').textContent = releaseDate ? releaseDate.substring(0, 4) : 'N/A';
+        if (yearEl) yearEl.textContent = releaseDate ? releaseDate.substring(0, 4) : 'N/A';
         
-        // Handle runtime for both Movies (runtime) and TV (episode_run_time)
         const runtime = data.runtime || (data.episode_run_time && data.episode_run_time[0]) || 'N/A';
-        document.getElementById('movie-runtime').textContent = runtime !== 'N/A' ? `${runtime} min` : 'N/A';
+        if (runtimeEl) runtimeEl.textContent = runtime !== 'N/A' ? `${runtime} min` : 'N/A';
         
-        document.getElementById('movie-overview').textContent = data.overview;
+        if (overviewEl) overviewEl.textContent = data.overview;
 
-        // 5. Trigger the Link Rendering
         renderGroupedLinks();
-
     } catch (error) {
         console.error("Error fetching movie details:", error);
-        document.getElementById('download-links-container').innerHTML = 
-            `<p class="text-red-400 text-center">Failed to load movie details. Please check your connection.</p>`;
     }
 }
 
-
-// 2. Group and Render Links by Language
 function renderGroupedLinks() {
     const container = document.getElementById('download-links-container');
-    if (!MOVIE_ID || !DUBBED_REGISTRY[MOVIE_ID]) {
-        container.innerHTML = `<p class="text-gray-400 italic text-center">No links available.</p>`;
-        return;
-    }
+    if (!container || !DUBBED_REGISTRY[MOVIE_ID]) return;
 
-    const langMap = {
-        "Sinhala": "si",
-        "Hindi": "hi",
-        "Tamil": "ta",
-        "English": "en",
-        "Malayalam": "ml"
-    };
-
+    const langMap = { "Sinhala": "si", "Hindi": "hi", "Tamil": "ta", "English": "en", "Malayalam": "ml" };
     const links = DUBBED_REGISTRY[MOVIE_ID].links;
+    
     const grouped = links.reduce((acc, link) => {
         if (!acc[link.language]) acc[link.language] = [];
         acc[link.language].push(link);
@@ -177,43 +345,26 @@ function renderGroupedLinks() {
 
     for (const [language, langLinks] of Object.entries(grouped)) {
         const isoCode = langMap[language];
-        
-        // 1. Try to find Logo
         const langLogo = tmdbLogos.find(l => l.iso_639_1 === isoCode);
-
-        // 2. Try to find Native Name (from translations or alt titles)
+        
         let nativeName = "";
-        if (!langLogo) {
-            const translation = window.tmdbTranslations.find(t => t.iso_639_1 === isoCode);
-            if (translation && translation.data.title) {
-                nativeName = translation.data.title;
-            } else if (translation && translation.data.name) {
-                nativeName = translation.data.name;
-            } else {
-                const alt = window.tmdbAltTitles.find(a => a.iso_3166_1 === isoCode.toUpperCase() || a.iso_639_1 === isoCode);
-                if (alt) nativeName = alt.title;
-            }
+        const translation = window.tmdbTranslations.find(t => t.iso_639_1 === isoCode);
+        if (translation?.data?.title || translation?.data?.name) {
+            nativeName = translation.data.title || translation.data.name;
         }
 
         const section = document.createElement('div');
         section.className = "space-y-4 mb-8";
         
-        // Header logic: Show Logo OR Native Name OR English Name
-        let headerDisplay;
-        if (langLogo) {
-            headerDisplay = `<img src="https://image.tmdb.org/t/p/w200${langLogo.file_path}" class="h-8 object-contain" alt="${language}">`;
-        } else if (nativeName) {
-            headerDisplay = `<span class="text-2xl font-bold text-white">${nativeName}</span> 
-                             <span class="text-sm text-gray-500 ml-2">(${language})</span>`;
-        } else {
-            headerDisplay = `<span class="text-2xl font-bold text-white">${language}</span>`;
-        }
+        let headerContent = langLogo 
+            ? `<img src="https://image.tmdb.org/t/p/w200${langLogo.file_path}" class="h-8 object-contain" alt="${language}"><span class="text-sm text-gray-500 font-medium ml-2 uppercase tracking-widest">${language}</span>`
+            : `<span class="text-2xl font-bold text-white">${nativeName || language}</span>${nativeName ? `<span class="text-sm text-gray-500 font-medium ml-2 uppercase tracking-widest">${language}</span>` : ''}`;
 
         section.innerHTML = `
             <div class="flex items-center gap-3 border-b border-gray-800 pb-2">
-                ${headerDisplay}
+                ${headerContent}
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
                 ${langLinks.map(link => `
                     <div class="relative group flex items-center bg-gray-800/40 border border-gray-700 hover:border-purple-500 rounded-lg transition-all overflow-hidden">
                         <a href="${link.url}" target="_blank" class="flex-grow flex items-center justify-between p-3 hover:bg-purple-600/10">
@@ -223,7 +374,7 @@ function renderGroupedLinks() {
                             </div>
                             <i class="fas fa-cloud-download-alt text-gray-600 group-hover:text-purple-400 transition-colors"></i>
                         </a>
-                        <button onclick="copyToClipboard('${link.url}', this)" class="p-4 bg-gray-800/60 hover:bg-purple-600 text-gray-400 hover:text-white border-l border-gray-700 transition-colors" title="Copy Link">
+                        <button onclick="copyToClipboard('${link.url}', this)" class="p-4 bg-gray-800/60 hover:bg-purple-600 text-gray-400 hover:text-white border-l border-gray-700 transition-colors">
                             <i class="fas fa-copy"></i>
                         </button>
                     </div>
@@ -234,39 +385,13 @@ function renderGroupedLinks() {
     }
 }
 
+document.getElementById('search-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSearch();
+});
 
-
-function copyToClipboard(text, btn) {
-    navigator.clipboard.writeText(text).then(() => {
-        const icon = btn.querySelector('i');
-        const originalClass = icon.className;
-        
-        // Visual feedback
-        icon.className = 'fas fa-check text-green-400';
-        btn.classList.add('bg-green-900/20');
-        
-        setTimeout(() => {
-            icon.className = originalClass;
-            btn.classList.remove('bg-green-900/20');
-        }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-    });
-}
-
-
-    // 3. Search Logic
-    function handleSearch() {
-        const query = document.getElementById('search-input').value.trim();
-        if (query) window.location.href = `index.html?search=${encodeURIComponent(query)}`;
-    }
-
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSearch();
-    });
-
-    document.addEventListener('DOMContentLoaded', fetchMovieDetails);
+document.addEventListener('DOMContentLoaded', init);
 </script>
+
 
 </body>
 </html>
