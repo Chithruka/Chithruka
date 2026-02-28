@@ -198,7 +198,94 @@ const DUBBED_REGISTRY = {
         links: [
             { language: "Sinhala", quality: "720p x264", size: "1.16GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Wind.Rises.2013.720p.BluRay.x264-DubZoneLK.mkv" },
             { language: "Sinhala", quality: "1080p x265 10-bits", size: "1.9GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Wind.Rises.2013.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" },
-              { language: "Sinhala", quality: "1080p", size: "1.3GB", url: "https://cloud.sinhalachr.workers.dev/5:/The_Wind_Rises_2013_1080p_BRRip_HEVC_x265_animostlk_blogspot_com.mp4" }
+              { language: "Sinhala", quality: "1080p", size: "1.3GB", url: "https://cloud.sinhalachr.workers.dev/5:/The_Wind_Rises_2013_1080p_BRRip_HEVC_x265_animostlk_blogspot_com.mp4" },
+              { language: "English", quality: "1080p", size: "1.3GB", url: "https://dl.vidsrc.vip/movie/149870" }
+        ]
+    },
+    "9502": {
+        type: "movie",
+        title: "Kung Fu Panda (2008)",
+        links: [
+            { language: "Sinhala", quality: "720p x264 SIRASA + HIRU", size: "1 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Kung.Fu.Panda.2008.720p.BluRay.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "1080p x264 SIRASA + HIRU", size: "1.85 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Kung.Fu.Panda..2008.Dual-Audio.Sirasa-Hiru.1080p.BluRay.x264-DubZoneLK.mkv" }
+        ]
+    },"49444": {
+        type: "movie",
+        title: "Kung Fu Panda 2 (2011)",
+        links: [
+            { language: "Sinhala", quality: "720p x264 SIRASA + HIRU", size: "1.12 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Kung.Fu.Panda.2011.720p.DUAL-AUDIO.BluRay.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "1080p x264 SIRASA + HIRU", size: "1.87 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Kung.Fu.Panda.2011.Dual-Audio.Sirasa-Hiru.1080p.BluRay.x264-DubZoneLK.mkv" }
+        ]
+    },"140300": {
+        type: "movie",
+        title: "Kung Fu Panda 3 (2016)",
+        links: [
+            { language: "Sinhala", quality: "1080p x264 - ITN", size: "1.3GB", url: "https://cloud.sinhalachr.workers.dev/13:/Kung.Fu.Panda.3.2016.1080p.BluRay.x264-[Animost%20LK].mp4" },
+             { language: "Sinhala", quality: "1080p x264 - ITN", size: "2.1GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Kung.Fu.Panda.3.2016.1080p.BluRay.x264-DubZoneLK.mkv" }
+        ]
+    },"10191": {
+        type: "movie",
+        title: "How to Train Your Dragon (2010)",
+        links: [
+            { language: "Sinhala", quality: "720p x264", size: "700MB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How.to.Train.Your.Dragon.2010.720p.Bluray.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "1080p x264", size: "2GB", url: "https://usersdrive.com/9so989mb8zs9.html" },
+             { language: "Sinhala", quality: "2160p x265 10-bit HDR", size: "5.94 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How.to.Train.Your.Dragon.2010.2160p.10bit.HDR.BluRay.x265.HEVC-DubZoneLK.mkv" }
+        ]
+    },"82702": {
+        type: "movie",
+        title: " How to Train Your Dragon 2 (2014)",
+        links: [
+            { language: "Sinhala", quality: "720p x264", size: "910MB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How%20to%20Train%20Your%20Dragon%202014%20720p%20@SinhalaFilms_LK.mkv" },
+             { language: "Sinhala", quality: "1080p x264", size: "2.17GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How.to.Train.Your.Dragon.2014.1080p.BluRay.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "2160p x265 10-bit HDR", size: "5.75GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How.to.Train.Your.Dragon.2014.2160p.10bit.HDR.BluRay.x265.HEVC-DubZoneLK.mkv" }
+        ]
+    },"166428": {
+        type: "movie",
+        title: "How to Train Your Dragon: The Hidden World (2019)",
+        links: [
+            { language: "Sinhala", quality: "1080p x265 10-bit HDR", size: "2.11 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/How.to.Train.Your.Dragon.The.Hidden.World.2019.1080p.BluRay.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "1080p x265", size: "1.1 GB", url: "https://cloud.sinhalachr.workers.dev/9:/@sinhalafilmsgo%E2%94%9CHow_to_train_your_dragon_3_Sinhala.mp4" }
+        ]
+    },"11212": {
+        type: "movie",
+        title: "Baby’s Day Out (1994)",
+        links: [
+            { language: "Sinhala", quality: "480p", size: "1GB", url: "https://drive.google.com/file/d/12PL9OL0ZR0CfR80G9y7GbZHz47HyYnb5/view?usp=drivesdk" },
+             { language: "Sinhala", quality: "1080p x264", size: "1.59 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Baby's.Day.Out.1994.1080p.WEBRip.x264-DubZoneLK.mkv" }
+        ]
+    },"120": {
+        type: "movie",
+        title: "The Lord of the Rings: The Fellowship of the Ring (2001)",
+        links: [
+            { language: "Sinhala", quality: "720p", size: "1.26GB", url: "https://mega.nz/file/ZuwGSBYY#nzTMwXKQH16Pz6glZWViFMnKM231FQUUrqR93HxusS0" },
+{ language: "Sinhala", quality: "720p", size: "1.50GB", url: "https://cloud.sinhalachr.workers.dev/11:/The%20Lord%20of%20the%20Rings:%20The%20Fellowship%20of%20the%20Ring%20(2001)%20720P%20HD%20@sinhalafilmsgo.mkv" },
+             { language: "Sinhala", quality: "1080p x265 10-bit", size: "3.30GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Fellowship.of.the.Ring.2001.Theatrical.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "2160p x265 10-bit HDR SIN1.0+ENG5.1", size: "10.19GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Fellowship.of.the.Ring.2001.Theatrical.2160p.BluRay.x265.HDR.SIN+ENG.1CH+6CH.HEVC-DubZoneLK.mkv" }
+        ]
+    },
+"121": {
+        type: "movie",
+        title: "The Lord of the Rings: The Two Towers (2002)",
+        links: [
+            { language: "Sinhala", quality: "720p x264", size: "1.29 GB", url: "https://mega.nz/file/1nhGGIZT#pRicQ35t_wSiiAkwlGDO6M2RHnV7AgPY11eo6Ezjjqg" },
+ { language: "Sinhala", quality: "1080p x265 10-Bit", size: "4.48 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Two.Towers.2002.Theatrical.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" },
+ { language: "Sinhala", quality: "2160p x265 10-bit HDR SIN1.0+ENG5.1", size: "9.22 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Two.Towers.2002.Theatrical.2160p.BluRay.x265.HDR.SIN+ENG.1CH+6CH.HEVC-DubZoneLK.mkv" }
+        ]
+    },
+    "122": {
+        type: "movie",
+        title: "The Lord of the Rings: The Return of the King (2003)",
+        links: [
+            { language: "Sinhala", quality: "720p x264", size: "1.50 GB", url: "https://mega.nz/file/Yrw3yDzB#HacuFmXlKPQQwTCbdpTgWSed2Gal6qOmRYh3FTEuGmE" },
+             { language: "Sinhala", quality: "1080p x265 10-bit", size: "5.13 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Return.of.the.King.2003.Theatrical.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "2160p x265 10-bit HDR SIN1.0+ENG5.1", size: "11.57 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lord.of.the.Rings.The.Return.of.the.King.2003.Theatrical.2160p.BluRay.x265.HDR.SIN+ENG.1CH+6CH.HEVC-DubZoneLK.mkv" }
+        ]
+    },"748783": {
+        type: "movie",
+        title: "The Garfield Movie (2024)",
+        links: [
+            { language: "Sinhala", quality: "BluRay 720p x264", size: "950 MB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Garfield.2024.720p.BluRay.x264-DubZoneLK.mkv" },
+             { language: "Sinhala", quality: "BluRay 1080p x265 10-bits", size: "1.70 GB", url: "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Garfield.2024.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" }
         ]
     },
      "629542": {
