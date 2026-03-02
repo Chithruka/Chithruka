@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download Dubbed Versions</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="dubbed-registry.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
@@ -113,19 +112,22 @@
 </footer>
 
 <script>
-const TMDB_API_KEY = "92850a79e50917b8cc19623455ae2240"; 
+  const ENCODED_KEY = "OTI4NTBhNzllNTA5MTdiOGNjMTk2MjM0NTVhZTIyNDA=";
+const TMDB_API_KEY = atob(ENCODED_KEY);
+
 const urlParams = new URLSearchParams(window.location.search);
 const movieIdParam = urlParams.get('id');
 const typeParam = urlParams.get('type');
 const searchQuery = urlParams.get('search'); 
 const MOVIE_ID = movieIdParam ? parseInt(movieIdParam) : null;
 
+// Global variables
+let DUBBED_REGISTRY = {};
 let tmdbLogos = [];
 window.tmdbTranslations = [];
 window.tmdbAltTitles = [];
 
 // --- UTILITY FUNCTIONS ---
-
 function debounce(func, delay) {
     let timeout;
     return function(...args) {
@@ -145,16 +147,26 @@ function copyToClipboard(text, btn) {
     });
 }
 
+// INSTANT SEARCH: No page reloads!
 function handleSearch() {
     const input = document.getElementById('search-input');
     if (!input) return;
     const query = input.value.trim();
-    if (query) {
-        window.location.href = `download.html?search=${encodeURIComponent(query)}`;
-    }
-}
+    
+    // Update URL without reloading the page
+    const url = new URL(window.location);
+    if (query) url.searchParams.set('search', query);
+    else url.searchParams.delete('search');
+    url.searchParams.delete('id'); // Clear detail view
+    window.history.pushState({}, '', url);
 
-// --- LIVE SEARCH DROPDOWN ---
+    // Hide details, show grid
+    document.getElementById('details-view').classList.add('hidden');
+    document.getElementById('grid-view').classList.remove('hidden');
+    document.getElementById('search-dropdown').classList.add('hidden');
+
+    renderMovieGrid(query);
+}
 
 function setupLiveSearch() {
     const searchInput = document.getElementById('search-input');
@@ -174,12 +186,9 @@ function setupLiveSearch() {
         searchDropdown.innerHTML = '<li class="p-3 text-gray-400 text-sm text-center">Searching...</li>';
         searchDropdown.classList.remove('hidden');
 
-        const results = [];
-        for (const [id, data] of Object.entries(DUBBED_REGISTRY)) {
-            if (data.title.toLowerCase().includes(query)) {
-                results.push({ id, ...data });
-            }
-        }
+        const results = Object.entries(DUBBED_REGISTRY)
+            .filter(([id, data]) => data.title.toLowerCase().includes(query))
+            .map(([id, data]) => ({ id, ...data }));
 
         if (results.length === 0) {
             searchDropdown.innerHTML = '<li class="p-3 text-gray-400 text-sm text-center italic">No results found</li>';
@@ -197,7 +206,7 @@ function setupLiveSearch() {
             });
             
             li.innerHTML = `
-                <div class="w-10 h-14 bg-gray-600 rounded flex-shrink-0 animate-pulse"></div>
+                <div class="w-10 h-14 bg-gray-600 rounded flex-shrink-0 animate-pulse skeleton-img"></div>
                 <div class="flex-grow min-w-0">
                     <div class="text-white font-medium text-sm truncate">${result.title}</div>
                     <div class="text-[10px] text-gray-400 uppercase mt-0.5 tracking-wider font-semibold">${result.type || 'movie'}</div>
@@ -205,6 +214,7 @@ function setupLiveSearch() {
             `;
             searchDropdown.appendChild(li);
 
+            // Fetch image in background and replace skeleton when ready
             try {
                 const mediaType = result.type || 'movie';
                 const tmdbResp = await fetch(`https://api.themoviedb.org/3/${mediaType}/${result.id}?api_key=${TMDB_API_KEY}`);
@@ -214,13 +224,13 @@ function setupLiveSearch() {
                     ? `https://image.tmdb.org/t/p/w92${tmdbData.poster_path}` 
                     : 'https://via.placeholder.com/92x138?text=N/A';
 
-                li.innerHTML = `
-                    <img src="${posterPath}" alt="${result.title}" class="w-10 h-14 object-cover rounded shadow-md border border-gray-600 flex-shrink-0">
-                    <div class="flex-grow min-w-0">
-                        <div class="text-white font-medium text-sm truncate">${result.title}</div>
-                        <div class="text-[10px] text-gray-400 uppercase mt-0.5 tracking-wider font-semibold">${result.type || 'movie'}</div>
-                    </div>
-                `;
+                const img = new Image();
+                img.src = posterPath;
+                img.className = "w-10 h-14 object-cover rounded shadow-md border border-gray-600 flex-shrink-0";
+                img.onload = () => {
+                    const skeleton = li.querySelector('.skeleton-img');
+                    if(skeleton) li.replaceChild(img, skeleton);
+                };
             } catch (error) {
                 console.error(`Error fetching thumbnail:`, error);
             }
@@ -234,23 +244,35 @@ function setupLiveSearch() {
             searchDropdown.classList.add('hidden');
         }
     });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSearch();
+    });
 }
 
 // --- CORE LOGIC & INITIALIZATION ---
 
 async function init() {
-    const detailsView = document.getElementById('details-view');
-    const gridView = document.getElementById('grid-view');
     const yearSpan = document.getElementById('current-year');
-    const searchInput = document.getElementById('search-input');
-
     if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
-    if (!detailsView || !gridView) return;
+    // 1. Fetch the JSON data first
+    try {
+        const res = await fetch('registry.json');
+        if (!res.ok) throw new Error("Failed to load registry");
+        DUBBED_REGISTRY = await res.json();
+    } catch (e) {
+        console.error(e);
+        document.querySelector('main').innerHTML = `<p class="text-center text-red-500 mt-10">Error loading movie database.</p>`;
+        return;
+    }
 
     setupLiveSearch();
 
-    // Check if we should show a specific movie OR the home grid
+    const detailsView = document.getElementById('details-view');
+    const gridView = document.getElementById('grid-view');
+
+    // 2. Decide what to render
     if (MOVIE_ID && DUBBED_REGISTRY[MOVIE_ID]) {
         detailsView.classList.remove('hidden');
         gridView.classList.add('hidden');
@@ -262,46 +284,67 @@ async function init() {
     }
 }
 
+// OPTIMIZED: Concurrent fetching & DocumentFragment
 async function renderMovieGrid(filter = "") {
     const grid = document.getElementById('movie-grid');
-    const titleHeader = document.getElementById('grid-title');
     if (!grid) return;
 
-    grid.innerHTML = ''; 
-    if (titleHeader) {
-        titleHeader.textContent = filter ? `Results for: "${filter}"` : "Explore Dubbed Content";
+    grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10 animate-pulse">Loading movies...</div>'; 
+
+    const entries = Object.entries(DUBBED_REGISTRY).filter(([id, data]) => {
+        return !filter || data.title.toLowerCase().includes(filter.toLowerCase());
+    });
+
+    if (entries.length === 0) {
+        grid.innerHTML = '<div class="col-span-full text-center text-gray-400 py-10">No results found.</div>';
+        return;
     }
 
-    for (const [id, data] of Object.entries(DUBBED_REGISTRY)) {
-        if (filter && !data.title.toLowerCase().includes(filter.toLowerCase())) continue;
-
+    // Fetch all items simultaneously using Promise.all
+    const fetchPromises = entries.map(async ([id, data]) => {
         const mediaType = data.type || 'movie';
-        
         try {
             const resp = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${TMDB_API_KEY}`);
+            if(!resp.ok) throw new Error("Network response was not ok");
             const tmdb = await resp.json();
-            const posterPath = tmdb.poster_path 
-                ? `https://image.tmdb.org/t/p/w342${tmdb.poster_path}` 
-                : 'https://via.placeholder.com/342x513?text=No+Poster';
-
-            const card = document.createElement('a');
-            card.href = `?id=${id}&type=${mediaType}`;
-            card.className = "group block bg-gray-900 rounded-xl overflow-hidden border border-gray-800 hover:border-purple-500 transition-all hover:-translate-y-2 shadow-lg";
-            card.innerHTML = `
-                <div class="relative aspect-[2/3] overflow-hidden">
-                    <img src="${posterPath}" alt="${data.title}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent opacity-60"></div>
-                    <span class="absolute top-2 right-2 bg-purple-600 text-[10px] font-bold px-2 py-1 rounded text-white uppercase">${mediaType}</span>
-                </div>
-                <div class="p-3">
-                    <h3 class="font-semibold text-sm truncate group-hover:text-purple-400 transition-colors">${data.title}</h3>
-                </div>
-            `;
-            grid.appendChild(card);
+            return { id, data, tmdb, mediaType };
         } catch (err) {
             console.error(`Error loading grid item ${id}:`, err);
+            return { id, data, tmdb: null, mediaType };
         }
-    }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    
+    // Clear loading state
+    grid.innerHTML = '';
+    
+    // Build DOM entirely in memory before appending
+    const fragment = document.createDocumentFragment();
+
+    results.forEach(({ id, data, tmdb, mediaType }) => {
+        const posterPath = tmdb && tmdb.poster_path 
+            ? `https://image.tmdb.org/t/p/w342${tmdb.poster_path}` 
+            : 'https://via.placeholder.com/342x513?text=No+Poster';
+
+        const card = document.createElement('a');
+        card.href = `?id=${id}&type=${mediaType}`;
+        card.className = "group block bg-gray-900 rounded-xl overflow-hidden border border-gray-800 hover:border-purple-500 transition-all hover:-translate-y-2 shadow-lg";
+        card.innerHTML = `
+            <div class="relative aspect-[2/3] overflow-hidden">
+                <img src="${posterPath}" alt="${data.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent opacity-60"></div>
+                <span class="absolute top-2 right-2 bg-purple-600 text-[10px] font-bold px-2 py-1 rounded text-white uppercase">${mediaType}</span>
+            </div>
+            <div class="p-3">
+                <h3 class="font-semibold text-sm truncate group-hover:text-purple-400 transition-colors">${data.title}</h3>
+            </div>
+        `;
+        fragment.appendChild(card);
+    });
+
+    // Append everything to the DOM exactly once
+    grid.appendChild(fragment);
 }
 
 async function fetchMovieDetails() {
@@ -419,13 +462,7 @@ function renderGroupedLinks() {
     }
 }
 
-document.getElementById('search-input')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleSearch();
-});
-
 document.addEventListener('DOMContentLoaded', init);
 </script>
-
-
 </body>
 </html>

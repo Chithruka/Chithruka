@@ -44,6 +44,7 @@ let deferredPrompt;
 let activeFilterLabel = "";
 let aiModalOpen = false;
 let userCountryCode = 'US';
+let DUBBED_REGISTRY = {};
 // --- Auth State ---
 let sessionId = localStorage.getItem('tmdb_session_id');
 let accountId = localStorage.getItem('tmdb_account_id');
@@ -98,6 +99,25 @@ async function fetchCached(url) {
         return data;
     } catch (e) {
         throw e;
+    }
+}
+
+/**
+ * Fetches the registry.json file and stores it in the DUBBED_REGISTRY variable.
+ * This ensures that the rest of your app can access the dubbed link data.
+ */
+async function loadDubbedRegistry() {
+    try {
+        const response = await fetch('registry.json');
+        if (!response.ok) {
+            throw new Error(`Failed to load registry: ${response.statusText}`);
+        }
+        DUBBED_REGISTRY = await response.json();
+        console.log("Dubbed Registry loaded successfully from JSON.");
+    } catch (error) {
+        console.error("Error loading dubbed registry:", error);
+        // Fallback to empty object so the app doesn't crash
+        DUBBED_REGISTRY = {};
     }
 }
 
@@ -4334,4 +4354,10 @@ function handleSearchSubmit(query) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-
+document.addEventListener('DOMContentLoaded', () => {
+    // Load the JSON data immediately when the page opens
+    loadDubbedRegistry();
+    
+    // You can also call your existing home loading logic here
+    // loadHome(); 
+});
