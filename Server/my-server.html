@@ -76,15 +76,30 @@ function setupPlayer(sources) {
         showIframe(`https://t.me/${telId}?embed=1`);
     } 
     else if (firstSource.type === 'youtube') {
-        // Convert watch link to embed link for stable IFrame
         const videoId = firstSource.src.split('v=')[1]?.split('&')[0];
         showIframe(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`);
     } 
+    else if (firstSource.type === 'dailymotion') {
+        const videoId = firstSource.src.split('/').pop();
+        showIframe(`https://www.dailymotion.com/embed/video/${videoId}`);
+    }
+    else if (firstSource.type === 'google-drive') {
+        const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
+        showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
+    }
+    /* --- NEW FACEBOOK LOGIC --- */
+    else if (firstSource.type === 'facebook') {
+        // Facebook requires the full URL to be encoded as a parameter
+        const encodedUrl = encodeURIComponent(firstSource.src);
+        const fbEmbed = `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=0&width=560`;
+        showIframe(fbEmbed);
+    }
+    /* -------------------------- */
     else {
-        // Use Video.js ONLY for MP4 files
         showVideoJS(sources);
     }
 }
+
 
 function showVideoJS(sources) {
     const el = document.getElementById('vjs-player');

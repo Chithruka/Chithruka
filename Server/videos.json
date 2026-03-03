@@ -1,25 +1,445 @@
 {
   "movies": {
     "671": [
-      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" },
-      { "type": "youtube", "label": "YouTube", "src": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-      { "type": "telegram", "label": "Telegram", "src": "https://t.me/your_channel/123" }
+      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" }
+    ],
+    "672": [
+      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2002.720p.x264-DubZoneLK.mp4" }
+    ],
+    "673": [
+      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2004.720p.x264-DubZoneLK.mp4" }
+    ],
+    "674": [
+      { "type": "mp4", "label": "1080p", "src": "https://cloud.sinhalachr.workers.dev/15:/Harry%20Potter%20Sinhala%20Dubbed/4%20-%20Harry%20Potter%20and%20the%20Goblet%20of%20Fire%20(2005)%20@sinhalafilmsgo.mp4" }
+    ],
+    "675": [
+      { "type": "mp4", "label": "1080p", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
+    ],
+    "808": [
+      { "type": "mkv", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Shrek.2001.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" }
     ]
   },
   "tv": {
     "77068": {
       "1": {
         "1": [
-          { "type": "youtube", "label": "Original", "src": "https://www.youtube.com/watch?v=U4tqGn7HD-o" }
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=U4tqGn7HD-o" }
+],
+"2": [
+{ "type": "youtube", "label": "1080p", "src": "https://www.youtube.com/watch?v=sfvHfFFf55Q" }
+],
+"3": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=T_t4JMY3u2U" }
+],
+"4": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=lMIofvnwkWs" }
+],
+"5": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=kFig_pkSVK4" }
+],
+"6": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=QlPp1HzYPlI" }
+],
+"7": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=-_aSjnRFbXI" }
+],
+"8": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=fMd76rvyFNc" }
+],
+"9": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=hErsnu81IxE" }
+],
+"10": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=Ykxuo-hkg08" }
+],
+"11": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=cLsJSfPFKRc" }
+],
+"12": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=neeP1pUp4WQ" }
+],
+"13": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=GXIK8MbTVGg" }
+],
+"14": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=ApNLfV31yIY" }
+],
+"15": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=qTiGVApHVZI" }
+],
+"16": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=WUAnVD4x6qc" }
+],
+"17": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=CTVtsj5R25Q" }
+],
+"18": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=Nu4DXr_s-fQ" }
+],
+"19": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=PALpzxfQhgo" }
+],
+"20": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=epX0MpvTnAc" }
+],
+"21": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=k9NE4Ib36k0" }
+],
+"22": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=ajhcwpFlBO8" }
+],
+"23": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=l1Kj7UxCDzc" }
+],
+"24": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=89xXiEygEnk" }
+],
+"25": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=28KMSej7zIA" }
+],
+"26": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=dv_Jg51RcrI" }
+],
+"27": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=oqBUROi-nzg" }
+],
+"28": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=kSoe4bJ8bHs" }
+],
+"29": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=OXbMTSHOBSc" }
+],
+"30": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=ZAYZN5XC4iw" }
+],
+"31": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=OA7sehd5Vg8" }
+],
+"32": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=6IyAl95c7r0" }
+],
+"33": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=PkjykPRhXTA" }
+],
+"34": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=ZGso_HTThSk" }
+],
+"35": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=fCPizcUwdWw" }
+],
+"36": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=Y2014Vs3-k8" }
+],
+"37": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=hmAiuclGlLo" }
+],
+"38": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=Q3QZEPKh9eU" }
+],
+"39": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=nVnY3-RbeRo" }
+],
+"40": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=aUphpSO3umM" }
+],
+"41": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=6gh_-8bnHIg" }
+],
+"42": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=kTrnj6nWSws" }
+],
+"43": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=hiprhRRX3k8" }
+],
+"44": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=yifknwHNH8U" }
+],
+"45": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=RVne3NVJf04" }
+],
+"46": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=3PbZurl-9uc" }
+],
+"47": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=WXOPcZkXkRI" }
+],
+"48": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=IJdepyncvUI" }
+],
+"49": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=VM83FyXrfj0" }
+],
+"50": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=sf2D-qFSq3Y" }
+],
+"51": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=m5zq62FEPLI" }
+],
+"52": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=Gzf3pK2hLbg" }
+],
+"53": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=ltxZ4-q05cE" }
+],
+"54": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=zQOYs1Kzmro" }
+],
+"55": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=27ZquMfg3qY" }
+],
+"56": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=PpjAMDN15hI" }
+],
+"57": [
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=2N_ItKIUKYI" }
+]
+      }
+    },
+    "308697": {
+      "1": {
+        "1": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x9sjvmc" }
         ]
       }
     },
-    "4686": {
+    "84982": {
       "1": {
         "1": [
-          { "type": "telegram", "label": "Original", "src": " oyfoyyf" }
+          { "type": "facebook", "label": "Original", "src": "https://www.facebook.com/facebook/videos/1KF2YEiL4c/" }
         ]
       }
-    }
+    },
+    "75288": {
+      "1": {
+        "1": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6bdwsp" }
+        ],
+        "2": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6bfco2" }
+        ],
+        "3": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6bs1q6" }
+        ],
+        "4": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6btasx" }
+        ],
+        "5": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6c4ylp" }
+        ],
+        "6": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6c7m05" }
+        ],
+        "7": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6cl7u3" }
+        ],
+        "8": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6cgwrp" }
+        ],
+        "9": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6cq6zy" }
+        ],
+        "10": [
+          { "type": "dailymotion", "label": "Original", "src": "https://dai.ly/x6crh8q" }
+        ]
+      }
+    },
+  "6040": {
+    "1": {
+      "1": [
+        { "type": "google-drive", "label": "Episode 1", "src": "https://drive.google.com/file/d/1-6GBGcwO9dBvW75lJG-CXmqDQ44yEBfA/view?usp=drivesdk" }
+      ],
+      "2": [
+        { "type": "google-drive", "label": "Episode 2", "src": "https://drive.google.com/file/d/1-76f6eKwiMleTGPlmKe2DK7cveP129tz/view?usp=drivesdk" }
+      ],
+      "3": [
+        { "type": "google-drive", "label": "Episode 3", "src": "https://drive.google.com/file/d/1-QUYFr1Rsv9-APoTxwewzSQ9wwbFfU1K/view?usp=drivesdk" }
+      ],
+      "4": [
+        { "type": "google-drive", "label": "Episode 4", "src": "https://drive.google.com/file/d/1-TAVxIFLPRdxg1W-wsMUeg_AX9f-Uf4k/view?usp=drivesdk" }
+      ],
+      "5": [
+        { "type": "google-drive", "label": "Episode 5", "src": "https://drive.google.com/file/d/1-bdfFC9hg_o4hfJeg8iLohhDj-3y9awU/view?usp=drivesdk" }
+      ],
+      "6": [
+        { "type": "google-drive", "label": "Episode 6", "src": "https://drive.google.com/file/d/1-cw96x3sgrCr53gOiCUMW5O1RdhMMKlP/view?usp=drivesdk" }
+      ],
+      "7": [
+        { "type": "google-drive", "label": "Episode 7", "src": "https://drive.google.com/file/d/1-nAbfrsaXIbsTuV07jlF02n0TLnN5720/view?usp=drivesdk" }
+      ],
+      "8": [
+        { "type": "google-drive", "label": "Episode 8", "src": "https://drive.google.com/file/d/1-oHlB2soxKha-Gf1LELBYY798W3kZI4f/view?usp=drivesdk" }
+      ],
+      "9": [
+        { "type": "google-drive", "label": "Episode 9", "src": "https://drive.google.com/file/d/1-tAJvfxd9oe6YRdS_CybCWaKZkn_rk4-/view?usp=drivesdk" }
+      ],
+      "10": [
+        { "type": "google-drive", "label": "Episode 10", "src": "https://drive.google.com/file/d/1-z-OBs9GiflztFwNUzy5TrbjXrrDE1NZ/view?usp=drivesdk" }
+      ],
+      "11": [
+        { "type": "google-drive", "label": "Episode 11", "src": "https://drive.google.com/file/d/1-zrK7AJ4KYwrhb-bRvyrdf6jFtNoVrMX/view?usp=drivesdk" }
+      ],
+      "12": [
+        { "type": "google-drive", "label": "Episode 12", "src": "https://drive.google.com/file/d/10-oD1D0pnTaHoIOz9Ri3WTXRCTiI3IFj/view?usp=drivesdk" }
+      ],
+      "13": [
+        { "type": "google-drive", "label": "Episode 13", "src": "https://drive.google.com/file/d/10-ooR6rVHln-1icdix9T2nMKtCMhsBMW/view?usp=drivesdk" }
+      ]
+    },
+  "2": {
+    "1": [
+      {
+        "type": "google-drive",
+        "label": "Episode 1",
+        "src": "https://drive.google.com/file/d/1f2AUfABSF-O1iLORjso2MDad-PzPrn-N/view?usp=drivesdk"
+      }
+    ],
+    "2": [
+      {
+        "type": "google-drive",
+        "label": "Episode 2",
+        "src": "https://drive.google.com/file/d/1ZwC8WR4TMXxbji2DJCczz3wLmW3W6nuR/view?usp=drivesdk"
+      }
+    ],
+    "3": [
+      {
+        "type": "google-drive",
+        "label": "Episode 3",
+        "src": "https://drive.google.com/file/d/1qSAwO503fBO3onzxlzk5ChA_kvsDqW02/view?usp=drivesdk"
+      }
+    ],
+    "4": [
+      {
+        "type": "google-drive",
+        "label": "Episode 4",
+        "src": "https://drive.google.com/file/d/1b29OT9T-_3DWNxrJKx3XEuN9LlEo6eJc/view?usp=drivesdk"
+      }
+    ],
+    "5": [
+      {
+        "type": "google-drive",
+        "label": "Episode 5",
+        "src": "https://drive.google.com/file/d/1dsgAW-8N5PAnHrUzJ7OqMEASm_Hmy2ZP/view?usp=drivesdk"
+      }
+    ],
+    "6": [
+      {
+        "type": "google-drive",
+        "label": "Episode 6",
+        "src": "https://drive.google.com/file/d/17cIPCQPrWdLA3qam7ei5ZAvR3o-au4kE/view?usp=drivesdk"
+      }
+    ],
+    "7": [
+      {
+        "type": "google-drive",
+        "label": "Episode 7",
+        "src": "https://drive.google.com/file/d/1jo4nLp2pA7fambjVGay6SALPjQsOMXk_/view?usp=drivesdk"
+      }
+    ],
+    "8": [
+      {
+        "type": "google-drive",
+        "label": "Episode 8",
+        "src": "https://drive.google.com/file/d/11b7kjvvSwe-9_aJ6WMsrAn2MiI_G-4ov/view?usp=drivesdk"
+      }
+    ],
+    "9": [
+      {
+        "type": "google-drive",
+        "label": "Episode 9",
+        "src": "https://drive.google.com/file/d/15L2Oc8Ba3R0zvJ9pR-fIkyKLkCBX7LfO/view?usp=drivesdk"
+      }
+    ],
+    "10": [
+      {
+        "type": "google-drive",
+        "label": "Episode 10",
+        "src": "https://drive.google.com/file/d/1xqT2N8x7KB2wUc7iVwGve7_K2N8IRnfq/view?usp=drivesdk"
+      }
+    ],
+    "11": [
+      {
+        "type": "google-drive",
+        "label": "Episode 11",
+        "src": "https://drive.google.com/file/d/1Oklnaqib3wxIZRYSFnBxzMTLJyfh5vTJ/view?usp=drivesdk"
+      }
+    ],
+    "12": [
+      {
+        "type": "google-drive",
+        "label": "Episode 12",
+        "src": "https://drive.google.com/file/d/17_QE6HpU28nBdsr9hsR6oOKNvKnBgIrb/view?usp=drivesdk"
+      }
+    ],
+    "13": [
+      {
+        "type": "google-drive",
+        "label": "Episode 13",
+        "src": "https://drive.google.com/file/d/1cqecfAqdTEqCr1pipZPn04mTvX3eCXs6/view?usp=drivesdk"
+      }
+    ]
+  },
+  "3": {
+    "1": [
+      { "type": "google-drive", "label": "Episode 1", "src": "https://drive.google.com/file/d/1-IYPpBP4aQWEvtGkYwvt6kzrZlO5onXv/view?usp=drivesdk" }
+    ],
+    "2": [
+      { "type": "google-drive", "label": "Episode 2", "src": "https://drive.google.com/file/d/1h7_r-k_X_Dhb6hktqnjxzSql3vwMeBEx/view?usp=drivesdk" }
+    ],
+    "3": [
+      { "type": "google-drive", "label": "Episode 3", "src": "https://drive.google.com/file/d/1aDRRtEh2JTGaJvIGobN0ZTYHPINLXd4i/view?usp=drivesdk" }
+    ],
+    "4": [
+      { "type": "google-drive", "label": "Episode 4", "src": "https://drive.google.com/file/d/1Cu32Xk59WHCmLS4veL9s_qof1qbh994B/view?usp=drivesdk" }
+    ],
+    "5": [
+      { "type": "google-drive", "label": "Episode 5", "src": "https://drive.google.com/file/d/1wd0jr3jaB1-7KspFNLLii1FPh1fvMQHR/view?usp=drivesdk" }
+    ],
+    "6": [
+      { "type": "google-drive", "label": "Episode 6", "src": "https://drive.google.com/file/d/1ERfGfGZU-BYvBNUoBn7-et2cbuwUBDF4/view?usp=drivesdk" }
+    ],
+    "7": [
+      { "type": "google-drive", "label": "Episode 7", "src": "https://drive.google.com/file/d/1Mx-eUCAi9XJv9OJnLQzuYMWKblweFpcG/view?usp=drivesdk" }
+    ],
+    "8": [
+      { "type": "google-drive", "label": "Episode 8", "src": "https://drive.google.com/file/d/1Vvpgvngm7BX7azY5zc8fZd3RqIrI-8rt/view?usp=drivesdk" }
+    ],
+    "9": [
+      { "type": "google-drive", "label": "Episode 9", "src": "https://drive.google.com/file/d/1dWTlFxIYKyugQj63lFXeNWnCXfIa3YfS/view?usp=drivesdk" }
+    ],
+    "10": [
+      { "type": "google-drive", "label": "Episode 10", "src": "https://drive.google.com/file/d/1m75dDQogWD9C2SlkhEAbsZP1pdkL03p5/view?usp=drivesdk" }
+    ],
+    "11": [
+      { "type": "google-drive", "label": "Episode 11", "src": "https://drive.google.com/file/d/1mQ6wTpCzr0lZfFV6Z8nPJOuJm8VVPdPp/view?usp=drivesdk" }
+    ],
+    "12": [
+      { "type": "google-drive", "label": "Episode 12", "src": "https://drive.google.com/file/d/1BCYo-lYSIdi5GXPyCRs4bDbsNGQUzs11/view?usp=drivesdk" }
+    ],
+    "13": [
+      { "type": "google-drive", "label": "Episode 13", "src": "https://drive.google.com/file/d/1-wm4OilJJ1Qr8Al6nTnZJmqDUdVU1BUk/view?usp=drivesdk" }
+    ],
+    "14": [
+      { "type": "google-drive", "label": "Episode 14", "src": "https://drive.google.com/file/d/1Itf1ji12lO-FrICwAu7jgvq-Ct6-ydXU/view?usp=drivesdk" }
+    ],
+    "15": [
+      { "type": "google-drive", "label": "Episode 15", "src": "https://drive.google.com/file/d/17ihr2tatlmralUi6P4moliSIcb6CnTBX/view?usp=drivesdk" }
+    ],
+    "16": [
+      { "type": "google-drive", "label": "Episode 16", "src": "https://drive.google.com/file/d/197dN1g8lTzMhk9k48kUNy-1QJoAP746U/view?usp=drivesdk" }
+    ],
+    "17": [
+      { "type": "google-drive", "label": "Episode 17", "src": "https://drive.google.com/file/d/1yFjOa4r8LZf3e69q8Xz9gb1epWDGIs0x/view?usp=drivesdk" }
+    ],
+    "18": [
+      { "type": "google-drive", "label": "Episode 18", "src": "https://drive.google.com/file/d/1C8acMstyzaQDPqxJOWey084oOhq10W67/view?usp=drivesdk" }
+    ],
+    "19": [
+      { "type": "google-drive", "label": "Episode 19", "src": "https://drive.google.com/file/d/1YR-duX2iviC9eQtobB5HODisD1U9IL-G/view?usp=drivesdk" }
+    ],
+    "20": [
+      { "type": "google-drive", "label": "Episode 20", "src": "https://drive.google.com/file/d/1x3x7gfRBLoy6EF5RQwNyIdMRdh7Le1nV/view?usp=drivesdk" }
+    ]
+  }
+  }
   }
 }
