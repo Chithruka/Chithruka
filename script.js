@@ -817,13 +817,13 @@ const SERVER_URLS = [
     { name: "Server 1", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
     { name: "Server 2", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
-    { name: "Server 4", movie: "https://autoembed.co/movie/tmdb/[ID]", tv: "https://autoembed.co/tv/tmdb/[ID]-[S]-[E]" },
-   { name: "Server 5", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
+   { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
     { 
-        name: "Server 6", 
+        name: "Server 5", 
         movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914&nextEpisode=true&episodeSelector=true", 
         tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" 
-    }
+    },
+    { name: "Server 6", movie: "Server/my-server.html?id=[ID]&type=movie", tv: "Server/my-server.html?id=[ID]&type=tv&s=[S]&e=[E]" }
 ];
 
 const DOWNLOAD_URLS = {
@@ -3357,112 +3357,102 @@ async function loadSoundtrack(title) {
     const section = document.getElementById('soundtrack-section');
     const container = document.getElementById('soundtrack-embed-container');
     const link = document.getElementById('soundtrack-link');
-
+    
     if (!section || !container) return;
 
     // 1. Clean Title for Search
-    // We remove subtitles (after :) and years (in parens) to get the core title
     let cleanTitle = title.split(':')[0].split('(')[0].trim();
-    
-    // Remove "The" from start to improve search matching
     if (cleanTitle.toLowerCase().startsWith('the ')) {
         cleanTitle = cleanTitle.substring(4);
     }
 
+    // 2. JSONP Helper (Fixes the "Failed to Fetch" CORS error)
+    const fetchiTunesJSONP = (query) => {
+        return new Promise((resolve, reject) => {
+            const callbackName = `itunes_cb_${Math.floor(Math.random() * 1000000)}`;
+            const script = document.createElement('script');
+            
+            window[callbackName] = (data) => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                resolve(data);
+            };
+
+            script.onerror = () => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                reject(new Error("iTunes API connection failed"));
+            };
+
+            // We add &callback=... to the URL to trigger JSONP mode
+            const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=15&callback=${callbackName}`;
+            script.src = url;
+            document.body.appendChild(script);
+        });
+    };
+
     try {
-        // 2. Search iTunes API
-        // Fetch more results (limit=15) so we can filter through them
-        const query = encodeURIComponent(`${cleanTitle} Soundtrack`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${query}&media=music&entity=album&limit=15`);
-        const data = await res.json();
+        // 3. Request Soundtrack Data
+        const data = await fetchiTunesJSONP(`${cleanTitle} Soundtrack`);
 
         if (data.results && data.results.length > 0) {
-            
-            // 3. Smart Filtering
-            // Get movie year from the global variable set by renderDetails()
+            // 4. Get Movie Year from Global State
             let movieYear = null;
-            if (currentMovieData && currentMovieData.year && currentMovieData.year !== 'N/A') {
-                movieYear = parseInt(currentMovieData.year);
+            if (currentMovieData) {
+                const dateStr = currentMovieData.release_date || currentMovieData.first_air_date;
+                if (dateStr) movieYear = new Date(dateStr).getFullYear();
             }
 
-            // Define "Bad" keywords that indicate it's not the official score
-            const bannedTerms = ["tribute", "karaoke", "cover", "podcast", "inspired by"];
-
             let bestMatch = null;
-            let minYearDiff = 100; // Start with a large year gap
+            let minYearDiff = Infinity;
 
+            // 5. Filter for best Soundtrack match
             for (const album of data.results) {
-                const albumName = album.collectionName.toLowerCase();
-                const artistName = album.artistName.toLowerCase();
+                const albumTitle = album.collectionName.toLowerCase();
+                const releaseYear = new Date(album.releaseDate).getFullYear();
                 
-                // A. Check for banned terms
-                if (bannedTerms.some(term => albumName.includes(term) || artistName.includes(term))) {
-                    continue;
-                }
+                const isSoundtrack = albumTitle.includes('soundtrack') || 
+                                   albumTitle.includes('motion picture') || 
+                                   albumTitle.includes('score') ||
+                                   albumTitle.includes(cleanTitle.toLowerCase());
+                
+                if (!isSoundtrack) continue;
 
-                // B. Title Match Safety Check
-                // The album must actually contain the movie title
-                if (!albumName.includes(cleanTitle.toLowerCase())) {
-                    continue;
-                }
-
-                // C. Year Matching (Crucial for fixing "Wrong" soundtracks)
                 if (movieYear) {
-                    const albumYear = parseInt(album.releaseDate.substring(0, 4));
-                    const diff = Math.abs(albumYear - movieYear);
-
-                    // We look for the album released closest to the movie's release year.
-                    // This filters out same-name movies from decades ago.
-                    if (diff < minYearDiff) {
-                        
-                        // Check if it looks like an official score
-                        const isExplicitOfficial = albumName.includes("original motion picture") || albumName.includes("ost") || albumName.includes("soundtrack");
-                        
-                        // If it's explicitly the OST and the year is very close (within 5 years), pick it immediately
-                        if (isExplicitOfficial && diff <= 5) {
-                            bestMatch = album;
-                            break; 
-                        }
-
-                        // Otherwise, keep this as the best candidate so far
+                    const diff = Math.abs(releaseYear - movieYear);
+                    if (diff <= 1 && diff < minYearDiff) {
                         minYearDiff = diff;
                         bestMatch = album;
                     }
-                } else {
-                    // If we don't have a movie year, just take the first valid result
+                } else if (!bestMatch) {
                     bestMatch = album;
-                    break;
                 }
             }
 
-            // If filtering removed everything, but we have raw results and NO movie year to rely on, fallback to the first one.
-            if (!bestMatch && !movieYear && data.results.length > 0) {
-                 bestMatch = data.results[0];
-            }
+            // Fallback to first result if no perfect match found
+            if (!bestMatch) bestMatch = data.results[0];
 
             if (bestMatch) {
                 const albumId = bestMatch.collectionId;
                 
+                // 6. Render Square Player
                 container.innerHTML = `
                     <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" 
                             frameborder="0" 
                             height="450" 
-                            style="width:100%; max-width:100%; overflow:hidden; border-radius:10px; background:transparent;" 
+                            style="width:100%; aspect-ratio: 1 / 1; max-width: 450px; overflow:hidden; border-radius:12px; background:transparent; display: block; margin: 0 auto;" 
                             sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
-                            src="https://embed.music.apple.com/us/album/${albumId}?theme=dark">
-                    </iframe>`;
+                            src="https://embed.music.apple.com/us/album/${albumId}">
+                    </iframe>
+                `;
 
-                if (link) {
-                    link.href = bestMatch.collectionViewUrl;
-                    link.innerHTML = `<i class="fab fa-apple mr-1"></i> Listen on Apple Music`;
-                }
-
+                if (link) link.href = bestMatch.collectionViewUrl;
                 section.classList.remove('hidden');
                 return;
             }
         }
         
-        // No valid soundtrack found
+        // Hide if nothing found
         section.classList.add('hidden');
 
     } catch (e) {
@@ -3470,10 +3460,6 @@ async function loadSoundtrack(title) {
         section.classList.add('hidden');
     }
 }
-
-// ==========================================
-// AI INTEL FUNCTIONS (Smart JSON Version)
-// ==========================================
 
 function openAIInsight() {
     if (!currentMovieData) return;
