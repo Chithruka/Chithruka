@@ -1476,3 +1476,9 @@ input[type=range]::-webkit-slider-thumb {
     font-size: 0.75rem; color: #aaa; line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+
+.media-badge.new {
+    left: auto;
+    right: 8px;
+    background: #10b981;
+}
