@@ -193,99 +193,6 @@
                 </div>
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
                 <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
-
-                <div id="cast-container" class="mt-4">
-                    <h4 class="section-title text-lg md:text-xl mb-4">Top Cast</h4>
-                    <div class="relative group">
-                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('cast-list', -200)"><i class="fas fa-chevron-left"></i></button>
-                        <div id="cast-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
-                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('cast-list', 200)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-<div id="soundtrack-section" class="mt-4 hidden">
-    <h4 class="section-title text-lg md:text-xl mb-4">Official Soundtrack</h4>
-    <div class="glass-panel p-0 rounded-xl overflow-hidden relative bg-black/40">
-        <div id="soundtrack-embed-container" class="w-full"></div>
-        
-        <div class="p-3 text-center bg-black/50">
-            <a id="soundtrack-link" href="#" target="_blank" class="text-xs text-gray-400 hover:text-pink-400 transition-colors">
-                <i class="fas fa-external-link-alt mr-1"></i> Open Music
-            </a>
-        </div>
-    </div>
-</div>
-                <div id="crew-container" class="mt-6 hidden">
-    <h4 class="section-title text-lg md:text-xl mb-4">Behind the Scenes</h4>
-                    <div class="relative group">
-                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('crew-list', -200)"><i class="fas fa-chevron-left"></i></button>
-                        <div id="crew-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
-                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('crew-list', 200)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-<div id="gallery-container" class="mt-8 hidden">
-    <h4 class="section-title text-lg md:text-xl mb-4">Gallery & Wallpapers</h4>
-    <div class="relative group">
-        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('gallery-list', -300)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        
-        <div id="gallery-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
-        
-        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('gallery-list', 300)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</div>
-<div id="logos-container" class="mt-8 hidden">
-    <h4 class="section-title text-lg md:text-xl mb-4">Official Logos</h4>
-    <div class="relative group">
-        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('logos-list', -300)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        
-        <div id="logos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
-        
-        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('logos-list', 300)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</div>
-<div id="videos-container" class="mt-8 hidden">
-    <h4 class="section-title text-lg md:text-xl mb-4">Trailers & More</h4>
-    <div class="relative group">
-        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('videos-list', -300)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        
-        <div id="videos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
-        
-        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('videos-list', 300)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</div>
-                <div class="info-grid">
-                    <div class="info-block">
-                        <h5><i class="fas fa-building mr-2"></i> Production</h5>
-                        <div id="production-list" class="info-list text-sm text-gray-300"></div>
-                    </div>
-                    <div class="info-block">
-                        <h5><i class="fas fa-calendar-check mr-2"></i> Release Dates</h5>
-                        <div id="release-dates-list" class="info-list"></div>
-                    </div>
-                    <div class="info-block">
-                        <h5><i class="fas fa-language mr-2"></i> Alt. Titles</h5>
-                        <div id="alt-titles-list" class="info-list text-sm text-gray-300"></div>
-                    </div>
-                    <div class="info-block">
-                        <h5><i class="fas fa-cogs mr-2"></i> Tech Specs</h5>
-                        <div id="tech-specs-list" class="info-list text-sm text-gray-300"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="player-interface" class="hidden fade-in">
         <div class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
              <div id="server-loading-msg" class="hidden"></div>
@@ -319,6 +226,96 @@
                 <i id="accordion-icon" class="fas fa-chevron-down text-gray-400"></i>
             </div>
             <div id="episode-accordion-content" class="accordion-content"></div>
+        </div>
+    </div>
+                <div id="cast-container" class="mt-4">
+                    <h4 class="section-title text-lg md:text-xl mb-4">Top Cast</h4>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('cast-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="cast-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('cast-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>                <div id="crew-container" class="mt-6 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Behind the Scenes</h4>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('crew-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="crew-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('crew-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div id="videos-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Trailers & More</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('videos-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="videos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('videos-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+<div id="soundtrack-section" class="mt-4 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Official Soundtrack</h4>
+    <div class="glass-panel p-0 rounded-xl overflow-hidden relative bg-black/40">
+        <div id="soundtrack-embed-container" class="w-full"></div>
+        
+        <div class="p-3 text-center bg-black/50">
+            <a id="soundtrack-link" href="#" target="_blank" class="text-xs text-gray-400 hover:text-pink-400 transition-colors">
+                <i class="fas fa-external-link-alt mr-1"></i> Open Music
+            </a>
+        </div>
+    </div>
+</div>
+<div id="logos-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Official Logos</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('logos-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="logos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('logos-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+<div id="gallery-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Gallery & Wallpapers</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('gallery-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="gallery-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('gallery-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h5><i class="fas fa-building mr-2"></i> Production</h5>
+                        <div id="production-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-calendar-check mr-2"></i> Release Dates</h5>
+                        <div id="release-dates-list" class="info-list"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-language mr-2"></i> Alt. Titles</h5>
+                        <div id="alt-titles-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-cogs mr-2"></i> Tech Specs</h5>
+                        <div id="tech-specs-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
