@@ -1,0 +1,25 @@
+{
+  "movies": {
+    "671": [
+      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" },
+      { "type": "youtube", "label": "YouTube", "src": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      { "type": "telegram", "label": "Telegram", "src": "https://t.me/your_channel/123" }
+    ]
+  },
+  "tv": {
+    "77068": {
+      "1": {
+        "1": [
+          { "type": "youtube", "label": "Original", "src": "https://www.youtube.com/watch?v=U4tqGn7HD-o" }
+        ]
+      }
+    },
+    "4686": {
+      "1": {
+        "1": [
+          { "type": "telegram", "label": "Original", "src": " oyfoyyf" }
+        ]
+      }
+    }
+  }
+}
