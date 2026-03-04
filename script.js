@@ -2097,6 +2097,7 @@ window.changeSeason = async function(seasonVal, episodeVal = 1) {
     updatePlayer();
 }
 
+
 async function fetchSeasonDetails(tvId, seasonNum) {
     try {
         const data = await fetchCached(`${BASE_TMDB_URL}/tv/${tvId}/season/${seasonNum}?api_key=${TMDB_API_KEY}`);
@@ -2148,7 +2149,7 @@ function renderEpisodesRich() {
         `;
 
         episodesHtml += `
-            <div class="episode-rich-item ${isActive ? 'active' : ''}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
+<div class="episode-rich-item ${isActive ? 'active' : ''}" data-episode="${ep.episode_number}" onclick="selectEpisode(${ep.season_number}, ${ep.episode_number}, this)">
                 <img src="${still}" class="ep-still" loading="lazy">
                 <div class="ep-info">
                     <div class="flex items-center mb-1">
@@ -3098,9 +3099,24 @@ window.selectEpisode = function(s, e, el) {
             updateSeasonStatusUI(epData.air_date);
         }
         
-        // Re-render the slider so the new episode gets the .active class
-        // and auto-scrolls into view smoothly
-        renderEpisodesRich(); 
+        // --- DOM MANIPULATION INSTEAD OF FULL RE-RENDER ---
+        const scrollList = document.getElementById('episodes-scroll-list');
+        
+        if (scrollList) {
+            // 1. Remove the 'active' class from all episodes
+            const allItems = scrollList.querySelectorAll('.episode-rich-item');
+            allItems.forEach(item => item.classList.remove('active'));
+
+            // 2. Find the newly selected episode element 
+            // (Use the passed 'el' if clicked, or fallback to the data attribute for the Next button)
+            const activeEl = el || scrollList.querySelector(`.episode-rich-item[data-episode="${e}"]`);
+
+            // 3. Add the active class and smoothly scroll it into the center
+            if (activeEl) {
+                activeEl.classList.add('active');
+                activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
     }
 
     updatePlayer();
@@ -3807,11 +3823,6 @@ function resetQuoteTimer() {
     clearInterval(quoteTimer);
     startQuoteTimer();
 }
-
-/* ==========================================
-   KEYBOARD NAVIGATION (Arrow Keys to Scroll)
-   ========================================== */
-
 /* ==========================================
    KEYBOARD NAVIGATION (Arrow Keys to Scroll)
    ========================================== */
