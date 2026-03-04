@@ -2079,9 +2079,9 @@ async function loadCollection(collectionId, collectionName) {
     } catch (e) { console.error("Collection Load Error", e); }
 }
 
-window.changeSeason = async function(seasonVal) {
+window.changeSeason = async function(seasonVal, episodeVal = 1) {
     currentSeason = parseInt(seasonVal);
-    currentEpisode = 1;
+    currentEpisode = parseInt(episodeVal); // Now respects the passed episode
 
     const selectedSeasonData = episodeData.find(s => s.season === currentSeason);
     if (selectedSeasonData) {
@@ -2089,6 +2089,8 @@ window.changeSeason = async function(seasonVal) {
     }
 
     episodeAccordionContent.innerHTML = '<div class="text-center p-4 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading Season...</div>';
+    
+    // Auto-open accordion so user can see the episodes loading
     if (!accordionOpen) toggleAccordion();
 
     await fetchSeasonDetails(TMDB_ID, currentSeason);
@@ -3032,11 +3034,12 @@ function updateContinueWatchingUI() {
             await selectContent(item.tmdbId, item.title, item.mediaType);
             if (item.mediaType === 'tv') {
                 setTimeout(() => {
-                    document.getElementById('season-select').value = item.season;
-                    changeSeason(item.season).then(() => {
-                        selectEpisode(item.season, item.episode, null);
-                    });
-                }, 1000);
+                    const seasonSelect = document.getElementById('season-select');
+                    if (seasonSelect) seasonSelect.value = item.season;
+                    
+                    // Trigger changeSeason with both the target season AND episode
+                    changeSeason(item.season, item.episode);
+                }, 800); // Slight delay ensures DOM is ready
             }
         };
 
@@ -3064,14 +3067,16 @@ window.nextEpisode = function() {
     const sIndex = episodeData.findIndex(s => s.season === currentSeason);
     if (sIndex === -1) return;
     let nextS = currentSeason, nextE = currentEpisode + 1;
+    
+    // Check if we reached the end of the current season
     if (nextE > episodeData[sIndex].episodes) {
         if (episodeData[sIndex + 1]) {
             nextS = episodeData[sIndex + 1].season;
             nextE = 1;
             document.getElementById('season-select').value = nextS;
-            changeSeason(nextS).then(() => {
-                selectEpisode(nextS, nextE, null);
-            });
+            
+            // Pass both Season and Episode to load properly
+            changeSeason(nextS, nextE);
             showMessage(`Starting Season ${nextS}...`);
             return;
         } else {
@@ -3082,16 +3087,20 @@ window.nextEpisode = function() {
     selectEpisode(nextS, nextE, null);
 }
 
+
 window.selectEpisode = function(s, e, el) {
     currentSeason = s; 
     currentEpisode = e;
 
-    // --- NEW: Update Release Status for this specific Episode ---
     if (typeof seasonEpisodes !== 'undefined' && seasonEpisodes.length > 0) {
         const epData = seasonEpisodes.find(ep => ep.episode_number === e);
         if (epData) {
             updateSeasonStatusUI(epData.air_date);
         }
+        
+        // Re-render the slider so the new episode gets the .active class
+        // and auto-scrolls into view smoothly
+        renderEpisodesRich(); 
     }
 
     updatePlayer();
@@ -3803,10 +3812,20 @@ function resetQuoteTimer() {
    KEYBOARD NAVIGATION (Arrow Keys to Scroll)
    ========================================== */
 
+/* ==========================================
+   KEYBOARD NAVIGATION (Arrow Keys to Scroll)
+   ========================================== */
+
 // Track which list the mouse is currently over
 let activeScrollWrapper = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+// ---> FIX: ADDED 'async' HERE <---
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // ---> FIX: AWAIT YOUR CONFIGS BEFORE DOING ANYTHING ELSE <---
+    await loadDubbedRegistry();
+    await loadLocalVideos();
+
     const urlParams = new URLSearchParams(window.location.search);
 
     // --- 1. Restore Adult Toggle State ---
@@ -3852,6 +3871,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(trailerSection) trailerSection.style.display = 'none'; 
         
         const deepId = Number(urlParams.get('id'));
+        // Now this will correctly see LOCAL_VIDEOS because we awaited it above!
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
     } else {
         // Homepage: Load Trailers
@@ -3929,6 +3949,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
 });
+
 
 function renderLogos(data) {
     const container = document.getElementById('logos-container');
@@ -4381,13 +4402,6 @@ function handleSearchSubmit(query) {
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadDubbedRegistry();
-    loadLocalVideos();
-    // You can also call your existing home loading logic here
-    // loadHome(); 
-});
 
 function buildUrl(server) {
     let template = (mediaType === 'movie') ? server.movie : server.tv;
