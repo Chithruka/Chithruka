@@ -124,10 +124,6 @@ async function fetchCached(url) {
     }
 }
 
-/**
- * Fetches the registry.json file and stores it in the DUBBED_REGISTRY variable.
- * This ensures that the rest of your app can access the dubbed link data.
- */
 async function loadDubbedRegistry() {
     try {
         const response = await fetch('registry.json');
@@ -2876,12 +2872,33 @@ function updatePlayer() {
     const nextBtn = document.getElementById('next-ep-btn');
     const currentEpisodeInfo = document.getElementById('current-episode-info');
 
-            if (mediaType === 'tv') {
+                    if (mediaType === 'tv') {
             if (currentEpisodeInfo) currentEpisodeInfo.textContent = `S${currentSeason}:E${currentEpisode} - ${activeServers[currentServerIndex].name}`;
-            // Unhide the Next Episode button for TV shows
-            if (nextBtn) nextBtn.classList.remove('hidden');
+            
+            // --- DYNAMIC & CLEVER NEXT BUTTON ---
+            const sIndex = episodeData.findIndex(s => s.season === currentSeason);
+            
+            if (sIndex !== -1 && nextBtn) {
+                const isLastSeason = (sIndex === episodeData.length - 1);
+                const isLastEpisodeInSeason = (currentEpisode >= episodeData[sIndex].episodes);
+                
+                if (isLastSeason && isLastEpisodeInSeason) {
+                    // It's the series finale - hide the button
+                    nextBtn.classList.add('hidden'); 
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    
+                    // Update button text dynamically
+                    const btnLabel = nextBtn.querySelector('span') || nextBtn; // Finds span if you have an icon
+                    if (isLastEpisodeInSeason) {
+                        const nextSeasonNum = episodeData[sIndex + 1].season;
+                        btnLabel.innerHTML = `<i class="fas fa-chevron-right mr-2"></i> Start Season ${nextSeasonNum}`;
+                    } else {
+                        btnLabel.innerHTML = `<i class="fas fa-step-forward mr-2"></i> Next Episode`;
+                    }
+                }
+            }
         } else {
-            // Ensure it stays hidden for Movies
             if (nextBtn) nextBtn.classList.add('hidden');
         }
 
