@@ -1,0 +1,33 @@
+name: Build Tailwind CSS
+
+on:
+  push:
+    branches:
+      - main # Change this if your default branch is named 'master'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Tailwind CSS
+        # This scans your HTML/JS and creates output.css
+        run: npx tailwindcss -i ./style.css -o ./output.css --minify
+
+      - name: Commit and Push output.css
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output.css
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: Auto-compile Tailwind CSS" && git push)
