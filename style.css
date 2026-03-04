@@ -90,10 +90,17 @@ body {
 
 /* --- Glassmorphism --- */
 .glass-panel {
-    background: rgba(0, 0, 0, 0.2); 
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    background: rgba(20, 20, 20, 0.85); /* Slightly more opaque */
+    /* Remove or reduce backdrop-filter for smoother scrolling */
+    backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Optimize card rendering */
+.movie-card, .episode-rich-item {
+    will-change: transform; /* Tells the browser to prepare for animation */
+    transform: translateZ(0); /* Forces GPU acceleration */
 }
 
 .glass-input, .glass-select {
@@ -1101,15 +1108,24 @@ input[type=range]::-webkit-slider-thumb {
         transform: translate(-50%, -50%) scale(1) !important;
     }
 }
-
-#soundtrack-section iframe {
-    background-color: transparent !important;
-    border-radius: 12px 12px 0 0;
+/* Add this to your style.css */
+#soundtrack-embed-container {
+    max-width: 450px; /* Limits width to match the square height */
+    margin: 0 auto;   /* Centers the square */
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #soundtrack-section {
-    animation: fadeIn 0.8s ease-out;
+    text-align: center; /* Centers the heading and link too */
 }
+
+#soundtrack-section .flex {
+    justify-content: center; /* Centers the "Soundtrack" title icon/text */
+}
+
 /* --- Modern Red Line Titles --- */
 .section-title {
     font-family: 'Netflix Sans', 'Montserrat', sans-serif !important;
@@ -1475,10 +1491,4 @@ input[type=range]::-webkit-slider-thumb {
 .ep-overview {
     font-size: 0.75rem; color: #aaa; line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-
-.media-badge.new {
-    left: auto;
-    right: 8px;
-    background: #10b981;
 }

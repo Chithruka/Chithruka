@@ -6,8 +6,8 @@ const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92';
 const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342';
 const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300';
 const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
-const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w1280';
-const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w300';
+const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w780';
+const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w185';
 
 // --- GEMINI AI CONFIGURATION ---
 const ENCODED_KEY = "QUl6YVN5QTVGRmxtOVo5VFM5Vk9pYXNBVkxRVDdrNEdzeWNNMG8w"; 
