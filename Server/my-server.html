@@ -67,7 +67,7 @@ async function init() {
 function setupPlayer(sources) {
     const firstSource = sources[0];
 
-    // Reset UI
+    // Reset UI to hide previous players or error messages
     document.getElementById('vjs-player').style.display = 'none';
     document.getElementById('iframe-container').style.display = 'none';
 
@@ -87,19 +87,23 @@ function setupPlayer(sources) {
         const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
         showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
     }
-    /* --- NEW FACEBOOK LOGIC --- */
     else if (firstSource.type === 'facebook') {
-        // Facebook requires the full URL to be encoded as a parameter
         const encodedUrl = encodeURIComponent(firstSource.src);
         const fbEmbed = `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=0&width=560`;
         showIframe(fbEmbed);
     }
-    /* -------------------------- */
+    /* --- NEW MEGA LOGIC --- */
+    else if (firstSource.type === 'mega') {
+        // Converts file links to the embeddable format
+        const megaEmbed = firstSource.src.replace('/file/', '/embed/');
+        showIframe(megaEmbed);
+    }
+    /* ---------------------- */
     else {
+        // Default to VideoJS for direct MP4/MKV links
         showVideoJS(sources);
     }
 }
-
 
 function showVideoJS(sources) {
     const el = document.getElementById('vjs-player');

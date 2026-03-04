@@ -15,9 +15,36 @@
     "675": [
       { "type": "mp4", "label": "1080p", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
     ],
+    "767": [
+      { "type": "mega", "label": "1080p", "src": "https://mega.nz/embed/2HAlSBpR#HxKYId7uuTqFkO6x-7OoymgsWt_iz8_BsxJ2E2A2C_k" }
+    ],
     "808": [
       { "type": "mkv", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Shrek.2001.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv" }
-    ]
+    ],
+  "559859": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=yUBFDJGaroQ" }
+  ],
+  "810588": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=wYto6gDIBBI" }
+  ],
+  "820851": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=f7H0YHnYEJ4" }
+  ],
+  "809051": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=64fdsmzugnc" }
+  ],
+  "704580": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=9FLzN3WkCuQ" }
+  ],
+  "507437": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=MAh9nmQX0qg" }
+  ],
+  "704610": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=oQ8kuIkLl5o" }
+  ],
+  "704617": [
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=aLWwl5feh1A" }
+  ]
   },
   "tv": {
     "77068": {
@@ -206,6 +233,13 @@
       "1": {
         "1": [
           { "type": "facebook", "label": "Original", "src": "https://www.facebook.com/facebook/videos/1KF2YEiL4c/" }
+        ]
+      }
+    },
+    "7225": {
+      "1": {
+        "1": [
+          { "type": "mp4", "label": "Original", "src": "https://01.pahan22feb.online/CineSubz.com%20-%20Merlin.S01E01.mp4" }
         ]
       }
     },
