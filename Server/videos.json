@@ -75,8 +75,35 @@
     "1225093": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x9pm67w" }
     ],
+    "829504": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0x1aa" }
+    ],
+    "1416973": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qc40" }
+    ],
+    "1338345": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qb42" }
+    ],
+    "1424160": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x9xk9yu" }
+    ],
+    "1307926": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8hkzi8" }
+    ],
     "507633": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=7VE4X2dLIUE" }
+    ],
+    "1010403": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8olsg0" }
+    ],
+    "689549": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8midac" }
+    ],
+    "540229": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=QGksRW6_Qfg" }
+    ],
+    "803751": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=7qwCog9RYJ0" }
     ],
   "559859": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=yUBFDJGaroQ" }
@@ -286,10 +313,10 @@
         ]
       }
     },
-    "84982": {
+    "292160": {
       "1": {
         "1": [
-          { "type": "facebook", "label": "Original", "src": "https://www.facebook.com/facebook/videos/1KF2YEiL4c/" }
+          { "type": "youtube", "src": "https://m.youtube.com/watch?v=3TdrlHfXj-c" }
         ]
       }
     },
