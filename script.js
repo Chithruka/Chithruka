@@ -2876,10 +2876,14 @@ function updatePlayer() {
     const nextBtn = document.getElementById('next-ep-btn');
     const currentEpisodeInfo = document.getElementById('current-episode-info');
 
-    if (mediaType === 'tv') {
-        if (currentEpisodeInfo) currentEpisodeInfo.textContent = `S${currentSeason}:E${currentEpisode} - ${activeServers[currentServerIndex].name}`;
-        // ... rest of your Next Episode button logic here ...
-    }
+            if (mediaType === 'tv') {
+            if (currentEpisodeInfo) currentEpisodeInfo.textContent = `S${currentSeason}:E${currentEpisode} - ${activeServers[currentServerIndex].name}`;
+            // Unhide the Next Episode button for TV shows
+            if (nextBtn) nextBtn.classList.remove('hidden');
+        } else {
+            // Ensure it stays hidden for Movies
+            if (nextBtn) nextBtn.classList.add('hidden');
+        }
 
     saveProgress();
 }
