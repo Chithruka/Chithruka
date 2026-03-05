@@ -30,11 +30,65 @@
     "838626": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/guerilla_marketing/guerilla_marketing.m3u8" }
     ],
+    "704593": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/daruwane/daruwane.m3u8" }
+    ],
+    "298932": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/thanha_rathi_ranga/thanha_rathi_ranga.m3u8" }
+    ],
+    "1144283": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/04/hls/karma/karma.m3u8" }
+    ],
+    "810872": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/hiripoda_wassa/hiripoda_wassa.m3u8" }
+    ],
+    "606853": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/bora_diya_pokuna/bora_diya_pokuna.m3u8" }
+    ],
+    "581433": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/09/hls/thaala/thaala.m3u8" }
+    ],
+    "507655": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/09/hls/motor_bicycle/motor_bicycle.m3u8" }
+    ],
     "767": [
       { "type": "mega", "label": "1080p", "src": "https://mega.nz/embed/2HAlSBpR#HxKYId7uuTqFkO6x-7OoymgsWt_iz8_BsxJ2E2A2C_k" }
     ],
+    "542146": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/09/hls/goal/goal.m3u8" }
+    ],
+    "721088": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/08/hls/the_newspaper/the_newspaper.m3u8" }
+    ],
+    "704857": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/06/hls/vijayaba_kollaya/vijayaba_kollaya.m3u8" }
+    ],
+    "507343": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/09/hls/pravegaya/pravegaya.m3u8" }
+    ],
+    "879001": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/asu/asu.m3u8" }
+    ],
+    "423021": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/super_six/super_six.m3u8" }
+    ],
     "1045793": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
+    ],
+    "935173": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/kosthapal_punyasoma/kosthapal_punyasoma.m3u8" }
+    ],
+    "809088": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/03/hls/vijaya_kuweni/vijaya_kuweni.m3u8" }
+    ],
+    "459881": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/nino_live/nino_live.m3u8" }
+    ],
+    "260964": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/akasa_kusum/akasa_kusum.m3u8" }
+    ],
+    "410732": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/purahanda_kaluwara/purahanda_kaluwara.m3u8" }
     ],
     "1302236": [
       { "type": "google-drive", "src": "https://drive.google.com/file/d/1Qu_hwXwQiYwjrymjg-rGj60IYXXHj1p6/view?usp=drivesdk" }
@@ -190,7 +244,7 @@
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=oQ8kuIkLl5o" }
   ],
   "704617": [
-    { "type": "youtube", "src": "https://www.youtube.com/watch?v=aLWwl5feh1A" }
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=9FLzN3WkCuQ" }
   ]
   },
   "tv": {
