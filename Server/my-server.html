@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Multi-Source Server</title>
-   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-youtube/3.0.1/Videojs-YouTube.min.js"></script>
-    
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
         .video-js, .external-iframe { width: 100% !important; height: 100% !important; border: none; }
@@ -16,13 +13,6 @@
             transform: translate(-50%, -50%); text-align: center; 
             display: none; font-family: sans-serif; z-index: 10;
         }
-        /* This "crops" the top of the YouTube iframe where the title and icon live */
-.vjs-youtube .vjs-tech {
-    position: absolute;
-    top: -60px; /* Moves the title bar off-screen */
-    height: calc(100% + 120px) !important; /* Stretches the video to fill the gap */
-}
-
     </style>
 </head>
 <body>
@@ -54,7 +44,6 @@ async function init() {
         if (type === 'movie') {
             sources = db.movies[id];
         } else if (type === 'tv') {
-            // Validating path exists in your merged JSON
             if (db.tv && db.tv[id] && db.tv[id][s] && db.tv[id][s][e]) {
                 sources = db.tv[id][s][e];
             }
@@ -77,48 +66,45 @@ async function init() {
 function setupPlayer(sources) {
     const firstSource = sources[0];
 
-    // Reset UI to hide previous players or error messages
     document.getElementById('vjs-player').style.display = 'none';
     document.getElementById('iframe-container').style.display = 'none';
 
-    // 1. Handle Telegram Embeds
-    if (firstSource.type === 'telegram') {
-        const telId = firstSource.src.split('t.me/')[1];
-        showIframe(`https://t.me/${telId}?embed=1`);
+    // 1. Handle Native YouTube Embed
+    if (firstSource.type === 'youtube') {
+        const videoId = extractYouTubeId(firstSource.src);
+        // Added modestbranding and rel=0 for a cleaner look
+        showIframe(`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&autoplay=1`);
     } 
-    // 2. Handle YouTube via Video.js
-    else if (firstSource.type === 'youtube') {
-        showVideoJS(sources, 'video/youtube');
-    } 
-    // 3. NEW: Handle HLS (.m3u8) Streams
+    // 2. Handle HLS (.m3u8) Streams via VideoJS
     else if (firstSource.type === 'hls' || firstSource.src.includes('.m3u8')) {
         showVideoJS(sources, 'application/x-mpegURL');
     }
-    // 4. Handle Dailymotion Embeds
+    // 3. Handle Dailymotion Embeds
     else if (firstSource.type === 'dailymotion') {
         const videoId = firstSource.src.split('/').pop();
         showIframe(`https://www.dailymotion.com/embed/video/${videoId}`);
     }
-    // 5. Handle Google Drive Preview
+    // 4. Handle Google Drive Preview
     else if (firstSource.type === 'google-drive') {
         const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
         showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
     }
-    // 6. Handle Facebook Video Plugin
-    else if (firstSource.type === 'facebook') {
-        const encodedUrl = encodeURIComponent(firstSource.src);
-        const fbEmbed = `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=0&width=560`;
-        showIframe(fbEmbed);
-    }
-    // 7. Handle Mega.nz Embeds
+    // 5. Handle Mega.nz Embeds
     else if (firstSource.type === 'mega') {
         const megaEmbed = firstSource.src.replace('/file/', '/embed/');
         showIframe(megaEmbed);
     }
-    // 8. Default to VideoJS for direct MP4/MKV links
+    // 6. Default to VideoJS for direct MP4 links
     else {
         showVideoJS(sources);
     }
+}
+
+// Helper to extract ID from standard and mobile YouTube links
+function extractYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
 }
 
 function showVideoJS(sources, mimeType = 'video/mp4') {
@@ -135,27 +121,13 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
     const player = videojs('vjs-player', {
         controls: true,
         autoplay: false,
-        preload: 'auto',
         fluid: true,
-        techOrder: ["html5", "youtube"], 
-        sources: sources.map(s => {
-            // Determine the correct type for each source
-            let type = 'video/mp4'; // default
-            if (s.type === 'youtube') type = 'video/youtube';
-            else if (s.type === 'hls' || s.src.includes('.m3u8')) type = 'application/x-mpegURL';
-            
-            return { src: s.src, type: type };
-        }),
-        youtube: { 
-            iv_load_policy: 3,
-            modestbranding: 1,
-            rel: 0,
-            showinfo: 0,
-            noCookie: true
-        }
+        sources: sources.map(s => ({
+            src: s.src,
+            type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegURL' : 'video/mp4'
+        }))
     });
 }
-
 
 function showIframe(url) {
     const container = document.getElementById('iframe-container');
@@ -163,10 +135,8 @@ function showIframe(url) {
     container.innerHTML = `<iframe 
         src="${url}" 
         class="external-iframe" 
-allow="autoplay *; encrypted-media *; fullscreen *; picture-in-picture *"
+        allow="autoplay *; fullscreen *; picture-in-picture *"
         allowfullscreen="true" 
-        webkitallowfullscreen="true" 
-        mozallowfullscreen="true" 
         frameborder="0"></iframe>`;
 }
 
