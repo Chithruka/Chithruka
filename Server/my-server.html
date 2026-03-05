@@ -133,8 +133,11 @@ function showIframe(url) {
     container.innerHTML = `<iframe 
         src="${url}" 
         class="external-iframe" 
-        allow="autoplay; fullscreen; picture-in-picture" 
-        allowfullscreen></iframe>`;
+allow="autoplay *; fullscreen *; picture-in-picture *"
+        allowfullscreen="true" 
+        webkitallowfullscreen="true" 
+        mozallowfullscreen="true" 
+        frameborder="0"></iframe>`;
 }
 
 init();
