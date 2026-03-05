@@ -2010,59 +2010,65 @@ async function fetchMovieDetails(id, title) {
 }
 
 async function fetchShowDetails(id, title) {
+    TMDB_ID = id;
+    currentTitle = title;
+    mediaType = 'tv';
+    currentSeason = 1;
+    currentEpisode = 1;
+
+    // Reset UI
+    tvControls.classList.add('hidden');
+    playerInterface.classList.add('hidden');
+    episodeAccordionContent.innerHTML = '';
+    currentEpisodeInfo.textContent = 'Loading...';
+    
+    // Smooth scroll to player
+    playerInterface.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     try {
-        // Updated URL includes: aggregate_credits (vital for full TV cast), similar, translations
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,aggregate_credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations`);
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}`);
         
-        if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
-
-        if (data.name) {
-            currentTitle = data.name;
-            document.title = `${currentTitle} - Chithruka`;
-        }
-        
-        renderDetails(data, currentTitle);
-        
-        renderGallery(data);
-
-        episodeData = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0)
+        // 1. Map season data including the poster_path for the slider
+        episodeData = data.seasons
+            .filter(s => s.season_number > 0 && s.episode_count > 0)
             .map(s => ({
                 season: s.season_number,
                 episodes: s.episode_count,
                 title: s.name,
-                air_date: s.air_date
+                air_date: s.air_date,
+                poster_path: s.poster_path // Captured for the new UI
             }));
 
-        if (!episodeData.length) { showMessage("No episodes available.", true); return; }
+        if (!episodeData.length) {
+            showMessage("No episodes available.", true);
+            return;
+        }
 
-        const seasonSelect = document.getElementById('season-select');
-        seasonSelect.innerHTML = '';
-
+        // 2. Update initial status badge
         if (episodeData.length > 0) {
             updateSeasonStatusUI(episodeData[0].air_date);
         }
 
-        episodeData.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.season;
-            const dateStr = s.air_date ? ` (${s.air_date.substring(0, 4)})` : '';
-            opt.textContent = `${s.title} (${s.episodes} Episodes)${dateStr}`;
-            seasonSelect.appendChild(opt);
-        });
+        // 3. Render the New Season Slider (Replaces the old <select> logic)
+        renderSeasonsSlider();
 
-        currentSeason = episodeData[0].season;
-        currentEpisode = 1;
+        // 4. Show controls and fetch the first season's episodes
         tvControls.classList.remove('hidden');
         playerInterface.classList.remove('hidden');
 
         await fetchSeasonDetails(id, currentSeason);
         updatePlayer();
-    } catch (e) { 
-        showMessage("Failed to load show details.", true); 
-        console.error(e); 
+
+    } catch (error) {
+        console.error("Show Details Error:", error);
+        showMessage("Failed to load show details.", true);
     }
 }
 
+/**
+ * Helper to render the horizontal season slider with posters.
+ * Make sure you have added the 'seasons-scroll-list' ID to your index.html.
+ */
 async function loadCollection(collectionId, collectionName) {
     try {
         const data = await fetchCached(`${BASE_TMDB_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`);
@@ -2079,13 +2085,29 @@ async function loadCollection(collectionId, collectionName) {
     } catch (e) { console.error("Collection Load Error", e); }
 }
 
-window.changeSeason = async function(seasonVal, episodeVal = 1) {
+window.changeSeason = async function(seasonVal, episodeVal = 1, el = null) {
     currentSeason = parseInt(seasonVal);
-    currentEpisode = parseInt(episodeVal); // Now respects the passed episode
+    currentEpisode = parseInt(episodeVal); 
 
     const selectedSeasonData = episodeData.find(s => s.season === currentSeason);
     if (selectedSeasonData) {
         updateSeasonStatusUI(selectedSeasonData.air_date);
+    }
+
+    // --- UPDATE SEASON SLIDER UI ---
+    const scrollList = document.getElementById('seasons-scroll-list');
+    if (scrollList) {
+        // Remove active class from all seasons
+        const allItems = scrollList.querySelectorAll('.season-rich-item');
+        allItems.forEach(item => item.classList.remove('active'));
+
+        // Find the newly selected season and activate it
+        const activeEl = el || scrollList.querySelector(`.season-rich-item[data-season="${currentSeason}"]`);
+        if (activeEl) {
+            activeEl.classList.add('active');
+            // Smoothly scroll the new season into the center of the view
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
     }
 
     episodeAccordionContent.innerHTML = '<div class="text-center p-4 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading Season...</div>';
@@ -2096,7 +2118,6 @@ window.changeSeason = async function(seasonVal, episodeVal = 1) {
     await fetchSeasonDetails(TMDB_ID, currentSeason);
     updatePlayer();
 }
-
 
 async function fetchSeasonDetails(tvId, seasonNum) {
     try {
@@ -3035,14 +3056,13 @@ function updateContinueWatchingUI() {
             await selectContent(item.tmdbId, item.title, item.mediaType);
             if (item.mediaType === 'tv') {
                 setTimeout(() => {
-                    const seasonSelect = document.getElementById('season-select');
-                    if (seasonSelect) seasonSelect.value = item.season;
-                    
-                    // Trigger changeSeason with both the target season AND episode
+                    // Removed the old 'season-select' dropdown logic here
+                    // Trigger changeSeason directly; it handles the UI slider sync now
                     changeSeason(item.season, item.episode);
-                }, 800); // Slight delay ensures DOM is ready
+                }, 800); 
             }
         };
+
 
         container.appendChild(card);
     });
@@ -3074,9 +3094,8 @@ window.nextEpisode = function() {
         if (episodeData[sIndex + 1]) {
             nextS = episodeData[sIndex + 1].season;
             nextE = 1;
-            document.getElementById('season-select').value = nextS;
             
-            // Pass both Season and Episode to load properly
+            // Pass both Season and Episode. changeSeason() will update the slider UI automatically.
             changeSeason(nextS, nextE);
             showMessage(`Starting Season ${nextS}...`);
             return;
@@ -3087,7 +3106,6 @@ window.nextEpisode = function() {
     }
     selectEpisode(nextS, nextE, null);
 }
-
 
 window.selectEpisode = function(s, e, el) {
     currentSeason = s; 
@@ -4414,12 +4432,48 @@ function handleSearchSubmit(query) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function buildUrl(server) {
-    let template = (mediaType === 'movie') ? server.movie : server.tv;
-    if (!template) return "about:blank";
+function renderSeasonsSlider() {
+    const container = document.getElementById('seasons-scroll-list');
+    if (!container) return;
 
-    return template
-        .replace('[ID]', TMDB_ID)
-        .replace('[S]', currentSeason)
-        .replace('[E]', currentEpisode);
+    let html = '';
+    episodeData.forEach((s) => {
+        const isActive = (s.season === currentSeason);
+        // Use TMDB_POSTER_MD (w342) for quality
+        const poster = s.poster_path 
+            ? `${TMDB_POSTER_MD}${s.poster_path}` 
+            : 'https://placehold.co/150x225/333/999?text=No+Poster';
+        
+        const dateStr = s.air_date ? s.air_date.substring(0, 4) : 'TBA';
+        
+        html += `
+            <div class="season-rich-item ${isActive ? 'active' : ''}" 
+                 data-season="${s.season}" 
+                 onclick="changeSeason(${s.season}, 1, this)">
+                <img src="${poster}" class="season-poster" loading="lazy" alt="${s.title}">
+                <div class="season-info">
+                    <div class="season-title" title="${s.title}">${s.title}</div>
+                    <div class="season-meta">
+                        <span>${s.episodes} Eps</span>
+                        <span class="text-gray-600">|</span>
+                        <span>${dateStr}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // Attach scroll limits/buttons logic so the left/right arrows work
+    updateScrollButtons(container);
+    container.addEventListener('scroll', () => updateScrollButtons(container));
+
+    // Ensure the active season is visible on load
+    setTimeout(() => {
+        const activeSeason = container.querySelector('.season-rich-item.active');
+        if (activeSeason) {
+            activeSeason.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }, 300);
 }
