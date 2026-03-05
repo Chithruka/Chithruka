@@ -69,6 +69,9 @@
     "83221": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=oHm3HTtynbk" }
     ],
+    "232786": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=WtUXShjurwo" }
+    ],
     "807475": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=0PpgLk7I6J0" }
     ],
@@ -163,7 +166,7 @@
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=MAh9nmQX0qg" }
   ],
   "704610": [
-    { "type": "youtube", "src": "https://www.youtube.com/watch?v=oQ8kuIkLl5o" }
+    { "type": "youtube", "src": "https://youtu.be/oQ8kuIkLl5o" }
   ],
   "704617": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=aLWwl5feh1A" }
