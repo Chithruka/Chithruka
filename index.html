@@ -223,25 +223,14 @@
         </div>
 
         <div id="tv-controls" class="hidden mb-12">
-<div class="mb-6">
-    <div class="flex justify-between items-center mb-2">
-        <label class="text-xs text-gray-400 ml-1">Select Season</label>
-        <div id="season-status-badge" class="text-xs font-bold px-2 py-1 rounded bg-white/10 hidden"></div>
-    </div>
-    <div class="relative group px-2 border border-white/10 rounded-xl bg-black/40 py-3">
-        <button class="scroll-btn left-0 -ml-2 z-10 hidden" onclick="scrollContainer('seasons-scroll-list', -300)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        
-        <div id="seasons-scroll-list" class="flex flex-row overflow-x-auto gap-[15px] px-[5px] scroll-smooth scrollbar-hide py-2">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs text-gray-400 ml-1">Select Season</label>
+                    <div id="season-status-badge" class="text-xs font-bold px-2 py-1 rounded bg-white/10 hidden"></div>
+                </div>
+                <select id="season-select" class="glass-select w-full p-3 rounded-xl font-bold text-white cursor-pointer" onchange="changeSeason(this.value)">
+                    </select>
             </div>
-
-        <button class="scroll-btn right-0 -mr-2 z-10" onclick="scrollContainer('seasons-scroll-list', 300)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</div>
-
 
             <div class="accordion-header" onclick="toggleAccordion()">
                 <span id="current-episode-info" class="font-semibold">Select an Episode</span>
@@ -694,6 +683,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=7" defer></script>
+<script src="script.js?v=6" defer></script>
 </body>
 </html>
