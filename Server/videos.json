@@ -15,11 +15,29 @@
     "675": [
       { "type": "mp4", "label": "1080p", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
     ],
+    "519682": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
+    ],
+    "881201": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/10/hls/gajaman/gajaman.m3u8" }
+    ],
+    "199207": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/rekawa/rekawa.m3u8" }
+    ],
+    "704569": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2022/01/hls/ali_surathal/ali_surathal.m3u8" }
+    ],
+    "838626": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/guerilla_marketing/guerilla_marketing.m3u8" }
+    ],
     "767": [
       { "type": "mega", "label": "1080p", "src": "https://mega.nz/embed/2HAlSBpR#HxKYId7uuTqFkO6x-7OoymgsWt_iz8_BsxJ2E2A2C_k" }
     ],
     "1045793": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
+    ],
+    "1302236": [
+      { "type": "google-drive", "src": "https://drive.google.com/file/d/1Qu_hwXwQiYwjrymjg-rGj60IYXXHj1p6/view?usp=drivesdk" }
     ],
     "739904": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8qcgyw" }
@@ -52,7 +70,7 @@
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8pbfym" }
     ],
     "807515": [
-      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8pbg9v" }
+      { "type": "hls", "label": "https://www.dailymotion.com/embed/x8pbg9v", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" }
     ],
     "804030": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8mod7w" }
@@ -71,6 +89,9 @@
     ],
     "232786": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=WtUXShjurwo" }
+    ],
+    "1341622": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=pWeLsZZHeto" }
     ],
     "807475": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=0PpgLk7I6J0" }
@@ -166,7 +187,7 @@
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=MAh9nmQX0qg" }
   ],
   "704610": [
-    { "type": "youtube", "src": "https://youtu.be/oQ8kuIkLl5o" }
+    { "type": "youtube", "src": "https://www.youtube.com/watch?v=oQ8kuIkLl5o" }
   ],
   "704617": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=aLWwl5feh1A" }

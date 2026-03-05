@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Multi-Source Server</title>
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+   <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-youtube/3.0.1/Videojs-YouTube.min.js"></script>
+    
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
         .video-js, .external-iframe { width: 100% !important; height: 100% !important; border: none; }
@@ -13,6 +16,13 @@
             transform: translate(-50%, -50%); text-align: center; 
             display: none; font-family: sans-serif; z-index: 10;
         }
+        /* This "crops" the top of the YouTube iframe where the title and icon live */
+.vjs-youtube .vjs-tech {
+    position: absolute;
+    top: -60px; /* Moves the title bar off-screen */
+    height: calc(100% + 120px) !important; /* Stretches the video to fill the gap */
+}
+
     </style>
 </head>
 <body>
@@ -71,61 +81,81 @@ function setupPlayer(sources) {
     document.getElementById('vjs-player').style.display = 'none';
     document.getElementById('iframe-container').style.display = 'none';
 
+    // 1. Handle Telegram Embeds
     if (firstSource.type === 'telegram') {
         const telId = firstSource.src.split('t.me/')[1];
         showIframe(`https://t.me/${telId}?embed=1`);
     } 
+    // 2. Handle YouTube via Video.js
     else if (firstSource.type === 'youtube') {
-        const videoId = firstSource.src.split('v=')[1]?.split('&')[0];
-        showIframe(`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`);
+        showVideoJS(sources, 'video/youtube');
     } 
+    // 3. NEW: Handle HLS (.m3u8) Streams
+    else if (firstSource.type === 'hls' || firstSource.src.includes('.m3u8')) {
+        showVideoJS(sources, 'application/x-mpegURL');
+    }
+    // 4. Handle Dailymotion Embeds
     else if (firstSource.type === 'dailymotion') {
         const videoId = firstSource.src.split('/').pop();
         showIframe(`https://www.dailymotion.com/embed/video/${videoId}`);
     }
+    // 5. Handle Google Drive Preview
     else if (firstSource.type === 'google-drive') {
         const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
         showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
     }
+    // 6. Handle Facebook Video Plugin
     else if (firstSource.type === 'facebook') {
         const encodedUrl = encodeURIComponent(firstSource.src);
         const fbEmbed = `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=0&width=560`;
         showIframe(fbEmbed);
     }
-    /* --- NEW MEGA LOGIC --- */
+    // 7. Handle Mega.nz Embeds
     else if (firstSource.type === 'mega') {
-        // Converts file links to the embeddable format
         const megaEmbed = firstSource.src.replace('/file/', '/embed/');
         showIframe(megaEmbed);
     }
-    /* ---------------------- */
+    // 8. Default to VideoJS for direct MP4/MKV links
     else {
-        // Default to VideoJS for direct MP4/MKV links
         showVideoJS(sources);
     }
 }
 
-function showVideoJS(sources) {
+function showVideoJS(sources, mimeType = 'video/mp4') {
+    const playerContainer = document.getElementById('player-container');
+    
+    if (videojs.getPlayers()['vjs-player']) {
+        videojs('vjs-player').dispose();
+        playerContainer.innerHTML = '<video id="vjs-player" class="video-js vjs-big-play-centered"></video>';
+    }
+
     const el = document.getElementById('vjs-player');
-    const errorEl = document.getElementById('error-msg');
     el.style.display = 'block';
 
     const player = videojs('vjs-player', {
         controls: true,
+        autoplay: false,
+        preload: 'auto',
         fluid: true,
-        sources: sources.map(s => ({
-            src: s.src,
-            type: 'video/mp4',
-            label: s.label
-        }))
-    });
-
-    player.on('error', () => {
-        el.style.display = 'none';
-        errorEl.innerText = "The video file is unavailable or broken.";
-        errorEl.style.display = 'block';
+        techOrder: ["html5", "youtube"], 
+        sources: sources.map(s => {
+            // Determine the correct type for each source
+            let type = 'video/mp4'; // default
+            if (s.type === 'youtube') type = 'video/youtube';
+            else if (s.type === 'hls' || s.src.includes('.m3u8')) type = 'application/x-mpegURL';
+            
+            return { src: s.src, type: type };
+        }),
+        youtube: { 
+            iv_load_policy: 3,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            noCookie: true
+        }
     });
 }
+
 
 function showIframe(url) {
     const container = document.getElementById('iframe-container');
