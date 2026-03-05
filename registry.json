@@ -23,6 +23,36 @@
       }
     ]
   },
+  "420818": {
+    "type": "movie",
+    "title": "Lion King (2019)",
+    "links": [
+      {
+        "language": "Sinhala",
+        "quality": "720p",
+        "size": "1.1GB",
+        "url": "https://drive.google.com/file/d/16by-uhsUIGTSYDNCpK6rYjP2iQIdSTFL/view?usp=drivesdk"
+      },
+      {
+        "language": "Sinhala",
+        "quality": "720p x264",
+        "size": "1.01GB",
+        "url": "https://mega.nz/file/tzwCTJCK#Gwgo-FGpE8gpZn78DtomUtDK-OzMUrSH0GzOzEF8ts4"
+      },
+      {
+        "language": "Sinhala",
+        "quality": "1080p 10bits x265",
+        "size": "2.22GB",
+        "url": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/The.Lion.King.2019.1080p.10bit.BluRay.x265.HEVC-DubZoneLK.mkv"
+      },
+      {
+        "language": "Sinhala",
+        "quality": "1080p 10bits x265",
+        "size": "2.22GB",
+        "url": "https://mega.nz/file/VrZDEDyT#rJNln7-zMcjflrHzump2D1TLFZXwf2rIzSXe7ZtaS7o"
+      }
+    ]
+  },
   "7704": {
     "type": "tv",
     "title": "Legend of the Seeker (2008)",
@@ -267,6 +297,12 @@
     "type": "movie",
     "title": "Harry Potter and the Prisoner of Azkaban (2004)",
     "links": [
+      {
+        "language": "Sinhala",
+        "quality": "720p x264",
+        "size": "1.23 GB",
+        "url": "https://f75s.com/d/5q95oaty1na3"
+      },
       {
         "language": "Sinhala",
         "quality": "720p x264",
