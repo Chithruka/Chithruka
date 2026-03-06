@@ -138,11 +138,26 @@
     "807515": [
       { "type": "hls", "label": "https://www.dailymotion.com/embed/x8pbg9v", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" }
     ],
+    "1365340": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/mahindagamanaya/mahindagamanaya.m3u8" }
+    ],
+    "935184": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/dhoni/dhoni.m3u8" }
+    ],
+    "633050": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/06/hls/gaadi/gaadi.m3u8" }
+    ],
     "272624": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/delovak_athara/delovak_athara.m3u8" }
     ],
     "256408": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/gamperaliya/gamperaliya.m3u8" }
+    ],
+    "1328049": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/04/hls/mandara/mandara.m3u8" }
+    ],
+    "1483073": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/04/hls/minnu/minnu.m3u8" }
     ],
     "804030": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8mod7w" }
@@ -173,6 +188,9 @@
     ],
     "807475": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=0PpgLk7I6J0" }
+    ],
+    "700409": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=cNb_5aRcTxU" }
     ],
     "530507": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=mbIObJX6Up0" }
