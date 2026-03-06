@@ -72,7 +72,6 @@ function setupPlayer(sources) {
     // 1. Handle Native YouTube Embed
     if (firstSource.type === 'youtube') {
         const videoId = extractYouTubeId(firstSource.src);
-        // Added modestbranding and rel=0 for a cleaner look
         showIframe(`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&autoplay=1`);
     } 
     // 2. Handle HLS (.m3u8) Streams via VideoJS
@@ -94,17 +93,32 @@ function setupPlayer(sources) {
         const megaEmbed = firstSource.src.replace('/file/', '/embed/');
         showIframe(megaEmbed);
     }
-    // 6. Default to VideoJS for direct MP4 links
+    // 6. NEW: Handle Vimeo Embeds
+    else if (firstSource.type === 'vimeo') {
+        const videoId = extractVimeoId(firstSource.src);
+        if (videoId) {
+            showIframe(`https://player.vimeo.com/video/${videoId}?autoplay=1&dnt=1`);
+        } else {
+            showIframe(firstSource.src);
+        }
+    }
+    // 7. Default to VideoJS for direct MP4 links
     else {
         showVideoJS(sources);
     }
 }
 
-// Helper to extract ID from standard and mobile YouTube links
+// Fixed YouTube extraction
 function extractYouTubeId(url) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// NEW: Helper to extract ID from standard Vimeo links
+function extractVimeoId(url) {
+    const match = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return match ? match[1] : null;
 }
 
 function showVideoJS(sources, mimeType = 'video/mp4') {
