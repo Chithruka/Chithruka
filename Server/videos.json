@@ -99,6 +99,9 @@
     "410732": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/purahanda_kaluwara/purahanda_kaluwara.m3u8" }
     ],
+    "1478078": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/hai_hui_babi_achchi/hai_hui_babi_achchi.m3u8" }
+    ],
     "1302236": [
       { "type": "google-drive", "src": "https://drive.google.com/file/d/1Qu_hwXwQiYwjrymjg-rGj60IYXXHj1p6/view?usp=drivesdk" }
     ],
@@ -152,6 +155,12 @@
     ],
     "402244": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x7y9j7" }
+    ],
+    "704940": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=klBkRuNz2uo" }
+    ],
+    "704958": [
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=8yWEUoX91JE" }
     ],
     "83221": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=oHm3HTtynbk" }
