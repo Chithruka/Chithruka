@@ -4,67 +4,93 @@
     <meta charset="UTF-8">
     <title>Multi-Source Server</title>
     <link href="https://unpkg.com/video.js/dist/video-js.min.css" rel="stylesheet">
-<script src="https://unpkg.com/video.js/dist/video.min.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-        .video-js, .external-iframe { width: 100% !important; height: 100% !important; border: none; }
-        #player-container { width: 100%; height: 100%; position: relative; }
-        #error-msg { 
-            color: white; position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); text-align: center; 
-            display: none; font-family: sans-serif; z-index: 10;
-        }
-        /* Import Bebas Neue from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+<script src="https://unpkg.com/video.js/dist/video.min.js"></script><style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-/* Apply font to the overall player */
-.video-js {
-    font-family: 'Bebas Neue', sans-serif !important;
-}
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+    .video-js, .external-iframe { width: 100% !important; height: 100% !important; border: none; }
+    #player-container { width: 100%; height: 100%; position: relative; }
+    
+    /* Cosmos Skin Customizations */
+    .video-js { font-family: 'Poppins', sans-serif !important; }
 
-/* Style the big play button in the center */
-.video-js .vjs-big-play-button {
-    background-color: rgba(229, 9, 20, 0.8) !important;
-    border: 2px solid #E50914 !important;
-    border-radius: 50% !important; /* Makes it a perfect circle */
-    width: 2.5em !important;
-    height: 2.5em !important;
-    line-height: 2.3em !important;
-    font-size: 3.5em !important;
-    transition: all 0.2s ease-in-out;
-}
+    /* Red Accent Colors */
+    .video-js .vjs-play-progress, 
+    .video-js .vjs-volume-level {
+        background-color: #d80027 !important;
+    }
 
-/* Solid red on hover for the big play button */
-.video-js:hover .vjs-big-play-button,
-.video-js .vjs-big-play-button:focus {
-    background-color: #E50914 !important;
-    transform: scale(1.05);
-}
+    /* Control Bar Gradient - Standard Alignment */
+    .video-js .vjs-control-bar {
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%) !important;
+        /* We remove 'display: flex' and 'align-items: center' here to let 
+           Video.js use its default positioning for the seekbar */
+    }
 
-/* Make the progress bar and volume level Netflix Red */
-.video-js .vjs-play-progress, 
-.video-js .vjs-volume-level {
-    background-color: #E50914 !important;
-}
+    /* Red Accent Colors (Keep these) */
+    .video-js .vjs-play-progress, 
+    .video-js .vjs-volume-level {
+        background-color: #d80027 !important;
+    }
 
-/* Give the play progress bar a subtle glow */
-.video-js .vjs-play-progress {
-    box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
-}
+    /* Center Play Button Styling */
+    .video-js .vjs-big-play-button {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        border: 2px solid #d80027 !important;
+        border-radius: 50% !important;
+        width: 2.5em !important; height: 2.5em !important;
+        line-height: 2.3em !important;
+        margin-top: -1.25em !important; margin-left: -1.25em !important;
+    }
 
-/* Style the control bar background for a sleek, gradient look */
-.video-js .vjs-control-bar {
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%) !important;
-    height: 4em !important;
-}
+        /* Cosmos Top Bar Overlay */
+    .vjs-cosmos-top-bar {
+        position: absolute; top: 0; left: 0; width: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+        /* Reduced padding to push elements closer to the very top corners */
+        padding: 10px 15px; 
+        box-sizing: border-box;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        pointer-events: none; z-index: 10;
+        transition: opacity 0.3s ease;
+        gap: 15px; /* Ensures a minimum gap between the title and logo */
+    }
 
-/* Adjust control text size */
-.video-js .vjs-time-control {
-    font-size: 1.2em;
-    line-height: 3.5em;
-    letter-spacing: 1px;
-}
-    </style>
+    .vjs-cosmos-title-container {
+        border-left: 4px solid #d80027;
+        padding-left: 12px;
+        flex: 1; /* Allows the title to take available space but no more */
+        min-width: 0; /* Crucial: Prevents a long title from blowing out the flex layout */
+    }
+
+    .vjs-cosmos-title { 
+        color: #fff; 
+        font-size: 18px; /* Reduced from 24px */
+        font-weight: 600; margin: 0; 
+        text-transform: capitalize; 
+        /* The next 3 lines prevent long titles from pushing the logo out */
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+    
+    .vjs-cosmos-desc { 
+        color: #aaa; 
+        font-size: 12px; /* Reduced from 14px */
+        margin: 2px 0 0 0; 
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    
+    .vjs-cosmos-logo { 
+        max-height: 30px; /* Reduced from 45px */
+        pointer-events: auto; 
+        flex-shrink: 0; /* Prevents the logo from ever shrinking when the title is long */
+    }
+
+    /* Hide top bar when player is inactive */
+    .vjs-user-inactive .vjs-cosmos-top-bar { opacity: 0; }
+
+</style>
 </head>
 <body>
 
@@ -172,7 +198,14 @@ function extractVimeoId(url) {
 
 function showVideoJS(sources, mimeType = 'video/mp4') {
     const playerContainer = document.getElementById('player-container');
+    const params = new URLSearchParams(window.location.search);
+    const typeLabel = params.get('type') === 'tv' ? 'TV SHOW' : 'MOVIE';
     
+    // Extract filename from the first source URL for the title
+    const fullUrl = sources[0].src;
+    const fileName = fullUrl.substring(fullUrl.lastIndexOf('/') + 1).split('.')[0];
+    const displayTitle = decodeURIComponent(fileName).replace(/[-_]/g, ' ');
+
     if (videojs.getPlayers()['vjs-player']) {
         videojs('vjs-player').dispose();
         playerContainer.innerHTML = '<video id="vjs-player" class="video-js vjs-big-play-centered"></video>';
@@ -189,6 +222,22 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
             src: s.src,
             type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegURL' : 'video/mp4'
         }))
+    });
+
+    // Inject Cosmos UI Elements
+    player.ready(function() {
+        const playerEl = player.el();
+
+        const topBar = document.createElement('div');
+        topBar.className = 'vjs-cosmos-top-bar';
+        topBar.innerHTML = `
+            <div class="vjs-cosmos-title-container">
+                <h1 class="vjs-cosmos-title">${displayTitle}</h1>
+                <p class="vjs-cosmos-desc">${typeLabel}</p>
+            </div>
+            <img class="vjs-cosmos-logo" src="https://blogger.googleusercontent.com/img/a/AVvXsEgJ_1EAzUQJl8Jen-1PImkPil7jaj8K-oJ31sNU02ktxmGkE28bUE0s3r3zAkCKGI5Xgxxf1rck2WhrsJfVV8iKcGVGvk0nPR_grXDQARpgDpe7TIfWptTk9ojpsybl9k-j6W0WtaDnnmVJxA_BgbEAP1wrpU3VjYd0EttKKQz3VH4F6BwFywfN-C4vrFpZ=w200" alt="Logo">
+        `;
+        playerEl.appendChild(topBar);
     });
 }
 
