@@ -2390,6 +2390,18 @@ function renderDetails(data, title) {
     let runtime = data.runtime || (data.episode_run_time ? data.episode_run_time[0] : 0);
     document.getElementById('detail-runtime').querySelector('span').textContent = runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : "N/A";
 
+    // --- NEW: Adult Content Badge Logic ---
+    const adultEl = document.getElementById('detail-adult');
+    if (adultEl) {
+        if (data.adult === true) {
+            adultEl.classList.remove('hidden');
+            adultEl.classList.add('flex'); // Add flex so the icon and text align properly
+        } else {
+            adultEl.classList.add('hidden');
+            adultEl.classList.remove('flex');
+        }
+    }
+
     // Age Rating Badge
     const ageEl = document.getElementById('detail-age');
     if (ageRating !== "Not Rated") {
