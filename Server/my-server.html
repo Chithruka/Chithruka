@@ -141,6 +141,7 @@ async function init() {
 function setupPlayer(sources) {
     const firstSource = sources[0];
 
+    document.getElementById('error-msg').style.display = 'none'; // <-- Add this line
     document.getElementById('vjs-player').style.display = 'none';
     document.getElementById('iframe-container').style.display = 'none';
 
@@ -217,7 +218,7 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
     const player = videojs('vjs-player', {
         controls: true,
         autoplay: false,
-        fluid: true,
+        fill: true, // <-- Change 'fluid' to 'fill'
         sources: sources.map(s => ({
             src: s.src,
             type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegURL' : 'video/mp4'
