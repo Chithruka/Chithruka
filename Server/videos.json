@@ -81,6 +81,12 @@
     "423021": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/super_six/super_six.m3u8" }
     ],
+    "226459": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/flying_fish/flying_fish.m3u8" }
+    ],
+    "1050922": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/ginimal_pokuru/ginimal_pokuru.m3u8" }
+    ],
     "1045793": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
     ],
