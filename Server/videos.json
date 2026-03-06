@@ -96,6 +96,12 @@
     "260964": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/akasa_kusum/akasa_kusum.m3u8" }
     ],
+    "1647156": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/hai_baby_hai/hai_baby_hai.m3u8" }
+    ],
+    "1448449": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/08/hls/sihina_sameekarana_movie_premiere/sihina_sameekarana_movie_premiere.m3u8" }
+    ],
     "410732": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/purahanda_kaluwara/purahanda_kaluwara.m3u8" }
     ],
