@@ -1,25 +1,19 @@
 {
   "movies": {
     "671": [
-      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" }
+      { "type": "mp4", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" }
     ],
     "672": [
-      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2002.720p.x264-DubZoneLK.mp4" }
+      { "type": "mp4", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2002.720p.x264-DubZoneLK.mp4" }
     ],
     "673": [
-      { "type": "mp4", "label": "1080p", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2004.720p.x264-DubZoneLK.mp4" }
+      { "type": "mp4", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2004.720p.x264-DubZoneLK.mp4" }
     ],
     "674": [
-      { "type": "mp4", "label": "1080p", "src": "https://cloud.sinhalachr.workers.dev/15:/Harry%20Potter%20Sinhala%20Dubbed/4%20-%20Harry%20Potter%20and%20the%20Goblet%20of%20Fire%20(2005)%20@sinhalafilmsgo.mp4" }
+      { "type": "mp4", "src": "https://cloud.sinhalachr.workers.dev/15:/Harry%20Potter%20Sinhala%20Dubbed/4%20-%20Harry%20Potter%20and%20the%20Goblet%20of%20Fire%20(2005)%20@sinhalafilmsgo.mp4" }
     ],
     "675": [
-      { "type": "mp4", "label": "1080p", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
-    ],
-    "1331072": [
-      { "type": "hls", "label": "adult", "src": "https://streamhls.click/hls/veX7X26hN0Kos-0t_0r7HA/kjhhiuahiuhgihdf/1772835086/12343564/index-f1-v1-a1.m3u8" }
-    ],
-    "1285810": [
-      { "type": "hls", "label": "adult", "src": "https://surrit.com/a30f49c4-0e26-434c-bdff-6fdb191100aa/360p/video.m3u8" }
+      { "type": "mp4", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
     ],
     "519682": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
@@ -67,7 +61,7 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/handaya/handaya.m3u8" }
     ],
     "767": [
-      { "type": "mega", "label": "1080p", "src": "https://mega.nz/embed/2HAlSBpR#HxKYId7uuTqFkO6x-7OoymgsWt_iz8_BsxJ2E2A2C_k" }
+      { "type": "mega", "src": "https://mega.nz/embed/2HAlSBpR#HxKYId7uuTqFkO6x-7OoymgsWt_iz8_BsxJ2E2A2C_k" }
     ],
     "542146": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/09/hls/goal/goal.m3u8" }
@@ -86,12 +80,6 @@
     ],
     "423021": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/super_six/super_six.m3u8" }
-    ],
-    "226459": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/flying_fish/flying_fish.m3u8" }
-    ],
-    "1050922": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/ginimal_pokuru/ginimal_pokuru.m3u8" }
     ],
     "1045793": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
@@ -171,18 +159,6 @@
     "1483073": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/04/hls/minnu/minnu.m3u8" }
     ],
-    "936620": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ahalepola_kumarihami/ahalepola_kumarihami.m3u8" }
-    ],
-    "1541752": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/raja_horu/raja_horu.m3u8" }
-    ],
-    "1339001": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/12/hls/kambili/kambili.m3u8" }
-    ],
-    "1647156": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/hai_baby_hai/hai_baby_hai.m3u8" }
-    ],
     "804030": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8mod7w" }
     ],
@@ -196,16 +172,10 @@
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x7y9j7" }
     ],
     "704940": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=vzaKhhCSXl8" }
-    ],
-    "1631385": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=gjOPYPbJwSg" }
+      { "type": "youtube", "src": "https://www.youtube.com/watch?v=klBkRuNz2uo" }
     ],
     "704958": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=8yWEUoX91JE" }
-    ],
-    "947163": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=5a8AheaK_dk" }
     ],
     "83221": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=oHm3HTtynbk" }
@@ -246,9 +216,6 @@
     "1037780": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=y_4mO0P3ZZ8" }
     ],
-    "261404": [
-  { "type": "vimeo", "src": "https://vimeo.com/481242298" }
-],
     "670162": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8rb2zv" }
     ],
@@ -329,7 +296,7 @@
 { "type": "youtube", "src": "https://www.youtube.com/watch?v=U4tqGn7HD-o" }
 ],
 "2": [
-{ "type": "youtube", "label": "1080p", "src": "https://www.youtube.com/watch?v=sfvHfFFf55Q" }
+{ "type": "youtube", "src": "https://www.youtube.com/watch?v=sfvHfFFf55Q" }
 ],
 "3": [
 { "type": "youtube", "src": "https://www.youtube.com/watch?v=T_t4JMY3u2U" }
@@ -501,7 +468,7 @@
     "308697": {
       "1": {
         "1": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x9sjvmc" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x9sjvmc" }
         ]
       }
     },
@@ -574,7 +541,7 @@
     "76791": {
       "1": {
         "1": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x88cxsg" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x88cxsg" }
         ]
       }
     },
@@ -588,77 +555,77 @@
     "235628": {
       "1": {
         "1": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5ai" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5ai" }
         ],
         "2": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5av" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5av" }
         ],
         "3": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5b7" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5b7" }
         ],
         "4": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5bw" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5bw" }
         ],
         "5": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5ch" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5ch" }
         ],
         "6": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5dp" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5dp" }
         ],
         "7": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5dx" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5dx" }
         ],
         "8": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5ee" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5ee" }
         ],
         "9": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kt5ep" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kt5ep" }
         ],
         "10": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kuaod" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kuaod" }
         ],
         "11": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kuaov" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kuaov" }
         ],
         "12": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kuap7" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kuap7" }
         ],
         "13": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x8kuape" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8kuape" }
         ]
       }
     },
     "75288": {
       "1": {
         "1": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6bdwsp" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6bdwsp" }
         ],
         "2": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6bfco2" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6bfco2" }
         ],
         "3": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6bs1q6" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6bs1q6" }
         ],
         "4": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6btasx" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6btasx" }
         ],
         "5": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6c4ylp" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6c4ylp" }
         ],
         "6": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6c7m05" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6c7m05" }
         ],
         "7": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6cl7u3" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6cl7u3" }
         ],
         "8": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6cgwrp" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6cgwrp" }
         ],
         "9": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6cq6zy" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6cq6zy" }
         ],
         "10": [
-          { "type": "dailymotion", "label": "Original", "src": "https://www.dailymotion.com/embed/x6crh8q" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6crh8q" }
         ]
       }
     },
