@@ -15,6 +15,12 @@
     "675": [
       { "type": "mp4", "label": "1080p", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
     ],
+    "1331072": [
+      { "type": "hls", "label": "adult", "src": "https://streamhls.click/hls/veX7X26hN0Kos-0t_0r7HA/kjhhiuahiuhgihdf/1772835086/12343564/index-f1-v1-a1.m3u8" }
+    ],
+    "1285810": [
+      { "type": "hls", "label": "adult", "src": "https://surrit.com/a30f49c4-0e26-434c-bdff-6fdb191100aa/360p/video.m3u8" }
+    ],
     "519682": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
     ],
