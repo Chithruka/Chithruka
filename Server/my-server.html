@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Multi-Source Server</title>
+    <title>Chithruka Server</title>
     <link href="https://unpkg.com/video.js@7/dist/video-js.min.css" rel="stylesheet">
 <script src="https://unpkg.com/video.js@7/dist/video.min.js"></script>
 
@@ -159,11 +159,26 @@ function setupPlayer(sources) {
     else if (firstSource.type === 'hls' || firstSource.src.includes('.m3u8')) {
         showVideoJS(sources, 'application/x-mpegURL');
     }
-    // 3. Handle Dailymotion Embeds
+      // 3. Handle Dailymotion Embeds
     else if (firstSource.type === 'dailymotion') {
-        const videoId = firstSource.src.split('/').pop();
-        showIframe(`https://www.dailymotion.com/embed/video/${videoId}`);
+        let dmUrl = firstSource.src;
+        
+        // Automatically fix older Dailymotion URLs by inserting '/video/'
+        // This ensures compatibility without needing to edit the JSON database
+        dmUrl = dmUrl.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
+        
+        // Check if autoplay is already in the URL; if not, append it.
+        if (dmUrl.includes('?')) {
+            if (!dmUrl.includes('autoplay=')) {
+                dmUrl += '&autoplay=1';
+            }
+        } else {
+            dmUrl += '?autoplay=1';
+        }
+        
+        showIframe(dmUrl);
     }
+
     // 4. Handle Google Drive Preview
     else if (firstSource.type === 'google-drive') {
         const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
@@ -252,7 +267,11 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
                 <h1 class="vjs-cosmos-title">${displayTitle}</h1>
                 <p class="vjs-cosmos-desc">${typeLabel}</p>
             </div>
-            <img class="vjs-cosmos-logo" src="https://blogger.googleusercontent.com/img/a/AVvXsEgJ_1EAzUQJl8Jen-1PImkPil7jaj8K-oJ31sNU02ktxmGkE28bUE0s3r3zAkCKGI5Xgxxf1rck2WhrsJfVV8iKcGVGvk0nPR_grXDQARpgDpe7TIfWptTk9ojpsybl9k-j6W0WtaDnnmVJxA_BgbEAP1wrpU3VjYd0EttKKQz3VH4F6BwFywfN-C4vrFpZ=w200" alt="Logo">
+            <img class="vjs-cosmos-logo" src="../Attachments/Chithruka%20Streamer%20Logo.svg" 
+  oncontextmenu="return false;" 
+  ondragstart="return false;" 
+  onselectstart="return false;"
+  alt="Logo">
         `;
         playerEl.appendChild(topBar);
     });
