@@ -673,7 +673,7 @@
     "71819": {
       "1": {
         "1": [
-          { "type": "YouTube", "src": "https://www.youtube.com/watch?v=DE9nHreOHYk" }
+          { "type": "youtube", "src": "https://www.youtube.com/watch?v=DE9nHreOHYk" }
         ]
       }
     },
