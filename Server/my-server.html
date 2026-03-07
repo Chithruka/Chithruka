@@ -47,7 +47,24 @@
         line-height: 2.3em !important;
         margin-top: -1.25em !important; margin-left: -1.25em !important;
     }
+    /* Fix hover and focus states for the Big Play Button */
+    .video-js:hover .vjs-big-play-button,
+    .video-js .vjs-big-play-button:hover,
+    .video-js .vjs-big-play-button:focus {
+        border-color: #d80027 !important;
+        background-color: rgba(216, 0, 39, 0.2) !important; /* Adds a subtle red tint on hover */
+        outline: none !important; /* Strips away the browser's default yellow/blue focus ring */
+        transition: all 0.3s ease !important;
+    }
 
+    /* Fix hover and focus states for the bottom control bar buttons */
+    .video-js .vjs-control:hover,
+    .video-js .vjs-control:focus {
+        color: #d80027 !important;
+        outline: none !important;
+        text-shadow: 0 0 5px rgba(216, 0, 39, 0.5) !important; /* Optional: adds a slight red glow */
+    }
+    
         /* Cosmos Top Bar Overlay */
     .vjs-cosmos-top-bar {
         position: absolute; top: 0; left: 0; width: 100%;
