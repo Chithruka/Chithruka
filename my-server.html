@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multi-Source Server</title>
+    <link href="https://unpkg.com/video.js@7/dist/video-js.min.css" rel="stylesheet">
+<script src="https://unpkg.com/video.js@7/dist/video.min.js"></script>
+
+<script src="https://unpkg.com/videojs-contrib-quality-levels@2.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
+<script src="https://unpkg.com/videojs-hls-quality-selector@1.1.4/dist/videojs-hls-quality-selector.min.js"></script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+    .video-js, .external-iframe { width: 100% !important; height: 100% !important; border: none; }
+    #player-container { width: 100%; height: 100%; position: relative; }
+    
+    /* Cosmos Skin Customizations */
+    .video-js { font-family: 'Poppins', sans-serif !important; }
+
+    /* Red Accent Colors */
+    .video-js .vjs-play-progress, 
+    .video-js .vjs-volume-level {
+        background-color: #d80027 !important;
+    }
+
+    /* Control Bar Gradient - Standard Alignment */
+    .video-js .vjs-control-bar {
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%) !important;
+        /* We remove 'display: flex' and 'align-items: center' here to let 
+           Video.js use its default positioning for the seekbar */
+    }
+
+    /* Red Accent Colors (Keep these) */
+    .video-js .vjs-play-progress, 
+    .video-js .vjs-volume-level {
+        background-color: #d80027 !important;
+    }
+
+    /* Center Play Button Styling */
+    .video-js .vjs-big-play-button {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        border: 2px solid #d80027 !important;
+        border-radius: 50% !important;
+        width: 2.5em !important; height: 2.5em !important;
+        line-height: 2.3em !important;
+        margin-top: -1.25em !important; margin-left: -1.25em !important;
+    }
+
+        /* Cosmos Top Bar Overlay */
+    .vjs-cosmos-top-bar {
+        position: absolute; top: 0; left: 0; width: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+        /* Reduced padding to push elements closer to the very top corners */
+        padding: 10px 15px; 
+        box-sizing: border-box;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        pointer-events: none; z-index: 10;
+        transition: opacity 0.3s ease;
+        gap: 15px; /* Ensures a minimum gap between the title and logo */
+    }
+
+    .vjs-cosmos-title-container {
+        border-left: 4px solid #d80027;
+        padding-left: 12px;
+        flex: 1; /* Allows the title to take available space but no more */
+        min-width: 0; /* Crucial: Prevents a long title from blowing out the flex layout */
+    }
+
+    .vjs-cosmos-title { 
+        color: #fff; 
+        font-size: 18px; /* Reduced from 24px */
+        font-weight: 600; margin: 0; 
+        text-transform: capitalize; 
+        /* The next 3 lines prevent long titles from pushing the logo out */
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+    }
+    
+    .vjs-cosmos-desc { 
+        color: #aaa; 
+        font-size: 12px; /* Reduced from 14px */
+        margin: 2px 0 0 0; 
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    
+    .vjs-cosmos-logo { 
+        max-height: 30px; /* Reduced from 45px */
+        pointer-events: auto; 
+        flex-shrink: 0; /* Prevents the logo from ever shrinking when the title is long */
+    }
+
+    /* Hide top bar when player is inactive */
+    .vjs-user-inactive .vjs-cosmos-top-bar { opacity: 0; }
+
+</style>
+</head>
+<body>
+
+    <div id="player-container">
+        <div id="error-msg">Checking source...</div>
+        <video id="vjs-player" class="video-js vjs-big-play-centered" style="display:none;"></video>
+        <div id="iframe-container" style="display:none; width:100%; height:100%;"></div>
+    </div>
+
+<script>
+async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const type = params.get('type');
+    const s = params.get('s'); 
+    const e = params.get('e'); 
+    const errorEl = document.getElementById('error-msg');
+
+    try {
+        const res = await fetch('videos.json');
+        if (!res.ok) throw new Error("Database not found");
+        
+        const db = await res.json();
+        let sources = null;
+
+        if (type === 'movie') {
+            sources = db.movies[id];
+        } else if (type === 'tv') {
+            if (db.tv && db.tv[id] && db.tv[id][s] && db.tv[id][s][e]) {
+                sources = db.tv[id][s][e];
+            }
+        }
+
+        if (!sources || sources.length === 0) {
+            errorEl.innerText = type === 'tv' ? `Episode S${s}:E${e} not found.` : "Movie not found.";
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        setupPlayer(sources);
+
+    } catch (err) {
+        errorEl.innerText = "System Error: Unable to load video database.";
+        errorEl.style.display = 'block';
+    }
+}
+
+function setupPlayer(sources) {
+    const firstSource = sources[0];
+
+    document.getElementById('error-msg').style.display = 'none'; // <-- Add this line
+    document.getElementById('vjs-player').style.display = 'none';
+    document.getElementById('iframe-container').style.display = 'none';
+
+    // 1. Handle Native YouTube Embed
+    if (firstSource.type === 'youtube') {
+        const videoId = extractYouTubeId(firstSource.src);
+        showIframe(`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&autoplay=1`);
+    } 
+    // 2. Handle HLS (.m3u8) Streams via VideoJS
+    else if (firstSource.type === 'hls' || firstSource.src.includes('.m3u8')) {
+        showVideoJS(sources, 'application/x-mpegURL');
+    }
+      // 3. Handle Dailymotion Embeds
+    else if (firstSource.type === 'dailymotion') {
+        let dmUrl = firstSource.src;
+        
+        // Automatically fix older Dailymotion URLs by inserting '/video/'
+        // This ensures compatibility without needing to edit the JSON database
+        dmUrl = dmUrl.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
+        
+        // Check if autoplay is already in the URL; if not, append it.
+        if (dmUrl.includes('?')) {
+            if (!dmUrl.includes('autoplay=')) {
+                dmUrl += '&autoplay=1';
+            }
+        } else {
+            dmUrl += '?autoplay=1';
+        }
+        
+        showIframe(dmUrl);
+    }
+
+    // 4. Handle Google Drive Preview
+    else if (firstSource.type === 'google-drive') {
+        const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
+        showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
+    }
+    // 5. Handle Mega.nz Embeds
+    else if (firstSource.type === 'mega') {
+        const megaEmbed = firstSource.src.replace('/file/', '/embed/');
+        showIframe(megaEmbed);
+    }
+    // 6. NEW: Handle Vimeo Embeds
+    else if (firstSource.type === 'vimeo') {
+        const videoId = extractVimeoId(firstSource.src);
+        if (videoId) {
+            showIframe(`https://player.vimeo.com/video/${videoId}?autoplay=1&dnt=1`);
+        } else {
+            showIframe(firstSource.src);
+        }
+    }
+    // 7. Default to VideoJS for direct MP4 links
+    else {
+        showVideoJS(sources);
+    }
+}
+
+// Fixed YouTube extraction
+function extractYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// NEW: Helper to extract ID from standard Vimeo links
+function extractVimeoId(url) {
+    const match = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return match ? match[1] : null;
+}
+
+function showVideoJS(sources, mimeType = 'video/mp4') {
+    const playerContainer = document.getElementById('player-container');
+    const params = new URLSearchParams(window.location.search);
+    const typeLabel = params.get('type') === 'tv' ? 'TV SHOW' : 'MOVIE';
+    
+    // Extract filename from the first source URL for the title
+    const fullUrl = sources[0].src;
+    const fileName = fullUrl.substring(fullUrl.lastIndexOf('/') + 1).split('.')[0];
+    const displayTitle = decodeURIComponent(fileName).replace(/[-_]/g, ' ');
+
+    if (videojs.getPlayers()['vjs-player']) {
+        videojs('vjs-player').dispose();
+        playerContainer.innerHTML = '<video id="vjs-player" class="video-js vjs-big-play-centered"></video>';
+    }
+
+    const el = document.getElementById('vjs-player');
+    el.style.display = 'block';
+
+    const player = videojs('vjs-player', {
+        controls: true,
+        autoplay: false,
+        fill: true,
+        sources: sources.map(s => ({
+            src: s.src,
+            type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegURL' : 'video/mp4'
+        }))
+    });
+
+    // --- NEW: Add the Quality Selector initialization ---
+    // We only want to enable this if the source is an HLS playlist
+    if (sources[0].type === 'hls' || sources[0].src.includes('.m3u8')) {
+        player.ready(function() {
+            player.hlsQualitySelector({
+                displayCurrentQuality: true,
+            });
+        });
+    }
+    // ---------------------------------------------------
+
+    // Inject Cosmos UI Elements
+    player.ready(function() {
+        const playerEl = player.el();
+
+        const topBar = document.createElement('div');
+        topBar.className = 'vjs-cosmos-top-bar';
+        topBar.innerHTML = `
+            <div class="vjs-cosmos-title-container">
+                <h1 class="vjs-cosmos-title">${displayTitle}</h1>
+                <p class="vjs-cosmos-desc">${typeLabel}</p>
+            </div>
+            <img class="vjs-cosmos-logo" src="https://blogger.googleusercontent.com/img/a/AVvXsEgJ_1EAzUQJl8Jen-1PImkPil7jaj8K-oJ31sNU02ktxmGkE28bUE0s3r3zAkCKGI5Xgxxf1rck2WhrsJfVV8iKcGVGvk0nPR_grXDQARpgDpe7TIfWptTk9ojpsybl9k-j6W0WtaDnnmVJxA_BgbEAP1wrpU3VjYd0EttKKQz3VH4F6BwFywfN-C4vrFpZ=w200" alt="Logo">
+        `;
+        playerEl.appendChild(topBar);
+    });
+}
+
+function showIframe(url) {
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = `<iframe 
+        src="${url}" 
+        class="external-iframe" 
+        allow="autoplay *; fullscreen *; picture-in-picture *"
+        allowfullscreen="true" 
+        frameborder="0"></iframe>`;
+}
+
+init();
+</script>
+</body>
+</html>
