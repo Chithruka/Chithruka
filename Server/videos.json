@@ -150,6 +150,12 @@
     "1045793": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
     ],
+     "506576": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x81vm8p?playlist=xbpj7w" }
+    ],
+    "1388768": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0q9n0" }
+    ],
     "935173": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/kosthapal_punyasoma/kosthapal_punyasoma.m3u8" }
     ],
@@ -650,10 +656,24 @@
         ]
       }
     },
+    "213856": {
+      "1": {
+        "1": [
+          { "type": "YouTube", "src": "https://www.youtube.com/watch?v=7B7HXnocTYQ" }
+        ]
+      }
+    },
     "101923": {
       "1": {
         "1": [
           { "type": "youtube", "src": "https://www.youtube.com/watch?v=UiCT29BlMos" }
+        ]
+      }
+    },
+    "71819": {
+      "1": {
+        "1": [
+          { "type": "YouTube", "src": "https://www.youtube.com/watch?v=DE9nHreOHYk" }
         ]
       }
     },
