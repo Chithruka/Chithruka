@@ -36,7 +36,7 @@ let currentServerIndex = 0;
 
 // The base servers (excluding your local server)
 const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidsrc.to/embed/movie/[ID]", tv: "https://vidsrc.to/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 1", movie: "https://vidsrcme.ru/embed/movie/[ID]", tv: "https://vidsrcme.ru/embed/tv/[ID]/[S]/[E]" },
     { name: "Server 2", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
