@@ -226,9 +226,6 @@ body {
     height: 40px;
     border-radius: 50%;
     border: 2px solid var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 0;
     background-color: transparent; 
     color: white; 
@@ -1562,7 +1559,7 @@ input[type=range]::-webkit-slider-thumb {
     right: 8px;          /* Pins it to the top right */
     background: #10b981; /* Adds a nice vibrant green color */
 }
-/* Ensure Tailwind's hidden class always wins over custom display properties */
-.hidden {
+/* Override display: flex specifically for the login button when hidden */
+.login-btn.hidden {
     display: none !important;
 }

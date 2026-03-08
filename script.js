@@ -538,6 +538,9 @@ async function displayAIResults(resultsList, aiMessage) {
 
 // --- AUTHENTICATION FUNCTIONS ---
 async function authenticateTMDB() {
+    const btn = document.getElementById('tmdb-login-btn');
+    if (btn) btn.style.pointerEvents = 'none'; // Prevent double-clicks
+    
     try {
         const res = await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`, { cache: "no-store" });
         const data = await res.json();
@@ -547,6 +550,7 @@ async function authenticateTMDB() {
         }
     } catch (e) {
         showMessage("Auth failed", true);
+        if (btn) btn.style.pointerEvents = 'auto'; // Re-enable on failure
     }
 }
 
@@ -3863,9 +3867,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (urlParams.has('request_token') && urlParams.get('approved') === 'true') {
         const token = urlParams.get('request_token');
         window.history.replaceState({}, document.title, window.location.pathname);
-        sessionId = null; 
-        createSession(token);
-    } 
+        
+        // Prevent double-execution from desktop browser pre-fetching
+        if (localStorage.getItem('last_used_token') !== token) {
+            localStorage.setItem('last_used_token', token);
+            sessionId = null; 
+            createSession(token);
+        }
+    }
     else {
         // --- 3. Standard Page Load (Check Local Storage) ---
         const storedSession = localStorage.getItem('tmdb_session_id');
