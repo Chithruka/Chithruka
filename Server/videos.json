@@ -148,7 +148,7 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/super_six/super_six.m3u8" }
     ],
     "1045793": [
-      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qbvy" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/10/hls/night_rider/night_rider.m3u8" }
     ],
      "506576": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x81vm8p?playlist=xbpj7w" }
