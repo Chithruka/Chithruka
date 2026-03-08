@@ -1562,3 +1562,7 @@ input[type=range]::-webkit-slider-thumb {
     right: 8px;          /* Pins it to the top right */
     background: #10b981; /* Adds a nice vibrant green color */
 }
+/* Ensure Tailwind's hidden class always wins over custom display properties */
+.hidden {
+    display: none !important;
+}
