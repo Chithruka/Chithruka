@@ -353,6 +353,11 @@
         </div>
     </div>
 
+    <div id="load-more-container" class="flex justify-center mt-8 mb-12" style="display: none;">
+        <button id="load-more-btn" class="btn btn-info shadow-lg" onclick="loadMoreChannels()">
+            <i class="fa-solid fa-plus"></i> Load More
+        </button>
+    </div>
     <footer>
         <div class="socials text-gray-400">
            <a href="https://www.youtube.com/live"><i class="fab fa-youtube cursor-pointer transition hover:text-white"></i></a>
@@ -391,10 +396,11 @@
         let apiChannels = []; 
         let allChannels = []; 
         let filteredChannels = []; 
-        let displayedCount = 40; 
+        const CHANNELS_PER_PAGE = 10;           // Added this line
+        let displayedCount = CHANNELS_PER_PAGE; // Changed from 40
         let player = null;
         const M3U_URL = 'https://iptv-org.github.io/iptv/categories/sports.m3u';
-
+        
         // --- Premium Data ---
         const premiumChannels = [
     // Sky Sports Group  
@@ -561,11 +567,13 @@
 ];
 
         // --- Core Functions ---
-        function resetPage(e) {
+ function resetPage(e) {
             if(e) e.preventDefault();
             document.getElementById('search-input').value = '';
             filteredChannels = [...allChannels];
-            renderGrid(filteredChannels.slice(0, 40), true);
+            displayedCount = CHANNELS_PER_PAGE;
+            renderGrid(filteredChannels.slice(0, CHANNELS_PER_PAGE), true);
+            document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -636,20 +644,26 @@ function handleImageError(img) {
                         if (current.url.includes('.m3u8')) apiChannels.push(current);
                     }
                 }
+                // Inside fetchChannels(), replace the existing renderGrid call with:
                 allChannels = [...premiumChannels, ...apiChannels];
                 filteredChannels = [...allChannels];
-                renderGrid(filteredChannels.slice(0, 40), true);
+                displayedCount = CHANNELS_PER_PAGE;
+                renderGrid(filteredChannels.slice(0, CHANNELS_PER_PAGE), true);
+                
+                // Show Load More button if needed
+                document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
             } catch (e) { console.error(e); }
         }
-
-        // --- Search ---
+// --- Search ---
         document.getElementById('search-input').addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             filteredChannels = allChannels.filter(c => c.name.toLowerCase().includes(query));
-            displayedCount = 40; 
-            renderGrid(filteredChannels.slice(0, 40), true);
+            displayedCount = CHANNELS_PER_PAGE; 
+            renderGrid(filteredChannels.slice(0, CHANNELS_PER_PAGE), true);
+            
+            // Show Load More button if needed
+            document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
         });
-
         // --- Player ---
 async function showMoreInfo(channelName) {
     const modal = document.getElementById('info-modal');
@@ -746,6 +760,17 @@ function openPlayer(channel) {
     }
 }
 
+function loadMoreChannels() {
+            const nextBatch = filteredChannels.slice(displayedCount, displayedCount + CHANNELS_PER_PAGE);
+            renderGrid(nextBatch, false); // false = append, don't clear
+            displayedCount += CHANNELS_PER_PAGE;
+
+            // Hide button if all channels are loaded
+            if (displayedCount >= filteredChannels.length) {
+                document.getElementById('load-more-container').style.display = 'none';
+            }
+        }
+
 function closePlayer() {
             const overlay = document.getElementById('player-overlay');
             const vidContainer = document.getElementById('video-container');
@@ -772,23 +797,9 @@ function closePlayer() {
             }
         }
 
-        // --- Infinite Scroll ---
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
-                if (displayedCount < filteredChannels.length) {
-                    const nextBatch = filteredChannels.slice(displayedCount, displayedCount + 20);
-                    renderGrid(nextBatch);
-                    displayedCount += 20;
-                }
-            }
-        });
-
         // Initialize
         fetchChannels();
     </script>
 
 </body>
 </html>
-
-
-
