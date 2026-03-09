@@ -1554,8 +1554,8 @@ input[type=range]::-webkit-slider-thumb {
     right: 8px;          /* Pins it to the top right */
     background: #10b981; /* Adds a nice vibrant green color */
 }
-/* Override display properties for elements when hidden */
 .login-btn.hidden,
-.loader-wrapper.hidden {
+.loader-wrapper.hidden,
+.action-btn.hidden {
     display: none !important;
 }
