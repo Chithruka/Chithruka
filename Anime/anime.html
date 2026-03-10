@@ -90,12 +90,24 @@
                     </div>
 
                     <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex gap-2 items-center">
-                            <span class="text-sm font-bold text-gray-400 mr-2">Audio:</span>
-                            <div id="server-buttons" class="flex flex-wrap gap-2">
-                                <button class="server-btn active" id="btn-sub" onclick="setAudioMode('sub')">SUB</button>
-                                <button class="server-btn" id="btn-dub" onclick="setAudioMode('dub')">DUB</button>
+                        <div class="flex gap-6 items-center flex-wrap">
+                            
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-bold text-gray-400 mr-2">Server:</span>
+                                <div class="flex flex-wrap gap-2">
+                                    <button class="server-btn active" id="btn-server1" onclick="setServer('vidsrc')">VidSrc</button>
+                                    <button class="server-btn" id="btn-server2" onclick="setServer('vidlink')">VidLink</button>
+                                </div>
                             </div>
+
+                            <div class="flex gap-2 items-center">
+                                <span class="text-sm font-bold text-gray-400 mr-2">Audio:</span>
+                                <div id="audio-buttons" class="flex flex-wrap gap-2">
+                                    <button class="server-btn active" id="btn-sub" onclick="setAudioMode('sub')">SUB</button>
+                                    <button class="server-btn" id="btn-dub" onclick="setAudioMode('dub')">DUB</button>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
 

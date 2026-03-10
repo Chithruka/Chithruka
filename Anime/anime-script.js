@@ -7,6 +7,7 @@ query ($page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
     media(sort: TRENDING_DESC, type: ANIME) {
       id
+      idMal 
       title { english romaji }
       coverImage { extraLarge large }
       bannerImage
@@ -23,6 +24,7 @@ query ($search: String) {
   Page(perPage: 10) {
     media(search: $search, type: ANIME) {
       id
+      idMal
       title { english romaji }
       coverImage { large }
     }
@@ -119,17 +121,20 @@ function getDominantColor(imageUrl) {
 
 // 4. PLAYER & DETAILS LOGIC
 let currentAnimeId = null;
+let currentMalId = null;
 let currentEp = 1;
 let audioMode = 'sub';
+let currentServer = 'vidsrc';
 
 async function selectAnime(anime, targetEp = 1) {
-    // If it lacks detailed stats (like from a basic search), fetch the full profile
+    // If it lacks detailed stats, fetch the full profile (Added idMal here too)
     if (!anime.duration && !anime.status) {
-        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id: anime.id });
+        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id: anime.id });
         anime = fullData.Media;
     }
 
     currentAnimeId = anime.id;
+    currentMalId = anime.idMal; // Save the MAL ID for VidLink
     
     // Safely parse the target episode, defaulting to 1
     let parsedEp = parseInt(targetEp);
@@ -214,12 +219,35 @@ window.changeEpisode = function(ep) {
     updatePlayer();
 };
 
+window.setServer = function(server) {
+    currentServer = server;
+    updatePlayer();
+};
+
 function updatePlayer() {
     const iframe = document.getElementById('player-iframe');
-    iframe.src = `https://vidsrc.cc/v2/embed/anime/ani${currentAnimeId}/${currentEp}/${audioMode}?autoPlay=false`;
     
+    // Route to the correct server
+    if (currentServer === 'vidsrc') {
+        iframe.src = `https://vidsrc.cc/v2/embed/anime/ani${currentAnimeId}/${currentEp}/${audioMode}?autoPlay=false`;
+    } else if (currentServer === 'vidlink') {
+        if (currentMalId) {
+            // Using the ?fallback=true parameter you requested
+            iframe.src = `https://vidlink.pro/anime/${currentMalId}/${currentEp}/${audioMode}?fallback=true`;
+        } else {
+            // Very rarely, AniList doesn't have a MAL ID for an obscure show.
+            alert("VidLink requires a MyAnimeList ID, which is missing for this title. Falling back to VidSrc.");
+            setServer('vidsrc');
+            return;
+        }
+    }
+    
+    // Update Button UI states
     document.getElementById('btn-sub').classList.toggle('active', audioMode === 'sub');
     document.getElementById('btn-dub').classList.toggle('active', audioMode === 'dub');
+    
+    document.getElementById('btn-server1').classList.toggle('active', currentServer === 'vidsrc');
+    document.getElementById('btn-server2').classList.toggle('active', currentServer === 'vidlink');
 }
 
 // 5. SEARCH LOGIC
@@ -271,7 +299,7 @@ function setupSearch() {
 
 // 6. HERO & UI HELPERS (Moved outside setupSearch)
 window.fetchFullAnimeDetails = async function(id, targetEp = 1) {
-    const data = await fetchAniList(`query($id:Int){Media(id:$id){id title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id });
+   const data = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id });
     selectAnime(data.Media, targetEp);
 }
 
