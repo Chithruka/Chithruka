@@ -10,9 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5">
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <link rel="stylesheet" href="output.css?v=5">
+   
     <style>
         /* Highlight style for the local search */
         .highlight {
@@ -30,22 +29,28 @@
 
 <div class="container mx-auto px-4 flex flex-col min-h-screen">
 
-   <nav class="navbar">
-        <div class="logo-text text-4xl md:text-6xl" onclick="location.href='index.html';">Chithruka</div>
-
-        <div class="search-group flex-grow justify-center mx-4 md:mx-10">
-            <div class="relative w-full max-w-[400px]">
-                <input type="text" id="local-search-input" class="glass-input w-full py-2 px-4 rounded-full" placeholder="Find text on this page...">
-                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
-            </div>
+<nav class="flex items-center justify-between w-full py-6 gap-2 md:gap-4">
+    <div class="flex-none">
+        <div class="cursor-pointer" onclick="location.href='index.html';">
+            <img src="Attachments/Chithruka Streamer Logo.svg" alt="Logo" class="w-20 sm:w-24 md:w-32 lg:w-40 transition-all">
         </div>
+    </div>
 
-        <div id="user-section">
-            <button onclick="location.href='index.html';" class="interact-btn" title="Back to Home">
-                <i class="fas fa-home"></i>
-            </button>
+    <div class="flex-grow flex justify-center px-2 max-w-xl">
+        <div class="relative w-full">
+            <input type="text" id="local-search-input" 
+                   class="glass-input w-full py-2 px-5 rounded-full bg-white/10 border border-white/20 text-white focus:outline-none focus:border-red-600 transition-all text-xs sm:text-sm md:text-base" 
+                   placeholder="Find text on this page...">
+            <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs sm:text-sm pointer-events-none"></i>
         </div>
-    </nav>
+    </div>
+
+    <div id="user-section" class="flex-none">
+        <button onclick="location.href='index.html';" class="interact-btn p-2 md:p-3 rounded-full hover:bg-white/10 transition-colors text-white" title="Back to Home">
+            <i class="fas fa-home text-base md:text-xl"></i>
+        </button>
+    </div>
+</nav>
 
     <div class="flex-grow flex items-center justify-center py-10">
         <div id="searchable-content" class="glass-panel p-8 md:p-12 rounded-2xl max-w-4xl w-full shadow-2xl relative overflow-hidden">
