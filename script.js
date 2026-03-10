@@ -40,7 +40,7 @@ const BASE_SERVER_URLS = [
     { name: "Server 2", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 5", movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914", tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" }
+    { name: "Server 5", movie: "https://vidcore.net/movie/[ID]?autoPlay=true&sub=en", tv: "https://vidcore.net/tv/[ID]/[S]/[E]?nextButton=true&autoNext=true" }
 ];
 
 let mediaType = 'movie';
