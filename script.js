@@ -36,8 +36,8 @@ let currentServerIndex = 0;
 
 // The base servers (excluding your local server)
 const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrcme.ru/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 2", movie: "https://vidlink.pro/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]" },
+    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true" },
+    { name: "Server 2", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
     { name: "Server 5", movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914&nextEpisode=true&episodeSelector=true", tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" }
