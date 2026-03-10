@@ -6,6 +6,7 @@
     <title>Chithruka - Game Streaming</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     
     <style>
         :root {
@@ -110,10 +111,7 @@
         }
 
         .hero-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 4rem;
-            margin-bottom: 10px;
-            line-height: 1;
+            width: 100%;
         }
 
         .hero-desc {
@@ -279,7 +277,6 @@
 
         /* --- Mobile Responsiveness --- */
         @media (max-width: 768px) {
-            .hero-title { font-size: 2.5rem; }
             .game-card { width: 160px; }
             .search-container input:focus { width: 120px; }
             .logo { font-size: 1.8rem; }
@@ -299,21 +296,23 @@
     <div id="main-view">
         <div class="hero">
             <div class="hero-content">
-                <h1 class="hero-title">HAZMOB FPS</h1>
+                <img class="hero-title" src="https://rawg.io/assets/images/games.4423d0579639f1241bc49dbc7e65f7ac.png" alt="" srcset="">
                 <p class="hero-desc">Experience intense tactical combat in this high-octane online shooter. Dominate the battlefield now.</p>
                 <button class="btn-play" onclick="playGame(9)">
                     <i class="fa-solid fa-play"></i> Play
                 </button>
-                <button class="btn-play" style="background:rgba(109, 109, 110, 0.7); color: white; margin-left: 10px;">
-                    <i class="fa-solid fa-circle-info"></i> More Info
-                </button>
+                <button class="btn-play" style="background:rgba(109, 109, 110, 0.7); color: white; margin-left: 10px;" onclick="showMoreInfo('cyberpunk-2077')">
+    <i class="fa-solid fa-circle-info"></i> More Info
+</button>
             </div>
         </div>
 
         <h3 class="category-title">Trending Now</h3>
         <div class="row-container" id="row-trending">
             </div>
-
+<h3 class="category-title">Latest Free Web Games</h3>
+<div class="row-container" id="row-f2p">
+    </div>
         <h3 class="category-title">Action & Adventure</h3>
         <div class="row-container" id="row-action">
             </div>
@@ -541,10 +540,94 @@
                 header.classList.remove('scrolled');
             }
         });
+// Initialize
+renderRows();
+fetchFreeBrowserGames();
 
-        // Initialize
-        renderRows();
+// --- Free-To-Play API Logic ---
+async function fetchFreeBrowserGames() {
+    const f2pContainer = document.getElementById('row-f2p');
+    f2pContainer.innerHTML = '<div style="color: gray; padding: 20px;">Loading live games...</div>';
 
-    </script>
+    try {
+        // We use a public CORS proxy here because the F2P API sometimes blocks direct browser requests
+        const proxyUrl = 'https://corsproxy.io/?'; 
+        const targetUrl = encodeURIComponent('https://www.freetogame.com/api/games?platform=browser&sort-by=popularity');
+        
+        const response = await fetch(proxyUrl + targetUrl);
+        const data = await response.json();
+
+        f2pContainer.innerHTML = ''; // Clear loading text
+
+        // Grab the top 10 most popular free browser games
+        data.slice(0, 10).forEach(game => {
+            const cardHtml = `
+                <div class="game-card" onclick="window.open('${game.game_url}', '_blank')">
+                    <img src="${game.thumbnail}" alt="${game.title}">
+                    <div class="card-info">
+                        <div class="card-title">${game.title}</div>
+                    </div>
+                </div>
+            `;
+            f2pContainer.innerHTML += cardHtml;
+        });
+    } catch (error) {
+        console.error('Error fetching F2P games:', error);
+        f2pContainer.innerHTML = '<div style="color: #E50914; padding: 20px;">Failed to load games.</div>';
+    }
+}
+
+// --- RAWG Redirect + Plyr Logic ---
+async function showMoreInfo(gameId) {
+    const modal = document.getElementById('gameModal');
+    const body = document.getElementById('modalBody');
+    
+    modal.style.display = "flex";
+    body.innerHTML = '<div style="color:white; padding: 20px;">Loading game data...</div>';
+
+    try {
+        // Use the Phalcode redirect URL instead of api.rawg.io
+        // This service maps IDs to Steam data automatically
+        const baseUrl = "https://rawg2steam.phalco.de/api/games";
+        
+        const detailsRes = await fetch(`${baseUrl}/${gameId}`);
+        const game = await detailsRes.json();
+
+        // Note: The redirect service provides Steam-based data.
+        // It typically includes a "clip" or "trailers" field if available.
+        let mediaSection = `<img src="${game.background_image}" style="width:100%; height:400px; object-fit:cover;" />`;
+
+        if (game.clip && game.clip.clip) {
+            mediaSection = `
+                <video id="trailer-player" playsinline controls data-poster="${game.background_image}" style="width: 100%; height: 400px; object-fit: cover;">
+                    <source src="${game.clip.clip}" type="video/mp4" />
+                </video>
+            `;
+        }
+
+        body.innerHTML = `
+            <div style="width:100%; height:100%; display:flex; flex-direction:column; background:var(--netflix-dark); color:white; overflow-y:auto;">
+                ${mediaSection}
+                <div style="padding: 30px;">
+                    <h2 style="font-family:'Bebas Neue', sans-serif; font-size:3.5rem; color:var(--netflix-red); margin-bottom: 10px; line-height: 1;">${game.name}</h2>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; font-weight: bold; color: #46d369;">
+                        <span>${game.released ? game.released.split('-')[0] : 'N/A'}</span>
+                        <span>⭐ ${game.rating || 'N/A'} / 5</span>
+                    </div>
+                    <p style="color:var(--text-gray); font-size: 1.1rem; line-height: 1.5;">${game.description_raw || 'No description available.'}</p>
+                </div>
+            </div>
+        `;
+
+        if (game.clip && game.clip.clip) {
+            new Plyr('#trailer-player', { autoplay: true, muted: false });
+        }
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        body.innerHTML = '<div style="color:white; padding: 20px;">Error loading game details. Using a redirect service...</div>';
+    }
+}  </script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 </body>
 </html>
