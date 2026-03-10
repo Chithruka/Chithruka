@@ -122,7 +122,7 @@ let currentAnimeId = null;
 let currentEp = 1;
 let audioMode = 'sub';
 
-async function selectAnime(anime) {
+async function selectAnime(anime, targetEp = 1) {
     // If it lacks detailed stats (like from a basic search), fetch the full profile
     if (!anime.duration && !anime.status) {
         const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id: anime.id });
@@ -130,7 +130,10 @@ async function selectAnime(anime) {
     }
 
     currentAnimeId = anime.id;
-    currentEp = 1;
+    
+    // Safely parse the target episode, defaulting to 1
+    let parsedEp = parseInt(targetEp);
+    currentEp = isNaN(parsedEp) ? 1 : parsedEp;
     
     const title = anime.title.english || anime.title.romaji;
     document.title = `${title} - Chithruka Anime`;
@@ -193,6 +196,9 @@ async function selectAnime(anime) {
         opt.textContent = `Episode ${i}`;
         epSelect.appendChild(opt);
     }
+    
+    // Set the dropdown to display the matched episode
+    epSelect.value = currentEp;
 
     updatePlayer();
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
@@ -264,9 +270,9 @@ function setupSearch() {
 }
 
 // 6. HERO & UI HELPERS (Moved outside setupSearch)
-window.fetchFullAnimeDetails = async function(id) {
+window.fetchFullAnimeDetails = async function(id, targetEp = 1) {
     const data = await fetchAniList(`query($id:Int){Media(id:$id){id title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id });
-    selectAnime(data.Media);
+    selectAnime(data.Media, targetEp);
 }
 
 window.scrollContainer = function(id, amount) {
@@ -422,3 +428,193 @@ function resetQuoteTimer() {
     clearInterval(quoteTimer);
     startQuoteTimer();
 }
+
+// --- TRACE.MOE REVERSE IMAGE SEARCH LOGIC ---
+
+window.openTraceMoeModal = () => {
+    document.getElementById('tracemoe-modal').classList.remove('hidden');
+    setupTraceMoeDragAndDrop();
+};
+
+window.closeTraceMoeModal = () => {
+    document.getElementById('tracemoe-modal').classList.add('hidden');
+    document.getElementById('tracemoe-results').innerHTML = '';
+    document.getElementById('tracemoe-url').value = '';
+    clearTraceMoeSelection();
+};
+
+// Clears the selected file and resets the preview UI
+window.clearTraceMoeSelection = (e) => {
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    
+    document.getElementById('tracemoe-file').value = '';
+    document.getElementById('tracemoe-preview-state').classList.add('hidden');
+    document.getElementById('tracemoe-default-state').classList.remove('hidden');
+    document.getElementById('tracemoe-preview-img').src = '';
+    document.getElementById('tracemoe-filename').textContent = '';
+    document.getElementById('tracemoe-dropzone').classList.remove('border-[#e50914]', 'bg-white/5');
+};
+
+// If user types a URL, clear the file input to prioritize the URL
+window.clearFileInput = () => {
+    const urlInput = document.getElementById('tracemoe-url').value.trim();
+    if (urlInput.length > 0) {
+        clearTraceMoeSelection();
+    }
+};
+
+// Updated file selection handler to ensure preview displays
+window.handleTraceMoeFileSelect = (input) => {
+    const previewState = document.getElementById('tracemoe-preview-state');
+    const defaultState = document.getElementById('tracemoe-default-state');
+    const previewImg = document.getElementById('tracemoe-preview-img');
+    const fileName = document.getElementById('tracemoe-filename');
+    const urlInput = document.getElementById('tracemoe-url');
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        urlInput.value = ''; // Clear URL if a file is chosen
+        
+        // Use createObjectURL for instant, synchronous preview
+        previewImg.src = URL.createObjectURL(file);
+        fileName.textContent = file.name;
+        
+        // Switch UI states
+        defaultState.classList.add('hidden');
+        previewState.classList.remove('hidden');
+    }
+};
+
+// Sets up Drag and Drop visual states and file capture
+function setupTraceMoeDragAndDrop() {
+    const dropzone = document.getElementById('tracemoe-dropzone');
+    const fileInput = document.getElementById('tracemoe-file');
+
+    // Prevent default browser behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Highlight dropzone when dragging over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => {
+            dropzone.classList.add('border-[#e50914]', 'bg-white/5');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => {
+            dropzone.classList.remove('border-[#e50914]', 'bg-white/5');
+        }, false);
+    });
+
+    // Handle dropped files
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files && files.length > 0) {
+            fileInput.files = files; 
+            handleTraceMoeFileSelect(fileInput); 
+        }
+    }, false);
+}
+
+// Executes the API call based on whether a URL or File was provided
+window.searchTraceMoe = async () => {
+    const fileInput = document.getElementById('tracemoe-file');
+    const urlInput = document.getElementById('tracemoe-url').value.trim();
+    const file = fileInput.files[0];
+    
+    const loading = document.getElementById('tracemoe-loading');
+    const resultsContainer = document.getElementById('tracemoe-results');
+
+    if (!file && !urlInput) {
+        alert("Please paste an image URL or upload a file first!");
+        return;
+    }
+
+    loading.classList.remove('hidden');
+    resultsContainer.innerHTML = '';
+
+    let fetchUrl = "https://api.trace.moe/search?anilistInfo";
+    let fetchOptions = { method: "POST" };
+
+    // Logic for URL vs File Upload
+    if (urlInput) {
+        fetchUrl += `&url=${encodeURIComponent(urlInput)}`;
+        fetchOptions = { method: "GET" }; // Trace.moe prefers GET when passing URLs via query
+    } else {
+        const formData = new FormData();
+        formData.append("image", file);
+        fetchOptions.body = formData;
+    }
+
+    try {
+        const res = await fetch(fetchUrl, fetchOptions);
+        const data = await res.json();
+        
+        loading.classList.add('hidden');
+
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="text-red-500 text-sm text-center font-bold">Error: ${data.error}</div>`;
+            return;
+        }
+
+        if (data.result && data.result.length > 0) {
+            // Deduplicate by AniList ID to prevent showing multiple identical matches
+            const uniqueResults = [];
+            const seenIds = new Set();
+            for (const r of data.result) {
+                if (!seenIds.has(r.anilist.id)) {
+                    seenIds.add(r.anilist.id);
+                    uniqueResults.push(r);
+                }
+            }
+
+            uniqueResults.slice(0, 3).forEach(match => {
+                const title = match.anilist.title.english || match.anilist.title.romaji || "Unknown Anime";
+                const similarity = (match.similarity * 100).toFixed(1);
+                const ep = match.episode || "?";
+                const isAdult = match.anilist.isAdult ? '<span class="text-[10px] bg-red-600 px-1 rounded ml-2">18+</span>' : '';
+
+                const div = document.createElement('div');
+                div.className = "flex gap-3 bg-white/5 p-3 rounded-xl border border-white/10 hover:bg-white/10 hover:border-white/30 cursor-pointer transition shadow-lg group";
+                
+                div.innerHTML = `
+                    <div class="relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden bg-black/50">
+                        <img src="${match.image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="Match Scene">
+                        <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                    </div>
+                    <div class="flex flex-col justify-center flex-1 min-w-0">
+                        <span class="text-sm font-bold text-white truncate flex items-center">${title} ${isAdult}</span>
+                        <div class="text-xs text-gray-400 mt-1 flex items-center justify-between">
+                            <span><i class="fas fa-tv mr-1 text-blue-400"></i> Ep: ${ep}</span>
+                            <span class="${similarity > 85 ? 'text-green-400' : 'text-yellow-400'} font-bold">${similarity}% Match</span>
+                        </div>
+                    </div>
+                `;
+                
+                div.onclick = () => {
+                    closeTraceMoeModal();
+                    // Pass both the ID and the matched episode
+                    fetchFullAnimeDetails(match.anilist.id, match.episode);
+                };
+                
+                resultsContainer.appendChild(div);
+            });
+        } else {
+            resultsContainer.innerHTML = `<div class="text-gray-400 text-sm text-center">No matches found. Try another image.</div>`;
+        }
+
+    } catch (error) {
+        console.error("Trace.moe error:", error);
+        loading.classList.add('hidden');
+        resultsContainer.innerHTML = `<div class="text-red-500 text-sm text-center font-bold">Failed to connect to the search engine. Ensure URL is valid or image is clear.</div>`;
+    }
+};

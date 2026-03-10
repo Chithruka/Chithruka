@@ -6,6 +6,25 @@
     <title>Chithruka Anime</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../output.css">
+    <style>
+        #tracemoe-results {
+    /* Ensures smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar styling for a better UI */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e50914;
+    border-radius: 10px;
+}
+    </style>
     </head>
 <body>
 <div id="page-background"></div>
@@ -13,6 +32,10 @@
     <nav class="navbar">
         <img src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Logo" class="logo-img" onclick="location.href='anime.html';">
         <div class="search-group">
+            <button onclick="openTraceMoeModal()" class="filter-btn" title="Search by Image">
+                <i class="fas fa-image"></i>
+            </button>
+            
             <div class="relative w-full max-w-[300px] flex-grow">
                 <input type="text" id="search-input" class="glass-input" placeholder="Search Anime...">
                 <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
@@ -125,6 +148,59 @@
             </div>
         </div>
     </div>
+  <div id="tracemoe-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl border border-white/10">
+        <button onclick="closeTraceMoeModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl z-20">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="text-center mb-6">
+            <h3 class="section-title text-xl font-bold mb-1 text-white flex justify-center items-center">
+                <i class="fas fa-camera-retro mr-2 text-[#e50914]"></i> Scene Search
+            </h3>
+            <p class="text-sm text-gray-400">Upload, drag & drop, or paste a URL of an anime screenshot.</p>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <input type="url" id="tracemoe-url" class="glass-input w-full p-3 rounded-xl text-sm" placeholder="Paste image URL here..." oninput="clearFileInput()">
+            
+            <div class="text-center text-xs text-gray-500 font-bold uppercase tracking-widest">- OR -</div>
+
+            <div id="tracemoe-dropzone" class="relative border-2 border-dashed border-gray-600 rounded-xl h-40 flex items-center justify-center overflow-hidden transition-all duration-300 bg-black/30 hover:border-[#e50914] group">
+                
+                <div id="tracemoe-default-state" class="pointer-events-none text-center p-4">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2 group-hover:text-[#e50914] transition-colors"></i>
+                    <p class="text-sm text-gray-300 font-bold">Drag & drop or tap to upload</p>
+                </div>
+
+<div id="tracemoe-preview-state" class="absolute inset-0 w-full h-full hidden z-10 bg-black">
+    <img id="tracemoe-preview-img" src="" class="w-full h-full object-cover opacity-70" alt="Preview">
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none"></div>
+    
+    <div class="absolute bottom-2 left-0 w-full px-3 pointer-events-none">
+        <p id="tracemoe-filename" class="text-xs text-white font-bold truncate drop-shadow-md bg-black/50 px-2 py-1 rounded inline-block max-w-full"></p>
+    </div>
+
+    <button onclick="clearTraceMoeSelection(event)" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 hover:scale-110 transition-all shadow-lg z-30 pointer-events-auto" title="Remove image">
+        <i class="fas fa-times text-sm"></i>
+    </button>
+</div>
+
+<input type="file" id="tracemoe-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onchange="handleTraceMoeFileSelect(this)">
+            </div>
+
+            <button onclick="searchTraceMoe()" class="w-full p-3 bg-[#E50914] hover:bg-[#B20710] rounded-xl text-white font-bold transition flex justify-center items-center gap-2 shadow-lg mt-2">
+                <i class="fas fa-search"></i> Find Anime
+            </button>
+            
+            <div id="tracemoe-loading" class="hidden text-center text-[#e50914] animate-pulse text-sm font-bold my-2">
+                <i class="fas fa-spinner fa-spin mr-2"></i> Analyzing frames...
+            </div>
+            
+            <div id="tracemoe-results" class="max-h-[250px] overflow-y-auto flex flex-col gap-3 mt-2 pr-1 custom-scrollbar"></div>
+        </div>
+    </div>
+</div>
 <script src="anime-script.js" defer></script>
 </body>
 </html>
