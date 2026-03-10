@@ -36,11 +36,11 @@ let currentServerIndex = 0;
 
 // The base servers (excluding your local server)
 const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true" },
+    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://player.videasy.net/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true" },
     { name: "Server 2", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
-    { name: "Server 5", movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914&nextEpisode=true&episodeSelector=true", tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" }
+    { name: "Server 5", movie: "https://www.vidking.net/embed/movie/[ID]?color=e50914", tv: "https://www.vidking.net/embed/tv/[ID]/[S]/[E]?color=e50914&nextEpisode=true&episodeSelector=true" }
 ];
 
 let mediaType = 'movie';
@@ -2833,14 +2833,21 @@ function renderDetailedInfo(data) {
 function buildUrl(template) {
     if (!TMDB_ID) return "#";
     let tpl = (mediaType === 'movie') ? template.movie : template.tv;
+    
+    // Using the /g regex flag ensures EVERY instance of [ID] gets replaced, 
+    // including the one in your fallback URL.
     let url = tpl.replace(/\[ID\]/g, TMDB_ID);
+    
     if (mediaType === 'movie' && url.includes('[IMDB_ID]')) {
         if (!IMDB_ID) return "about:blank";
         url = url.replace(/\[IMDB_ID\]/g, IMDB_ID);
     }
+    
     if (mediaType === 'tv') {
+        // Also good practice to make [S] and [E] global just in case!
         url = url.replace(/\[S\]/g, currentSeason).replace(/\[E\]/g, currentEpisode);
     }
+    
     return url;
 }
 
@@ -4433,14 +4440,4 @@ function handleSearchSubmit(query) {
     
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function buildUrl(server) {
-    let template = (mediaType === 'movie') ? server.movie : server.tv;
-    if (!template) return "about:blank";
-
-    return template
-        .replace('[ID]', TMDB_ID)
-        .replace('[S]', currentSeason)
-        .replace('[E]', currentEpisode);
 }
