@@ -15,6 +15,16 @@
     }
     /* Hide the default big play button for the "TV" feel */
     .vjs-big-play-button { display: none !important; }
+    
+    /* Iframe player styling */
+    #iframe-player {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: none; /* Hidden by default */
+        position: relative;
+        z-index: 1;
+    }
 </style>
     <style>
         /* --- CORE LAYOUT --- */
@@ -165,9 +175,9 @@
 
         .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; }
         .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
-        .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
+        .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
         .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
-        .retro-mode video { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
+        .retro-mode video, .retro-mode #iframe-player { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
         @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
         @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
 
@@ -200,6 +210,8 @@
     <div class="noise"></div>
     <div class="vignette"></div>
     
+    <iframe id="iframe-player" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+
     <video 
         id="video-player" 
         class="video-js vjs-default-skin vjs-big-play-centered" 
@@ -244,8 +256,8 @@
         </ul>
     </div>
 
-    <script>// --- INITIALIZE VIDEO.JS PLAYER ---
-// We initialize Video.js with standard HLS support and basic retro-friendly settings
+    <script>
+// --- INITIALIZE VIDEO.JS PLAYER ---
 const player = videojs('video-player', {
     fluid: false,
     autoplay: true,
@@ -256,12 +268,16 @@ const player = videojs('video-player', {
 
 // --- CONFIGURATION & STATE ---
 const PLAYLIST_SOURCES = [
-    'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8',
-    'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
+    'playlist.m3u8'
+];
+
+const API_SOURCES = [
+    'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free'
 ];
 
 const tvChassis = document.getElementById('tv-chassis'); 
 const screenWrapper = document.getElementById('screen-wrapper');
+const iframePlayer = document.getElementById('iframe-player');
 const fsBtn = document.getElementById('fs-btn');
 const channelList = document.getElementById('channel-list');
 const channelDisplay = document.getElementById('current-channel-display');
@@ -277,18 +293,35 @@ let recordedChunks = [];
 let isRecording = false;
 let currentChannelName = "Unknown_Channel";
 let allChannels = []; 
+let currentChannelIsIframe = false; // Track if we are currently watching an iframe
 
-// --- BOOTSTRAP: FETCH MULTIPLE SOURCES ---
+// --- BOOTSTRAP: FETCH MULTIPLE SOURCES (M3U & JSON) ---
 const statusMsg = document.querySelector('#channel-list li');
 if(statusMsg) statusMsg.innerText = "Scanning Frequencies (Loading sources)...";
 
-Promise.allSettled(PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text())))
+// Fetch and parse M3U files
+const m3u8Promises = PLAYLIST_SOURCES.map(url => 
+    fetch(url)
+        .then(res => res.text())
+        .then(text => parseM3U(text))
+);
+
+// Fetch and parse JSON APIs
+const apiPromises = API_SOURCES.map(url => 
+    fetch(url)
+        .then(res => res.json())
+        .then(data => parseJSONAPI(data))
+);
+
+// Resolve all sources and combine the data
+Promise.allSettled([...m3u8Promises, ...apiPromises])
     .then(results => {
         let combinedData = [];
-        results.forEach((result, index) => {
+        results.forEach((result) => {
             if (result.status === 'fulfilled') {
-                const channels = parseM3U(result.value);
-                combinedData = [...combinedData, ...channels];
+                combinedData = [...combinedData, ...result.value];
+            } else {
+                console.warn("A source failed to load:", result.reason);
             }
         });
 
@@ -297,7 +330,7 @@ Promise.allSettled(PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text()
         applyFilters(); 
         
         if(allChannels.length === 0) {
-            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists loaded.</li>';
+            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists or APIs loaded.</li>';
         }
     });
 
@@ -318,6 +351,7 @@ function parseM3U(content) {
                 logo: logoMatch ? logoMatch[1] : null,
                 group: groupMatch ? groupMatch[1] : 'Uncategorized',
                 country: countryMatch ? countryMatch[1] : 'INT',
+                isIframe: false // M3U8 streams are native video
             };
         } else if (line.startsWith('http')) {
             currentChannel.url = line;
@@ -328,9 +362,32 @@ function parseM3U(content) {
     return channels;
 }
 
+// --- JSON API PARSER ---
+function parseJSONAPI(data) {
+    const channels = [];
+    let list = Array.isArray(data) ? data : (data.channels || data.data || data.results || []);
+    
+    list.forEach(item => {
+        let streamUrl = item.url || item.stream_url || item.link || item.hls;
+        if (!streamUrl) return; 
+        
+        channels.push({
+            name: item.name || item.title || item.channel_name || "Unknown API Channel",
+            logo: item.logo || item.icon || item.image || null,
+            group: item.group || item.category || item.genre || 'Uncategorized',
+            country: item.country || item.region || 'INT',
+            url: streamUrl,
+            isIframe: true // FLAG: Tells the player to use the Iframe instead of Video.js
+        });
+    });
+    
+    return channels;
+}
+
 // --- CHANNEL CONTROLS ---
 function playStream(channel, element) {
     currentChannelName = channel.name;
+    currentChannelIsIframe = channel.isIframe;
     channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
     
     if(isRecording) { 
@@ -341,13 +398,26 @@ function playStream(channel, element) {
     document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
     if(element) element.classList.add('active');
 
-    // Update Video.js Source
-    player.src({
-        src: channel.url,
-        type: 'application/x-mpegURL'
-    });
-    
-    player.play().catch(e => console.log("Auto-play blocked or source issue."));
+    const videoWrapper = document.querySelector('.video-js');
+
+    if (channel.isIframe) {
+        // Stop video.js and show the Iframe
+        player.pause();
+        videoWrapper.style.setProperty('display', 'none', 'important');
+        iframePlayer.style.display = 'block';
+        iframePlayer.src = channel.url;
+    } else {
+        // Stop the iframe and show Video.js
+        iframePlayer.src = '';
+        iframePlayer.style.display = 'none';
+        videoWrapper.style.setProperty('display', 'block', 'important');
+        
+        player.src({
+            src: channel.url,
+            type: 'application/x-mpegURL'
+        });
+        player.play().catch(e => console.log("Auto-play blocked or source issue."));
+    }
 }
 
 // --- RECORDING ENGINE ---
@@ -357,7 +427,11 @@ function toggleRecording() {
 }
 
 function startRecording() {
-    // Video.js generates an internal video element with this ID suffix
+    if (currentChannelIsIframe) {
+        alert("COPYRIGHT PROTECTION: Cannot record web-embedded (API) channels due to browser cross-origin security.");
+        return;
+    }
+
     const rawVideo = document.querySelector('#video-player_html5_api');
     
     if (!rawVideo || rawVideo.paused) { 
@@ -367,7 +441,6 @@ function startRecording() {
     
     let stream;
     try {
-        // Capture stream from the underlying video element
         stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream();
     } catch (e) { 
         alert("CORS Security restriction. Some streams cannot be recorded via browser."); 
@@ -498,10 +571,7 @@ function renderChannels(channels) {
         li.appendChild(div);
         channelList.appendChild(li);
     });
-}</script>
+}
+</script>
 </body>
 </html>
-
-
-
-
