@@ -7,6 +7,14 @@
     "url": "https://www.youtube.com/watch?v=uU36MCXGlrI",
     "type": "embed"
   },
+   {
+    "name": "Haritha TV",
+    "logo": "https://lakfreedom.info/images/tv/harithatv.jpg",
+    "group": "Religion",
+    "country": "LK",
+    "url": "https://www.youtube.com/watch?v=-0RAbVO0N9Q",
+    "type": "embed"
+  },
   {
     "name": "Supreme TV",
     "logo": "https://tvsupreme.lk/wp-content/uploads/2025/10/Tv-Supreme-Logo-RGB-1536x1536.png",
@@ -28,7 +36,7 @@
     "logo": "https://upload.wikimedia.org/wikipedia/en/1/18/Vasanthamtv_channel.jpg",
     "group": "Sports",
     "country": "INT",
-    "url": "https://www.vasantham.lk/",
+    "url": "https://itn.lk/stream/vtv/",
     "type": "embed"
   }
 ]
