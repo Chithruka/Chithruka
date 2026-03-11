@@ -15,18 +15,6 @@
     }
     /* Hide the default big play button for the "TV" feel */
     .vjs-big-play-button { display: none !important; }
-    
-    /* Iframe player styling */
-    #iframe-player {
-        width: 100%;
-        height: 100%;
-        border: none;
-        display: none; /* Hidden by default */
-        position: relative;
-        z-index: 1;
-    }
-</style>
-    <style>
         /* --- CORE LAYOUT --- */
         body {
             margin: 0;
@@ -177,7 +165,7 @@
         .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
         .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
         .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
-        .retro-mode video, .retro-mode #iframe-player { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
+        .retro-mode video { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
         @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
         @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
 
@@ -204,23 +192,23 @@
 
     <div id="tv-station">
         <div id="tv-chassis">
-            <div id="screen-wrapper">
+ <div id="screen-wrapper">
     <div id="rec-overlay" class="blink">● REC</div>
     <div class="scanlines"></div>
     <div class="noise"></div>
     <div class="vignette"></div>
     
-    <iframe id="iframe-player" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-
     <video 
         id="video-player" 
         class="video-js vjs-default-skin vjs-big-play-centered" 
-        controls 
-        preload="auto" 
-        autoplay 
-        muted 
-        playsinline>
+        controls preload="auto" autoplay muted playsinline>
     </video>
+
+    <iframe 
+        id="iframe-player" 
+        allow="autoplay; fullscreen; encrypted-media" 
+        style="display:none; width:100%; height:100%; border:none; position:relative; z-index:5;">
+    </iframe>
 </div>
 
             <div class="tv-controls-bar">
@@ -256,8 +244,7 @@
         </ul>
     </div>
 
-    <script>
-// --- INITIALIZE VIDEO.JS PLAYER ---
+    <script>// --- INITIALIZE VIDEO.JS PLAYER ---
 const player = videojs('video-player', {
     fluid: false,
     autoplay: true,
@@ -269,16 +256,17 @@ const player = videojs('video-player', {
 // --- CONFIGURATION & STATE ---
 const PLAYLIST_SOURCES = [
     'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8',
-    'playlist.m3u8'
+    'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
 ];
 
+// Added custom_channels.json to the API sources
 const API_SOURCES = [
-    'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free'
+    'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free',
+    'custom_channels.json' 
 ];
 
 const tvChassis = document.getElementById('tv-chassis'); 
 const screenWrapper = document.getElementById('screen-wrapper');
-const iframePlayer = document.getElementById('iframe-player');
 const fsBtn = document.getElementById('fs-btn');
 const channelList = document.getElementById('channel-list');
 const channelDisplay = document.getElementById('current-channel-display');
@@ -289,40 +277,34 @@ const vfxBtn = document.getElementById('vfx-btn');
 const recBtn = document.getElementById('rec-btn');
 const recOverlay = document.getElementById('rec-overlay');
 
+// Hybrid Player Elements
+const iframePlayer = document.getElementById('iframe-player');
+const videoElement = document.getElementById('video-player');
+
 let mediaRecorder;
 let recordedChunks = [];
 let isRecording = false;
 let currentChannelName = "Unknown_Channel";
 let allChannels = []; 
-let currentChannelIsIframe = false; // Track if we are currently watching an iframe
 
-// --- BOOTSTRAP: FETCH MULTIPLE SOURCES (M3U & JSON) ---
+// --- BOOTSTRAP: FETCH SOURCES ---
 const statusMsg = document.querySelector('#channel-list li');
-if(statusMsg) statusMsg.innerText = "Scanning Frequencies (Loading sources)...";
+if(statusMsg) statusMsg.innerText = "Scanning Frequencies...";
 
-// Fetch and parse M3U files
 const m3u8Promises = PLAYLIST_SOURCES.map(url => 
-    fetch(url)
-        .then(res => res.text())
-        .then(text => parseM3U(text))
+    fetch(url).then(res => res.text()).then(text => parseM3U(text))
 );
 
-// Fetch and parse JSON APIs
 const apiPromises = API_SOURCES.map(url => 
-    fetch(url)
-        .then(res => res.json())
-        .then(data => parseJSONAPI(data))
+    fetch(url).then(res => res.json()).then(data => parseJSONAPI(data))
 );
 
-// Resolve all sources and combine the data
 Promise.allSettled([...m3u8Promises, ...apiPromises])
     .then(results => {
         let combinedData = [];
         results.forEach((result) => {
             if (result.status === 'fulfilled') {
                 combinedData = [...combinedData, ...result.value];
-            } else {
-                console.warn("A source failed to load:", result.reason);
             }
         });
 
@@ -331,15 +313,27 @@ Promise.allSettled([...m3u8Promises, ...apiPromises])
         applyFilters(); 
         
         if(allChannels.length === 0) {
-            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">Signal Lost: No playlists or APIs loaded.</li>';
+            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">No Signal Found.</li>';
         }
     });
 
-// --- M3U PARSER ---
+// --- UTILITY: YOUTUBE CONVERTER ---
+function getEmbedUrl(url) {
+    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+        return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1`;
+    }
+    return url; 
+}
+
+// --- PARSERS ---
 function parseM3U(content) {
     const lines = content.split('\n');
     const channels = [];
-    let currentChannel = {};
+    
+    // Give currentChannel a default skeleton instead of {}
+    let currentChannel = { name: "Unknown Channel", group: "Uncategorized", country: "INT" };
+    
     lines.forEach(line => {
         line = line.trim();
         if (line.startsWith('#EXTINF:')) {
@@ -347,23 +341,25 @@ function parseM3U(content) {
             const groupMatch = line.match(/group-title="([^"]*)"/);
             const countryMatch = line.match(/tvg-country="([^"]*)"/);
             const nameParts = line.split(',');
+            
             currentChannel = {
-                name: nameParts[nameParts.length - 1]?.trim() || "Unknown",
+                name: nameParts[nameParts.length - 1]?.trim() || "Unknown Channel",
                 logo: logoMatch ? logoMatch[1] : null,
                 group: groupMatch ? groupMatch[1] : 'Uncategorized',
                 country: countryMatch ? countryMatch[1] : 'INT',
-                isIframe: false // M3U8 streams are native video
             };
         } else if (line.startsWith('http')) {
             currentChannel.url = line;
+            currentChannel.type = line.includes('youtube.com') ? 'embed' : 'm3u8';
             channels.push(currentChannel);
-            currentChannel = {}; 
+            
+            // Reset back to the skeleton skeleton
+            currentChannel = { name: "Unknown Channel", group: "Uncategorized", country: "INT" };
         }
     });
     return channels;
 }
 
-// --- JSON API PARSER ---
 function parseJSONAPI(data) {
     const channels = [];
     let list = Array.isArray(data) ? data : (data.channels || data.data || data.results || []);
@@ -372,69 +368,67 @@ function parseJSONAPI(data) {
         let streamUrl = item.url || item.stream_url || item.link || item.hls;
         if (!streamUrl) return; 
         
+        // Auto-detect type if not provided in JSON
+        let type = item.type;
+        if (!type) {
+            type = (streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) ? 'm3u8' : 'embed';
+        }
+        
         channels.push({
-            name: item.name || item.title || item.channel_name || "Unknown API Channel",
-            logo: item.logo || item.icon || item.image || null,
-            group: item.group || item.category || item.genre || 'Uncategorized',
-            country: item.country || item.region || 'INT',
+            name: item.name || item.title || "Unknown Channel",
+            logo: item.logo || item.icon || null,
+            group: item.group || item.category || 'Uncategorized',
+            country: item.country || 'INT',
             url: streamUrl,
-            isIframe: true // FLAG: Tells the player to use the Iframe instead of Video.js
+            type: type
         });
     });
-    
     return channels;
 }
 
-// --- CHANNEL CONTROLS ---
+// --- CORE PLAYBACK LOGIC ---
 function playStream(channel, element) {
     currentChannelName = channel.name;
-    currentChannelIsIframe = channel.isIframe;
     channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
     
-    if(isRecording) { 
-        stopRecording(); 
-        alert("Recording stopped: Channel Changed."); 
-    }
+    // Stop recording if active (recording iframes is not supported)
+    if(isRecording) stopRecording();
 
     document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
     if(element) element.classList.add('active');
 
-    const videoWrapper = document.querySelector('.video-js');
-
-    if (channel.isIframe) {
-        // Stop video.js and show the Iframe
+    if (channel.type === 'embed') {
+        // Switch to Iframe mode
         player.pause();
-        videoWrapper.style.setProperty('display', 'none', 'important');
+        videoElement.style.display = 'none';
         iframePlayer.style.display = 'block';
-        iframePlayer.src = channel.url;
+        iframePlayer.src = getEmbedUrl(channel.url);
     } else {
-        // Stop the iframe and show Video.js
-        iframePlayer.src = '';
+        // Switch to Video.js mode
+        iframePlayer.src = "";
         iframePlayer.style.display = 'none';
-        videoWrapper.style.setProperty('display', 'block', 'important');
+        videoElement.style.display = 'block';
         
         player.src({
             src: channel.url,
             type: 'application/x-mpegURL'
         });
-        player.play().catch(e => console.log("Auto-play blocked or source issue."));
+        player.play().catch(e => console.log("Stream error or blocked."));
     }
 }
 
-// --- RECORDING ENGINE ---
+// --- RECORDING ENGINE (Only works for Video.js sources) ---
 function toggleRecording() {
+    if (videoElement.style.display === 'none') {
+        alert("Recording is not supported for external embedded websites due to security restrictions.");
+        return;
+    }
     if (!isRecording) startRecording();
     else stopRecording();
 }
 
 function startRecording() {
-    if (currentChannelIsIframe) {
-        alert("COPYRIGHT PROTECTION: Cannot record web-embedded (API) channels due to browser cross-origin security.");
-        return;
-    }
-
     const rawVideo = document.querySelector('#video-player_html5_api');
-    
     if (!rawVideo || rawVideo.paused) { 
         alert("No active video stream to record!"); 
         return; 
@@ -444,18 +438,12 @@ function startRecording() {
     try {
         stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream();
     } catch (e) { 
-        alert("CORS Security restriction. Some streams cannot be recorded via browser."); 
+        alert("CORS restriction: This stream cannot be recorded."); 
         return; 
     }
 
     recordedChunks = [];
-    const options = { mimeType: 'video/webm; codecs=vp9' };
-    
-    try { 
-        mediaRecorder = new MediaRecorder(stream, options); 
-    } catch (e) { 
-        mediaRecorder = new MediaRecorder(stream); 
-    }
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
 
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
     mediaRecorder.onstop = saveRecording;
@@ -479,72 +467,58 @@ function saveRecording() {
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    
-    let safeName = currentChannelName.replace(/[^a-zA-Z0-9 \-_]/g, "");
-    let width = player.videoWidth();
-    let height = player.videoHeight();
-    let res = (width && height) ? ` [${width}x${height}]` : "";
-    
+    let safeName = currentChannelName.replace(/[^a-zA-Z0-9]/g, "_");
     a.href = url;
-    a.download = `${safeName}${res} ${new Date().toISOString().slice(0, 10)}.webm`;
+    a.download = `${safeName}_${new Date().getTime()}.webm`;
     a.click();
     window.URL.revokeObjectURL(url);
 }
 
-// --- UI HELPERS ---
+// --- UI & FILTERS ---
 function toggleVFX() {
     screenWrapper.classList.toggle('retro-mode');
-    const isActive = screenWrapper.classList.contains('retro-mode');
-    vfxBtn.innerText = isActive ? "VCR FX: ON" : "VCR FX: OFF";
+    vfxBtn.innerText = screenWrapper.classList.contains('retro-mode') ? "VCR FX: ON" : "VCR FX: OFF";
     vfxBtn.classList.toggle('active-btn');
 }
 
 async function toggleFullscreen() {
     if (!document.fullscreenElement) {
-        try {
-            await tvChassis.requestFullscreen();
-            if (screen.orientation?.lock) await screen.orientation.lock('landscape');
-        } catch (err) { console.error(err); }
+        tvChassis.requestFullscreen().catch(err => console.error(err));
     } else {
         document.exitFullscreen();
     }
 }
 
-document.addEventListener('fullscreenchange', () => {
-    fsBtn.innerText = document.fullscreenElement ? "[X] EXIT FULL" : "[ ] FULLSCREEN";
-});
-
-// --- FILTERING LOGIC ---
 function populateDropdowns(channels) {
-    const countries = [...new Set(channels.map(c => c.country))].sort();
-    const categories = [...new Set(channels.map(c => c.group))].sort();
+    const countries = [...new Set(channels.map(c => c.country))].filter(Boolean).sort();
+    const categories = [...new Set(channels.map(c => c.group))].filter(Boolean).sort();
     
     countries.forEach(c => {
-        if(c){
-            const opt = document.createElement('option');
-            opt.value = c; opt.innerText = c.toUpperCase();
-            countrySelect.appendChild(opt);
-        }
+        const opt = document.createElement('option');
+        opt.value = c; opt.innerText = c.toUpperCase();
+        countrySelect.appendChild(opt);
     });
     categories.forEach(c => {
-        if(c && c !== 'Uncategorized'){
-            const opt = document.createElement('option');
-            opt.value = c; opt.innerText = c;
-            categorySelect.appendChild(opt);
-        }
+        const opt = document.createElement('option');
+        opt.value = c; opt.innerText = c;
+        categorySelect.appendChild(opt);
     });
 }
 
 function applyFilters() {
-    const countryVal = countrySelect.value;
-    const categoryVal = categorySelect.value;
-    const searchVal = searchBox.value.toLowerCase();
-    
+    const cVal = countrySelect.value;
+    const gVal = categorySelect.value;
+    const sVal = searchBox.value.toLowerCase();
+
     const filtered = allChannels.filter(ch => {
-        const matchesCountry = (countryVal === 'all') || (ch.country === countryVal);
-        const matchesCategory = (categoryVal === 'all') || (ch.group === categoryVal);
-        const matchesSearch = ch.name.toLowerCase().includes(searchVal);
-        return matchesCountry && matchesCategory && matchesSearch;
+        // Provide fallbacks to prevent undefined crashes
+        const country = ch.country || 'INT';
+        const group = ch.group || 'Uncategorized';
+        const name = ch.name || 'Unknown Channel';
+
+        return (cVal === 'all' || country === cVal) &&
+               (gVal === 'all' || group === gVal) &&
+               (name.toLowerCase().includes(sVal));
     });
     renderChannels(filtered);
 }
@@ -553,8 +527,7 @@ function renderChannels(channels) {
     channelList.innerHTML = '';
     document.getElementById('channel-count').innerText = channels.length;
     
-    // Virtualization: only render first 200 for performance
-    channels.slice(0, 200).forEach(channel => {
+    channels.slice(0, 300).forEach(channel => {
         const li = document.createElement('li');
         li.className = 'channel-item';
         li.onclick = () => playStream(channel, li);
@@ -562,7 +535,7 @@ function renderChannels(channels) {
         const img = document.createElement('img');
         img.src = channel.logo || 'https://via.placeholder.com/30?text=TV';
         img.className = 'channel-logo';
-        img.onerror = function() { this.style.display = 'none'; };
+        img.onerror = function() { this.src = 'https://via.placeholder.com/30?text=TV'; };
         
         const div = document.createElement('div');
         div.className = 'channel-info';
@@ -572,8 +545,6 @@ function renderChannels(channels) {
         li.appendChild(div);
         channelList.appendChild(li);
     });
-}
-</script>
+}</script>
 </body>
-
 </html>
