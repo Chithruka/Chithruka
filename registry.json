@@ -377,6 +377,42 @@
       }
     ]
   },
+  "177572": {
+    "type": "movie",
+    "title": "Big Hero 6 (2014)",
+    "links": [
+      {
+        "language": "Sinhala",
+        "quality": "480p x264 - ITN",
+        "size": "457.8 MB",
+        "url": "https://drive.google.com/file/d/1VutcfEqMD2f8CFCHV3ij7gX5LJokDdgI/view?usp=drivesdk"
+      },
+      {
+        "language": "Sinhala",
+        "quality": "720p 10bits x265 - Hiru TV",
+        "size": "824.4 MB",
+        "url": "https://drive.google.com/file/d/1zHo_OUtURWU5RQXo91S_1b0uaEZ-AXHq/view?usp=drivesdk"
+      }
+    ]
+  },
+   "177572": {
+    "type": "movie",
+    "title": "Norm of the North (2016)",
+    "links": [
+      {
+        "language": "Sinhala",
+        "quality": "480p x264 - ITN",
+        "size": "430.8 MB",
+        "url": "https://drive.google.com/file/d/1mRdK1A0LRxSlS64V-Lyc3Nd4VDOPaXTY/view?usp=drivesdk"
+      },
+      {
+        "language": "Sinhala",
+        "quality": "720p 10bits x265 - Hiru TV",
+        "size": "417.6 MB",
+        "url": "https://drive.google.com/file/d/1rhwa4_fgKWrKmj6_mQMpuE0RBCCH198S/view?usp=drivesdk"
+      }
+    ]
+  },
   "308697": {
     "type": "tv",
     "title": "Kanha - Morpankh Samraat",
