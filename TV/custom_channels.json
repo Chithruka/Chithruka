@@ -7,6 +7,14 @@
     "url": "https://www.youtube.com/watch?v=uU36MCXGlrI",
     "type": "embed"
   },
+  {
+    "name": "Shraddha TV",
+    "logo": "https://www.shraddha.lk/wp-content/uploads/2024/10/shradaha-live-logo.webp",
+    "group": "Religion",
+    "country": "LK",
+    "url": "https://www.youtube.com/watch?v=WTcobTJIwv0",
+    "type": "embed"
+  },
    {
     "name": "Haritha TV",
     "logo": "https://lakfreedom.info/images/tv/harithatv.jpg",
@@ -37,6 +45,14 @@
     "group": "Sports",
     "country": "INT",
     "url": "https://itn.lk/stream/vtv/",
+    "type": "embed"
+  },
+  {
+    "name": "TNL TV",
+    "logo": "https://tnltv.lk/images/logos/logo/tnltv.png",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://tnltv.lk/live.html",
     "type": "embed"
   }
 ]
