@@ -30206,7 +30206,7 @@ https://cloud.fastchannel.es/manifiest/hls/prog9/vepacotv.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/7o1bq3p.png" tvg-name="Vera TV (1080p) [Not 24/7]" group-title="Undefined",Vera TV (1080p) [Not 24/7]
 http://wms.shared.streamshow.it/veratv/mp4:veratv/playlist.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/YEKEaB4.png" tvg-name="Verbum TV (480p) [Not 24/7]" group-title="Undefined",Verbum TV (480p) [Not 24/7]
-https://edge3-moblive.yuppcdn.net/drm1/smil:verbumtvdrm.smil/index.m3u8
+https://samson.streamerr.co:8081/verbumtv/tracks-v2a1/mono.m3u8
 #EXTINF:-1 tvg-logo="https://i.imgur.com/TLaausJ.png" tvg-name="VerTV (VTV) (720p) [Not 24/7]" group-title="Undefined",VerTV (VTV) (720p) [Not 24/7]
 https://5f700d5b2c46f.streamlock.net/vertv/vertv/playlist.m3u8
 #EXTINF:-1 tvg-name="Vevo '90s & '00s Italy (1080p)" group-title="Undefined",Vevo '90s & '00s Italy (1080p)

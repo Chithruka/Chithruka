@@ -14,5 +14,21 @@
     "country": "INT",
     "url": "https://tvsupreme.lk/live/",
     "type": "embed"
+  },
+  {
+    "name": "ITN TV",
+    "logo": "https://itn.lk/wp-content/uploads/2022/03/ITN-Logo.svg",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://itn.lk/live/",
+    "type": "embed"
+  },
+  {
+    "name": "Vasantham TV",
+    "logo": "https://upload.wikimedia.org/wikipedia/en/1/18/Vasanthamtv_channel.jpg",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://www.vasantham.lk/",
+    "type": "embed"
   }
 ]
