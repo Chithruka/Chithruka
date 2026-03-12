@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,11 +144,17 @@
 
         /* --- SPORTS SPECIFIC STYLES --- */
         .hero {
-            height: 55vh; width: 100%; position: relative; border-radius: 20px; overflow: hidden;
-            background-image: url('https://as2.ftcdn.net/v2/jpg/16/43/38/69/1000_F_1643386926_MXBSCtuuje9XZePqbrV4iOW0DLF3VxBw.jpg');
-            background-size: cover; background-position: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            margin-bottom: 40px;
-        }
+    height: 55vh; 
+    width: 100%; 
+    position: relative; 
+    border-radius: 20px; 
+    overflow: hidden;
+    background-size: cover; 
+    background-position: center; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    margin-bottom: 40px;
+    transition: background-image 1.0s ease-in-out; 
+}
         .hero-overlay {
             position: absolute; inset: 0;
             background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(0,0,0,0.6) 40%, transparent);
@@ -369,7 +376,7 @@
         const M3U_URL = 'https://iptv-org.github.io/iptv/categories/sports.m3u';
         
         // --- Premium Data ---
-        const premiumChannels = [
+       const premiumChannels = [
             { name: "Sky Sports Mix", type: "iframe", src: "https://streamcrichd.com/update/skysmix.php", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-mix.svg", isPremium: true },
             { name: "Sky Sport 2", type: "iframe", src: "https://streamcrichd.com/update/skys2.php", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/new-zealand/sky-sport-2.png", isPremium: true },
             { name: "Sky Sport 3 NZ", type: "iframe", src: "https://streamcrichd.com/update/sky3nz.php", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Sky_Sports_2025.svg", isPremium: true },
@@ -391,8 +398,72 @@
             { name: "SuperSport Cricket", type: "iframe", src: "https://streamcrichd.com/update/sscricket.php", logo: "https://r2.thesportsdb.com/images/media/channel/logo/srtijz1643382350.png", isPremium: true },
             { name: "Ten Sports", type: "iframe", src: "https://streamcrichd.com/update/tensp.php", logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", isPremium: true },
             { name: "Red Bull TV", type: "hls", url: "https://rbmn-live.akamaized.net/hls/live/709025/WoRB-Int-EN-linear-BU/master_6660.m3u8", logo: "https://img.redbull.com/images/w_300/q_auto,f_auto/redbullcom/2021/3/8/v1viztxjab9e9a6of4by/redbulltv", isPremium: false },
-            { name: "beIN SPORTS", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports.webp", isPremium: true },
-            { name: "Sky Sports Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+premier+league&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-premier-league.webp", isPremium: true }
+              { name: "ACC Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=acc+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/acc-network.png", isPremium: true },
+  { name: "Astro Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-cricket.webp", isPremium: true },
+  { name: "Astro Football", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+football&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-football.webp", isPremium: true },
+  { name: "Astro Grandstand", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+grandstand&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-grandstand.webp", isPremium: true },
+  { name: "Astro Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+premier+league&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-premier-league.webp", isPremium: true },
+  { name: "Astro Premier League 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+premier+league+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-premier-league-2.webp", isPremium: true },
+  { name: "beIN SPORTS", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports.webp", isPremium: true },
+  { name: "beIN SPORTS 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-1.svg", isPremium: true },
+  { name: "beIN SPORTS 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-2.svg", isPremium: true },
+  { name: "beIN SPORTS 3", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+3&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-3.svg", isPremium: true },
+  { name: "beIN SPORTS MENA 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+mena+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-1.svg", isPremium: true },
+  { name: "beIN SPORTS MENA 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+mena+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-2.svg", isPremium: true },
+  { name: "BTN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=btn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/btn.webp", isPremium: true },
+  { name: "CBS Sports Golazo", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=cbs+sports+golazo&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/cbs-sports-golazo.webp", isPremium: true },
+  { name: "CBS Sports Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=cbs+sports+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/cbs-sports-network.svg", isPremium: true },
+  { name: "ESPN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn.svg", isPremium: true },
+  { name: "ESPN 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-2.svg", isPremium: true },
+  { name: "ESPN Deportes", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+deportes&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-deportes.png", isPremium: true },
+  { name: "ESPN News", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+news&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-news.svg", isPremium: true },
+  { name: "ESPN U", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+u&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-u.svg", isPremium: true },
+  { name: "Fox Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-cricket.svg", isPremium: true },
+  { name: "FOX Deportes", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+deportes&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-deportes.svg", isPremium: true },
+  { name: "FOX Soccer Plus", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+soccer+plus&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-soccer-plus.svg", isPremium: true },
+  { name: "FOX Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+sports+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-sport-1.svg", isPremium: true },
+  { name: "FOX Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+sports+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-sport-2.svg", isPremium: true },
+  { name: "GOLF TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=golf+tv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/golf-tv.png", isPremium: true },
+  { name: "GOLTV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=goltv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/goltv.svg", isPremium: true },
+  { name: "MLB Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=mlb+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/mlb-network.svg", isPremium: true },
+  { name: "NBA TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nba+tv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nba-tv.svg", isPremium: true },
+  { name: "NFL Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nfl+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nfl-network.svg", isPremium: true },
+  { name: "NHL Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nhl+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nhl-network.svg", isPremium: true },
+  { name: "Red Bull", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=red+bull&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/red-bull.svg", isPremium: true },
+  { name: "SEC Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sec+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/sec-network.svg", isPremium: true },
+  { name: "Tennis Channel", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tennis+channel&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/tennis-channel.png", isPremium: true },
+  { name: "TUDN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tudn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/tudn.svg", isPremium: true },
+  { name: "Willow 2 Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=willow+2+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/willow-cricket-2.webp", isPremium: true },
+  { name: "Willow Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=willow+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/willow-cricket-1.svg", isPremium: true },
+  { name: "WWE", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=wwe&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/wwe.svg", isPremium: true },
+  { name: "Yes Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=yes+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/yes.png", isPremium: true },
+  { name: "DAZN 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=dazn+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/dazn-1.png", isPremium: true },
+  { name: "Euro Sport 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=euro+sport+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/euro-sport-1.png", isPremium: true },
+  { name: "Euro Sport 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=euro+sport+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/euro-sport-2.png", isPremium: true },
+  { name: "LaLiga TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=laliga+tv&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/la-liga-tv.svg", isPremium: true },
+  { name: "Premier Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=premier+sports+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/premier-sports-1.svg", isPremium: true },
+  { name: "Premier Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=premier+sports+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/premier-sports-2.svg", isPremium: true },
+  { name: "Sky Sports Action", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+action&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-action.svg", isPremium: true },
+  { name: "Sky Sports Arena", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+arena&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-arena.svg", isPremium: true },
+  { name: "Sky Sports Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+cricket&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-cricket.svg", isPremium: true },
+  { name: "Sky Sports F1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+f1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-f1.svg", isPremium: true },
+  { name: "Sky Sports Football", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+football&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-football.svg", isPremium: true },
+  { name: "Sky Sports Golf", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+golf&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-golf.svg", isPremium: true },
+  { name: "Sky Sports Main Event", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+main+event&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-main-event.svg", isPremium: true },
+  { name: "Sky Sports Mix", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+mix&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-mix.svg", isPremium: true },
+  { name: "Sky Sports Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+premier+league&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-premier-league.webp", isPremium: true },
+  { name: "Sky Sports Racing", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+racing&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-racing.svg", isPremium: true },
+  { name: "Sky Sports Tennis", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+tennis&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-tennis.svg", isPremium: true },
+  { name: "TNT Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-1.png", isPremium: true },
+  { name: "TNT Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-2.png", isPremium: true },
+  { name: "TNT Sports 3", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+3&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-3.png", isPremium: true },
+  { name: "TNT Sports 4", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+4&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-4.png", isPremium: true },
+  { name: "TNT Sports 5", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+5&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-5.png", isPremium: true },
+  { name: "TNT Sports 6", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+6&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-6.png", isPremium: true },
+  { name: "TNT Sports 7", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+7&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-7.png", isPremium: true },
+  { name: "TNT Sports 8", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+8&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-8.png", isPremium: true },
+  { name: "TNT Sports 9", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+9&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-9.png", isPremium: true },
+  { name: "TNT Sports 10", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+10&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-10.png", isPremium: true }
         ];
 
         // --- Core Functions ---
@@ -615,6 +686,29 @@
         }
 
         fetchChannels();
+
+        // Updated Hero Background Image Rotation Logic (Infinite Mode)
+const heroSection = document.querySelector('.hero');
+
+function updateHeroBackground() {
+    // Generate a unique URL by adding a timestamp to bypass caching
+    const randomImageUrl = `https://loremflickr.com/1920/1080/sports?random=${Date.now()}`;
+    
+    // Pre-load the image in the background for a smooth transition
+    const img = new Image();
+    img.src = randomImageUrl;
+    
+    img.onload = () => {
+        // Only change the background once the new image is fully downloaded
+        heroSection.style.backgroundImage = `url('${randomImageUrl}')`;
+    };
+}
+
+// Initial load
+updateHeroBackground();
+
+// Fetch a brand new random image every 8 seconds
+setInterval(updateHeroBackground, 8000);
     </script>
 
 </body>
