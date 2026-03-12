@@ -66,6 +66,22 @@
         /* Custom scrollbar hides */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        #mobile-more-drawer {
+    position: fixed; bottom: 70px; left: 0; width: 100%;
+    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 0 0;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9998; padding: 25px 20px 35px 20px; visibility: hidden;
+}
+#mobile-more-drawer.open { transform: translateY(0); visibility: visible; }
+.drawer-link {
+    display: flex; align-items: center; padding: 14px 18px; gap: 12px; border-radius: 12px;
+    color: #e5e7eb; text-decoration: none; font-weight: 600; background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;
+}
+.drawer-link:hover, .drawer-link:active { background: rgba(229, 9, 20, 0.15); border-color: rgba(229, 9, 20, 0.3); color: #fff; }
+
+@media (min-width: 768px) { #mobile-more-drawer { display: none; } }
     </style>
 </head>
 <body class="bg-black text-gray-200 font-sans overflow-x-hidden">
@@ -106,11 +122,21 @@
         </li>
     </ul>
 </nav>
-
+<div id="mobile-more-drawer">
+    <div class="drawer-header">
+        <h3 class="text-white font-bold px-2 border-l-4 border-[#e50914] pl-3 text-lg">EXPLORE MORE</h3>
+    </div>
+    <div class="flex flex-col mt-4 gap-2">
+        <a href="../download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
+        <a href="../Games/Games.html" class="drawer-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg"><path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/><path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/><path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/><path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/><path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/><path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/></svg> <span>Games</span></a>
+        <a href="../Radio/radio.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg> <span>Radio</span></a>
+        <a href="../Books/Books.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg> <span>Books</span></a>
+    </div>
+</div>
 <div class="container mx-auto px-4">
     
     <nav class="navbar relative flex items-center justify-between py-4 mb-4 z-50">
-        <img oncontextmenu="return false;" ondragstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer" class="logo-img h-[40px] md:h-[50px] cursor-pointer" onclick="location.href='../index.html';">
+        <img oncontextmenu="return false;" ondragstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer" class="logo-img h-[40px] md:h-[50px] cursor-pointer" onclick="location.href='tv.html';">
 
         <div class="search-group flex items-center flex-grow max-w-xl mx-4 gap-2">
             <button onclick="openFilterModal()" class="filter-btn bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#e50914] text-gray-400 hover:text-white rounded-full p-2.5 transition flex-shrink-0" title="Filter Content">
@@ -118,7 +144,7 @@
             </button>
             <div class="relative w-full">
                 <input type="text" id="search-input" class="glass-input w-full bg-black/40 border border-white/10 rounded-full px-5 py-2.5 text-white focus:outline-none focus:border-[#e50914] transition-all" placeholder="Search Channels..." onkeyup="applyFilters()">
-                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
             </div>
         </div>
     </nav>
@@ -235,7 +261,7 @@
 
 <script>
     // --- UI HELPERS & LAZY LOADING STATE ---
-    const CHUNK_SIZE = 30; // Load 30 channels per batch to prevent browser freezing
+    const CHUNK_SIZE = 10; // Load 30 channels per batch to prevent browser freezing
     let channelLists = { m3u8: [], embed: [], search: [] };
     let renderIndices = { m3u8: 0, embed: 0, search: 0 };
 
@@ -614,6 +640,17 @@ window.toggleMoreMenu = function() {
     drawer.classList.toggle('open');
     moreBtn.classList.toggle('active');
 };
+
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    if (drawer && drawer.classList.contains('open')) {
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            moreBtn.classList.remove('active'); 
+        }
+    }
+});
 </script>
 
 </body>
