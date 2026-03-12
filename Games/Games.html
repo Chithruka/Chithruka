@@ -281,10 +281,132 @@
             .search-container input:focus { width: 120px; }
             .logo { font-size: 1.8rem; }
         }
+        /* --- DESKTOP SIDEBAR --- */
+.sidebar {
+    position: fixed; left: 0; top: 0; height: 100%;
+    background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 9999; transition: width 0.3s ease;
+    width: 64px; overflow: hidden; display: none; flex-direction: column;
+}
+.sidebar:hover { width: 240px; }
+.sidebar-header { height: 70px; display: flex; align-items: center; padding-left: 18px; }
+.sidebar-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 0 8px; width: 240px; list-style: none; }
+.nav-link { 
+    display: flex; align-items: center; padding: 12px; border-radius: 12px;
+    color: #9ca3af; text-decoration: none; transition: 0.3s;
+}
+.nav-link i { font-size: 1.2rem; min-width: 30px; text-align: center; }
+.nav-link .nav-text { margin-left: 15px; opacity: 0; white-space: nowrap; }
+.sidebar:hover .nav-text { opacity: 1; }
+.nav-link:hover, .nav-link.active { background: rgba(229, 9, 20, 0.1); color: #e50914; }
+
+/* --- REDESIGNED MOBILE NAVIGATION --- */
+.mobile-nav {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+    background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+}
+.nav-wrapper { display: flex; width: 100%; justify-content: space-around; padding: 0; margin: 0; }
+.mobile-item { list-style: none; flex: 1; padding: 0 4px; }
+.mobile-item a, .mobile-item button { 
+    height: 58px; width: 100%; margin: 6px 0; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; 
+    color: #9ca3af; transition: all 0.3s ease; background: transparent; border: none; cursor: pointer;
+}
+.mobile-item.active a, .mobile-item.active button,
+.mobile-item a:hover, .mobile-item button:hover { color: #e50914; background: rgba(229, 9, 20, 0.1); }
+.mobile-item.active a i, .mobile-item.active button i { transform: scale(1.15); }
+.mobile-item span { font-size: 0; opacity: 0; transition: all 0.3s ease; }
+.mobile-item.active span, .mobile-item:hover span { font-size: 12px; opacity: 1; margin-top: 4px; }
+
+/* --- MOBILE MORE DRAWER --- */
+#mobile-more-drawer {
+    position: fixed; bottom: 70px; left: 0; width: 100%;
+    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 0 0;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9998; padding: 25px 20px 35px 20px; visibility: hidden;
+}
+#mobile-more-drawer.open { transform: translateY(0); visibility: visible; }
+.drawer-link {
+    display: flex; align-items: center; padding: 14px 18px; border-radius: 12px; gap: 12px;
+    color: #e5e7eb; text-decoration: none; font-weight: 600; background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;
+}
+.drawer-link:hover, .drawer-link:active { background: rgba(229, 9, 20, 0.15); border-color: rgba(229, 9, 20, 0.3); color: #fff; }
+
+/* SVG Icons */
+.nav-svg { width: 24px; height: 24px; display: block; fill: currentColor; transition: transform 0.2s ease; }
+
+/* --- LAYOUT ADJUSTMENTS FOR GAMES.HTML --- */
+@media (min-width: 768px) { 
+    .sidebar { display: flex; } 
+    .mobile-nav, #mobile-more-drawer { display: none; } 
+    body { padding-left: 64px; }
+    /* Shifts the existing top header so it doesn't hide behind the sidebar */
+    header#navbar { padding-left: calc(4% + 64px); } 
+}
+@media (max-width: 767px) { 
+    body { padding-bottom: 70px; } 
+}
     </style>
 </head>
 <body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="menu-icon">
+            <svg stroke="#e50914" fill="#e50914" stroke-width="0" viewBox="0 0 24 24" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path>
+            </svg>
+        </div>
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li><a href="../index.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span class="nav-text">Home</span></a></li>
+        <li><a href="../Anime/anime.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span class="nav-text">Anime</span></a></li>
+        <li><a href="../download.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg><span class="nav-text">Dubbings</span></a></li>
+        <li><a href="../TV/tv.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span class="nav-text">Live TV</span></a></li>
+        <li><a href="../Sports/sports.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span class="nav-text">Sports</span></a></li>
+        <li><a href="#" class="nav-link active"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
+            <path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/>
+            <path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/>
+            <path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/>
+            <path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/>
+            <path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/>
+            <path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/>
+        </svg><span class="nav-text">Games</span></a></li>
+        <li><a href="../Radio/radio.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span class="nav-text">Radio</span></a></li>
+        <li><a href="../Books/Books.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span class="nav-text">Books</span></a></li>
+    </ul>
+</aside>
 
+<nav class="mobile-nav">
+    <ul class="nav-wrapper">
+        <li class="mobile-item"><a href="../index.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span>Home</span></a></li>
+        <li class="mobile-item"><a href="../Anime/anime.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span>Anime</span></a></li>
+        <li class="mobile-item"><a href="../TV/tv.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span>Live TV</span></a></li>
+        <li class="mobile-item active"><a href="#"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg"><path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/><path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/><path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/><path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/><path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/><path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/></svg><span>Games</span></a></li>
+        <li class="mobile-item" id="more-menu-btn">
+            <button onclick="toggleMoreMenu()">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path></svg><span>More</span>
+            </button>
+        </li>
+    </ul>
+</nav>
+
+<div id="mobile-more-drawer">
+    <div class="drawer-header">
+        <h3 style="color:white; font-weight:bold; padding: 0 8px; border-left: 4px solid #e50914; margin-bottom: 16px;">EXPLORE MORE</h3>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="../download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
+        <a href="../Sports/sports.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span>Sports</span></a>
+        <a href="../Radio/radio.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg> <span>Radio</span></a>
+        <a href="../Books/Books.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg> <span>Books</span></a>
+    </div>
+</div>
     <header id="navbar">
         <a href="#" class="logo" onclick="resetHome()">CHITHRUKA</a>
         <div class="search-container">
@@ -627,7 +749,27 @@ async function showMoreInfo(gameId) {
         console.error('Error fetching data:', error);
         body.innerHTML = '<div style="color:white; padding: 20px;">Error loading game details. Using a redirect service...</div>';
     }
-}  </script>
+} 
+// --- MOBILE MORE DRAWER LOGIC ---
+function toggleMoreMenu() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+}
+
+// Close drawer when clicking anywhere outside
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    if (drawer && drawer.classList.contains('open')) {
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            moreBtn.classList.remove('active'); 
+        }
+    }
+}); </script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 </body>
 </html>
