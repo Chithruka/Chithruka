@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube</title> 
+  <link href="../CSS/fontawesome-free-6.1.0-web/svgs/brands/contao.svg" type="image/x-icon" rel="shortcut icon" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+  <style>
+    /* Styling for the info area below the player to replace absolute positioning */
+    .video-info-wrapper {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 15px;
+      color: var(--black-color);
+    }
+    .video-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .channel-info-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .channel-info-container img.avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .subscribe-btn {
+      background-color: rgb(219, 21, 21);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .subscribe-btn:hover {
+      background-color: rgb(160, 15, 15);
+    }
+    .action-btns i {
+      font-size: 22px;
+      cursor: pointer;
+      margin-left: 20px;
+      transition: color 0.3s;
+    }
+    .action-btns i:hover {
+      color: var(--primary-color);
+    }
+    .accordion {
+      margin-top: 25px;
+      background: var(--light-gray-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .accordion-content header {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .accordion-content .description-text {
+      padding: 0 15px;
+      height: 0;
+      overflow: hidden;
+      transition: height 0.3s ease;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .accordion-content.open .description-text {
+      padding-bottom: 15px;
+    }
+  </style>
+</head>
+<body class="sidebar-hidden">
+  <div class="container">
+    <header>
+      <nav class="navbar">
+        <div class="nav-section nav-left">
+          <button class="nav-button menu-button">
+            <i class="fa fa-bars"></i>
+          </button>
+          <a href="#" class="nav-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/YouTube_2024.svg" alt="Logo" class="logo-image" style="width: 80px; border-radius: 0;">
+          </a>
+        </div>
+        
+        <div class="nav-section nav-center">
+          <form action="#" class="search-form">
+            <input spellcheck="false" aria-label="Search" type="search" placeholder="Type to search" id="search" autocomplete="off" class="search-input" required>
+            <button class="nav-button search-button">
+              <i class="fa fa-search"></i>
+            </button>
+          </form>
+          <button class="nav-button mic-button" onclick="record()">
+            <i class="fas fa-microphone"></i>
+          </button>
+        </div>
+        
+        <div class="nav-section nav-right">
+          <button class="nav-button theme-button">
+            <i class="fa fa-moon"></i>
+          </button>
+          <a href="Admin Dashboard Panel/index.html"><img src="../images/youtube logo.png" alt="User Image" class="user-image"></a>
+        </div>
+      </nav>
+    </header>
+    
+    <main class="main-layout">
+      <div class="screen-overlay"></div>
+
+      <aside class="sidebar">
+        <div class="nav-section nav-left">
+          <button class="nav-button menu-button"><i class="fa fa-bars"></i></button>
+          <a href="#" class="nav-logo">
+            <h2 class="logo-text">CTube</h2>
+          </a>
+        </div>
+        <div class="links-container">
+          <div class="link-section">
+            <a href="#" class="link-item"><i class="fa fa-estate"></i> Home</a>
+            <a href="#" class="link-item"><i class="fa fa-video"></i> Shorts</a>
+            <a href="#" class="link-item"><i class="fa fa-tv-retro"></i> Subscriptions</a>
+          </div>
+          </div>
+      </aside>
+  
+      <div class="content-wrapper">
+        
+        <div id="home-view">
+          <div class="category-list">
+            <button class="category-button active">All</button>
+            <button class="category-button">Movies</button>
+            <button class="category-button">Coding</button>
+          </div>
+          <div class="video-list" id="video-grid"></div>
+        </div>
+
+        <div id="player-view" style="display: none; padding-top: 20px;">
+          <div class="video-container paused" data-volume-level="high">
+            <img class="thumbnail-img">
+            <div class="video-controls-container">
+              <div class="timeline-container">
+                <div class="timeline">
+                  <img class="preview-img">
+                  <div class="thumb-indicator"></div>
+                </div>
+              </div>
+              <div class="controls">
+                <button class="play-pause-btn">
+                  <svg class="play-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
+                  <svg class="pause-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
+                </button>
+                <button title="Rewind 10 Seconds" class="rewind">
+                  <svg viewBox="0 0 24 24"><path fill="#ffffff" d="M12.5,3C17.15,3 21.08,6.03 22.47,10.22L20.1,11C19.05,7.81 16.04,5.5 12.5,5.5C10.54,5.5 8.77,6.22 7.38,7.38L10,10H3V3L5.6,5.6C7.45,4 9.85,3 12.5,3M10,12V22H8V14H6V12H10M18,14V20C18,21.11 17.11,22 16,22H14A2,2 0 0,1 12,20V14A2,2 0 0,1 14,12H16C17.11,12 18,12.9 18,14M14,14V20H16V14H14Z" /></svg>
+                </button>
+                <button title="Skip 10 Seconds" class="fast-forward">
+                  <svg viewBox="0 0 24 24"><path fill="#ffffff" d="M10,12V22H8V14H6V12H10M18,14V20C18,21.11 17.11,22 16,22H14A2,2 0 0,1 12,20V14A2,2 0 0,1 14,12H16C17.11,12 18,12.9 18,14M14,14V20H16V14H14M11.5,3C14.15,3 16.55,4 18.4,5.6L21,3V10H14L16.62,7.38C15.23,6.22 13.46,5.5 11.5,5.5C7.96,5.5 4.95,7.81 3.9,11L1.53,10.22C2.92,6.03 6.85,3 11.5,3Z" /></svg>
+                </button>
+                <div class="volume-container">
+                  <button class="mute-btn">
+                    <svg class="volume-high-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg>
+                    <svg class="volume-low-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M5,9V15H9L14,20V4L9,9M18.5,12C18.5,10.23 17.5,8.71 16,7.97V16C17.5,15.29 18.5,13.76 18.5,12Z" /></svg>
+                    <svg class="volume-muted-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18.04 14.83,18.46 14,18.7V20.77C15.38,20.45 16.63,19.82 17.68,18.96L19.73,21L21,19.73L12,10.73M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z" /></svg>
+                  </button>
+                  <input class="volume-slider" type="range" min="0" max="1" step="any" value="1">
+                </div>
+                <div class="duration-container">
+                  <div class="current-time">0:00</div>/<div class="total-time">0:00</div>
+                </div>
+             <button class="captions-btn">
+  <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18,11H16.5V10.5H14.5V13.5H16.5V13H18V14A1,1 0 0,1 17,15H14A1,1 0 0,1 13,14V10A1,1 0 0,1 14,9H17A1,1 0 0,1 18,10M11,11H9.5V10.5H7.5V13.5H9.5V13H11V14A1,1 0 0,1 10,15H7A1,1 0 0,1 6,14V10A1,1 0 0,1 7,9H10A1,1 0 0,1 11,10M19,4H5C3.89,4 3,4.89 3,6V18A2,2 0 0,0 5,20H19A2,2 0 0,0 21,18V6C21,4.89 20.1,4 19,4Z" /></svg>
+</button>
+<button class="speed-btn wide-btn">1x</button>
+
+<div class="quality-container" style="position: relative; display: flex; align-items: center;">
+  <button class="quality-btn" title="Settings">
+    <i class="fa-solid fa-gear"></i>
+  </button>
+  <div class="quality-menu" style="display: none;">
+    </div>
+</div>
+<button class="mini-player-btn">
+                  <svg viewBox="0 0 24 24"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7h9v6h-9z"/></svg>
+                </button>
+                <button class="theater-btn">
+                  <svg class="tall" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/></svg>
+                  <svg class="wide" viewBox="0 0 24 24"><path fill="currentColor" d="M19 7H5c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 8H5V9h14v6z"/></svg>
+                </button>
+                <button class="full-screen-btn">
+                  <svg class="open" viewBox="0 0 24 24"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                  <svg class="close" viewBox="0 0 24 24"><path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                </button>
+              </div>
+            </div>
+            <video id="video-player" src=""></video>
+          </div>
+
+          <div class="video-info-wrapper">
+            <h2 id="video-title-display">Video Title</h2>
+            <div class="video-info-header">
+              <div class="channel-info-container">
+                <img class="avatar" src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Netflix_2015_N_logo.svg">
+                <div>
+                  <h3 id="channel-name-display" style="display: inline-flex; align-items: center; gap: 5px;">
+                    Channel Name
+                    <i class="fa-solid fa-circle-check" style="font-size: 14px; color: #888;"></i>
+                  </h3>
+                  <p style="font-size: 13px; color: var(--primary-color);">1.2M subscribers</p>
+                </div>
+                <button class="subscribe-btn">Subscribe</button>
+              </div>
+              <div class="action-btns">
+                <i class="fa-solid fa-thumbs-up" title="Like"></i>
+                <i class="fa-solid fa-thumbs-down" title="Dislike"></i>
+                <i class="fa-solid fa-share" title="Share"></i>
+                <i class="fa-solid fa-bookmark" title="Save"></i>
+              </div>
+            </div>
+
+            <div class="accordion">
+              <div class="accordion-content">
+                <header>
+                  <span class="title">Description</span>
+                  <i class="fa-solid fa-angle-down"></i>
+                </header>
+                <p class="description-text" id="video-desc-display">Description text goes here...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Microphone feature function stub
+    function record() {
+      if ('webkitSpeechRecognition' in window) {
+        var recognition = new webkitSpeechRecognition();
+        recognition.lang = "en-GB";
+        recognition.onresult = function(event) {
+          document.getElementById('search').value = event.results[0][0].transcript;
+        }
+        recognition.start();
+      } else {
+        alert("Speech recognition not supported in this browser.");
+      }
+    }
+  </script>
+</body>
+</html>
