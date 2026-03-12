@@ -11,58 +11,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-<script src="https://vjs.zencdn.net/8.10.0/video.min.js" defer></script>
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js" defer></script>
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../output.css">
 
     <style>
-        /* Scoped fix for the Video Player Container */
-.chithruka-player-fix {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 80vh !important; /* Prevents it from going off the bottom */
-    aspect-ratio: 16 / 9 !important;
-    background: #000 !important;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-/* Force the actual video element to fit */
-.chithruka-player-fix video {
-    object-fit: contain !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Fix for Video.js UI controls being pushed out */
-.vjs-theme-netflix.video-js {
-    font-size: 10px !important; /* Scales the controls down slightly */
-}
-
-.video-js .vjs-control-bar {
-    z-index: 10 !important;
-}
-        /* --- Root Variables --- */
-     :root {
-    --primary-red: #E50914;
-    --bg-black: #141414;
-    --bg-dark: #0f0f0f;
-    --text-gray: #b3b3b3;
-    --glass-bg: rgba(20, 20, 20, 0.85);
-    /* Replace 'all' with specific properties */
-    --transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                  background-color 0.3s ease, 
-                  border-color 0.3s ease, 
-                  color 0.3s ease;
-}
-
-        /* --- Global Reset --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-black); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary-red); }
+        /* --- Root Variables & Base UI from index.html --- */
+        :root {
+            --primary-red: #E50914;
+            --accent: #e50914;
+            --bg-black: #141414;
+            --bg-dark: #0f0f0f;
+            --text-gray: #b3b3b3;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
 
         body {
             background-color: var(--bg-black);
@@ -70,403 +34,336 @@
             font-family: 'Montserrat', sans-serif;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            margin: 0;
+            min-height: 100vh;
         }
 
-        /* --- Video.js Theme Overrides --- */
-        .video-js { width: 100%; height: 100%; }
-        .vjs-theme-netflix .vjs-big-play-button {
-            background-color: var(--primary-red) !important;
-            border: none !important;
-            width: 2.5em; height: 1.5em; border-radius: 0.3em;
-            transition: transform 0.2s;
-        }
-        .vjs-theme-netflix .vjs-big-play-button:hover { transform: scale(1.1); }
-        .video-js .vjs-play-progress, .video-js .vjs-volume-level { background-color: var(--primary-red) !important; }
+        * { box-sizing: border-box; outline: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-black); }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-red); }
 
-        /* --- Header & Navigation --- */
-        header {
-            position: fixed; top: 0; width: 100%; height: 70px;
-            padding: 0 4%;
-            display: flex; align-items: center; justify-content: space-between;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
-            z-index: 1000;
-            transition: background 0.4s ease;
+        #page-background {
+            background-color: #000; height: 100%; left: 0; position: fixed; top: 0; width: 100%; z-index: -1;
         }
-        header.scrolled { background-color: var(--bg-black); box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
 
-        .logo {
-            font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem;
-            color: var(--primary-red); letter-spacing: 2px;
-            text-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
-            cursor: pointer; text-decoration: none;
-            transition: transform 0.3s;
+        /* --- DESKTOP SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; height: 100%;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999; transition: width 0.3s ease;
+            width: 64px; overflow: hidden; display: none; flex-direction: column;
         }
-        .logo:hover { transform: scale(1.05); }
-
-        .nav-links { display: flex; gap: 25px; margin-left: 40px; }
-        .nav-links a {
-            color: var(--text-gray); font-size: 0.95rem; font-weight: 500;
-            text-decoration: none; transition: color 0.3s;
+        .sidebar:hover { width: 240px; }
+        .sidebar-header { height: 70px; display: flex; align-items: center; padding-left: 18px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 0 8px; width: 240px; list-style: none; }
+        .nav-link { 
+            display: flex; align-items: center; padding: 12px; border-radius: 12px;
+            color: #9ca3af; text-decoration: none; transition: 0.3s;
         }
-        .nav-links a:hover { color: white; }
+        .nav-link i { font-size: 1.2rem; min-width: 30px; text-align: center; }
+        .nav-link .nav-text { margin-left: 15px; opacity: 0; white-space: nowrap; }
+        .sidebar:hover .nav-text { opacity: 1; }
+        .nav-link:hover, .nav-link.active { background: rgba(229, 9, 20, 0.1); color: #e50914; }
+        .nav-svg { width: 24px; height: 24px; display: block; fill: currentColor; transition: transform 0.2s ease; }
+        .nav-link:hover .nav-svg, .mobile-nav a.active .nav-svg { transform: scale(1.1); }
 
-        /* Mobile Menu */
-        /* Mobile Menu Overlay - FIXED Z-INDEX */
-#mobile-menu-overlay {
-    position: fixed; 
-    top: 70px; 
-    left: 0; 
-    right: 0;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    padding: 20px;
-    display: none; 
-    flex-direction: column; 
-    gap: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    animation: slideDown 0.3s ease-out;
-    z-index: 1001; /* This must be higher than the header (1000) */
-}
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- MOBILE NAVIGATION --- */
+        .mobile-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+            background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center;
+            z-index: 9999; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-wrapper { display: flex; width: 100%; justify-content: space-around; padding: 0; margin: 0; }
+        .mobile-item { list-style: none; flex: 1; padding: 0 4px; }
+        .mobile-item a, .mobile-item button { 
+            height: 58px; width: 100%; margin: 6px 0; border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; 
+            color: #9ca3af; transition: all 0.3s ease; background: transparent; border: none; cursor: pointer;
+        }
+        .mobile-item.active a, .mobile-item.active button, .mobile-item a:hover, .mobile-item button:hover { 
+            color: #e50914; background: rgba(229, 9, 20, 0.1); 
+        }
+        .mobile-item span { font-size: 0; opacity: 0; transition: all 0.3s ease; }
+        .mobile-item.active span, .mobile-item:hover span { font-size: 12px; opacity: 1; margin-top: 4px; }
+
+        #mobile-more-drawer {
+            position: fixed; bottom: 70px; left: 0; width: 100%;
+            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 0 0;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 9998; padding: 25px 20px 35px 20px; visibility: hidden;
+        }
+        #mobile-more-drawer.open { transform: translateY(0); visibility: visible; }
+        .drawer-link {
+            display: flex; align-items: center; padding: 14px 18px; gap: 12px; border-radius: 12px;
+            color: #e5e7eb; text-decoration: none; font-weight: 600; background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;
+        }
+        .drawer-link:hover, .drawer-link:active { background: rgba(229, 9, 20, 0.15); border-color: rgba(229, 9, 20, 0.3); color: #fff; }
+
+        @media (min-width: 768px) { .sidebar { display: flex; } .mobile-nav, #mobile-more-drawer { display: none; } body { padding-left: 64px; } }
+        @media (max-width: 767px) { body { padding-bottom: 70px; } }
+
+        /* --- TOP NAVBAR (Identical to index.html) --- */
+        .navbar {
+            align-items: center; display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between;
+            margin-bottom: 20px; padding: 15px 0; position: relative; z-index: 50;
+        }
+        .logo-img { cursor: pointer; height: 40px; transition: transform .2s ease; width: auto; z-index: 50; }
+        .logo-img:hover { transform: scale(1.05); }
         
-        #mobile-menu-overlay a {
-            font-size: 1.1rem; color: white; padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+        .search-group { align-items: center; display: flex; gap: 10px; position: relative; flex-grow: 1; justify-content: flex-end; }
+        .filter-btn {
+            background: hsla(0,0%,100%,.05); border: 1px solid transparent; border-radius: 50%;
+            color: #999; cursor: pointer; flex-shrink: 0; padding: 10px 14px; transition: all .3s;
+        }
+        .filter-btn:hover { background: hsla(0,0%,100%,.1); border-color: var(--accent); color: #fff; }
+        
+        .glass-input {
+            backdrop-filter: blur(10px); background: rgba(0,0,0,.4); border: 1px solid hsla(0,0%,100%,.15); color: #fff;
+            border-radius: 50px; padding: 10px 40px 10px 20px; transition: width .3s; width: 100%;
+        }
+        .glass-input:focus { background: rgba(0,0,0,.5); border-color: var(--accent); outline: none; }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 15px 10px; }
+            .logo-img { height: 35px; }
+            .search-group { flex-basis: 100%; margin: 10px 0 0; width: 100%; justify-content: center; }
+        }
+        @media (min-width: 769px) {
+            .search-group { margin: 0 40px; justify-content: center; }
+            .glass-input { max-width: 300px; }
+            .glass-input:focus { max-width: 400px; }
+            .logo-img { height: 50px; }
         }
 
-        /* --- Search & Avatar --- */
-        .search-box {
-            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
-            padding: 6px 12px; border-radius: 20px;
-            display: flex; align-items: center; transition: var(--transition);
-        }
-        .search-box:focus-within { border-color: white; background: rgba(0,0,0,0.9); }
-        .search-box input {
-            background: transparent; border: none; color: white;
-            padding-left: 10px; width: 0; transition: width 0.4s;
-        }
-        .search-box:hover input, .search-box input:focus { width: 220px; }
-
-        .avatar {
-            width: 36px; height: 36px; border-radius: 6px;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png') center/cover;
-            cursor: pointer; border: 2px solid transparent; transition: var(--transition);
-        }
-        .avatar:hover { border-color: white; }
-
-        /* --- Hero Section --- */
+        /* --- SPORTS SPECIFIC STYLES --- */
         .hero {
-            height: 75vh; width: 100%; position: relative;
+            height: 55vh; width: 100%; position: relative; border-radius: 20px; overflow: hidden;
             background-image: url('https://as2.ftcdn.net/v2/jpg/16/43/38/69/1000_F_1643386926_MXBSCtuuje9XZePqbrV4iOW0DLF3VxBw.jpg');
-            background-size: cover; background-position: center;
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            background-size: cover; background-position: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
         }
         .hero-overlay {
             position: absolute; inset: 0;
-            background: radial-gradient(circle at 70% 20%, transparent 0%, var(--bg-black) 90%),
-                        linear-gradient(to right, var(--bg-black) 0%, transparent 60%);
+            background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(0,0,0,0.6) 40%, transparent);
             display: flex; flex-direction: column; justify-content: center; padding-left: 5%;
         }
-        .hero-title {
-            font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 0.9;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-        }
-        .hero-subtitle { color: var(--primary-red); font-size: 3rem; margin-bottom: 1rem; }
+        .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 0.9; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .hero-subtitle { color: var(--primary-red); font-size: 2.5rem; margin-bottom: 1rem; }
         
         .btn {
-            padding: 10px 32px; border-radius: 4px; font-weight: 700; font-size: 1.1rem;
+            padding: 10px 32px; border-radius: 4px; font-weight: 700; font-size: 1rem;
             cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
-            transition: var(--transition); border: none;
+            transition: var(--transition); border: none; font-family: 'Montserrat', sans-serif;
         }
         .btn-play { background: white; color: black; }
         .btn-play:hover { background: rgba(255,255,255,0.85); transform: translateY(-2px); }
         .btn-info { background: rgba(109, 109, 110, 0.7); color: white; backdrop-filter: blur(5px); }
         .btn-info:hover { background: rgba(109, 109, 110, 0.5); transform: translateY(-2px); }
 
-        /* --- Grid Layout --- */
         .infinite-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 16px; padding: 20px 4%; margin-top: -80px; position: relative; z-index: 10;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px; margin-top: 20px;
         }
 
         .poster {
-            position: relative; aspect-ratio: 16/9;
-            background: #1a1a1a; border-radius: 6px; overflow: hidden;
-            cursor: pointer; transition: var(--transition);
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: relative; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 8px; overflow: hidden;
+            cursor: pointer; transition: var(--transition); border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        .poster:hover {
-            transform: scale(1.05); z-index: 20;
-            border-color: rgba(255,255,255,0.5);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
+        .poster:hover { transform: scale(1.05); z-index: 20; border-color: rgba(255,255,255,0.5); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .poster img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
-        
         .poster-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%);
-            display: flex; align-items: flex-end; padding: 10px;
-            opacity: 0.9;
+            position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%);
+            display: flex; align-items: flex-end; padding: 10px; opacity: 0.9;
         }
-        .poster-title { font-size: 0.9rem; font-weight: 600; text-shadow: 0 2px 4px black; }
+        .poster-title { font-size: 0.85rem; font-weight: 600; text-shadow: 0 2px 4px black; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .premium-badge {
-            position: absolute; top: 8px; right: 8px;
-            background: linear-gradient(45deg, var(--primary-red), #b20710);
-            color: white; font-size: 0.65rem; padding: 3px 8px;
-            border-radius: 3px; font-weight: 800; letter-spacing: 0.5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: absolute; top: 8px; right: 8px; background: linear-gradient(45deg, var(--primary-red), #b20710);
+            color: white; font-size: 0.6rem; padding: 3px 8px; border-radius: 4px; font-weight: 800; letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10;
         }
 
-        /* --- Player Overlay --- */
+        /* --- Custom Player Fixes --- */
         #player-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: black; z-index: 2000; display: none; flex-direction: column;
+            background: black; z-index: 10000; display: none; flex-direction: column;
         }
-        .player-header {
-            padding: 15px 4%; display: flex; justify-content: space-between; align-items: center;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-        }
-        .back-btn {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
-            color: white; font-size: 1rem; padding: 8px 20px; border-radius: 30px;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            transition: var(--transition); backdrop-filter: blur(5px);
-        }
+        .player-header { padding: 15px 4%; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); }
+        .back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; font-size: 0.9rem; padding: 8px 20px; border-radius: 30px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: var(--transition); backdrop-filter: blur(5px); }
         .back-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-3px); }
+        #video-container { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 0; }
         
-        #video-container { 
-    flex: 1; 
-    width: 100%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    overflow: hidden; 
-    min-height: 0; 
-}
-        /* --- Footer --- */
-        footer {
-            margin-top: 50px; padding: 40px 4%;
-            background: rgba(0,0,0,0.8); text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .socials { font-size: 1.5rem; display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
-        .socials i:hover { color: white; transform: scale(1.1); transition: 0.3s; }
+        .info-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 600px; background: #181818; border-radius: 12px; z-index: 10000; box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid #333; padding: 2rem; color: white; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .info-header { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--primary-red); margin-bottom: 1rem; border-bottom: 2px solid #333; }
+        
+        .vjs-theme-netflix.video-js { font-size: 10px !important; }
+        .video-js { background-color: #000 !important; width: 100%; height: 100%; }
+        .vjs-custom-loading .vjs-big-play-button { display: none !important; }
+        .vjs-loading-spinner { border: 3px solid rgba(229, 9, 20, 0.5) !important; border-top-color: #E50914 !important; }
+        .vjs-theme-netflix .vjs-big-play-button { background-color: var(--primary-red) !important; border: none !important; width: 2.5em; height: 1.5em; border-radius: 0.3em; transition: transform 0.2s; }
+        .vjs-theme-netflix .vjs-big-play-button:hover { transform: scale(1.1); }
+        .video-js .vjs-play-progress, .video-js .vjs-volume-level { background-color: var(--primary-red) !important; }
 
-        /* --- Responsive Queries --- */
         @media (max-width: 768px) {
-            header { height: 65px; padding: 0 5%; background: rgba(0,0,0,0.95); }
-            .nav-links { display: none; }
-            #mobile-menu-toggle { display: block; }
-            
-            .hero { height: 55vh; }
             .hero-title { font-size: 3rem; }
             .hero-subtitle { font-size: 1.5rem; }
-            .btn { font-size: 0.9rem; padding: 8px 16px; }
-
-            .infinite-grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                gap: 12px; margin-top: -20px;
-            }
-            .poster { aspect-ratio: 16/10; }
-            .poster-title { font-size: 0.75rem; }
-            
-            #search-input { width: 140px; }
-            
-            /* Player Adjustments */
-            .player-header { padding: 10px 15px; }
-            .back-btn { font-size: 0.85rem; padding: 6px 14px; }
-        }
-        /* Fallback Icon Styling */
-.poster-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    font-size: 3rem;
-    color: rgb(220 38 38 / var(--tw-text-opacity, 1));
-    background: #1a1a1a;
-}
-/* Info Modal Styles */
-.info-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 600px;
-    background: #181818;
-    border-radius: 12px;
-    z-index: 2000;
-    box-shadow: 0 0 40px rgba(0,0,0,0.8);
-    border: 1px solid #333;
-    padding: 2rem;
-    color: white;
-}
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 1999;
-}
-.info-header {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.5rem;
-    color: var(--primary-red);
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #333;
-}
-.info-body { font-size: 0.95rem; line-height: 1.6; color: #ccc; }
-/* Ensure the player background is always black */
-.video-js {
-    background-color: #000 !important;
-}
-
-/* Hide the big play button during the initial load to stop the "YouTube icon" flicker */
-.vjs-custom-loading .vjs-big-play-button {
-    display: none !important;
-}
-
-/* Customize the loading spinner to match your red theme */
-.vjs-loading-spinner {
-    border: 3px solid rgba(229, 9, 20, 0.5) !important;
-    border-top-color: #E50914 !important;
-}
-/* --- Fixes for output.css Conflicts --- */
-        
-        /* 1. Override the global flex body from output.css */
-        body {
-            display: block !important; 
-            font-family: 'Montserrat', sans-serif !important; 
-        }
-
-        /* 2. Custom logo classes to replace uncompiled Tailwind arbitrary values */
-        .header-logo {
-            height: 35px;
-            width: auto;
-            object-fit: contain;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
-        }
-        
-        .header-logo:hover {
-            transform: scale(1.05);
-        }
-        
-        @media (min-width: 768px) {
-            .header-logo {
-                height: 50px;
-            }
-        }
-
-        /* 3. Patch the poster fallback color (removes reliance on a missing Tailwind variable) */
-        .poster-fallback {
-            color: #dc2626 !important; 
+            .infinite-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
         }
     </style>
 </head>
 <body>
-    <header id="navbar">
-<a href="#" onclick="resetPage(event)">
-            <img src="../Attachments/Chithruka Streamer Logo.svg" alt="Chithruka Logo" class="header-logo">
-        </a>
+
+    <div id="page-background"></div>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="menu-icon">
+                <svg stroke="#e50914" fill="#e50914" stroke-width="0" viewBox="0 0 24 24" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path>
+                </svg>
+            </div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="../index.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span class="nav-text">Home</span></a></li>
+            <li><a href="../Anime/anime.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span class="nav-text">Anime</span></a></li>
+            <li><a href="../download.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg><span class="nav-text">Dubbings</span></a></li>
+            <li><a href="../TV/tv.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span class="nav-text">Live TV</span></a></li>
+            <li><a href="#" class="nav-link active"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span class="nav-text">Sports</span></a></li>
+            <li><a href="../Games/Games.html" class="nav-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg"><path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/><path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/><path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/><path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/><path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/><path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/></svg><span class="nav-text">Games</span></a></li>
+            <li><a href="../Radio/radio.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span class="nav-text">Radio</span></a></li>
+            <li><a href="../Books/Books.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span class="nav-text">Books</span></a></li>
+        </ul>
+    </aside>
+
+    <nav class="mobile-nav">
+        <ul class="nav-wrapper">
+            <li class="mobile-item"><a href="../index.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span>Home</span></a></li>
+            <li class="mobile-item"><a href="../Anime/anime.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span>Anime</span></a></li>
+            <li class="mobile-item"><a href="../TV/tv.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span>Live TV</span></a></li>
+            <li class="mobile-item active"><a href="#"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span>Sports</span></a></li>
+            <li class="mobile-item" id="more-menu-btn">
+                <button onclick="toggleMoreMenu()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path></svg><span>More</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="mobile-more-drawer">
+        <div class="drawer-header">
+            <h3 class="text-white font-bold px-2 border-l-4 border-[#e50914] pl-3 text-lg">EXPLORE MORE</h3>
+        </div>
+        <div class="flex flex-col mt-4 gap-2">
+            <a href="../download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
+            <a href="../Games/Games.html" class="drawer-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg"><path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/><path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/><path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/><path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/><path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/><path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/></svg> <span>Games</span></a>
+            <a href="../Radio/radio.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg> <span>Radio</span></a>
+            <a href="../Books/Books.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg> <span>Books</span></a>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4">
         
-        <nav class="nav-links">
-            <a href="https://chithruka.github.io/Chithruka/">Movies</a>
-            <a href="https://chithruka.github.io/Chithruka/TV/tv.html">Live TV</a>
-            <a href="https://chithruka.github.io/Chithruka/Radio/radio.html">Live Radio</a>
+        <nav class="navbar">
+            <img oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer" class="logo-img" onclick="resetPage(event)">
+            
+            <div class="search-group">
+                <button onclick="playRandom()" class="filter-btn" title="Play Random">
+                    <i class="fa-solid fa-shuffle"></i>
+                </button>
+                <div class="relative w-full max-w-[300px] flex-grow">
+                    <input type="text" id="search-input" class="glass-input" placeholder="Search sports...">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
+                </div>
+            </div>
         </nav>
 
-        <div style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
-            <div class="search-box">
-                <i class="fas fa-search" style="color: white; font-size: 0.9rem;"></i>
-                <input type="text" id="search-input" placeholder="Search sports...">
-            </div>
-            <div class="avatar" onclick="toggleMobileMenu()"></div>
-        </div>
-    </header>
-
-    <div id="mobile-menu-overlay">
-        <a href="https://chithruka.github.io/Chithruka/">Movies</a>
-        <a href="https://chithruka.github.io/Chithruka/TV/tv.html">Live TV</a>
-        <a href="https://chithruka.github.io/Chithruka/Radio/radio.html">Live Radio</a>
-        <a href="#" onclick="toggleMobileMenu()" style="color: var(--primary-red); font-size: 0.9rem;">Close Menu</a>
-    </div>
-
-    <div class="hero">
-        <div class="hero-overlay">
-            <h1 class="hero-title text-white font-extrabold mb-2" style="font-family: 'Bebas Neue', sans-serif;">LIVE SPORT</h1>
-            <h2 class="hero-subtitle font-bold text-red-600 mb-4" style="font-family: 'Bebas Neue', sans-serif;">UNLIMITED</h2>
-            <p class="text-gray-300 text-sm md:text-lg max-w-lg mb-6 leading-relaxed drop-shadow-md">
-                Stream the biggest matches in Cricket, Football, Tennis and more. High definition, zero buffering.
-            </p>
-            <div class="flex gap-4">
-                <button class="btn btn-play shadow-lg" onclick="playRandom()">
-                    <i class="fa-solid fa-shuffle"></i> Random
-                </button>
-                <button class="btn btn-info shadow-lg" onclick="showMoreInfo('IPL')">
-    <i class="fa-solid fa-bat-ball"></i> Cricket Info
-</button>
+        <div class="hero">
+            <div class="hero-overlay">
+                <h1 class="hero-title text-white font-extrabold mb-2">LIVE SPORT</h1>
+                <h2 class="hero-subtitle font-bold text-red-600 mb-4">UNLIMITED</h2>
+                <p class="text-gray-300 text-sm md:text-lg max-w-lg mb-6 leading-relaxed drop-shadow-md" style="font-family: 'Montserrat', sans-serif;">
+                    Stream the biggest matches in Cricket, Football, Tennis and more. High definition, zero buffering.
+                </p>
+                <div class="flex gap-4">
+                    <button class="btn btn-play shadow-lg" onclick="playRandom()">
+                        <i class="fa-solid fa-shuffle"></i> Random
+                    </button>
+                    <button class="btn btn-info shadow-lg" onclick="showMoreInfo('IPL')">
+                        <i class="fa-solid fa-bat-ball"></i> Cricket Info
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="main-content">
-        <div class="flex justify-center mt-12 mb-12">
-            <div class="w-10 h-10 border-4 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+        <div id="main-content">
+            <div class="flex justify-center mt-12 mb-12">
+                <div class="w-10 h-10 border-4 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+            </div>
         </div>
-    </div>
 
-    <div id="load-more-container" class="flex justify-center mt-8 mb-12" style="display: none;">
-        <button id="load-more-btn" class="btn btn-info shadow-lg" onclick="loadMoreChannels()">
-            <i class="fa-solid fa-plus"></i> Load More
-        </button>
-    </div>
-    <footer>
-        <div class="socials text-gray-400">
-           <a href="https://www.youtube.com/live"><i class="fab fa-youtube cursor-pointer transition hover:text-white"></i></a>
-           <a href="https://www.twitch.tv/"><i class="fa-brands fa-twitch cursor-pointer transition hover:text-white"></i></a>
-           <a href="https://www.facebook.com/watch"><i class="fa-brands fa-facebook cursor-pointer transition hover:text-white"></i></a>
-           <a href="https://www.dailymotion.com/search/tv/lives"><i class="fa-brands fa-dailymotion cursor-pointer transition hover:text-white"></i></a>
-        <a href="https://vimeo.com/search?type=clip&q=tv&live=now"><i class="fa-brands fa-vimeo cursor-pointer transition hover:text-white"></i></a>
+        <div id="load-more-container" class="flex justify-center mt-8 mb-12" style="display: none;">
+            <button id="load-more-btn" class="btn btn-info shadow-lg" onclick="loadMoreChannels()" style="font-family: 'Montserrat', sans-serif;">
+                <i class="fa-solid fa-plus"></i> Load More
+            </button>
         </div>
-        <p class="text-xs text-gray-600 font-medium">
-            &copy; 2026 Chithruka. All Rights Reserved.
-        </p>
-    </footer>
+
+    </div>
 
     <div id="player-overlay">
         <div class="player-header">
             <button class="back-btn" onclick="closePlayer()">
                 <i class="fas fa-arrow-left"></i> Back
             </button>
-            <span id="player-title" class="font-bold text-lg text-gray-200 tracking-wide">Channel Name</span>
+            <span id="player-title" class="font-bold text-lg text-gray-200 tracking-wide" style="font-family: 'Montserrat', sans-serif;">Channel Name</span>
             <div style="width: 20px;"></div>
         </div>
         <div id="video-container"></div>
     </div>
-<div id="modal-overlay" class="modal-overlay" onclick="closeInfo()"></div>
-<div id="info-modal" class="info-modal">
-    <div class="flex justify-between items-start">
-        <h2 id="modal-title" class="info-header">Loading...</h2>
-        <button onclick="closeInfo()" class="text-white text-2xl">&times;</button>
+
+    <div id="modal-overlay" class="modal-overlay" onclick="closeInfo()"></div>
+    <div id="info-modal" class="info-modal">
+        <div class="flex justify-between items-start">
+            <h2 id="modal-title" class="info-header">Loading...</h2>
+            <button onclick="closeInfo()" class="text-white text-2xl" style="background:transparent; border:none; cursor:pointer;">&times;</button>
+        </div>
+        <div id="modal-content" class="info-body" style="font-family: 'Montserrat', sans-serif;">
+            <p>Fetching latest sports information...</p>
+        </div>
     </div>
-    <div id="modal-content" class="info-body">
-        <p>Fetching latest sports information...</p>
-    </div>
-</div>
-   <script>
+
+    <script>
+        // --- Drawer Logic & Mobile Menu ---
+        document.addEventListener('click', function(e) {
+            const drawer = document.getElementById('mobile-more-drawer');
+            const moreBtn = document.getElementById('more-menu-btn');
+            if (drawer && drawer.classList.contains('open')) {
+                if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+                    drawer.classList.remove('open');
+                    moreBtn.classList.remove('active'); 
+                }
+            }
+        });
+
+        function toggleMoreMenu() {
+            const drawer = document.getElementById('mobile-more-drawer');
+            const moreBtn = document.getElementById('more-menu-btn');
+            drawer.classList.toggle('open');
+            moreBtn.classList.toggle('active');
+        }
+
         // --- State ---
         let apiChannels = []; 
         let allChannels = []; 
         let filteredChannels = []; 
-        const CHANNELS_PER_PAGE = 10;
+        const CHANNELS_PER_PAGE = 15; // Increased slightly for desktop grid
         let displayedCount = CHANNELS_PER_PAGE;
         let player = null;
         const M3U_URL = 'https://iptv-org.github.io/iptv/categories/sports.m3u';
@@ -494,72 +391,8 @@
             { name: "SuperSport Cricket", type: "iframe", src: "https://streamcrichd.com/update/sscricket.php", logo: "https://r2.thesportsdb.com/images/media/channel/logo/srtijz1643382350.png", isPremium: true },
             { name: "Ten Sports", type: "iframe", src: "https://streamcrichd.com/update/tensp.php", logo: "https://upload.wikimedia.org/wikipedia/en/1/12/Ten_Sports_Logo.png", isPremium: true },
             { name: "Red Bull TV", type: "hls", url: "https://rbmn-live.akamaized.net/hls/live/709025/WoRB-Int-EN-linear-BU/master_6660.m3u8", logo: "https://img.redbull.com/images/w_300/q_auto,f_auto/redbullcom/2021/3/8/v1viztxjab9e9a6of4by/redbulltv", isPremium: false },
-              { name: "ACC Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=acc+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/acc-network.png", isPremium: true },
-  { name: "Astro Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-cricket.webp", isPremium: true },
-  { name: "Astro Football", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+football&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-football.webp", isPremium: true },
-  { name: "Astro Grandstand", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+grandstand&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-grandstand.webp", isPremium: true },
-  { name: "Astro Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+premier+league&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-premier-league.webp", isPremium: true },
-  { name: "Astro Premier League 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=astro+premier+league+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/astro-premier-league-2.webp", isPremium: true },
-  { name: "beIN SPORTS", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports.webp", isPremium: true },
-  { name: "beIN SPORTS 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-1.svg", isPremium: true },
-  { name: "beIN SPORTS 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-2.svg", isPremium: true },
-  { name: "beIN SPORTS 3", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+3&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-3.svg", isPremium: true },
-  { name: "beIN SPORTS MENA 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+mena+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-1.svg", isPremium: true },
-  { name: "beIN SPORTS MENA 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports+mena+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports-2.svg", isPremium: true },
-  { name: "BTN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=btn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/btn.webp", isPremium: true },
-  { name: "CBS Sports Golazo", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=cbs+sports+golazo&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/cbs-sports-golazo.webp", isPremium: true },
-  { name: "CBS Sports Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=cbs+sports+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/cbs-sports-network.svg", isPremium: true },
-  { name: "ESPN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn.svg", isPremium: true },
-  { name: "ESPN 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-2.svg", isPremium: true },
-  { name: "ESPN Deportes", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+deportes&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-deportes.png", isPremium: true },
-  { name: "ESPN News", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+news&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-news.svg", isPremium: true },
-  { name: "ESPN U", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=espn+u&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/espn-u.svg", isPremium: true },
-  { name: "Fox Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-cricket.svg", isPremium: true },
-  { name: "FOX Deportes", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+deportes&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-deportes.svg", isPremium: true },
-  { name: "FOX Soccer Plus", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+soccer+plus&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-soccer-plus.svg", isPremium: true },
-  { name: "FOX Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+sports+1&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-sport-1.svg", isPremium: true },
-  { name: "FOX Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=fox+sports+2&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/fox-sport-2.svg", isPremium: true },
-  { name: "GOLF TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=golf+tv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/golf-tv.png", isPremium: true },
-  { name: "GOLTV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=goltv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/goltv.svg", isPremium: true },
-  { name: "MLB Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=mlb+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/mlb-network.svg", isPremium: true },
-  { name: "NBA TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nba+tv&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nba-tv.svg", isPremium: true },
-  { name: "NFL Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nfl+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nfl-network.svg", isPremium: true },
-  { name: "NHL Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=nhl+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/nhl-network.svg", isPremium: true },
-  { name: "Red Bull", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=red+bull&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/red-bull.svg", isPremium: true },
-  { name: "SEC Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sec+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/sec-network.svg", isPremium: true },
-  { name: "Tennis Channel", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tennis+channel&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/tennis-channel.png", isPremium: true },
-  { name: "TUDN", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tudn&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/tudn.svg", isPremium: true },
-  { name: "Willow 2 Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=willow+2+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/willow-cricket-2.webp", isPremium: true },
-  { name: "Willow Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=willow+cricket&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/willow-cricket-1.svg", isPremium: true },
-  { name: "WWE", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=wwe&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/wwe.svg", isPremium: true },
-  { name: "Yes Network", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=yes+network&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/yes.png", isPremium: true },
-  { name: "DAZN 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=dazn+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/dazn-1.png", isPremium: true },
-  { name: "Euro Sport 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=euro+sport+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/euro-sport-1.png", isPremium: true },
-  { name: "Euro Sport 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=euro+sport+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/euro-sport-2.png", isPremium: true },
-  { name: "LaLiga TV", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=laliga+tv&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/la-liga-tv.svg", isPremium: true },
-  { name: "Premier Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=premier+sports+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/premier-sports-1.svg", isPremium: true },
-  { name: "Premier Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=premier+sports+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/premier-sports-2.svg", isPremium: true },
-  { name: "Sky Sports Action", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+action&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-action.svg", isPremium: true },
-  { name: "Sky Sports Arena", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+arena&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-arena.svg", isPremium: true },
-  { name: "Sky Sports Cricket", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+cricket&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-cricket.svg", isPremium: true },
-  { name: "Sky Sports F1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+f1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-f1.svg", isPremium: true },
-  { name: "Sky Sports Football", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+football&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-football.svg", isPremium: true },
-  { name: "Sky Sports Golf", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+golf&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-golf.svg", isPremium: true },
-  { name: "Sky Sports Main Event", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+main+event&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-main-event.svg", isPremium: true },
-  { name: "Sky Sports Mix", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+mix&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-mix.svg", isPremium: true },
-  { name: "Sky Sports Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+premier+league&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-premier-league.webp", isPremium: true },
-  { name: "Sky Sports Racing", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+racing&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-racing.svg", isPremium: true },
-  { name: "Sky Sports Tennis", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+tennis&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-tennis.svg", isPremium: true },
-  { name: "TNT Sports 1", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+1&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-1.png", isPremium: true },
-  { name: "TNT Sports 2", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+2&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-2.png", isPremium: true },
-  { name: "TNT Sports 3", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+3&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-3.png", isPremium: true },
-  { name: "TNT Sports 4", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+4&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-4.png", isPremium: true },
-  { name: "TNT Sports 5", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+5&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-5.png", isPremium: true },
-  { name: "TNT Sports 6", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+6&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-6.png", isPremium: true },
-  { name: "TNT Sports 7", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+7&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-7.png", isPremium: true },
-  { name: "TNT Sports 8", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+8&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-8.png", isPremium: true },
-  { name: "TNT Sports 9", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+9&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-9.png", isPremium: true },
-  { name: "TNT Sports 10", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=tnt+sports+10&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/tnt-sport-10.png", isPremium: true }
+            { name: "beIN SPORTS", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=bein+sports&code=us&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-states/bein-sports.webp", isPremium: true },
+            { name: "Sky Sports Premier League", type: "iframe", src: "https://cdn-live.tv/api/v1/channels/player/?name=sky+sports+premier+league&code=gb&user=cdnlivetv&plan=free", logo: "https://api.cdn-live.tv/api/v1/channels/images6318/united-kingdom/sky-sport-premier-league.webp", isPremium: true }
         ];
 
         // --- Core Functions ---
@@ -571,11 +404,6 @@
             renderGrid(filteredChannels.slice(0, CHANNELS_PER_PAGE), true);
             document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu-overlay');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
         }
 
         function handleImageError(img) {
@@ -606,11 +434,11 @@
                 poster.innerHTML = `
                     ${badge}
                     <img src="${logoSrc}" loading="lazy" style="${!logoSrc ? 'display:none' : ''}" onerror="handleImageError(this)">
-                    <div class="poster-fallback" style="${logoSrc ? 'display:none' : 'display:flex'}">
+                    <div class="poster-fallback" style="${logoSrc ? 'display:none' : 'display:flex'}; align-items: center; justify-content: center; height: 100%; width: 100%; font-size: 3rem; color: #dc2626; background: #1a1a1a;">
                         <i class="fa-solid fa-tv"></i>
                     </div>
                     <div class="poster-overlay">
-                        <div class="poster-title truncate w-full text-white drop-shadow-md">${channel.name}</div>
+                        <div class="poster-title" style="font-family: 'Montserrat', sans-serif;">${channel.name}</div>
                     </div>
                 `;
                 fragment.appendChild(poster);
@@ -628,7 +456,7 @@
             document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
         });
 
-        // --- Player ---
+        // --- Player & Modal ---
         async function showMoreInfo(channelName) {
             const modal = document.getElementById('info-modal');
             const overlay = document.getElementById('modal-overlay');
@@ -650,14 +478,14 @@
 
                     if (league) {
                         content.innerHTML = `
-                            <div class="mb-4 text-center">
-                                <img src="${league.strBadge}" class="w-24 h-24 mb-4 mx-auto" onerror="this.src='https://www.thesportsdb.com/images/media/league/badge/0787tt1521124451.png'">
-                                <p class="font-bold text-white mb-2">Tournament/League Info:</p>
-                                <p class="text-sm leading-relaxed">${league.strDescriptionEN ? league.strDescriptionEN.substring(0, 400) + '...' : 'Live cricket coverage including T20, ODI, and Test matches.'}</p>
+                            <div style="margin-bottom: 1rem; text-align: center;">
+                                <img src="${league.strBadge}" style="width: 6rem; height: 6rem; margin-bottom: 1rem; display: block; margin-left: auto; margin-right: auto;" onerror="this.src='https://www.thesportsdb.com/images/media/league/badge/0787tt1521124451.png'">
+                                <p style="font-weight: bold; color: white; margin-bottom: 0.5rem;">Tournament/League Info:</p>
+                                <p style="font-size: 0.875rem; line-height: 1.6;">${league.strDescriptionEN ? league.strDescriptionEN.substring(0, 400) + '...' : 'Live cricket coverage including T20, ODI, and Test matches.'}</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 text-sm mt-4">
-                                <div class="bg-zinc-800 p-2 rounded border border-zinc-700"><strong>Sport:</strong> ${league.strSport || 'Cricket'}</div>
-                                <div class="bg-zinc-800 p-2 rounded border border-zinc-700"><strong>First Played:</strong> ${league.intFormedYear || 'N/A'}</div>
+                            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; font-size: 0.875rem; margin-top: 1rem;">
+                                <div style="background: #27272a; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid #3f3f46;"><strong>Sport:</strong> ${league.strSport || 'Cricket'}</div>
+                                <div style="background: #27272a; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid #3f3f46;"><strong>First Played:</strong> ${league.intFormedYear || 'N/A'}</div>
                             </div>
                         `;
                         return;
@@ -745,15 +573,12 @@
         }
 
         // --- Initialization & Background Fetch ---
-
-        // 1. INSTANT RENDER: Load premium channels immediately
         allChannels = [...premiumChannels];
         filteredChannels = [...allChannels];
         displayedCount = CHANNELS_PER_PAGE;
         renderGrid(filteredChannels.slice(0, CHANNELS_PER_PAGE), true);
         document.getElementById('load-more-container').style.display = filteredChannels.length > CHANNELS_PER_PAGE ? 'flex' : 'none';
 
-        // 2. BACKGROUND FETCH: Get the M3U file without freezing the UI
         async function fetchChannels() {
             try {
                 const response = await fetch(M3U_URL);
