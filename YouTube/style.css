@@ -291,8 +291,30 @@ body.sidebar-hidden .main-layout .sidebar {
   text-decoration: none;
 }
 
+/* Position the duration badge on the bottom right of the thumbnail */
 .video-list .video-card .thumbnail-container {
-  position: relative;
+  position: relative; /* Ensure parent is relative */
+}
+
+.video-list .video-card .duration {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8); /* Dark background for readability */
+}
+
+/* Style the channel logo to be circular */
+.video-list .video-card .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* Makes it circular */
+  object-fit: cover;
+  margin-top: 4px;
 }
 
 .video-list .video-card .thumbnail {
@@ -303,27 +325,10 @@ body.sidebar-hidden .main-layout .sidebar {
   background: var(--light-white-color);
 }
 
-.video-list .video-card .duration {
-  position: absolute;
-  right: 0.65rem;
-  bottom: 0.8rem;
-  color: #fff;
-  font-size: 0.875rem;
-  padding: 0 0.3rem;
-  border-radius: 0.3rem;
-  background: var(--overlay-dark-color);
-}
-
 .video-list .video-card .video-info {
   display: flex;
   gap: 0.7rem;
   padding: 0.7rem 0.5rem;
-}
-
-.video-list .video-card .icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
 }
 
 .video-list .video-card .title {

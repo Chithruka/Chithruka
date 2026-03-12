@@ -73,11 +73,12 @@ function renderVideos(videoArray) {
     card.innerHTML = `
       <div class="thumbnail-container">
         <img src="${vid.thumb}" alt="Thumbnail" class="thumbnail">
+        <span class="duration">${vid.duration || '4:15'}</span>
       </div>
       <div class="video-info">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Netflix_2015_N_logo.svg" alt="Channel Logo" class="icon" style="border-radius: 0;">
+        <img src="${vid.channelLogo || 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20height%3D%22100%25%22%20version%3D%221.1%22%20viewBox%3D%220%200%2068%2048%22%20width%3D%22100%25%22%3E%3Cpath%20class%3D%22ytp-large-play-button-bg%22%20d%3D%22M66.52%2C7.74c-0.78-2.93-2.49-5.41-5.42-6.19C55.79%2C.13%2C34%2C0%2C34%2C0S12.21%2C.13%2C6.9%2C1.55%20C3.97%2C2.33%2C2.27%2C4.81%2C1.48%2C7.74C0.06%2C13.05%2C0%2C24%2C0%2C24s0.06%2C10.95%2C1.48%2C16.26c0.78%2C2.93%2C2.49%2C5.41%2C5.42%2C6.19%20C12.21%2C47.87%2C34%2C48%2C34%2C48s21.79-0.13%2C27.1-1.55c2.93-0.78%2C4.64-3.26%2C5.42-6.19C67.94%2C34.95%2C68%2C24%2C68%2C24S67.94%2C13.05%2C66.52%2C7.74z%22%20fill%3D%22%23f03%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M%2045%2C24%2027%2C14%2027%2C34%22%20fill%3D%22%23fff%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E'}" alt="Channel Logo" class="icon">
         <div class="video-details">
-          <h2 class="title" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; font-size: 1.3rem;">${vid.title}</h2>
+          <h2 class="title" style="font-family: 'Google Sans', sans-serif; letter-spacing: 1px; font-size: 1.3rem;">${vid.title}</h2>
           <p class="channel-name">${vid.channel}</p>
           <p class="views">${vid.views}</p>
         </div>
@@ -136,6 +137,7 @@ function loadPlayerView(videoId) {
   document.getElementById('video-title-display').innerText = currentVideo.title;
   document.getElementById('video-desc-display').innerText = currentVideo.description;
   document.getElementById('channel-name-display').innerHTML = `${currentVideo.channel} <i class="fa-solid fa-circle-check" style="font-size: 14px; color: #888;"></i>`;
+  document.getElementById('channel-logo-display').src = currentVideo.channelLogo;
 
   video.poster = currentVideo.thumb;
   const src = currentVideo.sources;
