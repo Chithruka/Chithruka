@@ -3,165 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro IPTV Multi-Source</title>
+    <title>Live TV - Chithruka Streamer</title>
+    
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<style>
-    /* Ensure Video.js fills our screen-wrapper */
-    .video-js {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    /* Hide the default big play button for the "TV" feel */
-    .vjs-big-play-button { display: none !important; }
-        /* --- CORE LAYOUT --- */
-        body {
-            margin: 0;
-            background-color: #1a1a1a;
-            color: #ccc;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            height: 100vh;
-            overflow: hidden; 
-        }
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    
+    <link rel="stylesheet" href="../output.css">
 
-        #tv-station {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background: #0f0f0f;
-            overflow: hidden;
-        }
+    <style>
+        /* --- DESKTOP SIDEBAR --- */
+        .sidebar { position: fixed; left: 0; top: 0; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; transition: width 0.3s ease; width: 64px; overflow: hidden; display: none; flex-direction: column; }
+        .sidebar:hover { width: 240px; }
+        .sidebar-header { height: 70px; display: flex; align-items: center; padding-left: 18px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 0 8px; width: 240px; }
+        .nav-link { display: flex; align-items: center; padding: 12px; border-radius: 12px; color: #9ca3af; text-decoration: none; transition: 0.3s; }
+        .nav-link i { font-size: 1.2rem; min-width: 30px; text-align: center; }
+        .nav-link .nav-text { margin-left: 15px; opacity: 0; white-space: nowrap; }
+        .sidebar:hover .nav-text { opacity: 1; }
+        .nav-link:hover, .nav-link.active { background: rgba(229, 9, 20, 0.1); color: #e50914; }
 
-        #tv-chassis {
-            background: #2b2b2b;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: inset 0 0 10px #000, 0 0 50px rgba(0,0,0,0.8), 0 0 0 5px #111;
-            width: 90%;
-            max-width: 1000px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
+        /* --- MOBILE NAVIGATION --- */
+        .mobile-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-wrapper { display: flex; width: 100%; justify-content: space-around; padding: 0; margin: 0; }
+        .mobile-item { list-style: none; flex: 1; padding: 0 4px; }
+        .mobile-item a, .mobile-item button { height: 58px; width: 100%; margin: 6px 0; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #9ca3af; transition: all 0.3s ease; background: transparent; border: none; cursor: pointer; }
+        .mobile-item.active a, .mobile-item.active button, .mobile-item a:hover, .mobile-item button:hover { color: #e50914; background: rgba(229, 9, 20, 0.1); }
+        .mobile-item.active a i, .mobile-item.active button i { transform: scale(1.15); }
+        .mobile-item span { font-size: 0; opacity: 0; transition: all 0.3s ease; }
+        .mobile-item.active span, .mobile-item:hover span { font-size: 12px; opacity: 1; margin-top: 4px; }
 
-        /* Fullscreen Logic */
-        #tv-chassis:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            max-width: none;
-            padding: 0;
-            border-radius: 0;
-            background: black;
-            justify-content: center; 
-        }
+        .nav-svg { width: 24px; height: 24px; display: block; fill: currentColor; transition: transform 0.2s ease; }
+        .sidebar-nav a, .mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .sidebar-nav a:hover .nav-svg, .mobile-nav a.active .nav-svg { transform: scale(1.1); }
 
-        #tv-chassis:fullscreen #screen-wrapper {
-            height: 100%;
-            border: none;
-            border-radius: 0;
-        }
+        @media (min-width: 768px) { .sidebar { display: flex; } .mobile-nav { display: none; } body { padding-left: 64px; } }
+        @media (max-width: 767px) { body { padding-bottom: 70px; } }
 
-        #tv-chassis:fullscreen .tv-controls-bar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border-radius: 50px;
-            width: auto;
-            min-width: 300px;
-            z-index: 2147483647; 
-        }
+        /* --- VCR VFX & Player Overrides --- */
+        .video-js { width: 100% !important; height: 100% !important; border-radius: 0.75rem; background-color: #000; }
+        .vjs-big-play-button { display: none !important; }
         
-        #tv-chassis:fullscreen .brand { display: none; }
-
-        #screen-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 8px solid #111;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* --- CONTROLS --- */
-        .tv-controls-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            position: relative;
-            z-index: 100;
-        }
-
-        .brand { font-weight: bold; letter-spacing: 2px; color: #555; text-transform: uppercase; margin-bottom: 5px; }
-        .desktop-badge { display: inline; font-size: 0.6em; }
-        .mobile-badge { display: none; font-size: 0.6em; }
-
-        /* --- SIDEBAR --- */
-        #playlist-sidebar {
-            width: 350px;
-            background-color: #1a1a1a;
-            border-left: 2px solid #333;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        /* --- MOBILE PORTRAIT --- */
-        @media (max-width: 900px) {
-            body { flex-direction: column; height: auto; overflow-y: auto; }
-            #tv-station { padding: 10px 0; width: 100%; min-height: auto; background: #000; }
-            #tv-chassis { width: 100%; padding: 10px; border-radius: 0; box-shadow: none; box-sizing: border-box; }
-            #screen-wrapper { border-width: 2px; }
-            #playlist-sidebar { width: 100%; height: 500px; border-left: none; border-top: 2px solid #333; }
-            .tv-controls-bar { flex-direction: column; gap: 10px; }
-            .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; gap: 5px; }
-            button { padding: 12px 5px; font-size: 10px; }
-            
-            .desktop-badge { display: none; }
-            .mobile-badge { display: inline; }
-        }
-
-        /* --- MOBILE LANDSCAPE --- */
-        @media (orientation: landscape) and (max-width: 900px) {
-            body { overflow: hidden; }
-            #tv-station { padding: 0; height: 100vh; width: 100vw; background: #000; }
-            #tv-chassis { width: 100%; height: 100%; padding: 0; border: none; border-radius: 0; }
-            #screen-wrapper { width: 100%; height: 100%; border: none; border-radius: 0; aspect-ratio: unset; }
-            #playlist-sidebar { display: none; }
-            
-            .tv-controls-bar {
-                position: absolute; bottom: 10px; left: 10px; right: 10px;
-                background: rgba(0,0,0,0.7); padding: 5px; border-radius: 8px; z-index: 200;
-                flex-direction: row; 
-            }
-            .brand { display: none; } 
-            .btn-group { display: flex; width: 100%; }
-            #current-channel-display { display: none; }
-        }
-
-        /* --- VFX & REC --- */
-        #rec-overlay { position: absolute; top: 20px; right: 30px; color: red; font-weight: bold; font-size: 24px; display: none; z-index: 20; text-shadow: 0 0 5px black; pointer-events: none; }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-
-        .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; }
+        .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; border-radius: 0.75rem; }
         .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
         .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
         .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
@@ -169,382 +57,564 @@
         @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
         @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
 
-        .btn-group { display: flex; gap: 10px; }
-        button { padding: 8px 16px; background: #444; border: 1px solid #222; color: white; cursor: pointer; font-family: inherit; text-transform: uppercase; font-size: 12px; box-shadow: 0 2px 0 #000; }
-        button:active { transform: translateY(2px); box-shadow: inset 0 2px 0 #000; }
-        button.active-btn { background: #d63031; }
-        #rec-btn.recording { background-color: red; color: white; border-color: darkred; animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
-        #playlist-header { padding: 15px; background-color: #222; border-bottom: 2px solid #333; }
-        .filter-group { display: flex; gap: 5px; margin-bottom: 10px; }
-        select, input[type="text"] { background: #333; color: #ccc; border: 1px solid #444; padding: 8px; width: 100%; box-sizing: border-box; }
-        #channel-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
-        #channel-list::-webkit-scrollbar { width: 10px; background: #222;}
-        #channel-list::-webkit-scrollbar-thumb { background: #444; }
-        .channel-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #252525; display: flex; align-items: center; font-size: 12px; }
-        .channel-item:hover { background-color: #333; }
-        .channel-item.active { background-color: #d63031; color: white; }
-        .channel-logo { width: 30px; height: 30px; margin-right: 12px; object-fit: contain; background: #ccc; }
-        .channel-info { display: flex; flex-direction: column; }
+        .recording-pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Custom scrollbar hides */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
+<body class="bg-black text-gray-200 font-sans overflow-x-hidden">
 
-    <div id="tv-station">
-        <div id="tv-chassis">
- <div id="screen-wrapper">
-    <div id="rec-overlay" class="blink">● REC</div>
-    <div class="scanlines"></div>
-    <div class="noise"></div>
-    <div class="vignette"></div>
+<div id="page-background" class="fixed inset-0 bg-black z-[-1]"></div>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="menu-icon">
+            <svg stroke="#e50914" fill="#e50914" stroke-width="0" viewBox="0 0 24 24" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path>
+            </svg>
+        </div>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="../index.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span class="nav-text">Home</span></a></li>
+        <li><a href="../Anime/anime.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span class="nav-text">Anime</span></a></li>
+        <li><a href="../download.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg><span class="nav-text">Dubbings</span></a></li>
+        <li><a href="#" class="nav-link active"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span class="nav-text">Live TV</span></a></li>
+        <li><a href="../Sports/sports.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span class="nav-text">Sports</span></a></li>
+        <li><a href="../Games/Games.html" class="nav-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg"><path d="M362.667,341.333c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S350.891,341.333,362.667,341.333z"/><path d="M362.667,384c-11.776,0-21.333,9.557-21.333,21.333s9.557,21.333,21.333,21.333S384,417.109,384,405.333 S374.443,384,362.667,384z"/><path d="M320,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333s-21.333,9.557-21.333,21.333 S308.224,384,320,384z"/><path d="M405.333,384c11.776,0,21.333-9.557,21.333-21.333s-9.557-21.333-21.333-21.333S384,350.891,384,362.667 S393.557,384,405.333,384z"/><path d="M192,341.333h-21.333V320c0-11.782-9.551-21.333-21.333-21.333C137.551,298.667,128,308.218,128,320v21.333h-21.333 c-11.782,0-21.333,9.551-21.333,21.333S94.885,384,106.667,384H128v21.333c0,11.782,9.551,21.333,21.333,21.333 c11.782,0,21.333-9.551,21.333-21.333V384H192c11.782,0,21.333-9.551,21.333-21.333S203.782,341.333,192,341.333z"/><path d="M490.667,213.333H277.333v-128c0-11.685,9.649-21.333,21.333-21.333C310.351,64,320,73.649,320,85.333v21.333 c0,35.249,28.751,64,64,64c35.249,0,64-28.751,64-64V21.333C448,9.551,438.449,0,426.667,0s-21.333,9.551-21.333,21.333v85.333 c0,11.685-9.649,21.333-21.333,21.333c-11.685,0-21.333-9.649-21.333-21.333V85.333c0-35.249-28.751-64-64-64 c-35.249,0-64,28.751-64,64v128H21.333C9.551,213.333,0,222.885,0,234.667v256C0,502.449,9.551,512,21.333,512h469.333 c11.782,0,21.333-9.551,21.333-21.333v-256C512,222.885,502.449,213.333,490.667,213.333z M469.333,469.333H42.667V256h426.667 V469.333z"/></svg><span class="nav-text">Games</span></a></li>
+        <li><a href="../Radio/radio.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span class="nav-text">Radio</span></a></li>
+        <li><a href="../Books/Books.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span class="nav-text">Books</span></a></li>
+        <li style="cursor: pointer;"><a onclick="openFilterModal()" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg><span class="nav-text">Search Filters</span></a></li>
+        </ul>
+</aside>
+
+<nav class="mobile-nav">
+    <ul class="nav-wrapper">
+        <li class="mobile-item"><a href="../index.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span>Home</span></a></li>
+        <li class="mobile-item"><a href="../Anime/anime.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span>Anime</span></a></li>
+        <li class="mobile-item active"><a href="tv.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span>Live TV</span></a></li>
+        <li class="mobile-item"><a href="../Sports/sports.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span>Sports</span></a></li>
+        <li class="mobile-item" id="more-menu-btn">
+            <button onclick="toggleMoreMenu()">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path></svg><span>More</span>
+            </button>
+        </li>
+    </ul>
+</nav>
+
+<div class="container mx-auto px-4">
     
-    <video 
-        id="video-player" 
-        class="video-js vjs-default-skin vjs-big-play-centered" 
-        controls preload="auto" autoplay muted playsinline>
-    </video>
+    <nav class="navbar relative flex items-center justify-between py-4 mb-4 z-50">
+        <img oncontextmenu="return false;" ondragstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer" class="logo-img h-[40px] md:h-[50px] cursor-pointer" onclick="location.href='../index.html';">
 
-    <iframe 
-        id="iframe-player" 
-        allow="autoplay; fullscreen; encrypted-media" 
-        style="display:none; width:100%; height:100%; border:none; position:relative; z-index:5;">
-    </iframe>
+        <div class="search-group flex items-center flex-grow max-w-xl mx-4 gap-2">
+            <button onclick="openFilterModal()" class="filter-btn bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#e50914] text-gray-400 hover:text-white rounded-full p-2.5 transition flex-shrink-0" title="Filter Content">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+            <div class="relative w-full">
+                <input type="text" id="search-input" class="glass-input w-full bg-black/40 border border-white/10 rounded-full px-5 py-2.5 text-white focus:outline-none focus:border-[#e50914] transition-all" placeholder="Search Channels..." onkeyup="applyFilters()">
+                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+            </div>
+        </div>
+    </nav>
+
+    <div id="player-section" class="mb-8 mt-2 hidden animate-fade-in">
+        <div class="glass-panel p-4 md:p-6 rounded-2xl border border-white/10 shadow-2xl relative">
+            <h2 id="current-channel-display" class="text-xl md:text-2xl font-bold mb-4 text-white border-l-4 border-[#e50914] pl-3 tracking-wide">NO SIGNAL</h2>
+            
+            <div id="screen-wrapper" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+                <div id="rec-overlay" class="blink hidden absolute top-4 right-6 text-red-500 font-bold text-xl drop-shadow-md z-20">● REC</div>
+                <div class="scanlines"></div>
+                <div class="noise"></div>
+                <div class="vignette"></div>
+                
+                <video id="video-player" class="video-js vjs-default-skin w-full h-full" controls preload="auto" autoplay muted playsinline></video>
+                <iframe id="iframe-player" allow="autoplay; fullscreen; encrypted-media" class="hidden w-full h-full absolute inset-0 z-0 border-none"></iframe>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
+                <button id="vfx-btn" onclick="toggleVFX()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all">
+                    <i class="fas fa-tv"></i> <span>VCR FX: OFF</span>
+                </button>
+                <button id="rec-btn" onclick="toggleRecording()" class="flex items-center gap-2 bg-white/5 hover:bg-red-900/40 border border-white/10 hover:border-red-500 text-gray-300 hover:text-white font-semibold py-2 px-5 rounded-lg transition-all">
+                    <i class="fas fa-circle text-red-500"></i> <span id="rec-text">Record</span>
+                </button>
+                <button id="fs-btn" onclick="toggleFullscreen()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all ml-auto">
+                    <i class="fas fa-expand"></i> <span>Fullscreen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-results-section" class="mb-12 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Search Results
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('search-results-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="search-results-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('search-results-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="m3u8-section" class="mb-12 relative">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Global Channels (M3U8)
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('m3u8-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="m3u8-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4">
+                <div class="text-gray-500 text-sm p-4">Scanning frequencies...</div>
+            </div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('m3u8-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="embed-section" class="mb-12 relative">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-blue-500 pl-3">
+            Premium Networks (Embedded)
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('embed-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="embed-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4">
+                <div class="text-gray-500 text-sm p-4">Scanning frequencies...</div>
+            </div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('embed-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
 </div>
 
-            <div class="tv-controls-bar">
-                <div class="brand">
-                    Sony Trinitron 
-                    <span class="desktop-badge">EMULATION</span>
-                    <span class="mobile-badge">MOBILE</span>
-                </div>
-                <div class="btn-group">
-                    <button id="vfx-btn" onclick="toggleVFX()">VCR FX: OFF</button>
-                    <button id="rec-btn" onclick="toggleRecording()">● Record</button>
-                    <button id="fs-btn" onclick="toggleFullscreen()">[ ] FULLSCREEN</button>
-                </div>
+<div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative border border-white/10 shadow-2xl bg-[#111]">
+        <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-4 text-center text-white border-b border-white/10 pb-2">Filter Channels</h3>
+        
+        <div class="flex flex-col gap-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-bold tracking-wider uppercase">Country</label>
+                <select id="country-filter" class="glass-select w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white" onchange="applyFilters(); closeFilterModal();">
+                    <option value="all">All Countries</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-bold tracking-wider uppercase">Category</label>
+                <select id="category-filter" class="glass-select w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white" onchange="applyFilters(); closeFilterModal();">
+                    <option value="all">All Categories</option>
+                </select>
             </div>
             
-            <div style="margin-top:10px; text-align:center; color:#555; font-size: 0.8em;" id="current-channel-display">NO SIGNAL</div>
-        </div>
-    </div>
-
-    <div id="playlist-sidebar">
-        <div id="playlist-header">
-            <div class="filter-group">
-                <select id="country-filter" onchange="applyFilters()"><option value="all">ALL COUNTRIES</option></select>
-                <select id="category-filter" onchange="applyFilters()"><option value="all">ALL CATEGORIES</option></select>
-            </div>
-            <input type="text" id="search-box" placeholder="SEARCH..." onkeyup="applyFilters()">
-            <div style="margin-top: 5px; font-size: 0.7em; color: #666; text-align: right;">
-                <span id="channel-count">0</span> CHANNELS
+            <div class="flex gap-3 mt-4">
+                <button onclick="resetFilters()" class="flex-1 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-bold transition">
+                    Reset
+                </button> 
+                <button onclick="closeFilterModal()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
+                    Done
+                </button>
             </div>
         </div>
-        <ul id="channel-list">
-            <li style="padding:20px; text-align:center; color:#666;">TUNING...</li>
-        </ul>
     </div>
+</div>
 
-    <script>// --- INITIALIZE VIDEO.JS PLAYER ---
-const player = videojs('video-player', {
-    fluid: false,
-    autoplay: true,
-    controls: true,
-    responsive: true,
-    playbackRates: [0.5, 1, 1.5, 2]
-});
+<script>
+    // --- UI HELPERS & LAZY LOADING STATE ---
+    const CHUNK_SIZE = 30; // Load 30 channels per batch to prevent browser freezing
+    let channelLists = { m3u8: [], embed: [], search: [] };
+    let renderIndices = { m3u8: 0, embed: 0, search: 0 };
 
-// --- CONFIGURATION & STATE ---
-const PLAYLIST_SOURCES = [
-    'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
-];
+    window.scrollContainer = function(id, amount) {
+        document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
+    }
 
-// Added custom_channels.json to the API sources
-const API_SOURCES = [
-    'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free',
-    'custom_channels.json' 
-];
+    function renderChunk(listKey, container) {
+        const list = channelLists[listKey];
+        if (!list || !container) return;
 
-const tvChassis = document.getElementById('tv-chassis'); 
-const screenWrapper = document.getElementById('screen-wrapper');
-const fsBtn = document.getElementById('fs-btn');
-const channelList = document.getElementById('channel-list');
-const channelDisplay = document.getElementById('current-channel-display');
-const countrySelect = document.getElementById('country-filter');
-const categorySelect = document.getElementById('category-filter');
-const searchBox = document.getElementById('search-box');
-const vfxBtn = document.getElementById('vfx-btn');
-const recBtn = document.getElementById('rec-btn');
-const recOverlay = document.getElementById('rec-overlay');
+        const startIndex = renderIndices[listKey];
+        const endIndex = Math.min(startIndex + CHUNK_SIZE, list.length);
 
-// Hybrid Player Elements
-const iframePlayer = document.getElementById('iframe-player');
-const videoElement = document.getElementById('video-player');
+        if (startIndex >= endIndex) return; // No more items to render
 
-let mediaRecorder;
-let recordedChunks = [];
-let isRecording = false;
-let currentChannelName = "Unknown_Channel";
-let allChannels = []; 
+        const chunkHTML = list.slice(startIndex, endIndex).map(generateCardHTML).join('');
+        container.insertAdjacentHTML('beforeend', chunkHTML);
+        renderIndices[listKey] = endIndex;
+        
+        updateScrollButtons(container);
+    }
 
-// --- BOOTSTRAP: FETCH SOURCES ---
-const statusMsg = document.querySelector('#channel-list li');
-if(statusMsg) statusMsg.innerText = "Scanning Frequencies...";
+    function updateScrollButtons(container) {
+        if (!container) return;
+        const leftBtn = container.previousElementSibling;
+        const rightBtn = container.nextElementSibling;
+        const tolerance = 5;
+        const scrollThreshold = 500; // pixels from the end before loading the next chunk
 
-const m3u8Promises = PLAYLIST_SOURCES.map(url => 
-    fetch(url).then(res => res.text()).then(text => parseM3U(text))
-);
+        // Map container ID to listKey
+        let listKey = null;
+        if (container.id === 'm3u8-container') listKey = 'm3u8';
+        else if (container.id === 'embed-container') listKey = 'embed';
+        else if (container.id === 'search-results-container') listKey = 'search';
 
-const apiPromises = API_SOURCES.map(url => 
-    fetch(url).then(res => res.json()).then(data => parseJSONAPI(data))
-);
+        // Lazy Loading Trigger (Infinite Scroll)
+        if (listKey && (container.scrollWidth - (container.scrollLeft + container.clientWidth) <= scrollThreshold)) {
+            renderChunk(listKey, container);
+        }
 
-Promise.allSettled([...m3u8Promises, ...apiPromises])
-    .then(results => {
-        let combinedData = [];
-        results.forEach((result) => {
-            if (result.status === 'fulfilled') {
-                combinedData = [...combinedData, ...result.value];
+        if (leftBtn && leftBtn.classList.contains('scroll-btn')) {
+            if (container.scrollLeft <= tolerance) leftBtn.classList.add('hidden');
+            else leftBtn.classList.remove('hidden');
+        }
+
+        if (rightBtn && rightBtn.classList.contains('scroll-btn')) {
+            let isFullyRendered = listKey ? (renderIndices[listKey] >= channelLists[listKey].length) : true;
+            
+            if (container.scrollWidth <= container.clientWidth) rightBtn.classList.add('hidden');
+            else if (isFullyRendered && (container.scrollLeft + container.clientWidth >= container.scrollWidth - tolerance)) {
+                rightBtn.classList.add('hidden');
+            }
+            else rightBtn.classList.remove('hidden');
+        }
+    }
+
+    // Attach scroll listeners to all containers
+    document.querySelectorAll('.overflow-x-auto').forEach(container => {
+        container.addEventListener('scroll', () => updateScrollButtons(container));
+    });
+
+    // Mobile Nav & Modal Logic
+    const filterModal = document.getElementById('filter-modal');
+    window.openFilterModal = () => { filterModal.classList.remove('hidden'); toggleMobileNav(true); };
+    window.closeFilterModal = () => { filterModal.classList.add('hidden'); toggleMobileNav(false); };
+    window.toggleMobileNav = function(hide) {
+        const nav = document.querySelector('.mobile-nav');
+        if (nav) {
+            if (hide) nav.classList.add('nav-hidden-down');
+            else nav.classList.remove('nav-hidden-down');
+        }
+    };
+
+    // --- IPTV LOGIC ---
+    const player = videojs('video-player', { fluid: false, autoplay: true, controls: true, responsive: true, playbackRates: [0.5, 1, 1.5, 2] });
+
+    const PLAYLIST_SOURCES = [
+        'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
+    ];
+    const API_SOURCES = [
+        'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free',
+        'custom_channels.json'
+    ];
+
+    const screenWrapper = document.getElementById('screen-wrapper');
+    const playerSection = document.getElementById('player-section');
+    const iframePlayer = document.getElementById('iframe-player');
+    const videoElement = document.getElementById('video-player');
+    const channelDisplay = document.getElementById('current-channel-display');
+    const searchResultsSection = document.getElementById('search-results-section');
+
+    let allChannels = [];
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let currentChannelName = "";
+
+    // Bootstrap
+    Promise.allSettled([
+        ...PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text()).then(parseM3U)),
+        ...API_SOURCES.map(url => fetch(url).then(res => res.json()).then(parseJSONAPI))
+    ]).then(results => {
+        let combined = [];
+        results.forEach(r => { if (r.status === 'fulfilled') combined = [...combined, ...r.value]; });
+        allChannels = combined.map((ch, idx) => ({ ...ch, id: `ch-${idx}` })); // Assign unique IDs
+
+        populateDropdowns();
+        renderMainSections();
+    });
+
+    // Parsers
+    function parseM3U(content) {
+        const lines = content.split('\n');
+        const channels = [];
+        let curr = { name: "Unknown Channel", group: "General", country: "INT" };
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const logo = line.match(/tvg-logo="([^"]*)"/);
+                const group = line.match(/group-title="([^"]*)"/);
+                const country = line.match(/tvg-country="([^"]*)"/);
+                const parts = line.split(',');
+                
+                curr = {
+                    name: parts[parts.length - 1]?.trim() || "Unknown Channel",
+                    logo: logo ? logo[1] : null,
+                    group: group ? group[1] : 'General',
+                    country: country ? country[1] : 'INT',
+                };
+            } else if (line.startsWith('http')) {
+                curr.url = line;
+                curr.type = line.includes('youtube.com') ? 'embed' : 'm3u8';
+                channels.push(curr);
+                curr = { name: "Unknown Channel", group: "General", country: "INT" };
             }
         });
-
-        allChannels = combinedData;
-        populateDropdowns(allChannels);
-        applyFilters(); 
-        
-        if(allChannels.length === 0) {
-            channelList.innerHTML = '<li style="padding:20px; text-align:center; color:red;">No Signal Found.</li>';
-        }
-    });
-
-// --- UTILITY: YOUTUBE CONVERTER ---
-function getEmbedUrl(url) {
-    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-    if (ytMatch && ytMatch[1]) {
-        return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1`;
+        return channels;
     }
-    return url; 
-}
 
-// --- PARSERS ---
-function parseM3U(content) {
-    const lines = content.split('\n');
-    const channels = [];
-    
-    // Give currentChannel a default skeleton instead of {}
-    let currentChannel = { name: "Unknown Channel", group: "Uncategorized", country: "INT" };
-    
-    lines.forEach(line => {
-        line = line.trim();
-        if (line.startsWith('#EXTINF:')) {
-            const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-            const groupMatch = line.match(/group-title="([^"]*)"/);
-            const countryMatch = line.match(/tvg-country="([^"]*)"/);
-            const nameParts = line.split(',');
+    function parseJSONAPI(data) {
+        const channels = [];
+        let list = Array.isArray(data) ? data : (data.channels || data.data || data.results || []);
+        
+        list.forEach(item => {
+            let streamUrl = item.url || item.stream_url || item.link || item.hls || item.stream;
+            if (!streamUrl) return; 
+            let type = item.type || ((streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) ? 'm3u8' : 'embed');
             
-            currentChannel = {
-                name: nameParts[nameParts.length - 1]?.trim() || "Unknown Channel",
-                logo: logoMatch ? logoMatch[1] : null,
-                group: groupMatch ? groupMatch[1] : 'Uncategorized',
-                country: countryMatch ? countryMatch[1] : 'INT',
-            };
-        } else if (line.startsWith('http')) {
-            currentChannel.url = line;
-            currentChannel.type = line.includes('youtube.com') ? 'embed' : 'm3u8';
-            channels.push(currentChannel);
+            // Comprehensive check for various logo/image keys used by different APIs
+            let logoUrl = item.logo || item.icon || item.tvg_logo || item.picture || item.image || item.thumbnail || item.logo_url || (item.tvg && item.tvg.logo) || null;
+
+            channels.push({
+                name: item.name || item.title || "Unknown Channel",
+                logo: logoUrl,
+                group: item.group || item.category || 'General',
+                country: item.country || 'INT',
+                url: streamUrl,
+                type: type
+            });
+        });
+        return channels;
+    }
+
+    function getEmbedUrl(url) {
+        const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+        if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1`;
+        return url; 
+    }
+
+    // Rendering Cards
+    function generateCardHTML(channel) {
+        const isHLS = channel.type === 'm3u8';
+        const badgeText = isHLS ? 'HLS' : 'EMBED';
+        const badgeClass = isHLS ? 'bg-[#e50914]' : 'bg-blue-600';
+        const logo = channel.logo || 'https://placehold.co/150x225/222/999?text=TV+Channel';
+
+        return `
+            <div class="scroll-card flex-shrink-0 cursor-pointer group w-36 md:w-44" onclick="playStream('${channel.id}')">
+                <div class="poster-wrapper bg-[#1f1f1f] aspect-[2/3] rounded-xl overflow-hidden relative border border-white/10 group-hover:border-white/40 group-hover:shadow-[0_12px_24px_rgba(0,0,0,0.7)] transition-all flex items-center justify-center p-4">
+                    <div class="absolute top-2 left-2 ${badgeClass} text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10 tracking-wider">${badgeText}</div>
+                    
+                    <img src="${logo}" class="max-w-full max-h-full object-contain filter drop-shadow-md transition-transform duration-300 group-hover:scale-110" loading="lazy" onerror="this.src='https://placehold.co/150x225/222/999?text=TV'">
+                    
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity z-20">
+                        <i class="fas fa-play-circle text-4xl text-white drop-shadow-lg transform scale-90 group-hover:scale-110 transition-all"></i>
+                    </div>
+                </div>
+                <div class="card-body mt-2 px-1">
+                    <div class="card-title text-white font-bold text-sm truncate" title="${channel.name}">${channel.name}</div>
+                    <div class="card-meta text-[11px] text-gray-400 mt-0.5 truncate uppercase tracking-wide">${channel.group} • ${channel.country}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMainSections() {
+        const m3u8Container = document.getElementById('m3u8-container');
+        const embedContainer = document.getElementById('embed-container');
+        
+        channelLists.m3u8 = allChannels.filter(c => c.type === 'm3u8');
+        channelLists.embed = allChannels.filter(c => c.type === 'embed');
+
+        // Clear containers and reset indices
+        m3u8Container.innerHTML = '';
+        embedContainer.innerHTML = '';
+        renderIndices.m3u8 = 0;
+        renderIndices.embed = 0;
+
+        // Render Initial Chunks
+        renderChunk('m3u8', m3u8Container);
+        renderChunk('embed', embedContainer);
+    }
+
+    // Search and Filters
+    function populateDropdowns() {
+        const countrySelect = document.getElementById('country-filter');
+        const categorySelect = document.getElementById('category-filter');
+        
+        const countries = [...new Set(allChannels.map(c => c.country))].filter(Boolean).sort();
+        const categories = [...new Set(allChannels.map(c => c.group))].filter(Boolean).sort();
+        
+        countries.forEach(c => countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`);
+        categories.forEach(c => categorySelect.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+
+    window.applyFilters = function() {
+        const sVal = document.getElementById('search-input').value.toLowerCase();
+        const cVal = document.getElementById('country-filter').value;
+        const gVal = document.getElementById('category-filter').value;
+
+        if (sVal === '' && cVal === 'all' && gVal === 'all') {
+            searchResultsSection.classList.add('hidden');
+            return;
+        }
+
+        channelLists.search = allChannels.filter(ch => {
+            const country = ch.country || 'INT';
+            const group = ch.group || 'General';
+            const name = ch.name || '';
+            return (cVal === 'all' || country === cVal) &&
+                   (gVal === 'all' || group === gVal) &&
+                   (name.toLowerCase().includes(sVal));
+        });
+
+        const container = document.getElementById('search-results-container');
+        
+        if (channelLists.search.length === 0) {
+            container.innerHTML = '<div class="text-gray-400 p-4 w-full text-center">No channels found matching your criteria.</div>';
+        } else {
+            container.innerHTML = ''; // Clear prior results
+            renderIndices.search = 0; // Reset index
+            renderChunk('search', container);
+        }
+        
+        searchResultsSection.classList.remove('hidden');
+        updateScrollButtons(container);
+        
+        if (sVal === '') {
+            searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    window.resetFilters = function() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('country-filter').value = 'all';
+        document.getElementById('category-filter').value = 'all';
+        applyFilters();
+        closeFilterModal();
+    }
+
+    // Playback
+    window.playStream = function(id) {
+        const channel = allChannels.find(c => c.id === id);
+        if (!channel) return;
+
+        currentChannelName = channel.name;
+        channelDisplay.innerText = "Tuned: " + channel.name;
+        
+        if(isRecording) stopRecording();
+
+        playerSection.classList.remove('hidden');
+        playerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (channel.type === 'embed') {
+            player.pause();
+            videoElement.classList.add('hidden');
+            iframePlayer.classList.remove('hidden');
+            iframePlayer.src = getEmbedUrl(channel.url);
+        } else {
+            iframePlayer.src = "";
+            iframePlayer.classList.add('hidden');
+            videoElement.classList.remove('hidden');
             
-            // Reset back to the skeleton skeleton
-            currentChannel = { name: "Unknown Channel", group: "Uncategorized", country: "INT" };
+            player.src({ src: channel.url, type: 'application/x-mpegURL' });
+            player.play().catch(e => console.log("Stream blocked or requires interaction."));
         }
-    });
-    return channels;
-}
+    };
 
-function parseJSONAPI(data) {
-    const channels = [];
-    let list = Array.isArray(data) ? data : (data.channels || data.data || data.results || []);
-    
-    list.forEach(item => {
-        let streamUrl = item.url || item.stream_url || item.link || item.hls;
-        if (!streamUrl) return; 
-        
-        // Auto-detect type if not provided in JSON
-        let type = item.type;
-        if (!type) {
-            type = (streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) ? 'm3u8' : 'embed';
+    // VFX & Controls
+    window.toggleVFX = function() {
+        screenWrapper.classList.toggle('retro-mode');
+        const btn = document.getElementById('vfx-btn');
+        const isOn = screenWrapper.classList.contains('retro-mode');
+        btn.innerHTML = `<i class="fas fa-tv"></i> <span>VCR FX: ${isOn ? 'ON' : 'OFF'}</span>`;
+        if(isOn) {
+            btn.classList.add('border-red-500', 'text-white');
+        } else {
+            btn.classList.remove('border-red-500', 'text-white');
         }
+    };
+
+    window.toggleFullscreen = function() {
+        const container = document.getElementById('screen-wrapper');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => console.error(err));
+        } else {
+            document.exitFullscreen();
+        }
+    };
+
+    // Recording (Video.js only)
+    window.toggleRecording = function() {
+        if (!videoElement.classList.contains('hidden') === false) {
+            alert("Recording is not supported for external embedded websites (Iframes) due to browser security restrictions.");
+            return;
+        }
+        if (!isRecording) startRecording();
+        else stopRecording();
+    };
+
+    function startRecording() {
+        const rawVideo = document.querySelector('#video-player_html5_api');
+        if (!rawVideo || rawVideo.paused) { alert("No active video stream to record!"); return; }
         
-        channels.push({
-            name: item.name || item.title || "Unknown Channel",
-            logo: item.logo || item.icon || null,
-            group: item.group || item.category || 'Uncategorized',
-            country: item.country || 'INT',
-            url: streamUrl,
-            type: type
-        });
-    });
-    return channels;
-}
+        let stream;
+        try { stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream(); } 
+        catch (e) { alert("CORS restriction: This stream cannot be recorded locally."); return; }
 
-// --- CORE PLAYBACK LOGIC ---
-function playStream(channel, element) {
-    currentChannelName = channel.name;
-    channelDisplay.innerText = "TUNED: " + channel.name.toUpperCase();
-    
-    // Stop recording if active (recording iframes is not supported)
-    if(isRecording) stopRecording();
-
-    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-    if(element) element.classList.add('active');
-
-    if (channel.type === 'embed') {
-        // Switch to Iframe mode
-        player.pause();
-        videoElement.style.display = 'none';
-        iframePlayer.style.display = 'block';
-        iframePlayer.src = getEmbedUrl(channel.url);
-    } else {
-        // Switch to Video.js mode
-        iframePlayer.src = "";
-        iframePlayer.style.display = 'none';
-        videoElement.style.display = 'block';
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = saveRecording;
+        mediaRecorder.start();
         
-        player.src({
-            src: channel.url,
-            type: 'application/x-mpegURL'
-        });
-        player.play().catch(e => console.log("Stream error or blocked."));
-    }
-}
-
-// --- RECORDING ENGINE (Only works for Video.js sources) ---
-function toggleRecording() {
-    if (videoElement.style.display === 'none') {
-        alert("Recording is not supported for external embedded websites due to security restrictions.");
-        return;
-    }
-    if (!isRecording) startRecording();
-    else stopRecording();
-}
-
-function startRecording() {
-    const rawVideo = document.querySelector('#video-player_html5_api');
-    if (!rawVideo || rawVideo.paused) { 
-        alert("No active video stream to record!"); 
-        return; 
-    }
-    
-    let stream;
-    try {
-        stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream();
-    } catch (e) { 
-        alert("CORS restriction: This stream cannot be recorded."); 
-        return; 
+        isRecording = true;
+        document.getElementById('rec-text').innerText = "Stop REC";
+        document.getElementById('rec-btn').classList.add('recording-pulse');
+        document.getElementById('rec-overlay').classList.remove('hidden');
     }
 
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = saveRecording;
-    mediaRecorder.start();
-    
-    isRecording = true;
-    recBtn.innerText = "■ STOP";
-    recBtn.classList.add('recording');
-    recOverlay.style.display = 'block';
-}
-
-function stopRecording() {
-    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    isRecording = false;
-    recBtn.innerText = "● RECORD";
-    recBtn.classList.remove('recording');
-    recOverlay.style.display = 'none';
-}
-
-function saveRecording() {
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    let safeName = currentChannelName.replace(/[^a-zA-Z0-9]/g, "_");
-    a.href = url;
-    a.download = `${safeName}_${new Date().getTime()}.webm`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
-
-// --- UI & FILTERS ---
-function toggleVFX() {
-    screenWrapper.classList.toggle('retro-mode');
-    vfxBtn.innerText = screenWrapper.classList.contains('retro-mode') ? "VCR FX: ON" : "VCR FX: OFF";
-    vfxBtn.classList.toggle('active-btn');
-}
-
-async function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        tvChassis.requestFullscreen().catch(err => console.error(err));
-    } else {
-        document.exitFullscreen();
+    function stopRecording() {
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('rec-text').innerText = "Record";
+        document.getElementById('rec-btn').classList.remove('recording-pulse');
+        document.getElementById('rec-overlay').classList.add('hidden');
     }
-}
 
-function populateDropdowns(channels) {
-    const countries = [...new Set(channels.map(c => c.country))].filter(Boolean).sort();
-    const categories = [...new Set(channels.map(c => c.group))].filter(Boolean).sort();
+    function saveRecording() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        let safeName = currentChannelName.replace(/[^a-zA-Z0-9]/g, "_") || "Live_TV";
+        a.href = url;
+        a.download = `${safeName}_${new Date().getTime()}.webm`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+    // Function to toggle the drawer
+window.toggleMoreMenu = function() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
     
-    countries.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c; opt.innerText = c.toUpperCase();
-        countrySelect.appendChild(opt);
-    });
-    categories.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c; opt.innerText = c;
-        categorySelect.appendChild(opt);
-    });
-}
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+};
+</script>
 
-function applyFilters() {
-    const cVal = countrySelect.value;
-    const gVal = categorySelect.value;
-    const sVal = searchBox.value.toLowerCase();
-
-    const filtered = allChannels.filter(ch => {
-        // Provide fallbacks to prevent undefined crashes
-        const country = ch.country || 'INT';
-        const group = ch.group || 'Uncategorized';
-        const name = ch.name || 'Unknown Channel';
-
-        return (cVal === 'all' || country === cVal) &&
-               (gVal === 'all' || group === gVal) &&
-               (name.toLowerCase().includes(sVal));
-    });
-    renderChannels(filtered);
-}
-
-function renderChannels(channels) {
-    channelList.innerHTML = '';
-    document.getElementById('channel-count').innerText = channels.length;
-    
-    channels.slice(0, 300).forEach(channel => {
-        const li = document.createElement('li');
-        li.className = 'channel-item';
-        li.onclick = () => playStream(channel, li);
-        
-        const img = document.createElement('img');
-        img.src = channel.logo || 'https://via.placeholder.com/30?text=TV';
-        img.className = 'channel-logo';
-        img.onerror = function() { this.src = 'https://via.placeholder.com/30?text=TV'; };
-        
-        const div = document.createElement('div');
-        div.className = 'channel-info';
-        div.innerHTML = `<span>${channel.name}</span><span style="color:#666; font-size:0.8em">${channel.country.toUpperCase()}</span>`;
-        
-        li.appendChild(img);
-        li.appendChild(div);
-        channelList.appendChild(li);
-    });
-}</script>
 </body>
-
 </html>

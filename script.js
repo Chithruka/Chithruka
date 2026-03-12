@@ -257,6 +257,7 @@ function toggleAIModal() {
     const inputCont = document.getElementById('ai-input-container');
     
     aiModalOpen = !aiModalOpen;
+    window.toggleMobileNav(aiModalOpen);
     
     if (aiModalOpen) {
         modal.classList.remove('hidden');
@@ -1554,12 +1555,16 @@ function renderPersonProfile(data, totalCredits) {
 
 window.openFilterModal = () => {
     filterModal.classList.remove('hidden');
+    window.toggleMobileNav(true); // Hide nav
     loadGenres();
     loadCountries();
     loadLanguages();
 };
-window.closeFilterModal = () => filterModal.classList.add('hidden');
-filterModal.addEventListener('click', e => { if (e.target === filterModal) closeFilterModal(); });
+
+window.closeFilterModal = () => {
+    filterModal.classList.add('hidden');
+    window.toggleMobileNav(false); // Show nav
+};
 
 async function loadGenres() {
     const type = document.getElementById('filter-type').value;
@@ -3178,7 +3183,6 @@ window.toggleAccordion = function() {
 // ==========================================
 
 window.openDownloadModal = function() {
-    // 1. Ensure a movie/show is actually selected using the correct global variables
     if (!TMDB_ID || !mediaType) {
         showMessage("No content selected to download.", true);
         return;
@@ -3189,33 +3193,27 @@ window.openDownloadModal = function() {
     const dubbedBtn = document.getElementById('dl-link-dubbed');
     const subtitle = document.getElementById('download-modal-subtitle');
 
-    // 2. Setup Source 1 (VidSrc / Default Download)
     if (dlLink1) {
         dlLink1.href = buildUrl(DOWNLOAD_URLS.source1);
     }
 
-    // 3. Logic to check the Dubbed Registry
     if (dubbedBtn) {
-        // Check if the current TMDB_ID exists in our dubbed registry
         if (typeof DUBBED_REGISTRY !== 'undefined' && DUBBED_REGISTRY[TMDB_ID]) {
-            // Set link to your download.html with the correct parameters
             dubbedBtn.href = `download.html?id=${TMDB_ID}&type=${mediaType}`;
             dubbedBtn.classList.remove('hidden');
         } else {
-            // Hide the dubbed button if we don't have it in the registry
             dubbedBtn.classList.add('hidden');
         }
     }
 
-    // 4. Update the subtitle text to show Season/Episode or Movie
     if (subtitle) {
         subtitle.textContent = mediaType === 'tv' ? `S${currentSeason}:E${currentEpisode}` : "Full Movie";
     }
 
-    // 5. Show the Modal and prevent background scrolling
     if (modal) {
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden'; 
+        window.toggleMobileNav(true); // Hide nav
     }
 };
 
@@ -3223,7 +3221,8 @@ window.closeDownloadModal = function() {
     const modal = document.getElementById('download-modal');
     if (modal) {
         modal.classList.add('hidden');
-        document.body.style.overflow = ''; // Restore background scrolling
+        document.body.style.overflow = ''; 
+        window.toggleMobileNav(false); // Show nav
     }
 };
 
@@ -3569,10 +3568,12 @@ function openAIInsight() {
     document.getElementById('ai-insight-result').classList.add('hidden');
     
     modal.classList.remove('hidden');
+    window.toggleMobileNav(true); // Hide nav
 }
 
 function closeAIInsight() {
     document.getElementById('ai-insight-modal').classList.add('hidden');
+    window.toggleMobileNav(false); // Show nav
 }
 
 async function fetchAIInsight(mode) {
@@ -4087,6 +4088,8 @@ function openLightbox(url, language) {
 
     // 2. Show the lightbox (Animation logic)
     lightbox.classList.remove('hidden');
+    window.toggleMobileNav(true); // Hide nav
+    
     // Small timeout ensures the transition classes work
     setTimeout(() => {
         lightbox.classList.remove('opacity-0');
@@ -4112,6 +4115,7 @@ function closeLightbox() {
         lightbox.classList.add('hidden');
         document.getElementById('lightbox-img').src = ''; 
         document.body.style.overflow = ''; // Re-enable scrolling
+        window.toggleMobileNav(false); // Show nav
     }, 300); 
 }
 
@@ -4441,3 +4445,53 @@ function handleSearchSubmit(query) {
     // 4. Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// --- MOBILE NAVBAR & DRAWER LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    const mobileItems = document.querySelectorAll('.mobile-item');
+    const currentPath = window.location.pathname;
+
+    // Auto-detect active page and highlight the correct icon
+    mobileItems.forEach(item => {
+        const linkObj = item.querySelector('a');
+        if (linkObj) {
+            const link = linkObj.getAttribute('href');
+            // Check if current URL path matches the href
+            if (link !== '#' && currentPath.includes(link.replace('./', ''))) {
+                item.classList.add('active');
+            }
+        }
+    });
+});
+
+// Close drawer when clicking anywhere outside of it
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    if (drawer && drawer.classList.contains('open')) {
+        // If the click is NOT inside the drawer and NOT on the toggle button
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            // FIX: Also remove the active state from the button
+            moreBtn.classList.remove('active'); 
+        }
+    }
+});
+
+// Function to toggle the drawer
+window.toggleMoreMenu = function() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+};
+
+window.toggleMobileNav = function(hide) {
+    const nav = document.querySelector('.mobile-nav');
+    if (nav) {
+        if (hide) nav.classList.add('nav-hidden-down');
+        else nav.classList.remove('nav-hidden-down');
+    }
+};

@@ -646,3 +646,50 @@ window.searchTraceMoe = async () => {
         resultsContainer.innerHTML = `<div class="text-red-500 text-sm text-center font-bold">Failed to connect to the search engine. Ensure URL is valid or image is clear.</div>`;
     }
 };
+
+// --- MOBILE NAVBAR & DRAWER LOGIC ---
+
+// Close drawer when clicking anywhere outside of it
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    if (drawer && drawer.classList.contains('open')) {
+        // If the click is NOT inside the drawer and NOT on the toggle button
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            moreBtn.classList.remove('active'); 
+        }
+    }
+});
+
+// Function to toggle the drawer
+window.toggleMoreMenu = function() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+};
+
+// Function to hide/show the bottom nav when modals open
+window.toggleMobileNav = function(hide) {
+    const nav = document.querySelector('.mobile-nav');
+    if (nav) {
+        if (hide) nav.classList.add('nav-hidden-down');
+        else nav.classList.remove('nav-hidden-down');
+    }
+};
+
+// Update Modal closing/opening to respect the bottom bar
+const originalOpenTraceMoe = window.openTraceMoeModal;
+window.openTraceMoeModal = () => {
+    originalOpenTraceMoe();
+    window.toggleMobileNav(true);
+};
+
+const originalCloseTraceMoe = window.closeTraceMoeModal;
+window.closeTraceMoeModal = () => {
+    originalCloseTraceMoe();
+    window.toggleMobileNav(false);
+};
