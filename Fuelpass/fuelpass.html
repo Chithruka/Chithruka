@@ -261,27 +261,55 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. Grab the URL parameters
         const urlParams = new URLSearchParams(window.location.search);
+        const qrCodeValue = urlParams.get('code') || "Placeholder";
         
-        // 2. Look for the 'code' parameter (e.g., ?code=YOUR_CODE_HERE)
-        const qrCodeValue = urlParams.get('code');
-
-        // 3. Find the image and text elements on the page
         const qrImage = document.querySelector('.qr-code-img');
         const codeTextElement = document.querySelector('.code-text');
+        const downloadBtn = document.querySelector('.btn-green');
+        const shareBtn = document.querySelector('.btn-blue');
 
-        // 4. If a code exists in the URL, update the page
-        if (qrCodeValue) {
-            // Encode the value to ensure it's safe for a URL
-            const safeCode = encodeURIComponent(qrCodeValue);
-            
-            // Update the QR API link with the new data
-            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${safeCode}`;
-            
-            // Update the text below the QR code to show the string
-            codeTextElement.textContent = `Code : ${qrCodeValue}`;
-        }
+        // 1. Update UI based on URL
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrCodeValue)}`;
+        qrImage.src = qrUrl;
+        codeTextElement.textContent = `Code : ${qrCodeValue}`;
+
+        // 2. Download QR Functionality
+        downloadBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch(qrImage.src);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `FuelPass_${qrCodeValue}.png`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (err) {
+                console.error("Download failed", err);
+                alert("Failed to download image. Try long-pressing the QR code.");
+            }
+        });
+
+        // 3. Share Functionality (Mobile Native Share)
+        shareBtn.addEventListener('click', async () => {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'National Fuel Pass',
+                        text: `My Fuel Pass Code: ${qrCodeValue}`,
+                        url: window.location.href
+                    });
+                } catch (err) {
+                    console.log("Share cancelled or failed", err);
+                }
+            } else {
+                alert("Sharing is not supported on this browser. Try using a mobile device.");
+            }
+        });
     });
 </script>
 </body>
