@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Fuel Pass</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .page-header {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .page-header .step-text {
+            color: #c43224;
+        }
+
+        .card {
+            background-color: #f6f6f6;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        /* Top Navigation Bar */
+        .card-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .nav-left a, .nav-right a {
+            text-decoration: none;
+            color: #333;
+        }
+
+        .nav-left i {
+            color: #c43224; /* Red home icon */
+            margin-right: 5px;
+        }
+
+        .nav-left span {
+            margin: 0 10px;
+            color: #888;
+            font-weight: normal;
+        }
+        
+        .nav-right i {
+            margin-right: 5px;
+            font-size: 1rem;
+        }
+
+        /* Black Title Bar */
+        .card-title-bar {
+            background-color: #000000;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* Content Area */
+        .card-body {
+            display: flex;
+            padding: 30px;
+            background-color: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+            gap: 20px;
+        }
+
+        .content-left {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .qr-code-img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .code-text {
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            padding-left: 10px;
+        }
+
+        .btn {
+            padding: 10px;
+            text-align: center;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-blue {
+            background-color: #3866df;
+        }
+
+        .btn-green {
+            background-color: #5c8c36;
+        }
+
+        .content-right {
+            flex: 1;
+        }
+
+        .quota-box {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .quota-text {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        /* Footer Area */
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid #e0e0e0;
+            background-color: #f6f6f6;
+        }
+
+        .footer-left a {
+            color: #666;
+            margin-right: 15px;
+        }
+
+        .footer-right {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-right a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-change {
+            color: #5c8c36;
+        }
+
+        .btn-change i {
+            margin-right: 5px;
+        }
+
+        .btn-delete {
+            color: #c43224;
+        }
+
+        .btn-delete i {
+            margin-right: 5px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 650px) {
+            .card-body {
+                flex-direction: column;
+            }
+            .content-left {
+                flex: auto;
+                align-items: center;
+                text-align: center;
+            }
+            .btn {
+                max-width: 300px;
+            }
+            .card-footer {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="card">
+        <div class="card-nav">
+            <div class="nav-left">
+                <a href="#"><i class="fas fa-home"></i> Home</a>
+                <span>|</span>
+                <a href="#">Station List</a>
+            </div>
+            <div class="nav-right">
+                <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <div class="card-title-bar">
+            National Fuel Pass
+        </div>
+
+        <div class="card-body">
+            <div class="content-left">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=Placeholder" alt="QR Code" class="qr-code-img">
+                <div class="code-text">Code :</div>
+                
+                <button class="btn btn-blue">Send QR to My Mobile</button>
+                <button class="btn btn-green">Download QR</button>
+            </div>
+            
+            <div class="content-right">
+                <div class="quota-box">
+                    <div class="quota-text">Eligible Weekly Quota: 10.000 L</div>
+                    <div class="quota-text">Balance Weekly Quota: 10.000 L ( Resets on - 2026-3-18 )</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="footer-left">
+                <a href="#">Terms & Conditions</a>
+                <a href="#">Privacy Notice</a>
+            </div>
+            <div class="footer-right">
+                <a href="#" class="btn-change"><i class="fas fa-redo"></i> Change QR code</a>
+                <a href="#" class="btn-delete"><i class="fas fa-trash"></i> Delete Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Grab the URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // 2. Look for the 'code' parameter (e.g., ?code=YOUR_CODE_HERE)
+        const qrCodeValue = urlParams.get('code');
+
+        // 3. Find the image and text elements on the page
+        const qrImage = document.querySelector('.qr-code-img');
+        const codeTextElement = document.querySelector('.code-text');
+
+        // 4. If a code exists in the URL, update the page
+        if (qrCodeValue) {
+            // Encode the value to ensure it's safe for a URL
+            const safeCode = encodeURIComponent(qrCodeValue);
+            
+            // Update the QR API link with the new data
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${safeCode}`;
+            
+            // Update the text below the QR code to show the string
+            codeTextElement.textContent = `Code : ${qrCodeValue}`;
+        }
+    });
+</script>
+</body>
+</html>
