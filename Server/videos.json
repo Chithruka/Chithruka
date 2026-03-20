@@ -600,7 +600,7 @@
           { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x9sjvmc" }
         ]
       }
-    },
+    }
     "292160": {
       "1": {
         "1": [
@@ -677,7 +677,7 @@
     "213856": {
       "1": {
         "1": [
-          { "type": "YouTube", "src": "https://www.youtube.com/watch?v=7B7HXnocTYQ" }
+          { "type": "youtube", "src": "https://www.youtube.com/watch?v=7B7HXnocTYQ" }
         ]
       }
     },
