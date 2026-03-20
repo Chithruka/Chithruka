@@ -166,7 +166,7 @@ async function init() {
 function setupPlayer(sources) {
     const firstSource = sources[0];
 
-    document.getElementById('error-msg').style.display = 'none'; // <-- Add this line
+    document.getElementById('error-msg').style.display = 'none'; 
     document.getElementById('vjs-player').style.display = 'none';
     document.getElementById('iframe-container').style.display = 'none';
 
@@ -184,7 +184,6 @@ function setupPlayer(sources) {
         let dmUrl = firstSource.src;
         
         // Automatically fix older Dailymotion URLs by inserting '/video/'
-        // This ensures compatibility without needing to edit the JSON database
         dmUrl = dmUrl.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
         
         // Check if autoplay is already in the URL; if not, append it.
@@ -198,7 +197,6 @@ function setupPlayer(sources) {
         
         showIframe(dmUrl);
     }
-
     // 4. Handle Google Drive Preview
     else if (firstSource.type === 'google-drive') {
         const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
@@ -209,7 +207,7 @@ function setupPlayer(sources) {
         const megaEmbed = firstSource.src.replace('/file/', '/embed/');
         showIframe(megaEmbed);
     }
-    // 6. NEW: Handle Vimeo Embeds
+     // 6. NEW: Handle Vimeo Embeds
     else if (firstSource.type === 'vimeo') {
         const videoId = extractVimeoId(firstSource.src);
         if (videoId) {
@@ -218,11 +216,19 @@ function setupPlayer(sources) {
             showIframe(firstSource.src);
         }
     }
-    // 7. Default to VideoJS for direct MP4 links
+    // 7. Handle VKontakte Embeds
+    else if (firstSource.type === 'vk') {
+        let vkUrl = firstSource.src;
+        if (!vkUrl.includes('autoplay=')) {
+            vkUrl += vkUrl.includes('?') ? '&autoplay=1' : '?autoplay=1';
+        }
+        showIframe(vkUrl);
+    }
+    // 8. Default to VideoJS for direct MP4 links
     else {
         showVideoJS(sources);
     }
-}
+} // <-- ADDED THE MISSING CLOSING BRACE HERE
 
 // Fixed YouTube extraction
 function extractYouTubeId(url) {
@@ -242,7 +248,6 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
     const params = new URLSearchParams(window.location.search);
     const typeLabel = params.get('type') === 'tv' ? 'TV SHOW' : 'MOVIE';
     
-    // Extract filename from the first source URL for the title
     const fullUrl = sources[0].src;
     const fileName = fullUrl.substring(fullUrl.lastIndexOf('/') + 1).split('.')[0];
     const displayTitle = decodeURIComponent(fileName).replace(/[-_]/g, ' ');
@@ -255,10 +260,8 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
     const el = document.getElementById('vjs-player');
     el.style.display = 'block';
 
-    // 1. Check if the source is an HLS stream
     const isHLS = sources[0].type === 'hls' || sources[0].src.includes('.m3u8');
 
-    // 2. Build the base player options
     const playerOptions = {
         controls: true,
         autoplay: false,
@@ -267,31 +270,26 @@ function showVideoJS(sources, mimeType = 'video/mp4') {
             src: s.src,
             type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/vnd.apple.mpegurl' : 'video/mp4'
         })),
-        plugins: {} // Initialize an empty plugins object
+        plugins: {} 
     };
 
-    // 3. Conditionally add the download button ONLY if it's NOT an HLS stream
     if (!isHLS) {
         playerOptions.plugins.vjsdownload = {
             beforeElement: 'fullscreenToggle',
             textControl: 'Download Video',
             name: 'downloadButton',
-            downloadURL: sources[0].src // Sets the download link to the active mp4 source
+            downloadURL: sources[0].src
         };
     }
 
-    // Initialize the player with our dynamic options
     const player = videojs('vjs-player', playerOptions);
 
-    // --- Add the Quality Selector initialization ---
-    // We only want to enable this if the source is an HLS playlist
     if (isHLS) {
         player.ready(function() {
             player.httpSourceSelector();
         });
     }
 
-    // Inject Cosmos UI Elements
     player.ready(function() {
         const playerEl = player.el();
 
