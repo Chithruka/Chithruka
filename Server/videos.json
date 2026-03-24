@@ -18,6 +18,9 @@
     "519682": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
     ],
+    "878373": [
+      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/SAPTHA_KANYA_720P_hls/master.m3u8" }
+    ],
     "881201": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/10/hls/gajaman/gajaman.m3u8" }
     ],
@@ -76,7 +79,7 @@
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=iKLzaM-T5CI" }
     ],
     "466347": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=wh_ZRu3zx4A" }
+      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/maharaja_gemunu/video/hls/02-Aug-21-91014_MAHARAJAGEMUNUPSTEREOMbpsmp.m3u8" }
     ],
      "704823": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=OBfnm3cTO_Q" }
@@ -193,7 +196,7 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/03/hls/vijaya_kuweni/vijaya_kuweni.m3u8" }
     ],
     "459881": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/nino_live/nino_live.m3u8" }
+      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/332/hls/master.m3u8" }
     ],
     "260964": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2018/06/hls/akasa_kusum/akasa_kusum.m3u8" }
@@ -400,7 +403,7 @@
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=KTKb5MyY7Rs" }
     ],
     "390272": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=gyO3jJdRs8Q" }
+      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/address_na/video/hls/09-Apr-21-71514_FILM_ADDRESSNAFULMOVES.m3u8" }
     ],
     "803751": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=7qwCog9RYJ0" }
@@ -781,6 +784,40 @@
         ],
         "10": [
           { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x6crh8q" }
+        ]
+      }
+    },
+    "216852": {
+      "1": {
+        "1": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/185/hls/master.m3u8" }
+        ],
+        "2": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/194/hls/master.m3u8" }
+        ],
+        "3": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/186/hls/master.m3u8" }
+        ],
+        "4": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/187/hls/master.m3u8" }
+        ],
+        "5": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/188/hls/master.m3u8" }
+        ],
+        "6": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/189/hls/master.m3u8" }
+        ],
+        "7": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/190/hls/master.m3u8" }
+        ],
+        "8": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/191/hls/master.m3u8" }
+        ],
+        "9": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/192/hls/master.m3u8" }
+        ],
+        "10": [
+          { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/193/hls/master.m3u8" }
         ]
       }
     },
