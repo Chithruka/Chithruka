@@ -40,12 +40,12 @@
     "type": "embed"
   },
   {
-    "name": "Vasantham TV",
-    "logo": "https://upload.wikimedia.org/wikipedia/en/1/18/Vasanthamtv_channel.jpg",
-    "group": "Sports",
+    "name": "TV Derana",
+    "logo": "https://dyp5fjwik91fw.cloudfront.net/posters/1732/source.webp",
+    "group": "entertainment",
     "country": "INT",
-    "url": "https://itn.lk/stream/vtv/",
-    "type": "embed"
+    "url": "https://dyp5fjwik91fw.cloudfront.net/videos/210/hls/master.m3u8",
+    "type": "hls"
   },
   {
     "name": "TNL TV",
