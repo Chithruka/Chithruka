@@ -130,90 +130,128 @@ async function init() {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
     const type = params.get('type');
-    const s = params.get('s');
-    const e = params.get('e');
+    const s = params.get('s'); 
+    const e = params.get('e'); 
     const errorEl = document.getElementById('error-msg');
 
     try {
         const res = await fetch('videos.json');
         if (!res.ok) throw new Error("Database not found");
+        
         const db = await res.json();
-
         let sources = null;
-        let nameFromJson = null;
-        let posterFromJson = null;
 
-        // 1. DATA EXTRACTION LOGIC
         if (type === 'movie') {
-            const movieData = db.movies[id];
-            if (Array.isArray(movieData)) {
-                // Support for OLD format: "id": [{...}]
-                sources = movieData;
-            } else if (movieData && movieData.sources) {
-                // Support for NEW format: "id": { "name": "...", "poster": "...", "sources": [...] }
-                sources = movieData.sources;
-                nameFromJson = movieData.name;
-                posterFromJson = movieData.poster;
-            }
+            sources = db.movies[id];
         } else if (type === 'tv') {
-            const epData = db.tv && db.tv[id] && db.tv[id][s] && db.tv[id][s][e];
-            if (Array.isArray(epData)) {
-                // Support for OLD TV format (Direct array)
-                sources = epData;
-            } else if (epData && epData.sources) {
-                // Support for NEW TV format (Object with poster/name)
-                sources = epData.sources;
-                nameFromJson = epData.name;
-                posterFromJson = epData.poster;
+            if (db.tv && db.tv[id] && db.tv[id][s] && db.tv[id][s][e]) {
+                sources = db.tv[id][s][e];
             }
         }
 
-        // 2. VALIDATION
         if (!sources || sources.length === 0) {
             errorEl.innerText = type === 'tv' ? `Episode S${s}:E${e} not found.` : "Movie not found.";
+            errorEl.style.display = 'block';
             return;
         }
 
-        errorEl.style.display = 'none';
-        const primarySource = sources[0];
-
-        // 3. ROUTING
-        if (['mp4', 'hls', 'google-drive', 'direct', 'youtube'].includes(primarySource.type)) {
-            showVideoJS(sources, nameFromJson, posterFromJson);
-        } else {
-            showIframe(primarySource.src);
-        }
+        setupPlayer(sources);
 
     } catch (err) {
-        errorEl.innerText = "Error loading video data.";
-        console.error(err);
+        errorEl.innerText = "System Error: Unable to load video database.";
+        errorEl.style.display = 'block';
     }
 }
 
-function showVideoJS(sources, nameFromJson, posterFromJson, mimeType = 'video/mp4') {
+function setupPlayer(sources) {
+    const firstSource = sources[0];
+
+    document.getElementById('error-msg').style.display = 'none'; 
+    document.getElementById('vjs-player').style.display = 'none';
+    document.getElementById('iframe-container').style.display = 'none';
+
+    // 1. Handle Native YouTube Embed
+    if (firstSource.type === 'youtube') {
+        const videoId = extractYouTubeId(firstSource.src);
+        showIframe(`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&autoplay=1`);
+    } 
+    // 2. Handle HLS (.m3u8) Streams via VideoJS
+    else if (firstSource.type === 'hls' || firstSource.src.includes('.m3u8')) {
+        showVideoJS(sources, 'application/vnd.apple.mpegurl');
+    }
+      // 3. Handle Dailymotion Embeds
+    else if (firstSource.type === 'dailymotion') {
+        let dmUrl = firstSource.src;
+        
+        // Automatically fix older Dailymotion URLs by inserting '/video/'
+        dmUrl = dmUrl.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
+        
+        // Check if autoplay is already in the URL; if not, append it.
+        if (dmUrl.includes('?')) {
+            if (!dmUrl.includes('autoplay=')) {
+                dmUrl += '&autoplay=1';
+            }
+        } else {
+            dmUrl += '?autoplay=1';
+        }
+        
+        showIframe(dmUrl);
+    }
+    // 4. Handle Google Drive Preview
+    else if (firstSource.type === 'google-drive') {
+        const videoId = firstSource.src.match(/\/d\/(.+?)\//)[1];
+        showIframe(`https://drive.google.com/file/d/${videoId}/preview`);
+    }
+    // 5. Handle Mega.nz Embeds
+    else if (firstSource.type === 'mega') {
+        const megaEmbed = firstSource.src.replace('/file/', '/embed/');
+        showIframe(megaEmbed);
+    }
+     // 6. NEW: Handle Vimeo Embeds
+    else if (firstSource.type === 'vimeo') {
+        const videoId = extractVimeoId(firstSource.src);
+        if (videoId) {
+            showIframe(`https://player.vimeo.com/video/${videoId}?autoplay=1&dnt=1`);
+        } else {
+            showIframe(firstSource.src);
+        }
+    }
+    // 7. Handle VKontakte Embeds
+    else if (firstSource.type === 'vk') {
+        let vkUrl = firstSource.src;
+        if (!vkUrl.includes('autoplay=')) {
+            vkUrl += vkUrl.includes('?') ? '&autoplay=1' : '?autoplay=1';
+        }
+        showIframe(vkUrl);
+    }
+    // 8. Default to VideoJS for direct MP4 links
+    else {
+        showVideoJS(sources);
+    }
+} // <-- ADDED THE MISSING CLOSING BRACE HERE
+
+// Fixed YouTube extraction
+function extractYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+// NEW: Helper to extract ID from standard Vimeo links
+function extractVimeoId(url) {
+    const match = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return match ? match[1] : null;
+}
+
+function showVideoJS(sources, mimeType = 'video/mp4') {
     const playerContainer = document.getElementById('player-container');
     const params = new URLSearchParams(window.location.search);
+    const typeLabel = params.get('type') === 'tv' ? 'TV SHOW' : 'MOVIE';
     
-    const type = params.get('type');
-    const eParam = params.get('e'); 
-    const typeLabel = type === 'tv' ? 'TV SHOW' : 'MOVIE';
-    
-    // 4. TITLE SELECTION LOGIC
-    let displayTitle = "";
-    if (type === 'tv' && eParam) {
-        // For TV shows, prioritize the stable "Episode X" label
-        displayTitle = `Episode ${eParam}`;
-    } else if (nameFromJson) {
-        // For Movies, use the name from JSON if provided
-        displayTitle = nameFromJson;
-    } else {
-        // Fallback to filename extraction
-        const fullUrl = sources[0].src;
-        const fileName = fullUrl.substring(fullUrl.lastIndexOf('/') + 1).split(/[?#]/)[0].split('.')[0];
-        displayTitle = decodeURIComponent(fileName).replace(/[-_.]/g, ' ');
-    }
+    const fullUrl = sources[0].src;
+    const fileName = fullUrl.substring(fullUrl.lastIndexOf('/') + 1).split('.')[0];
+    const displayTitle = decodeURIComponent(fileName).replace(/[-_]/g, ' ');
 
-    // Clean up existing player
     if (videojs.getPlayers()['vjs-player']) {
         videojs('vjs-player').dispose();
         playerContainer.innerHTML = '<video id="vjs-player" class="video-js vjs-big-play-centered"></video>';
@@ -222,20 +260,15 @@ function showVideoJS(sources, nameFromJson, posterFromJson, mimeType = 'video/mp
     const el = document.getElementById('vjs-player');
     el.style.display = 'block';
 
-    const isHLS = sources[0].type === 'hls';
-    
-    // 5. PLAYER CONFIGURATION
+    const isHLS = sources[0].type === 'hls' || sources[0].src.includes('.m3u8');
+
     const playerOptions = {
-        autoplay: false,
         controls: true,
-        responsive: true,
-        fluid: true,
-        preload: 'auto',
-        poster: posterFromJson || '', // Set the poster image here
+        autoplay: false,
+        fill: true,
         sources: sources.map(s => ({
             src: s.src,
-            type: s.type === 'hls' ? 'application/x-mpegURL' : mimeType,
-            label: s.label || 'Default'
+            type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/vnd.apple.mpegurl' : 'video/mp4'
         })),
         plugins: {} 
     };
@@ -257,9 +290,9 @@ function showVideoJS(sources, nameFromJson, posterFromJson, mimeType = 'video/mp
         });
     }
 
-    // 6. TOP BAR OVERLAY
     player.ready(function() {
         const playerEl = player.el();
+
         const topBar = document.createElement('div');
         topBar.className = 'vjs-cosmos-top-bar';
         topBar.innerHTML = `
@@ -267,7 +300,11 @@ function showVideoJS(sources, nameFromJson, posterFromJson, mimeType = 'video/mp
                 <h1 class="vjs-cosmos-title">${displayTitle}</h1>
                 <p class="vjs-cosmos-desc">${typeLabel}</p>
             </div>
-            <img class="vjs-cosmos-logo" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Logo">
+            <img class="vjs-cosmos-logo" src="../Attachments/Chithruka%20Streamer%20Logo.svg" 
+  oncontextmenu="return false;" 
+  ondragstart="return false;" 
+  onselectstart="return false;"
+  alt="Logo">
         `;
         playerEl.appendChild(topBar);
     });
@@ -276,11 +313,15 @@ function showVideoJS(sources, nameFromJson, posterFromJson, mimeType = 'video/mp
 function showIframe(url) {
     const container = document.getElementById('iframe-container');
     container.style.display = 'block';
-    container.innerHTML = `<iframe src="${url}" class="external-iframe" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    container.innerHTML = `<iframe 
+        src="${url}" 
+        class="external-iframe" 
+        allow="autoplay *; fullscreen *; picture-in-picture *"
+        allowfullscreen="true" 
+        frameborder="0"></iframe>`;
 }
 
 init();
 </script>
-
 </body>
 </html>

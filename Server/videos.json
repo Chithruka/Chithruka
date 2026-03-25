@@ -78,13 +78,9 @@
      "645527": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=iKLzaM-T5CI" }
     ],
-"466347": {
-      "name": "Maharaja Gemunu",
-      "poster": "https://media.themoviedb.org/t/p/w1066_and_h600_face/9jwjRhNy2GpYdMdpV9vFl7rZzFU.jpg",
-      "sources": [
-        { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/maharaja_gemunu/video/hls/02-Aug-21-91014_MAHARAJAGEMUNUPSTEREOMbpsmp.m3u8" }
-      ]
-    },
+    "466347": [
+      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/maharaja_gemunu/video/hls/02-Aug-21-91014_MAHARAJAGEMUNUPSTEREOMbpsmp.m3u8" }
+    ],
      "704823": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=OBfnm3cTO_Q" }
     ],
