@@ -24,6 +24,12 @@
     "881201": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/10/hls/gajaman/gajaman.m3u8" }
     ],
+    "1541752": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/raja_horu/raja_horu.m3u8" }
+    ],
+    "432800": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/burning_birds/burning_birds.m3u8" }
+    ],
     "199207": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/rekawa/rekawa.m3u8" }
     ],
@@ -34,13 +40,16 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ahalepola_kumarihami/ahalepola_kumarihami.m3u8" }
     ],
     "226459": [
-      { "type": "vk", "src": "https://vk.com/video_ext.php?oid=-136471876&id=456244958&hd=2" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/flying_fish/flying_fish.m3u8" }
     ],
     "84694": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=crFD1Pn858I" }
     ],
     "1655268": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=9l3AmfkM4-g" }
+    ],
+    "822273": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/jundai_gundai/jundai_gundai.m3u8" }
     ],
     "1106299": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=AFPLRIdn1pk" }
@@ -78,9 +87,13 @@
      "645527": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=iKLzaM-T5CI" }
     ],
-    "466347": [
-      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/maharaja_gemunu/video/hls/02-Aug-21-91014_MAHARAJAGEMUNUPSTEREOMbpsmp.m3u8" }
-    ],
+"466347": {
+      "name": "Maharaja Gemunu",
+      "poster": "https://media.themoviedb.org/t/p/w1066_and_h600_face/9jwjRhNy2GpYdMdpV9vFl7rZzFU.jpg",
+      "sources": [
+        { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/maharaja_gemunu/video/hls/02-Aug-21-91014_MAHARAJAGEMUNUPSTEREOMbpsmp.m3u8" }
+      ]
+    },
      "704823": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=OBfnm3cTO_Q" }
     ],
@@ -358,7 +371,7 @@
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=acqPq09AHL4" }
     ],
     "1037780": [
-      { "type": "youtube", "src": "https://www.youtube.com/watch?v=y_4mO0P3ZZ8" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/the_game/the_game.m3u8" }
     ],
     "670162": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8rb2zv" }
@@ -368,6 +381,9 @@
     ],
     "1225093": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x9pm67w" }
+    ],
+    "946379": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/10/hls/anthima_reya/anthima_reya.m3u8" }
     ],
     "829504": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0x1aa" }
