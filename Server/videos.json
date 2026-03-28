@@ -385,6 +385,12 @@
     "946379": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/10/hls/anthima_reya/anthima_reya.m3u8" }
     ],
+    "201840": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=SUM8E9FhNRU" }
+    ],
+    "408097": [
+      { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/videos/537/hls/master.m3u8" }
+    ],
     "829504": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0x1aa" }
     ],
