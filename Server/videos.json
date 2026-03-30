@@ -93,6 +93,9 @@
      "466347": [
       { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/videos/632/hls/master.m3u8" }
     ],
+    "522491": [
+      { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/videos/635/hls/master.m3u8" }
+    ],
      "1608893": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=ydd-0uSzdHw" }
     ],
