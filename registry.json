@@ -807,6 +807,12 @@
     "type": "movie",
     "title": "The Bad Guys (2022)",
     "links": [
+          {
+        "language": "Sinhala",
+        "quality": "480p",
+        "size": "530 MB",
+        "url": "https://edge2-waw-sprintcdn.r66nv9ed.com/hls2/01/05461/vcdtxw765vqv_h/index-v1-a1.m3u8?t=XVI1qOFVh-8yoTZJjYKZ4kPrdblo0RIW94SU02pYk-I&s=1774940876&e=10800&f=27307970&srv=1065&asn=&sp=4000&p=0"
+      },
       {
         "language": "Sinhala",
         "quality": "720p x265 10-bits",
