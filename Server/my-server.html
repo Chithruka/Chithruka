@@ -224,11 +224,27 @@ function setupPlayer(sources) {
         }
         showIframe(vkUrl);
     }
-    // 8. Default to VideoJS for direct MP4 links
+        // 8. Handle Telegram Embeds
+    else if (firstSource.type === 'telegram') {
+        let tgUrl = firstSource.src;
+        
+        // Telegram requires the "?embed=1" parameter to display as a player/widget
+        if (!tgUrl.includes('embed=1')) {
+            tgUrl += tgUrl.includes('?') ? '&embed=1' : '?embed=1';
+        }
+        
+        // Optional: Attempt to autoplay the video (depends on browser policies)
+        if (!tgUrl.includes('autoplay=1')) {
+            tgUrl += '&autoplay=1';
+        }
+        
+        showIframe(tgUrl);
+    }
+    // 9. Default to VideoJS for direct MP4 links
     else {
         showVideoJS(sources);
     }
-} // <-- ADDED THE MISSING CLOSING BRACE HERE
+}
 
 // Fixed YouTube extraction
 function extractYouTubeId(url) {

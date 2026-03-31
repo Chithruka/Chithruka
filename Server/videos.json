@@ -264,6 +264,18 @@
     "807515": [
       { "type": "hls", "label": "https://www.dailymotion.com/embed/x8pbg9v", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" }
     ],
+    "553595": [
+      { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/4" }
+    ],
+    "1353428": [
+      { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/5" }
+    ],
+    "1390165": [
+      { "type": "telegram", "src": "https://t.me/Walampuri/16" }
+    ],
+    "525867": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=8uVy4SJkKPo" }
+    ],
     "1365340": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/mahindagamanaya/mahindagamanaya.m3u8" }
     ],
