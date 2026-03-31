@@ -285,6 +285,15 @@
     "564190": [
       { "type": "facebook", "src": "https://www.facebook.com/supun.prasad.501/videos/%E0%B7%83%E0%B7%92%E0%B6%9A%E0%B7%94%E0%B6%BB%E0%B7%94-%E0%B7%84%E0%B6%AD%E0%B7%9A-%E0%B7%83%E0%B6%B8%E0%B7%8A%E0%B6%B4%E0%B7%96%E0%B6%BB%E0%B7%8A%E0%B6%AB-%E0%B6%A0%E0%B7%92%E0%B6%AD%E0%B7%8A%E0%B6%BB%E0%B6%B4%E0%B6%A7%E0%B6%BA/951540623589382/" }
     ],
+    "1650682": [
+      { "type": "facebook", "src": "https://www.facebook.com/100076977584315/videos/%E0%B7%80%E0%B7%93%E0%B6%BB-%E0%B6%B4%E0%B7%94%E0%B6%BB%E0%B6%B1%E0%B7%8A%E0%B6%85%E0%B6%B4%E0%B7%8A%E0%B6%B4%E0%B7%94/622980054820580/" }
+    ],
+        "1228419": [
+      { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/videos/659/hls/master.m3u8" }
+    ],
+    "1658764": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=rXBAo9v4a5M" }
+    ],
     "1390165": [
       { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/7" }
     ],
