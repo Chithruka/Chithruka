@@ -224,23 +224,38 @@ function setupPlayer(sources) {
         }
         showIframe(vkUrl);
     }
-        // 8. Handle Telegram Embeds
+         // 8. Handle Telegram Embeds
     else if (firstSource.type === 'telegram') {
         let tgUrl = firstSource.src;
-        
-        // Telegram requires the "?embed=1" parameter to display as a player/widget
         if (!tgUrl.includes('embed=1')) {
             tgUrl += tgUrl.includes('?') ? '&embed=1' : '?embed=1';
         }
-        
-        // Optional: Attempt to autoplay the video (depends on browser policies)
         if (!tgUrl.includes('autoplay=1')) {
             tgUrl += '&autoplay=1';
         }
-        
         showIframe(tgUrl);
     }
-    // 9. Default to VideoJS for direct MP4 links
+    // 9. Handle Facebook Embeds
+    else if (firstSource.type === 'facebook') {
+        let fbUrl = firstSource.src;
+        let embedUrl = "";
+
+        // Check if the provided URL is already a Facebook plugin URL
+        if (fbUrl.includes('plugins/video.php')) {
+            embedUrl = fbUrl;
+        } else {
+            // Convert standard Facebook video URL to embed URL
+            embedUrl = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(fbUrl)}&show_text=false`;
+        }
+        
+        // Autoplay parameter for Facebook
+        if (!embedUrl.includes('autoplay=1')) {
+            embedUrl += '&autoplay=1';
+        }
+
+        showIframe(embedUrl);
+    }
+    // 10. Default to VideoJS for direct MP4 links
     else {
         showVideoJS(sources);
     }
