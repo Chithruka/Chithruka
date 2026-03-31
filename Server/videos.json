@@ -265,10 +265,19 @@
       { "type": "hls", "label": "https://www.dailymotion.com/embed/x8pbg9v", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" }
     ],
     "553595": [
-      { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/4" }
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=Os1bGdnYd58" }
     ],
     "1353428": [
       { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/5" }
+    ],
+    "803757": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=e4BnfAhkDeg" }
+    ],
+    "578218": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=rzhxPm5RYNo" }
+    ],
+    "878968": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=sZf3d0Oi2PE" }
     ],
     "946290": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=0a6mPXow4SA" }
