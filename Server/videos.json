@@ -19,7 +19,7 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
     ],
     "878373": [
-      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/SAPTHA_KANYA_720P_hls/master.m3u8" }
+      { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/videos/699/hls/master.m3u8" }
     ],
     "881201": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/10/hls/gajaman/gajaman.m3u8" }
@@ -29,6 +29,9 @@
     ],
     "432800": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/burning_birds/burning_birds.m3u8" }
+    ],
+    "645721": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=EoGY_YRDEt8" }
     ],
     "199207": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/rekawa/rekawa.m3u8" }
