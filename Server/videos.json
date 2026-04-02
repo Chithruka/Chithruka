@@ -135,6 +135,18 @@
      "1633802": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=-ctr03HDkaY" }
     ],
+    "398474": [
+      { "type": "vimeo", "src": "https://player.vimeo.com/video/289547488" }
+    ],
+    "550208": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=9MjHJhPQZzE" }
+    ],
+    "518459": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=VhlYMZd-UYI" }
+    ],
+    "1339001": [
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/12/hls/kambili/kambili.m3u8" }
+    ],
      "253733": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=aIfK9nWvQEY" }
     ],
@@ -478,7 +490,7 @@
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=KTKb5MyY7Rs" }
     ],
     "390272": [
-      { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/lms/videos/conversion/address_na/video/hls/09-Apr-21-71514_FILM_ADDRESSNAFULMOVES.m3u8" }
+      { "type": "hls", "src": "https://d126jq6a1mo2v5.cloudfront.net/rs/vods/714/hls/master.m3u8" }
     ],
     "803751": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=eRknd_9nQHQ" }
