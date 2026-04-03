@@ -153,6 +153,12 @@
     "1339001": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/12/hls/kambili/kambili.m3u8" }
     ],
+    "491933": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=Ikttg3X4nYs" }
+    ],
+    "824020": [
+      { "type": "facebook", "src": "https://www.facebook.com/100053110044099/videos/%E0%B7%83%E0%B7%9A%E0%B6%BA%E0%B7%8F-%E0%B7%83%E0%B7%92%E0%B6%82%E0%B7%84%E0%B6%BD-%E0%B7%84%E0%B7%9C%E0%B6%BD%E0%B7%8A%E0%B6%B8%E0%B6%B1%E0%B7%8A-%E0%B6%A0%E0%B7%92%E0%B6%AD%E0%B7%8A%E0%B6%BB%E0%B6%B4%E0%B6%A7%E0%B6%BA-%EF%B8%8F-seya-sinhala-horror-full-moviemp4-dilhani-akanayak/480149591001947/" }
+    ],
      "253733": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=aIfK9nWvQEY" }
     ],
