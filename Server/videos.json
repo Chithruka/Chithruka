@@ -525,12 +525,18 @@
   "559859": [
     { "type": "vk", "src": "https://vk.com/video_ext.php?oid=-136471876&id=456241215&hd=2" }
   ],
+  "742351": [
+      { "type": "vk", "src": "https://vkvideo.ru/video_ext.php?oid=-136471876&id=456239703&hd=1" }
+    ],
   "810588": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=wYto6gDIBBI" }
   ],
   "820851": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=f7H0YHnYEJ4" }
   ],
+  "524342": [
+      { "type": "vk", "src": "https://vkvideo.ru/video_ext.php?oid=-136471876&id=456243457&hd=3" }
+    ],
   "809051": [
     { "type": "youtube", "src": "https://www.youtube.com/watch?v=64fdsmzugnc" }
   ],
