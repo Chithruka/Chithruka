@@ -5427,6 +5427,12 @@
       "1": {
         "1": [
           { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x88cxsg" }
+        ],
+        "2": [
+          { "type": "youtube", "src": "https://m.youtube.com/watch?v=cVOgQa4liOM" }
+        ],
+        "3": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x4h9xq1" }
         ]
       }
     },
