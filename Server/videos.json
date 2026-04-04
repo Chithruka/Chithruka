@@ -5433,6 +5433,12 @@
         ],
         "3": [
           { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x4h9xq1" }
+        ],
+        "4": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x4hdbcy" }
+        ],
+        "5": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x4ic94y" }
         ]
       }
     },
