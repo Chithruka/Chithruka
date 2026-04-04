@@ -5585,10 +5585,48 @@
           { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x57psfc" }
         ],
         "54": [
-          { "type": "mp4", "src": "https://www.dailymotion.com/embed/x5m53yv" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5m53yv" }
         ],
         "55": [
-          { "type": "mp4", "src": "https://www.dailymotion.com/embed/x5m8u6n" }
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5m8u6n" }
+        ],
+        "56": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5n4cy8" }
+        ],
+        "57": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5n873f" }
+        ],
+        "58": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5o3s20" }
+        ],
+        "59": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5o82ed" }
+        ],
+        "60": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5oz3s4" }
+        ],
+        "61": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5p2hq5" }
+        ],
+        "62": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5pxjoe" }
+        ]
+      },
+      "2": {
+        "1": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5q1t4t" }
+        ],
+        "2": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5qzpqh" }
+        ],
+        "3": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5r3u7y" }
+        ],
+        "4": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5rufmt" }
+        ],
+        "5": [
+          { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x5rwdhj" }
         ]
       },
       "7": {
