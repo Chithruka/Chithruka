@@ -15,6 +15,12 @@
     "675": [
       { "type": "mp4", "src": "https://files.cartoons.lk/430/Harry%20Potter%205%20%282007%29%20Cartoon.lk-720p.mp4" }
     ],
+    "12444": [
+      { "type": "google-drive", "src": "https://drive.google.com/file/d/1JxDeOnOS13ghD5IcDgqN3gpRAJGOwmEk/view?usp=drivesdk" }
+    ],
+    "12445": [
+      { "type": "google-drive", "src": "https://drive.google.com/file/d/1eMKYYILu8ZyJfZIaFQu9V2w8jMZygAiS/view?usp=drivesdk" }
+    ],
     "519682": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/09/hls/heena_hoyana_samanallu/heena_hoyana_samanallu.m3u8" }
     ],
