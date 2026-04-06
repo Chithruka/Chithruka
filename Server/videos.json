@@ -280,7 +280,7 @@
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8yo6fi" }
     ],
     "256677": [
-      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8t42by" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/gahanu_lamai/gahanu_lamai.m3u8" }
     ],
     "1395823": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8pvv1l" }
@@ -496,7 +496,7 @@
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0x1aa" }
     ],
     "1416973": [
-      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qc40" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/11/hls/gini_awi_saha_gini_keli_2/gini_awi_saha_gini_keli_2.m3u8" }
     ],
     "1338345": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0qb42" }
