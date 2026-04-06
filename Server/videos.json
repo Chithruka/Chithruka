@@ -234,6 +234,9 @@
      "506576": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x81vm8p?playlist=xbpj7w" }
     ],
+     "645127": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x7wgnov?playlist=xbvufu" }
+    ],
     "560698": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x7p7wj7?playlist=xbv0f2" }
     ],
@@ -352,7 +355,7 @@
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=rX3rvG3Wcc0" }
     ],
     "1658764": [
-      { "type": "youtube", "src": "https://m.youtube.com/watch?v=rXBAo9v4a5M" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/maya_old/maya_old.m3u8" }
     ],
     "1390165": [
       { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/7" }
