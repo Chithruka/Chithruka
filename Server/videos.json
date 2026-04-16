@@ -246,6 +246,9 @@
     "1388768": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0q9n0" }
     ],
+    "1174136": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=t_MC2prjTwg" }
+    ],
     "935173": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/kosthapal_punyasoma/kosthapal_punyasoma.m3u8" }
     ],
