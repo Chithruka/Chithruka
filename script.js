@@ -36,10 +36,10 @@ let currentServerIndex = 0;
 
 // The base servers (excluding your local server)
 const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://player.videasy.net/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
-    { name: "Server 2", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
+    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 2", movie: "https://player.videasy.net/movie/[ID]", tv: "https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
-    { name: "Server 4", movie: "https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 4", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
     { name: "Server 5", movie: "https://vidcore.net/movie/[ID]?autoPlay=true&sub=en", tv: "https://vidcore.net/tv/[ID]/[S]/[E]?nextButton=true&autoNext=true" }
 ];
 
@@ -867,7 +867,7 @@ function getActiveServers() {
 
 const DOWNLOAD_URLS = {
     source1: { movie: "https://vidvault.ru/movie/[ID]", tv: "https://vidvault.ru/tv/[ID]/[S]/[E]" },
-    source2: { movie: "https://godriveplayer.com/download.php?type=movie&tmdb=[ID]", tv: "https://godriveplayer.com/download.php?type=series&tmdb=[ID]&season=[S]&episode=[E]" }
+    source2: { movie: "https://www.rivestream.app/download?type=movie&id=[ID]", tv: "https://www.rivestream.app/download?type=tv&id=[ID]&season=[S]&episode=[E]" }
 };
 
 const playerInterface = document.getElementById('player-interface');
@@ -3190,11 +3190,17 @@ window.openDownloadModal = function() {
 
     const modal = document.getElementById('download-modal');
     const dlLink1 = document.getElementById('dl-link-1');
+    const dlLink2 = document.getElementById('dl-link-2'); // Target the new Source 2 button
     const dubbedBtn = document.getElementById('dl-link-dubbed');
     const subtitle = document.getElementById('download-modal-subtitle');
 
     if (dlLink1) {
         dlLink1.href = buildUrl(DOWNLOAD_URLS.source1);
+    }
+
+    // Apply the Rivestream URL to the new button
+    if (dlLink2) {
+        dlLink2.href = buildUrl(DOWNLOAD_URLS.source2);
     }
 
     if (dubbedBtn) {
