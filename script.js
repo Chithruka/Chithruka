@@ -40,7 +40,7 @@ const BASE_SERVER_URLS = [
     { name: "Server 2", movie: "https://player.videasy.net/movie/[ID]", tv: "https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
     { name: "Server 3", movie: "https://vidrock.ru/movie/[ID]", tv: "https://vidrock.ru/tv/[ID]/[S]/[E]" },
    { name: "Server 4", movie: "https://www.vidsrc.wtf/4/movie/[ID]?color=e01621", tv: "https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]?color=e01621" },
-   { name: "Server 5", movie: "https://vidcore.net/movie/[ID]?autoPlay=true&sub=en", tv: "https://vidcore.net/tv/[ID]/[S]/[E]?nextButton=true&autoNext=true" }
+   { name: "Server 5", movie: "https://1embed.cc/embed/movie/[ID]", tv: "https://1embed.cc/embed/tv/[ID]/[S]/[E]" }
 ];
 
 let mediaType = 'movie';
