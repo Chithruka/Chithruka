@@ -36,7 +36,7 @@ let currentServerIndex = 0;
 
 // The base servers (excluding your local server)
 const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://vidsrc.vip/embed/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://vidsrc.vip/embed/tv/[ID]/[S]/[E]" },
+    { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://streamimdb.ru/embed/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://streamimdb.ru/embed/tv/[ID]" },
     { name: "Server 2", movie: "https://player.videasy.net/movie/[ID]", tv: "https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
     { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
     { name: "Server 4", movie: "https://vidsrc.cc/v2/embed/movie/[ID]?autoPlay=false", tv: "https://vidsrc.cc/v2/embed/tv/[ID]/[S]/[E]?autoPlay=false" },
@@ -2084,8 +2084,15 @@ async function loadCollection(collectionId, collectionName) {
             document.getElementById('collection-header').innerHTML = `${data.name}`;
             collectionSection.classList.remove('hidden');
             renderCards(parts, collectionContainer, false);
+            
+            // --- NEW: Scroll down to the collection section smoothly ---
+            setTimeout(() => {
+                collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
-    } catch (e) { console.error("Collection Load Error", e); }
+    } catch (e) { 
+        console.error("Collection Load Error", e); 
+    }
 }
 
 window.changeSeason = async function(seasonVal, episodeVal = 1) {
