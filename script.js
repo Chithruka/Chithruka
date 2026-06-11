@@ -38,9 +38,9 @@ let currentServerIndex = 0;
 const BASE_SERVER_URLS = [
     { name: "Server 1", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://streamimdb.ru/embed/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://streamimdb.ru/embed/tv/[ID]" },
     { name: "Server 2", movie: "https://player.videasy.net/movie/[ID]", tv: "https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
-    { name: "Server 3", movie: "https://multiembed.mov/?video_id=[ID]&tmdb=1", tv: "https://multiembed.mov/?video_id=[ID]&tmdb=1&s=[S]&e=[E]" },
-    { name: "Server 4", movie: "https://rivestream.ru/embed?type=movie&id=[ID]", tv: "https://rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]" },
-    { name: "Server 5", movie: "https://vidcore.net/movie/[ID]?autoPlay=true&sub=en", tv: "https://vidcore.net/tv/[ID]/[S]/[E]?nextButton=true&autoNext=true" }
+    { name: "Server 3", movie: "https://vidrock.ru/movie/[ID]", tv: "https://vidrock.ru/tv/[ID]/[S]/[E]" },
+   { name: "Server 4", movie: "https://www.vidsrc.wtf/4/movie/[ID]?color=e01621", tv: "https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]?color=e01621" },
+   { name: "Server 5", movie: "https://vidcore.net/movie/[ID]?autoPlay=true&sub=en", tv: "https://vidcore.net/tv/[ID]/[S]/[E]?nextButton=true&autoNext=true" }
 ];
 
 let mediaType = 'movie';
