@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radio Global V13 (Fixed)</title>
+    <title>Radio Global V14 (On-Demand Loading)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -156,8 +156,13 @@
         let markersLayer = new L.LayerGroup();
         let loadedUUIDs = new Set();
         let audioPlayer = document.getElementById('audio-player');
-        let hls = null; // HLS instance
+        let hls = null; 
+        
+        // Tracking Variables for on-demand loading
         let currentCountryCode = 'US';
+        let userCountryCode = 'US';
+        let userLocation = null;
+        
         let mediaRecorder;
         let audioChunks = [];
         let streamObj;
@@ -194,12 +199,12 @@
         }
 
         function checkMobileAutoClose() {
-            if(window.innerWidth < 600 && !isMenuOpen) toggleMenu(); // Open menu if closed to show player
+            if(window.innerWidth < 600 && !isMenuOpen) toggleMenu(); 
         }
 
         // --- BOOT ---
         async function boot() {
-            if(window.innerWidth < 600) { toggleMenu(); } // Default closed on mobile
+            if(window.innerWidth < 600) { toggleMenu(); } 
 
             initMap();
             
@@ -219,9 +224,11 @@
             try {
                 const geo = await resolveUserLocation();
                 currentCountryCode = geo.code;
+                userCountryCode = geo.code;
+                userLocation = [geo.lat, geo.lon];
                 document.getElementById('location-val').innerText = geo.country;
-                if(geo.lat) map.flyTo([geo.lat, geo.lon], 6);
-                loadStations(`countrycode=${currentCountryCode}`, true); 
+                if(geo.lat) map.flyTo(userLocation, 6);
+                loadStations(`countrycode=${currentCountryCode}&order=clickcount&reverse=true`, true); 
             } catch (e) {
                 log("Loc failed. Global mode.", 'err');
                 document.getElementById('location-val').innerText = "Global";
@@ -244,20 +251,44 @@
         }
 
         async function findBestServer() {
-            // Robust server finder without Promise.any dependency for older browsers
             for (const server of DEFAULT_SERVERS) {
                 try {
                     const r = await fetch(`${server}/json/stats`, { method: 'HEAD' });
                     if (r.ok) return server;
                 } catch (e) { continue; }
             }
-            return DEFAULT_SERVERS[0]; // Fallback
+            return DEFAULT_SERVERS[0]; 
         }
 
         function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+            // preferCanvas enabled to prevent DOM lag when populating thousands of markers globally
+            map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([20, 0], 2);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
             markersLayer.addTo(map);
+
+            // ON-DEMAND MAP LOADER: Dynamically append channels as you pan the map
+            map.on('moveend', async () => {
+                if(!activeServer) return;
+                
+                // Wrap ensures coordinates stay within mathematical bounds when zooming far out
+                const center = map.getCenter().wrap(); 
+                
+                try {
+                    // Reverse geocode the new map center to find what region we are looking at
+                    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${center.lat}&longitude=${center.lng}&localityLanguage=en`);
+                    const d = await r.json();
+                    
+                    if (d.countryCode && d.countryCode !== currentCountryCode) {
+                        currentCountryCode = d.countryCode;
+                        document.getElementById('location-val').innerText = d.countryName;
+                        log(`Scanning Region: ${d.countryName}`, 'info');
+                        // Append stations for the newly discovered country (clear is set to false)
+                        loadStations(`countrycode=${d.countryCode}&order=clickcount&reverse=true`, false);
+                    }
+                } catch(e) {
+                    // Fail silently over oceans or unmapped territories
+                }
+            });
         }
 
         async function loadStations(q, clear) {
@@ -295,8 +326,9 @@
                 });
                 
                 document.getElementById('station-count').innerText = loadedUUIDs.size;
-                log(`tuned: ${count} stations`, 'ok');
+                log(`Tuned: ${count} stations`, 'ok');
 
+                // Only adjust bounds visually if we are doing a fresh hard load
                 if(clear && count > 0) {
                     const group = L.featureGroup(markersLayer.getLayers());
                     map.fitBounds(group.getBounds(), {padding: [50, 50]});
@@ -312,9 +344,8 @@
 
             const url = st.url_resolved;
 
-            // --- HLS SUPPORT IMPLEMENTATION ---
             if (Hls.isSupported() && (url.includes('.m3u8') || st.codec === 'HLS')) {
-                if(hls) { hls.destroy(); } // Cleanup previous instance
+                if(hls) { hls.destroy(); } 
                 hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(audioPlayer);
@@ -328,14 +359,12 @@
                     }
                 });
             } else {
-                // Standard Playback
                 if(hls) { hls.destroy(); hls = null; }
                 audioPlayer.src = url;
                 audioPlayer.load();
                 audioPlayer.play().catch(e => handleError(e));
             }
 
-            // Update UI on success
             audioPlayer.onplaying = () => {
                 document.getElementById('np-meta').innerText = "LIVE ON AIR";
                 document.getElementById('np-title').style.color = "#00ff88";
@@ -353,17 +382,26 @@
         }
 
         // --- ACTIONS ---
-        function loadLocal() { loadStations(`countrycode=${currentCountryCode}`, true); checkMobileAutoClose(); }
-        function loadGlobal() { loadStations(`order=clickcount&reverse=true`, true); checkMobileAutoClose(); }
+        function loadLocal() { 
+            currentCountryCode = userCountryCode; 
+            if(userLocation && userLocation[0]) map.flyTo(userLocation, 6);
+            loadStations(`countrycode=${userCountryCode}&order=clickcount&reverse=true`, true); 
+            checkMobileAutoClose(); 
+        }
+        
+        function loadGlobal() { 
+            loadStations(`order=clickcount&reverse=true`, true); 
+            checkMobileAutoClose(); 
+        }
         
         function performSearch() { 
             const v = document.getElementById('search-box').value; 
             if(v) {
-                // Using 'name' search which matches name or tags loosely in API
                 loadStations(`name=${encodeURIComponent(v)}`, true); 
             }
             checkMobileAutoClose();
         }
+        
         function handleEnter(e) { if(e.key === 'Enter') performSearch(); }
 
         // --- RECORDER (Desktop) ---
