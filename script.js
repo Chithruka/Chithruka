@@ -224,7 +224,7 @@ function renderSkeletons(container, count = 10) {
 // --- NEW: Gender Icon Helper ---
 function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
     if (path) {
-        return `<img src="${TMDB_IMG_BASE_URL}${path}" class="${cssClass} object-cover" loading="lazy" alt="Person">`;
+        return `<img src="${TMDB_IMG_BASE_URL}${path}" class="${cssClass} object-cover" loading="lazy" decoding="async" alt="Person">`;
     }
     
     // Default Icon (User / Unknown)
@@ -867,7 +867,8 @@ function getActiveServers() {
 
 const DOWNLOAD_URLS = {
     source1: { movie: "https://vidvault.ru/movie/[ID]", tv: "https://vidvault.ru/tv/[ID]/[S]/[E]" },
-    source2: { movie: "https://www.rivestream.app/download?type=movie&id=[ID]", tv: "https://www.rivestream.app/download?type=tv&id=[ID]&season=[S]&episode=[E]" }
+    source2: { movie: "https://www.rivestream.app/download?type=movie&id=[ID]", tv: "https://www.rivestream.app/download?type=tv&id=[ID]&season=[S]&episode=[E]" },
+    source3: { movie: "https://1embed.cc/download/movie/[ID]", tv: "https://1embed.cc/download/tv/[ID]/[S]/[E]" }
 };
 
 const playerInterface = document.getElementById('player-interface');
@@ -902,10 +903,50 @@ window.scrollContainer = function(id, amount) {
     document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
 }
 
-trendingContainer.addEventListener('scroll', () => {
-    if (trendingContainer.scrollLeft + trendingContainer.clientWidth >= trendingContainer.scrollWidth - 200) {
-        loadTrending();
+// ==========================================
+// INFINITE SCROLL — IntersectionObserver
+// ==========================================
+// A lightweight sentinel div is appended after every batch of cards.
+// When it enters the viewport the next page is fetched automatically,
+// with no scroll-event polling overhead.
+
+let trendingObserver = null;
+
+function attachTrendingObserver() {
+    // Disconnect any previous observer so we never double-fire
+    if (trendingObserver) {
+        trendingObserver.disconnect();
+        trendingObserver = null;
     }
+
+    // Remove any old sentinel
+    const old = document.getElementById('trending-sentinel');
+    if (old) old.remove();
+
+    // Create the sentinel element
+    const sentinel = document.createElement('div');
+    sentinel.id = 'trending-sentinel';
+    sentinel.style.cssText = 'width:100%;height:4px;flex-shrink:0;pointer-events:none;';
+    trendingContainer.appendChild(sentinel);
+
+    trendingObserver = new IntersectionObserver(
+        (entries) => {
+            if (entries[0].isIntersecting) {
+                loadTrending();
+            }
+        },
+        {
+            root: trendingContainer,   // observe inside the horizontal scroll container
+            rootMargin: '0px 300px 0px 0px', // start loading 300px before the right edge
+            threshold: 0
+        }
+    );
+
+    trendingObserver.observe(sentinel);
+}
+
+trendingContainer.addEventListener('scroll', () => {
+    updateScrollButtons(trendingContainer);
 });
 
 async function loadTrending() {
@@ -952,6 +993,9 @@ async function loadTrending() {
 
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
+
+            // Re-attach the sentinel so the observer watches the new end of the list
+            attachTrendingObserver();
         } else if (trendingPage === 1) {
             trendingContainer.innerHTML = '<p class="text-gray-400 p-4">No results found.</p>';
         }
@@ -1109,7 +1153,7 @@ function renderCards(items, container, trackIds) {
         if (isPerson) {
              card.innerHTML = `
                 <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333; overflow: hidden;">
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" decoding="async" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
                          onerror="this.onerror=null; this.src='${fallbackImage}'"
                          style="border-radius: 50%;">
@@ -1148,7 +1192,7 @@ function renderCards(items, container, trackIds) {
             card.innerHTML = `
                 <div class="poster-wrapper">
                     ${badgeHtml} 
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" decoding="async" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
                          onerror="this.onerror=null; this.src='${fallbackImage}'">
                     <div class="play-overlay">
@@ -1914,6 +1958,56 @@ window.closeTrailerModal = () => {
     trailerIframe.src = '';
 };
 
+// ==========================================
+// DEFERRED SECTION LOADING
+// ==========================================
+// Recommendations and Soundtrack are only fetched when the user
+// actually scrolls near the bottom of the detail page.
+// This saves 2 API calls (+ iTunes JSONP) on every content open.
+
+let deferredSectionObserver = null;
+
+function setupDeferredSections(id, title) {
+    // Disconnect any previous observer from the last content load
+    if (deferredSectionObserver) {
+        deferredSectionObserver.disconnect();
+        deferredSectionObserver = null;
+    }
+
+    const recsSection    = document.getElementById('recommendations-section');
+    const soundSection   = document.getElementById('soundtrack-section');
+    const collSection    = document.getElementById('collection-section');
+
+    // Track which deferred jobs are still pending so we only fire once each
+    const pending = new Set(['recs', 'sound']);
+
+    deferredSectionObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const key = entry.target.dataset.deferred;
+                if (!pending.has(key)) return;
+                pending.delete(key);
+
+                if (key === 'recs') {
+                    loadRecommendations(mediaType, id);
+                } else if (key === 'sound') {
+                    loadSoundtrack(title);
+                }
+
+                // Stop watching this element once triggered
+                deferredSectionObserver.unobserve(entry.target);
+            });
+        },
+        { rootMargin: '400px 0px' } // start loading 400px before it enters viewport
+    );
+
+    // Tag sentinel elements. Use the section containers themselves —
+    // they are in the DOM at this point, just hidden (which is fine for observation).
+    if (recsSection)  { recsSection.dataset.deferred  = 'recs';  deferredSectionObserver.observe(recsSection); }
+    if (soundSection) { soundSection.dataset.deferred = 'sound'; deferredSectionObserver.observe(soundSection); }
+}
+
 window.selectContent = async function(id, title, type) {
     TMDB_ID = id;
     mediaType = type;
@@ -1981,8 +2075,9 @@ window.selectContent = async function(id, title, type) {
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
 
-    loadRecommendations(mediaType, id);
-    loadSoundtrack(currentTitle); 
+    // Defer secondary data (recommendations & soundtrack) until user scrolls near them
+    // This avoids 2 extra API calls on every content open if the user never scrolls down.
+    setupDeferredSections(id, title);
 
     setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
 }
@@ -2603,7 +2698,7 @@ function renderDetails(data, title) {
                 div.className = "gallery-item group relative flex-shrink-0 cursor-pointer w-48 md:w-64";
                 
                 div.innerHTML = `
-                    <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
+                    <img src="${imgUrl}" loading="lazy" decoding="async" alt="Gallery Image">
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <i class="fas fa-expand-alt text-white text-xl"></i>
                     </div>
@@ -2653,7 +2748,7 @@ function renderDetails(data, title) {
 
                 div.innerHTML = `
                     <div class="video-thumbnail">
-                        <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
+                        <img src="${thumbSrc}" loading="lazy" decoding="async" alt="${video.name}">
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
                         </div>
@@ -3197,7 +3292,8 @@ window.openDownloadModal = function() {
 
     const modal = document.getElementById('download-modal');
     const dlLink1 = document.getElementById('dl-link-1');
-    const dlLink2 = document.getElementById('dl-link-2'); // Target the new Source 2 button
+    const dlLink2 = document.getElementById('dl-link-2');
+    const dlLink3 = document.getElementById('dl-link-3');
     const dubbedBtn = document.getElementById('dl-link-dubbed');
     const subtitle = document.getElementById('download-modal-subtitle');
 
@@ -3208,6 +3304,10 @@ window.openDownloadModal = function() {
     // Apply the Rivestream URL to the new button
     if (dlLink2) {
         dlLink2.href = buildUrl(DOWNLOAD_URLS.source2);
+    }
+
+    if (dlLink3) {
+        dlLink3.href = buildUrl(DOWNLOAD_URLS.source3);
     }
 
     if (dubbedBtn) {
@@ -3403,7 +3503,7 @@ async function loadLatestTrailers() {
             const card = document.createElement('div');
             card.className = 'trailer-card';
             card.innerHTML = `
-                <img src="${imgUrl}" class="trailer-img" loading="lazy" alt="${item.title}">
+                <img src="${imgUrl}" class="trailer-img" loading="lazy" decoding="async" alt="${item.title}">
                 <div class="trailer-play-icon"><i class="fas fa-play"></i></div>
                 <div class="trailer-content">
                     <div class="trailer-title">${item.title}</div>
