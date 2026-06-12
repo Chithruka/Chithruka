@@ -126,7 +126,7 @@ async function fetchCached(url) {
 
 async function loadDubbedRegistry() {
     try {
-        const response = await fetch('registry.json');
+        const response = await fetch('registry.json?v=' + Date.now());
         if (!response.ok) {
             throw new Error(`Failed to load registry: ${response.statusText}`);
         }
@@ -224,7 +224,7 @@ function renderSkeletons(container, count = 10) {
 // --- NEW: Gender Icon Helper ---
 function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
     if (path) {
-        return `<img src="${TMDB_IMG_BASE_URL}${path}" class="${cssClass} object-cover" loading="lazy" decoding="async" alt="Person">`;
+        return `<img src="${TMDB_IMG_BASE_URL}${path}" class="${cssClass} object-cover" loading="lazy" alt="Person">`;
     }
     
     // Default Icon (User / Unknown)
@@ -903,30 +903,34 @@ window.scrollContainer = function(id, amount) {
     document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
 }
 
+trendingContainer.addEventListener('scroll', () => {
+    updateScrollButtons(trendingContainer);
+});
+
 // ==========================================
 // INFINITE SCROLL — IntersectionObserver
 // ==========================================
-// A lightweight sentinel div is appended after every batch of cards.
-// When it enters the viewport the next page is fetched automatically,
-// with no scroll-event polling overhead.
+// A sentinel div is placed at the end of the card list.
+// When it enters the scroll container's viewport, the next page is fetched.
+// This replaces the old pixel-math scroll event that ran on every scroll tick.
 
 let trendingObserver = null;
 
 function attachTrendingObserver() {
-    // Disconnect any previous observer so we never double-fire
+    // Disconnect any previous observer to avoid double-firing
     if (trendingObserver) {
         trendingObserver.disconnect();
         trendingObserver = null;
     }
 
-    // Remove any old sentinel
+    // Remove any leftover sentinel from the previous batch
     const old = document.getElementById('trending-sentinel');
     if (old) old.remove();
 
-    // Create the sentinel element
+    // Create a tiny invisible sentinel at the end of the card row
     const sentinel = document.createElement('div');
     sentinel.id = 'trending-sentinel';
-    sentinel.style.cssText = 'width:100%;height:4px;flex-shrink:0;pointer-events:none;';
+    sentinel.style.cssText = 'width:4px;height:100%;flex-shrink:0;pointer-events:none;';
     trendingContainer.appendChild(sentinel);
 
     trendingObserver = new IntersectionObserver(
@@ -936,18 +940,14 @@ function attachTrendingObserver() {
             }
         },
         {
-            root: trendingContainer,   // observe inside the horizontal scroll container
-            rootMargin: '0px 300px 0px 0px', // start loading 300px before the right edge
+            root: trendingContainer,     // watch inside the horizontal scroll box
+            rootMargin: '0px 300px 0px 0px', // trigger 300px before the right edge
             threshold: 0
         }
     );
 
     trendingObserver.observe(sentinel);
 }
-
-trendingContainer.addEventListener('scroll', () => {
-    updateScrollButtons(trendingContainer);
-});
 
 async function loadTrending() {
     if (isTrendingLoading) return;
@@ -965,8 +965,9 @@ async function loadTrending() {
         let data;
         if (activeUrl) {
             data = await fetchCached(`${activeUrl}&page=${trendingPage}`);
-            const type = activeUrl.includes('/tv?') ? 'tv' : 'movie';
-            data.results = data.results.map(i => ({ ...i, media_type: type }));
+            // Match /discover/tv, /search/tv, /tv/popular, etc.
+            const type = /\/(tv)[/?]/.test(activeUrl) ? 'tv' : 'movie';
+            data.results = data.results.map(i => ({ ...i, media_type: i.media_type || type }));
         } else {
             data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (trendingPage === 1) {
@@ -994,7 +995,8 @@ async function loadTrending() {
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
 
-            // Re-attach the sentinel so the observer watches the new end of the list
+            // Re-attach the sentinel after every batch so the observer always
+            // watches the new end of the list (works for home feed AND filter results)
             attachTrendingObserver();
         } else if (trendingPage === 1) {
             trendingContainer.innerHTML = '<p class="text-gray-400 p-4">No results found.</p>';
@@ -1153,7 +1155,7 @@ function renderCards(items, container, trackIds) {
         if (isPerson) {
              card.innerHTML = `
                 <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333; overflow: hidden;">
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" decoding="async" alt="${title}" 
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
                          onerror="this.onerror=null; this.src='${fallbackImage}'"
                          style="border-radius: 50%;">
@@ -1192,7 +1194,7 @@ function renderCards(items, container, trackIds) {
             card.innerHTML = `
                 <div class="poster-wrapper">
                     ${badgeHtml} 
-                    <img src="${poster}" class="poster-img skeleton" loading="lazy" decoding="async" alt="${title}" 
+                    <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
                          onload="this.classList.remove('skeleton')"
                          onerror="this.onerror=null; this.src='${fallbackImage}'">
                     <div class="play-overlay">
@@ -1910,7 +1912,10 @@ async function applyFilter(overrides = {}) {
             currentFetchUrl = "STOP";
         } else {
             renderCards(results, trendingContainer, true);
-            trendingPage = 2; 
+            trendingPage = 2;
+            // Re-attach the sentinel so the IntersectionObserver picks up
+            // subsequent pages exactly like the home trending feed does.
+            attachTrendingObserver();
         }
         document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
     } catch (e) {
@@ -1957,56 +1962,6 @@ window.closeTrailerModal = () => {
     trailerModal.classList.add('hidden');
     trailerIframe.src = '';
 };
-
-// ==========================================
-// DEFERRED SECTION LOADING
-// ==========================================
-// Recommendations and Soundtrack are only fetched when the user
-// actually scrolls near the bottom of the detail page.
-// This saves 2 API calls (+ iTunes JSONP) on every content open.
-
-let deferredSectionObserver = null;
-
-function setupDeferredSections(id, title) {
-    // Disconnect any previous observer from the last content load
-    if (deferredSectionObserver) {
-        deferredSectionObserver.disconnect();
-        deferredSectionObserver = null;
-    }
-
-    const recsSection    = document.getElementById('recommendations-section');
-    const soundSection   = document.getElementById('soundtrack-section');
-    const collSection    = document.getElementById('collection-section');
-
-    // Track which deferred jobs are still pending so we only fire once each
-    const pending = new Set(['recs', 'sound']);
-
-    deferredSectionObserver = new IntersectionObserver(
-        (entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const key = entry.target.dataset.deferred;
-                if (!pending.has(key)) return;
-                pending.delete(key);
-
-                if (key === 'recs') {
-                    loadRecommendations(mediaType, id);
-                } else if (key === 'sound') {
-                    loadSoundtrack(title);
-                }
-
-                // Stop watching this element once triggered
-                deferredSectionObserver.unobserve(entry.target);
-            });
-        },
-        { rootMargin: '400px 0px' } // start loading 400px before it enters viewport
-    );
-
-    // Tag sentinel elements. Use the section containers themselves —
-    // they are in the DOM at this point, just hidden (which is fine for observation).
-    if (recsSection)  { recsSection.dataset.deferred  = 'recs';  deferredSectionObserver.observe(recsSection); }
-    if (soundSection) { soundSection.dataset.deferred = 'sound'; deferredSectionObserver.observe(soundSection); }
-}
 
 window.selectContent = async function(id, title, type) {
     TMDB_ID = id;
@@ -2075,11 +2030,57 @@ window.selectContent = async function(id, title, type) {
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
 
-    // Defer secondary data (recommendations & soundtrack) until user scrolls near them
-    // This avoids 2 extra API calls on every content open if the user never scrolls down.
-    setupDeferredSections(id, title);
+    // Defer reviews, recommendations & soundtrack until the user scrolls near them.
+    setupDeferredSections(id, currentTitle);
 
     setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
+}
+
+// ==========================================
+// DEFERRED SECTION LOADING
+// ==========================================
+// Reviews, Recommendations and Soundtrack are fetched only when the user
+// scrolls near them — saving multiple API calls on every content open.
+
+let deferredSectionObserver = null;
+
+function setupDeferredSections(id, title) {
+    // Disconnect previous observer so we never double-fire
+    if (deferredSectionObserver) {
+        deferredSectionObserver.disconnect();
+        deferredSectionObserver = null;
+    }
+
+    // Reset reviews list immediately (clear stale content from the previous title)
+    loadReviews(id, mediaType, true /* reset */);
+
+    const recsSection    = document.getElementById('recommendations-section');
+    const soundSection   = document.getElementById('soundtrack-section');
+    const reviewsSection = document.getElementById('reviews-section');
+
+    const pending = new Set(['recs', 'sound', 'reviews']);
+
+    deferredSectionObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const key = entry.target.dataset.deferred;
+                if (!pending.has(key)) return;
+                pending.delete(key);
+
+                if      (key === 'recs')    loadRecommendations(mediaType, id);
+                else if (key === 'sound')   loadSoundtrack(title);
+                else if (key === 'reviews') loadReviews(id, mediaType);
+
+                deferredSectionObserver.unobserve(entry.target);
+            });
+        },
+        { rootMargin: '400px 0px' }
+    );
+
+    if (recsSection)    { recsSection.dataset.deferred    = 'recs';    deferredSectionObserver.observe(recsSection); }
+    if (soundSection)   { soundSection.dataset.deferred   = 'sound';   deferredSectionObserver.observe(soundSection); }
+    if (reviewsSection) { reviewsSection.dataset.deferred = 'reviews'; deferredSectionObserver.observe(reviewsSection); }
 }
 
 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2698,7 +2699,7 @@ function renderDetails(data, title) {
                 div.className = "gallery-item group relative flex-shrink-0 cursor-pointer w-48 md:w-64";
                 
                 div.innerHTML = `
-                    <img src="${imgUrl}" loading="lazy" decoding="async" alt="Gallery Image">
+                    <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <i class="fas fa-expand-alt text-white text-xl"></i>
                     </div>
@@ -2748,7 +2749,7 @@ function renderDetails(data, title) {
 
                 div.innerHTML = `
                     <div class="video-thumbnail">
-                        <img src="${thumbSrc}" loading="lazy" decoding="async" alt="${video.name}">
+                        <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
                         </div>
@@ -3301,7 +3302,6 @@ window.openDownloadModal = function() {
         dlLink1.href = buildUrl(DOWNLOAD_URLS.source1);
     }
 
-    // Apply the Rivestream URL to the new button
     if (dlLink2) {
         dlLink2.href = buildUrl(DOWNLOAD_URLS.source2);
     }
@@ -3503,7 +3503,7 @@ async function loadLatestTrailers() {
             const card = document.createElement('div');
             card.className = 'trailer-card';
             card.innerHTML = `
-                <img src="${imgUrl}" class="trailer-img" loading="lazy" decoding="async" alt="${item.title}">
+                <img src="${imgUrl}" class="trailer-img" loading="lazy" alt="${item.title}">
                 <div class="trailer-play-icon"><i class="fas fa-play"></i></div>
                 <div class="trailer-content">
                     <div class="trailer-title">${item.title}</div>
@@ -4305,6 +4305,128 @@ function renderGallery(data) {
         list.addEventListener('scroll', () => updateScrollButtons(list));
     }
 }
+
+// ==========================================
+// USER REVIEWS
+// ==========================================
+
+let reviewsPage = 1;
+let reviewsTotalPages = 1;
+let reviewsLoading = false;
+
+async function loadReviews(id, type, reset = false) {
+    const section  = document.getElementById('reviews-section');
+    const list     = document.getElementById('reviews-list');
+    const moreBtn  = document.getElementById('reviews-load-more');
+    if (!section || !list) return;
+
+    if (reset) {
+        reviewsPage = 1;
+        reviewsTotalPages = 1;
+        list.innerHTML = '';
+        section.classList.add('hidden');
+        if (moreBtn) moreBtn.classList.add('hidden');
+    }
+
+    if (reviewsLoading || reviewsPage > reviewsTotalPages) return;
+    reviewsLoading = true;
+
+    try {
+        const data = await fetchCached(
+            `${BASE_TMDB_URL}/${type}/${id}/reviews?api_key=${TMDB_API_KEY}&page=${reviewsPage}`
+        );
+
+        if (!data.results || data.results.length === 0) {
+            if (reviewsPage === 1) section.classList.add('hidden');
+            return;
+        }
+
+        reviewsTotalPages = data.total_pages || 1;
+        section.classList.remove('hidden');
+
+        data.results.forEach(review => {
+            const card = createReviewCard(review);
+            list.appendChild(card);
+        });
+
+        reviewsPage++;
+
+        // Show "Load More" only if there are further pages
+        if (moreBtn) {
+            if (reviewsPage <= reviewsTotalPages) {
+                moreBtn.classList.remove('hidden');
+                // Store the current id/type so the button can call loadReviews again
+                moreBtn.dataset.id   = id;
+                moreBtn.dataset.type = type;
+            } else {
+                moreBtn.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        console.error('Reviews fetch failed', e);
+    } finally {
+        reviewsLoading = false;
+    }
+}
+
+window.loadMoreReviews = function() {
+    const btn = document.getElementById('reviews-load-more');
+    if (!btn) return;
+    loadReviews(btn.dataset.id, btn.dataset.type);
+};
+
+function createReviewCard(review) {
+    const card = document.createElement('div');
+    card.className = 'review-card';
+
+    // Avatar initial(s)
+    const initials = (review.author_details?.username || review.author || '?')
+        .trim().substring(0, 2).toUpperCase();
+
+    // Star rating
+    const ratingVal = review.author_details?.rating;
+    let starsHtml = '';
+    if (ratingVal) {
+        const stars = Math.round(ratingVal / 2); // TMDB rates /10, show /5
+        starsHtml = `
+            <div class="review-stars">
+                ${'<i class="fas fa-star"></i>'.repeat(stars)}${'<i class="far fa-star"></i>'.repeat(5 - stars)}
+                <span class="ml-1 text-gray-400">${ratingVal}/10</span>
+            </div>`;
+    }
+
+    // Date
+    const dateStr = review.created_at
+        ? new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        : '';
+
+    // Sanitise content (strip markdown, keep plain text readable)
+    const rawContent = (review.content || '').replace(/!\[.*?\]\(.*?\)/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    const isLong = rawContent.length > 400;
+
+    const uid = 'rev-' + review.id;
+
+    card.innerHTML = `
+        <div class="review-header">
+            <div class="review-avatar">${initials}</div>
+            <div>
+                <div class="review-author">${review.author || 'Anonymous'}</div>
+                <div class="review-date">${dateStr}</div>
+            </div>
+            ${starsHtml}
+        </div>
+        <div class="review-body clamped" id="${uid}">${rawContent}</div>
+        ${isLong ? `<button class="review-toggle" onclick="toggleReview('${uid}', this)">Read More</button>` : ''}
+    `;
+    return card;
+}
+
+window.toggleReview = function(id, btn) {
+    const body = document.getElementById(id);
+    if (!body) return;
+    const collapsed = body.classList.toggle('clamped');
+    btn.textContent = collapsed ? 'Read More' : 'Show Less';
+};
 
 // --- NEW FEATURE: SIMILAR TITLES ---
 function renderSimilar(data) {
