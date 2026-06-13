@@ -1079,6 +1079,7 @@ async function initHero(items) {
     slidesContainer.innerHTML = '';
     indicatorsContainer.innerHTML = '';
     heroSection.style.display = 'block';
+    heroSection.classList.remove('skeleton');
 
     const validItems = items.filter(i => i.media_type !== 'person');
 
@@ -1128,6 +1129,91 @@ async function initHero(items) {
         let nextIndex = (activeIndex + 1) % validItems.length;
         showHeroSlide(nextIndex);
     }, 6000);
+
+    setupHeroDrag(validItems.length);
+}
+
+function heroSlideStep(direction) {
+    const slides = document.querySelectorAll('.hero-slide');
+    if (!slides.length) return;
+    let activeIndex = Array.from(slides).findIndex(s => s.classList.contains('active'));
+    let nextIndex = (activeIndex + direction + slides.length) % slides.length;
+    showHeroSlide(nextIndex);
+    if (heroInterval) clearInterval(heroInterval);
+    heroInterval = setInterval(() => {
+        let ai = Array.from(document.querySelectorAll('.hero-slide')).findIndex(s => s.classList.contains('active'));
+        showHeroSlide((ai + 1) % slides.length);
+    }, 6000);
+}
+
+function setupHeroDrag(slideCount) {
+    if (slideCount < 2) return;
+    if (heroSection.dataset.dragBound) return;
+    heroSection.dataset.dragBound = 'true';
+
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    let dragged = false;
+    const threshold = 50;
+
+    const onStart = (x, y) => {
+        startX = x;
+        startY = y;
+        isDragging = true;
+        dragged = false;
+    };
+
+    const onMove = (x, y, e) => {
+        if (!isDragging) return;
+        const dx = x - startX;
+        const dy = y - startY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+            dragged = true;
+            if (e.cancelable) e.preventDefault();
+        }
+    };
+
+    const onEnd = (x) => {
+        if (!isDragging) return;
+        const dx = x - startX;
+        if (Math.abs(dx) > threshold) {
+            heroSlideStep(dx < 0 ? 1 : -1);
+        }
+        isDragging = false;
+    };
+
+    heroSection.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+    heroSection.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY, e));
+    heroSection.addEventListener('mouseup', (e) => onEnd(e.clientX));
+    heroSection.addEventListener('mouseleave', () => { isDragging = false; });
+
+    heroSection.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+    }, { passive: true });
+
+    heroSection.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY, e);
+    }, { passive: false });
+
+    heroSection.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        onEnd(t.clientX);
+    });
+
+    heroSection.addEventListener('click', (e) => {
+        if (dragged) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragged = false;
+        }
+    }, true);
+
+    heroSection.style.cursor = 'grab';
+    heroSection.addEventListener('mousedown', () => heroSection.style.cursor = 'grabbing');
+    heroSection.addEventListener('mouseup', () => heroSection.style.cursor = 'grab');
 }
 
 function showHeroSlide(index) {
