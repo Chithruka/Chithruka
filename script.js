@@ -63,6 +63,12 @@ let loadedGenreType = null;
 let heroInterval;
 let deferredPrompt;
 let activeFilterLabel = "";
+// --- SLIDER FILTER STATE ---
+let currentTrendingFilter = 'all';
+let top10Page = 1;
+let top10Pool = [];
+let top10Filter = 'all';
+let isTop10Loading = false;
 let aiModalOpen = false;
 let userCountryCode = 'US';
 let DUBBED_REGISTRY = {};
@@ -801,6 +807,10 @@ async function loadMyLibrary(type) {
 function loadHome() {
     currentFetchUrl = "";
     trendingPage = 1;
+    currentTrendingFilter = 'all';
+    top10Page = 1;
+    top10Pool = [];
+    top10Filter = 'all';
     searchInput.value = '';
     searchResults.innerHTML = '';
     
@@ -829,6 +839,9 @@ function loadHome() {
     }
 
     document.getElementById('trending-header').innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    document.querySelectorAll('.slider-filter-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent.trim() === 'All');
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     trendingContainer.innerHTML = '';
@@ -894,13 +907,50 @@ const collectionContainer = document.getElementById('collection-container');
 
 function showMessage(text, isError = false) {
     messageBox.textContent = text;
-    messageBox.className = `fixed bottom-5 right-5 p-4 rounded-lg shadow-lg z-50 text-white font-semibold max-w-sm text-center ${isError ? 'bg-red-700' : 'bg-blue-600'}`;
+    messageBox.className = `fixed bottom-24 md:bottom-5 right-5 p-4 rounded-lg shadow-lg z-[10000] text-white font-semibold max-w-sm text-center ${isError ? 'bg-red-700' : 'bg-blue-600'}`;
     messageBox.classList.remove('hidden');
     setTimeout(() => messageBox.classList.add('hidden'), 3000);
 }
 
 window.scrollContainer = function(id, amount) {
     document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
+}
+
+// ==========================================
+// SLIDER MEDIA-TYPE FILTER (Movie / TV / All)
+// ==========================================
+window.setSliderFilter = function(containerId, type, btn) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Update active state on sibling buttons
+    const wrapper = btn.closest('.slider-filter');
+    if (wrapper) {
+        wrapper.querySelectorAll('.slider-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    if (containerId === 'top10-container') {
+        // Top 10 needs re-numbering and may need to fetch extra pages
+        // to always show a full top 10 of the selected type.
+        renderTop10ForFilter(type);
+        return;
+    }
+
+    // Generic show/hide filter (e.g. Trending Now)
+    currentTrendingFilter = type;
+    container.querySelectorAll(':scope > .scroll-card, :scope > .top-10-card').forEach(card => {
+        const cardType = card.dataset.mediaType;
+        if (type === 'all' || cardType === type) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    if (typeof updateScrollButtons === 'function') {
+        updateScrollButtons(container);
+    }
 }
 
 trendingContainer.addEventListener('scroll', () => {
@@ -975,7 +1025,10 @@ async function loadTrending() {
                 if (!urlParams.has('id')) {
                     // Don't clear container here, we handle it below
                     initHero(data.results.slice(0, 5));
-                    renderTop10(data.results.slice(0, 10));
+                    // Reset top10 pool and seed it with this first page
+                    top10Pool = data.results.filter(i => i.media_type !== 'person' && i.poster_path);
+                    top10Page = trendingPage;
+                    renderTop10ForFilter(top10Filter);
                 }
             }
         }
@@ -994,6 +1047,16 @@ async function loadTrending() {
 
             trendingPage++;
             renderCards(data.results, trendingContainer, true);
+
+            // Apply the currently active "Trending Now" media-type filter
+            // to the newly appended cards as well.
+            if (currentTrendingFilter !== 'all') {
+                trendingContainer.querySelectorAll(':scope > .scroll-card').forEach(card => {
+                    if (card.dataset.mediaType !== currentTrendingFilter) {
+                        card.style.display = 'none';
+                    }
+                });
+            }
 
             // Re-attach the sentinel after every batch so the observer always
             // watches the new end of the list (works for home feed AND filter results)
@@ -1076,16 +1139,56 @@ function showHeroSlide(index) {
     if (indicators[index]) indicators[index].classList.add('active');
 }
 
-function renderTop10(items) {
+async function renderTop10ForFilter(type) {
+    top10Filter = type;
+
+    if (isTop10Loading) return;
+    isTop10Loading = true;
+
+    try {
+        let filtered = top10Pool.filter(i => type === 'all' || i.media_type === type);
+
+        // Keep fetching more "trending/all" pages until we have 10 matching
+        // items (or we run out of pages, max 5 extra pages as a safety cap).
+        let safety = 0;
+        while (filtered.length < 10 && top10Page < 1 + 5 + safety) {
+            // Stop if we've already tried a reasonable number of extra pages
+            if (safety >= 5) break;
+
+            top10Page++;
+            safety++;
+
+            let data;
+            try {
+                data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${top10Page}`);
+            } catch (e) {
+                break;
+            }
+
+            if (!data.results || data.results.length === 0) break;
+
+            const newItems = data.results.filter(i => i.media_type !== 'person' && i.poster_path);
+            top10Pool.push(...newItems);
+
+            filtered = top10Pool.filter(i => type === 'all' || i.media_type === type);
+        }
+
+        renderTop10List(filtered.slice(0, 10));
+    } finally {
+        isTop10Loading = false;
+    }
+}
+
+function renderTop10List(items) {
     top10Container.innerHTML = '';
     items.forEach((item, index) => {
-        if (item.media_type === 'person') return;
         const title = item.title || item.name;
         const poster = item.poster_path ? `${TMDB_POSTER_MD}${item.poster_path}` : null;
         if (!poster) return;
 
         const card = document.createElement('div');
         card.className = 'top-10-card';
+        card.dataset.mediaType = item.media_type;
         card.innerHTML = `
                 <div class="rank-number">${index + 1}</div>
                 <img src="${poster}" class="top-poster" loading="lazy" alt="${title}">
@@ -1151,6 +1254,7 @@ function renderCards(items, container, trackIds) {
 
         const card = document.createElement('div');
         card.className = 'scroll-card';
+        card.dataset.mediaType = item.media_type;
 
         if (isPerson) {
              card.innerHTML = `

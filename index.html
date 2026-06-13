@@ -269,9 +269,16 @@
     </div>
 
     <div class="mb-12 relative" id="top10-section">
-        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title">
-            Top 10 Trending
-        </h2>
+        <div class="flex justify-between items-center px-2 mb-6 flex-wrap gap-3">
+            <h2 class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
+                Top 10 Trending
+            </h2>
+            <div class="slider-filter">
+                <button class="slider-filter-btn active" onclick="setSliderFilter('top10-container','all',this)">All</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('top10-container','movie',this)">Movies</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('top10-container','tv',this)">TV Shows</button>
+            </div>
+        </div>
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('top10-container', -300)">
                 <i class="fas fa-chevron-left"></i>
@@ -560,9 +567,16 @@
         </div>
     </div>
     <div class="mb-12 relative">
-        <h2 id="trending-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title">
-            Trending Now
-        </h2>
+        <div class="flex justify-between items-center px-2 mb-4 md:mb-6 flex-wrap gap-3">
+            <h2 id="trending-header" class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
+                Trending Now
+            </h2>
+            <div class="slider-filter">
+                <button class="slider-filter-btn active" onclick="setSliderFilter('trending-container','all',this)">All</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','movie',this)">Movies</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','tv',this)">TV Shows</button>
+            </div>
+        </div>
         <div class="relative group px-2">
             <button id="scroll-left" class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
                 <i class="fas fa-chevron-left"></i>
