@@ -905,11 +905,48 @@ const pageBackground = document.getElementById('page-background');
 const collectionSection = document.getElementById('collection-section');
 const collectionContainer = document.getElementById('collection-container');
 
+let messageTimeout;
 function showMessage(text, isError = false) {
-    messageBox.textContent = text;
-    messageBox.className = `fixed bottom-24 md:bottom-5 right-5 p-4 rounded-lg shadow-lg z-[10000] text-white font-semibold max-w-sm text-center ${isError ? 'bg-red-700' : 'bg-blue-600'}`;
-    messageBox.classList.remove('hidden');
-    setTimeout(() => messageBox.classList.add('hidden'), 3000);
+    const box = document.getElementById('message-box');
+    const inner = document.getElementById('message-box-inner');
+    const icon = document.getElementById('message-icon');
+    const msg = document.getElementById('message-text');
+
+    // Content
+    msg.textContent = text;
+
+    // Theme: error = red accent, success = green accent
+    if (isError) {
+        icon.innerHTML = '<i class="fas fa-xmark"></i>';
+        icon.style.cssText = 'background: rgba(229,9,20,0.2); color: #e50914;';
+        inner.style.borderColor = 'rgba(229,9,20,0.35)';
+    } else {
+        icon.innerHTML = '<i class="fas fa-check"></i>';
+        icon.style.cssText = 'background: rgba(70,211,105,0.2); color: #46d369;';
+        inner.style.borderColor = 'rgba(70,211,105,0.3)';
+    }
+
+    // Position: above mobile nav on mobile, near bottom-right on desktop
+    const isMobile = window.innerWidth < 768;
+    box.style.bottom = isMobile ? 'calc(70px + 12px)' : '20px';
+
+    // Show with animation
+    box.classList.remove('hidden');
+    box.style.opacity = '0';
+    box.style.transform = 'translateY(8px)';
+    box.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    requestAnimationFrame(() => {
+        box.style.opacity = '1';
+        box.style.transform = 'translateY(0)';
+    });
+
+    // Auto-hide after 3s
+    clearTimeout(messageTimeout);
+    messageTimeout = setTimeout(() => {
+        box.style.opacity = '0';
+        box.style.transform = 'translateY(8px)';
+        setTimeout(() => box.classList.add('hidden'), 250);
+    }, 3000);
 }
 
 window.scrollContainer = function(id, amount) {
