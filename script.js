@@ -1479,7 +1479,7 @@ function renderCards(items, container, trackIds) {
                     ${charHtml}
                     <div class="card-meta">
                         <span>${year}</span>
-                        <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
+                        <span class="text-yellow-500 font-bold"><i class="fas fa-star mr-1"></i>${rating}</span>
                     </div>
                 </div>
             `;
