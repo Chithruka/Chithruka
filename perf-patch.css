@@ -1,0 +1,31 @@
+/* ============================================================
+   perf-patch.css — Drop this AFTER your output.css <link>
+   Addresses: Fix #8 (will-change), Fix #2 (FA async hint)
+   ============================================================ */
+
+/* Fix #8: Pre-promote blurring elements to their own GPU layer
+   so backdrop-filter compositing doesn't stall the main thread */
+.sidebar {
+    will-change: width;
+}
+
+.mobile-nav {
+    will-change: transform;
+}
+
+/* Ensure the hero section's slide transitions are GPU-accelerated */
+.hero-slide {
+    will-change: opacity;
+}
+
+/* Reduce repaint cost for poster hover effects —
+   already has will-change: transform on .poster-img,
+   but adding contain helps the browser limit repaint scope */
+.scroll-card {
+    contain: layout style;
+}
+
+/* Prevent poster scale animations from causing full-page repaints */
+.poster-wrapper {
+    isolation: isolate;
+}

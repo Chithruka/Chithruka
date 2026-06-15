@@ -77,7 +77,8 @@ let DUBBED_REGISTRY = {};
 let sessionId = localStorage.getItem('tmdb_session_id');
 let accountId = localStorage.getItem('tmdb_account_id');
 
-const requestCache = new Map();
+// In-memory cache (instant, no serialization cost)
+const memCache = new Map();
 
 async function fetchCached(url) {
     // 1. Create a clean cache key (remove keys to avoid duplicates in key name)
@@ -86,6 +87,9 @@ async function fetchCached(url) {
     // 2. Cache Duration: 1 Hour (in milliseconds)
     const CACHE_DURATION = 1000 * 60 * 60; 
 
+    // --- FIX #7: Check in-memory first (instant, no serialization) ---
+    if (memCache.has(cacheKey)) return memCache.get(cacheKey);
+
     // 3. Try Local Storage
     try {
         const cachedRecord = localStorage.getItem(cacheKey);
@@ -93,6 +97,7 @@ async function fetchCached(url) {
             const { timestamp, data } = JSON.parse(cachedRecord);
             // Check if expired
             if (Date.now() - timestamp < CACHE_DURATION) {
+                memCache.set(cacheKey, data); // Warm up memory cache
                 return data;
             }
         }
@@ -106,7 +111,10 @@ async function fetchCached(url) {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
 
-        // 5. Save to Local Storage
+        // 5. Store in memory immediately
+        memCache.set(cacheKey, data);
+
+        // 6. Save to Local Storage
         try {
             // Only cache if valid data
             if (data) {
@@ -145,7 +153,21 @@ async function loadDubbedRegistry() {
     }
 }
 
-// --- HELPER FUNCTIONS ---
+// --- FIX #5: Lazy-load flags so we only fetch when actually needed ---
+let dubbedRegistryLoaded = false;
+let localVideosLoaded = false;
+
+async function ensureDubbedRegistry() {
+    if (dubbedRegistryLoaded) return;
+    await loadDubbedRegistry();
+    dubbedRegistryLoaded = true;
+}
+
+async function ensureLocalVideos() {
+    if (localVideosLoaded) return;
+    await loadLocalVideos();
+    localVideosLoaded = true;
+}
 function formatRuntime(minutes) {
     if (!minutes) return "";
     const h = Math.floor(minutes / 60);
@@ -159,7 +181,11 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
+// --- FIX #6: Cache dominant color results by image URL ---
+const colorCache = new Map();
+
 function getDominantColor(imageUrl) {
+    if (colorCache.has(imageUrl)) return Promise.resolve(colorCache.get(imageUrl));
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "Anonymous";
@@ -172,16 +198,16 @@ function getDominantColor(imageUrl) {
             ctx.drawImage(img, 0, 0, 1, 1);
             let [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 
-            // --- NEW: Force Darken the Color ---
-            // We multiply by 0.3 to keep only 30% of the brightness.
-            // This ensures even bright white becomes dark grey.
+            // Force Darken the Color
             r = Math.floor(r * 0.3);
             g = Math.floor(g * 0.3);
             b = Math.floor(b * 0.3);
 
-            resolve(`${r}, ${g}, ${b}`);
+            const result = `${r}, ${g}, ${b}`;
+            colorCache.set(imageUrl, result);
+            resolve(result);
         };
-        img.onerror = () => resolve('20, 20, 20'); // Default to dark grey, not black
+        img.onerror = () => resolve('20, 20, 20');
     });
 }
 
@@ -853,12 +879,13 @@ function getActiveServers() {
     const servers = [...BASE_SERVER_URLS];
     let hasLocalServer = false;
 
-    // Check if the current content exists in the local JSON
-    if (mediaType === 'movie') {
-        hasLocalServer = !!(LOCAL_VIDEOS.movies && LOCAL_VIDEOS.movies[TMDB_ID]);
-    } else if (mediaType === 'tv') {
-        // Safe navigation through Season and Episode
-        hasLocalServer = !!LOCAL_VIDEOS.tv?.[TMDB_ID]?.[currentSeason]?.[currentEpisode];
+    // Only check LOCAL_VIDEOS if it's been loaded
+    if (localVideosLoaded) {
+        if (mediaType === 'movie') {
+            hasLocalServer = !!(LOCAL_VIDEOS.movies && LOCAL_VIDEOS.movies[TMDB_ID]);
+        } else if (mediaType === 'tv') {
+            hasLocalServer = !!LOCAL_VIDEOS.tv?.[TMDB_ID]?.[currentSeason]?.[currentEpisode];
+        }
     }
 
     if (hasLocalServer) {
@@ -1118,23 +1145,38 @@ async function initHero(items) {
     heroSection.style.display = 'block';
     heroSection.classList.remove('skeleton');
 
-    const validItems = items.filter(i => i.media_type !== 'person');
+    const validItems = items.filter(i => i.media_type !== 'person' && i.backdrop_path);
 
-    for (let i = 0; i < validItems.length; i++) {
-        const item = validItems[i];
+    // --- FIX #1: Fetch all logos IN PARALLEL instead of one by one ---
+    const logoResults = await Promise.allSettled(
+        validItems.map(item =>
+            fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`)
+        )
+    );
+
+    // --- FIX #4: Preload the first slide's backdrop image immediately ---
+    if (validItems[0]?.backdrop_path) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = `${TMDB_BACKDROP_WEB}${validItems[0].backdrop_path}`;
+        document.head.appendChild(link);
+    }
+
+    let slideCount = 0;
+    validItems.forEach((item, i) => {
         const title = item.title || item.name;
-        const backdrop = item.backdrop_path ? `${TMDB_BACKDROP_WEB}${item.backdrop_path}` : null;
-        if (!backdrop) continue;
+        const backdrop = `${TMDB_BACKDROP_WEB}${item.backdrop_path}`;
 
         let logoUrl = null;
-        try {
-            const imgData = await fetchCached(`${BASE_TMDB_URL}/${item.media_type}/${item.id}/images?api_key=${TMDB_API_KEY}`);
-            const logo = imgData.logos.find(l => l.iso_639_1 === 'en') || imgData.logos[0];
+        if (logoResults[i].status === 'fulfilled') {
+            const imgData = logoResults[i].value;
+            const logo = imgData.logos?.find(l => l.iso_639_1 === 'en') || imgData.logos?.[0];
             if (logo) logoUrl = `${TMDB_POSTER_XL}${logo.file_path}`;
-        } catch (e) { }
+        }
 
         const slide = document.createElement('div');
-        slide.className = `hero-slide ${i === 0 ? 'active' : ''}`;
+        slide.className = `hero-slide ${slideCount === 0 ? 'active' : ''}`;
         slide.style.backgroundImage = `url('${backdrop}')`;
 
         const titleHtml = logoUrl
@@ -1155,19 +1197,21 @@ async function initHero(items) {
         slidesContainer.appendChild(slide);
 
         const ind = document.createElement('div');
-        ind.className = `indicator ${i === 0 ? 'active' : ''}`;
-        ind.onclick = () => showHeroSlide(i);
+        ind.className = `indicator ${slideCount === 0 ? 'active' : ''}`;
+        ind.onclick = () => showHeroSlide(slideCount);
         indicatorsContainer.appendChild(ind);
-    }
+        slideCount++;
+    });
 
+    // --- FIX #9: Track hero index in a variable, no querySelectorAll every 6s ---
+    let currentHeroIndex = 0;
     if (heroInterval) clearInterval(heroInterval);
     heroInterval = setInterval(() => {
-        let activeIndex = Array.from(document.querySelectorAll('.hero-slide')).findIndex(s => s.classList.contains('active'));
-        let nextIndex = (activeIndex + 1) % validItems.length;
-        showHeroSlide(nextIndex);
+        currentHeroIndex = (currentHeroIndex + 1) % slideCount;
+        showHeroSlide(currentHeroIndex);
     }, 6000);
 
-    setupHeroDrag(validItems.length);
+    setupHeroDrag(slideCount);
 }
 
 function heroSlideStep(direction) {
@@ -1176,10 +1220,12 @@ function heroSlideStep(direction) {
     let activeIndex = Array.from(slides).findIndex(s => s.classList.contains('active'));
     let nextIndex = (activeIndex + direction + slides.length) % slides.length;
     showHeroSlide(nextIndex);
+    // Interval is managed inside initHero; just clear here to avoid double-firing
     if (heroInterval) clearInterval(heroInterval);
+    let idx = nextIndex;
     heroInterval = setInterval(() => {
-        let ai = Array.from(document.querySelectorAll('.hero-slide')).findIndex(s => s.classList.contains('active'));
-        showHeroSlide((ai + 1) % slides.length);
+        idx = (idx + 1) % slides.length;
+        showHeroSlide(idx);
     }, 6000);
 }
 
@@ -3512,11 +3558,14 @@ window.toggleAccordion = function() {
 // DOWNLOAD MODAL LOGIC
 // ==========================================
 
-window.openDownloadModal = function() {
+window.openDownloadModal = async function() {
     if (!TMDB_ID || !mediaType) {
         showMessage("No content selected to download.", true);
         return;
     }
+
+    // FIX #5: Load registry only when the download modal is actually opened
+    await ensureDubbedRegistry();
 
     const modal = document.getElementById('download-modal');
     const dlLink1 = document.getElementById('dl-link-1');
@@ -4194,13 +4243,8 @@ function resetQuoteTimer() {
 // Track which list the mouse is currently over
 let activeScrollWrapper = null;
 
-// ---> FIX: ADDED 'async' HERE <---
 document.addEventListener('DOMContentLoaded', async () => {
     
-    // ---> FIX: AWAIT YOUR CONFIGS BEFORE DOING ANYTHING ELSE <---
-    await loadDubbedRegistry();
-    await loadLocalVideos();
-
     const urlParams = new URLSearchParams(window.location.search);
 
     // --- 1. Restore Adult Toggle State ---
@@ -4251,7 +4295,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(trailerSection) trailerSection.style.display = 'none'; 
         
         const deepId = Number(urlParams.get('id'));
-        // Now this will correctly see LOCAL_VIDEOS because we awaited it above!
+        // Ensure local video data is available for deep-linked content
+        await ensureLocalVideos();
         selectContent(deepId, "Loading Content...", urlParams.get('type'));
     } else {
         // Homepage: Load Trailers
