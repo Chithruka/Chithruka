@@ -4435,7 +4435,7 @@ function renderLogos(data) {
             div.innerHTML = `
                 <img src="${imgUrl}" loading="lazy" class="max-w-full max-h-full object-contain drop-shadow-lg" alt="${langLabel} Logo">
                 
-                <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10">
+                <div class="absolute top-2 right-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10">
                     ${langLabel}
                 </div>
 
@@ -4556,7 +4556,7 @@ function renderGallery(data) {
         div.innerHTML = `
             <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt="${typeLabel}">
             
-            <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10 shadow-sm z-10 pointer-events-none">
+            <div class="absolute top-2 right-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10 shadow-sm z-10 pointer-events-none">
                 ${typeLabel}
             </div>
 
