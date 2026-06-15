@@ -149,7 +149,24 @@
 .sidebar-nav a:hover .nav-svg, 
 .mobile-nav a.active .nav-svg {
     transform: scale(1.1); /* Subtle hover effect from Netflix UI */
-}</style>
+}
+
+/* --- MOBILE PLAYER FULL BLEED FIX --- */
+@media (max-width: 767px) {
+    #mobile-player-fix {
+        /* Exact math to cancel out the px-4 (16px) and p-6 (24px) parent paddings */
+        margin-left: -40px !important;
+        margin-right: -40px !important;
+        width: calc(100% + 80px) !important;
+        max-width: none !important;
+        
+        /* Remove the curved edges and side borders so it sits flush against the phone screen */
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -389,7 +406,7 @@
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
                 <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
     <div id="player-interface" class="hidden fade-in">
-        <div class="w-[100vw] max-w-[100vw] left-1/2 -translate-x-1/2 md:w-full md:left-auto md:translate-x-0 mb-6 rounded-none md:rounded-xl overflow-hidden shadow-2xl relative bg-black border-y border-gray-800 md:border-x aspect-video">
+        <div id="mobile-player-fix" class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800 aspect-video">
              <div id="server-loading-msg" class="hidden"></div>
 <iframe id="player-iframe" 
         src="" 
