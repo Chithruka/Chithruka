@@ -29,3 +29,26 @@
 .poster-wrapper {
     isolation: isolate;
 }
+
+/* ============================================================
+   Fix: Live filter sentence wraps to next line instead of
+   expanding the page width with horizontal scrolling.
+   ============================================================ */
+
+/* Allow the filter-sentence heading tokens to wrap */
+#trending-header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal; /* override any inherited nowrap */
+}
+
+/* Prevent inline <select> and <input> tokens from blowing out the width */
+#trending-header select,
+#trending-header input[type="number"] {
+    min-width: 0;
+    max-width: 100%;
+    flex-shrink: 1;
+}

@@ -50,3 +50,60 @@
 .slider-filter-btn:hover{border-color:#e50914;color:#fff}
 .slider-filter-btn.active{background:#e50914;border-color:#e50914;color:#fff}
 @media (max-width:768px){.slider-filter-btn{font-size:.65rem;padding:5px 10px}}
+
+/* --- Inline "live sentence" filter controls (type/genre/country/year/rating) --- */
+.header-inline-select,.header-inline-input{
+    background:rgba(229,9,20,.08);
+    border:none;
+    border-bottom:2px dashed rgba(229,9,20,.65);
+    color:#fff;
+    font:inherit;
+    font-weight:inherit;
+    letter-spacing:inherit;
+    text-transform:inherit;
+    cursor:pointer;
+    padding:0 6px 1px 4px;
+    margin:0 2px;
+    border-radius:6px 6px 0 0;
+    -webkit-appearance:none;-moz-appearance:none;appearance:none;
+    transition:background .2s ease,border-color .2s ease;
+    vertical-align:baseline;
+}
+.header-inline-select{
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23e50914' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 2px center;
+    background-size:.7em;
+    padding-right:1.3em;
+}
+.header-inline-select:hover,.header-inline-input:hover,
+.header-inline-select:focus,.header-inline-input:focus{
+    background-color:rgba(229,9,20,.18);
+    border-bottom-color:#e50914;
+    outline:none;
+}
+.header-inline-input{
+    width:5.5ch;
+    text-align:center;
+    cursor:text;
+}
+.header-inline-input::-webkit-inner-spin-button,.header-inline-input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0;
+}
+.header-inline-select option{background:#1a1a1a;color:#fff;font-weight:600;}
+
+/* --- Fix: prevent filter sentence from expanding the page horizontally --- */
+#trending-header {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+.header-inline-select,
+.header-inline-input {
+    min-width: 0;
+    max-width: 100%;
+}

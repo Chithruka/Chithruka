@@ -1078,10 +1078,8 @@ async function loadTrending() {
     try {
         let data;
         if (activeUrl) {
-            data = await fetchCached(`${activeUrl}&page=${trendingPage}`);
-            // Match /discover/tv, /search/tv, /tv/popular, etc.
-            const type = /\/(tv)[/?]/.test(activeUrl) ? 'tv' : 'movie';
-            data.results = data.results.map(i => ({ ...i, media_type: i.media_type || type }));
+            const merged = await fetchFilterPage(activeUrl, trendingPage);
+            data = { results: merged };
         } else {
             data = await fetchCached(`${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}&page=${trendingPage}`);
             if (trendingPage === 1) {
@@ -1886,7 +1884,8 @@ window.closeFilterModal = () => {
 };
 
 async function loadGenres() {
-    const type = document.getElementById('filter-type').value;
+    const rawType = document.getElementById('filter-type').value;
+    const type = rawType === 'all' ? 'movie' : rawType; // TMDB has no /genre/all/list endpoint
     
     // Check if we already loaded this specific type to avoid unnecessary calls
     if (loadedGenreType === type) return;
@@ -1967,6 +1966,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
 window.clearFilters = function() {
     // --- FIX: Reset text search state ---
     currentSearchQuery = ""; 
+    currentFilterState = null;
     
     // Reset Inputs
     document.getElementById('filter-genre').value = "";
@@ -1974,6 +1974,7 @@ window.clearFilters = function() {
     document.getElementById('filter-language').value = ""; 
     document.getElementById('filter-year').value = "";
     document.getElementById('filter-rating').value = "";
+    if(document.getElementById('filter-type')) document.getElementById('filter-type').value = "movie";
     
     if(document.getElementById('filter-sort')) {
         document.getElementById('filter-sort').value = "popularity.desc";
@@ -1999,6 +2000,11 @@ window.clearFilters = function() {
     const header = document.getElementById('trending-header');
     header.innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
 
+    // The All/Movies/TV Shows slider is only meaningful for the default mixed
+    // trending feed (it actually contains both types there) - bring it back.
+    const sliderWrap = document.getElementById('trending-slider-filter');
+    if (sliderWrap) sliderWrap.style.display = '';
+
     trendingContainer.innerHTML = '';
     loadedIds.clear();
     trendingPage = 1;
@@ -2008,16 +2014,300 @@ window.clearFilters = function() {
     loadTrending();
 }
 
+
+// ==========================================
+// LIVE FILTER HEADER ENGINE
+// Powers the editable "All Movies Rated 4.5+" style
+// sentence header so every token (type, genre, country,
+// language, year, rating) can be changed in place and
+// instantly re-queries TMDB instead of just hiding/showing
+// already-loaded cards.
+// ==========================================
+
+// The single source of truth for whatever filter is currently driving
+// the trending-container. null === default "Trending Now" feed.
+let currentFilterState = null;
+
+// Caches so we don't refetch the same master lists over and over.
+let inlineGenreCache = {};      // { movie: [...], tv: [...] }
+let inlineCountryCache = null;  // [...]
+let inlineLanguageCache = null; // [...]
+
+async function ensureInlineGenreList(type) {
+    if (inlineGenreCache[type]) return inlineGenreCache[type];
+    try {
+        const data = await fetchCached(`${BASE_TMDB_URL}/genre/${type}/list?api_key=${TMDB_API_KEY}`);
+        inlineGenreCache[type] = data.genres || [];
+    } catch (e) {
+        inlineGenreCache[type] = [];
+    }
+    return inlineGenreCache[type];
+}
+
+async function ensureInlineCountryList() {
+    if (inlineCountryCache) return inlineCountryCache;
+    try {
+        const data = await fetchCached(`https://api.themoviedb.org/3/configuration/countries?api_key=${TMDB_API_KEY}`);
+        data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+        inlineCountryCache = data;
+    } catch (e) {
+        inlineCountryCache = [];
+    }
+    return inlineCountryCache;
+}
+
+async function ensureInlineLanguageList() {
+    if (inlineLanguageCache) return inlineLanguageCache;
+    try {
+        const data = await fetchCached(`${BASE_TMDB_URL}/configuration/languages?api_key=${TMDB_API_KEY}`);
+        data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+        inlineLanguageCache = data;
+    } catch (e) {
+        inlineLanguageCache = [];
+    }
+    return inlineLanguageCache;
+}
+
+// Genre id mapping between the movie & tv genre namespaces for the
+// handful of genres that don't share an id (kept identical to the
+// mapping already used elsewhere so behaviour stays consistent).
+const HEADER_GENRE_MAPPING = {
+    '10759': '28|12', '10765': '878|14', '10768': '10752', '10762': '10751',
+    '28': '10759', '12': '10759', '878': '10765', '14': '10765', '10752': '10768',
+};
+
+// Builds a /discover/{type} URL for ONE concrete media type ('movie' or 'tv'),
+// applying all the same param translations the old single-type code used to
+// do inline. Used for both single-type filtering and for the two parallel
+// requests that make up "All" (movies + tv shows combined).
+function buildDiscoverUrlForType(concreteType, params) {
+    let genre = params.genre;
+    if (genre && HEADER_GENRE_MAPPING[genre]) {
+        if (concreteType === 'movie' && ['10759', '10765', '10768', '10762'].includes(genre)) genre = HEADER_GENRE_MAPPING[genre];
+        else if (concreteType === 'tv' && ['28', '12', '878', '14', '10752'].includes(genre)) genre = HEADER_GENRE_MAPPING[genre];
+    }
+
+    let url = `${BASE_TMDB_URL}/discover/${concreteType}?api_key=${TMDB_API_KEY}&include_adult=${params.includeAdult}&include_video=false`;
+
+    let finalSort = params.sort || 'popularity.desc';
+    if (concreteType === 'tv' && finalSort.includes('primary_release_date')) finalSort = finalSort.replace('primary_release_date', 'first_air_date');
+    if (concreteType === 'movie' && finalSort.includes('first_air_date')) finalSort = finalSort.replace('first_air_date', 'primary_release_date');
+    // discover/tv has no revenue sort option - fall back gracefully.
+    if (concreteType === 'tv' && finalSort.startsWith('revenue')) finalSort = 'popularity.desc';
+    url += `&sort_by=${finalSort}`;
+
+    if (finalSort.startsWith('vote_average')) url += '&vote_count.gte=200';
+
+    if (params.year) {
+        if (concreteType === 'movie') url += `&primary_release_year=${params.year}`;
+        else url += `&first_air_date_year=${params.year}`;
+    }
+    if (genre) url += `&with_genres=${genre}`;
+    if (params.rating) url += `&vote_average.gte=${params.rating}`;
+    if (params.country) url += `&with_origin_country=${params.country}`;
+    if (params.company) url += `&with_companies=${params.company}`;
+    if (params.network && concreteType === 'tv') url += `&with_networks=${params.network}`;
+    if (params.language) url += `&with_original_language=${params.language}`;
+    if (params.keyword) url += `&with_keywords=${params.keyword}`;
+
+    return url;
+}
+
+// Client-side comparator used to merge & sort the combined movie+tv
+// result set when type === 'all' (TMDB has no single "discover everything"
+// endpoint, so we ask both endpoints and stitch the results together).
+function mergeSortResults(items, sortKey) {
+    const [field, dir] = (sortKey || 'popularity.desc').split('.');
+    const mult = dir === 'asc' ? 1 : -1;
+    const getVal = (item) => {
+        switch (field) {
+            case 'vote_average': return item.vote_average || 0;
+            case 'revenue': return item.revenue || 0;
+            case 'primary_release_date': {
+                const d = item.release_date || item.first_air_date;
+                return d ? new Date(d).getTime() : 0;
+            }
+            default: return item.popularity || 0;
+        }
+    };
+    return [...items].sort((a, b) => (getVal(a) - getVal(b)) * mult);
+}
+
+// Unified page fetcher. Accepts the SAME string urls the rest of the app
+// already uses (search/company/keyword endpoints) AND the new
+// {url, mediaType} spec / array-of-specs shape used for discover + "All".
+// This is what both applyFilter()'s first page and loadTrending()'s
+// infinite-scroll pages call, so pagination "just works" for every mode.
+async function fetchFilterPage(urlSpecOrSpecs, page) {
+    let specs;
+    if (typeof urlSpecOrSpecs === 'string') {
+        specs = [{ url: urlSpecOrSpecs, mediaType: /\/(tv)[/?]/.test(urlSpecOrSpecs) ? 'tv' : 'movie' }];
+    } else if (Array.isArray(urlSpecOrSpecs)) {
+        specs = urlSpecOrSpecs;
+    } else {
+        specs = [urlSpecOrSpecs];
+    }
+
+    const responses = await Promise.all(specs.map(spec =>
+        fetchCached(`${spec.url}&page=${page}`).catch(() => ({ results: [] }))
+    ));
+
+    let merged = [];
+    responses.forEach((data, idx) => {
+        const items = (data.results || []).map(i => ({ ...i, media_type: i.media_type || specs[idx].mediaType }));
+        merged = merged.concat(items);
+    });
+
+    if (specs.length > 1) {
+        merged = mergeSortResults(merged, currentFilterState ? currentFilterState.sort : 'popularity.desc');
+    }
+
+    // Apply the year filter consistently on every page (previously this
+    // only ran on page 1, so infinite-scroll pages could leak in titles
+    // from the wrong year).
+    if (currentFilterState && currentFilterState.year) {
+        merged = merged.filter(item => {
+            const date = item.release_date || item.first_air_date;
+            return date && date.substring(0, 4) === String(currentFilterState.year);
+        });
+    }
+
+    return merged;
+}
+
+// Turns the live filter state back into the "overrides" shape applyFilter()
+// already understands, so every inline control can just call applyFilter()
+// again - one single code path for every way a filter can be triggered
+// (clicking a tag, the Discover modal, or editing the live sentence).
+function stateToOverrides(state) {
+    return {
+        type: state.type,
+        genre: state.genre,
+        genreLabel: state.genreLabel,
+        country: state.country,
+        countryLabel: state.countryLabel,
+        language: state.language,
+        year: state.year,
+        rating: state.rating,
+        company: state.company,
+        network: state.network,
+        keyword: state.keyword
+    };
+}
+
+function buildHeaderSelect(value, options, onChange) {
+    const sel = document.createElement('select');
+    sel.className = 'header-inline-select';
+    options.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.text;
+        if (String(opt.value) === String(value || '')) o.selected = true;
+        sel.appendChild(o);
+    });
+    sel.addEventListener('change', (e) => onChange(e.target.value));
+    return sel;
+}
+
+function buildHeaderNumberInput(value, placeholder, step, onChange) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    if (step) input.step = step;
+    input.className = 'header-inline-input';
+    input.value = value || '';
+    input.placeholder = placeholder || '';
+    input.addEventListener('change', (e) => onChange(e.target.value));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+    return input;
+}
+
+// Renders the live, editable "All Movies Rated 4.5+" style sentence in
+// place of the old static header text + the now-useless All/Movies/TV
+// slider (that slider only ever hid/showed cards that were ALREADY all
+// the same type, since discover results only ever came back as one type).
+async function renderInteractiveHeader(state) {
+    const sliderWrap = document.getElementById('trending-slider-filter');
+    if (sliderWrap) sliderWrap.style.display = 'none';
+
+    const header = document.getElementById('trending-header');
+    header.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    // GENRE token - always shown ("All" when no genre is active)
+    const genreListType = state.type === 'tv' ? 'tv' : 'movie';
+    const genres = await ensureInlineGenreList(genreListType);
+    const genreOptions = [{ value: '', text: 'All' }, ...genres.map(g => ({ value: String(g.id), text: g.name }))];
+    frag.appendChild(buildHeaderSelect(state.genre || '', genreOptions, (val) => {
+        const opt = genreOptions.find(o => o.value === val);
+        applyFilter({ ...stateToOverrides(state), genre: val, genreLabel: opt ? opt.text : '' });
+    }));
+
+    frag.appendChild(document.createTextNode(' '));
+
+    // TYPE token - always shown. THIS is the dropdown that replaces the
+    // broken Movies/TV Shows/All slider buttons.
+    frag.appendChild(buildHeaderSelect(state.type, [
+        { value: 'movie', text: 'Movies' },
+        { value: 'tv', text: 'TV Shows' },
+        { value: 'all', text: 'All' }
+    ], (val) => {
+        applyFilter({ ...stateToOverrides(state), type: val });
+    }));
+
+    // COUNTRY token - only shown if a country filter is active
+    if (state.country) {
+        frag.appendChild(document.createTextNode(' from '));
+        const countries = await ensureInlineCountryList();
+        const countryOptions = countries.map(c => ({ value: c.iso_3166_1, text: c.english_name }));
+        frag.appendChild(buildHeaderSelect(state.country, countryOptions, (val) => {
+            const opt = countryOptions.find(o => o.value === val);
+            applyFilter({ ...stateToOverrides(state), country: val, countryLabel: opt ? opt.text : '' });
+        }));
+    }
+
+    // LANGUAGE token - only shown if a language filter is active
+    if (state.language) {
+        frag.appendChild(document.createTextNode(' in '));
+        const languages = await ensureInlineLanguageList();
+        const langOptions = languages.map(l => ({ value: l.iso_639_1, text: l.english_name }));
+        frag.appendChild(buildHeaderSelect(state.language, langOptions, (val) => {
+            applyFilter({ ...stateToOverrides(state), language: val });
+        }));
+    }
+
+    // YEAR token - only shown if a year filter is active, but editable on the go
+    if (state.year) {
+        frag.appendChild(document.createTextNode(' released in '));
+        frag.appendChild(buildHeaderNumberInput(state.year, 'Year', null, (val) => {
+            applyFilter({ ...stateToOverrides(state), year: val });
+        }));
+    }
+
+    // RATING token - only shown if a rating filter is active, but editable on the go
+    if (state.rating) {
+        frag.appendChild(document.createTextNode(' Rated '));
+        frag.appendChild(buildHeaderNumberInput(state.rating, 'Rating', '0.1', (val) => {
+            applyFilter({ ...stateToOverrides(state), rating: val });
+        }));
+        frag.appendChild(document.createTextNode('+'));
+    }
+
+    header.appendChild(frag);
+}
+
 async function applyFilter(overrides = {}) {
-    // 1. Get current settings from UI
-    let type = document.getElementById('filter-type').value || 'movie';
+    // 1. Get current settings from UI (overrides win, including explicit "" to clear a field)
+    let type = typeof overrides.type !== 'undefined' ? overrides.type : (document.getElementById('filter-type').value || 'movie');
 
     // 2. Extract values (Prioritize overrides -> then DOM elements)
-    let genre = overrides.genre ? String(overrides.genre) : document.getElementById('filter-genre').value;
-    const country = overrides.country || document.getElementById('filter-country').value;
-    const language = overrides.language || document.getElementById('filter-language').value; 
-    const year = overrides.year || document.getElementById('filter-year').value;
-    const rating = overrides.rating || document.getElementById('filter-rating').value;
+    // NOTE: using `typeof !== 'undefined'` instead of `||`/ternary-on-truthiness so that an
+    // inline header control explicitly clearing a field (e.g. picking "All" genre, which is
+    // value "") actually clears it instead of silently falling back to the modal's old value.
+    let genre = typeof overrides.genre !== 'undefined' ? String(overrides.genre) : document.getElementById('filter-genre').value;
+    const country = typeof overrides.country !== 'undefined' ? overrides.country : document.getElementById('filter-country').value;
+    const language = typeof overrides.language !== 'undefined' ? overrides.language : document.getElementById('filter-language').value;
+    const year = typeof overrides.year !== 'undefined' ? overrides.year : document.getElementById('filter-year').value;
+    const rating = typeof overrides.rating !== 'undefined' ? overrides.rating : document.getElementById('filter-rating').value;
     const company = overrides.company;
     const network = overrides.network;
     const keyword = overrides.keyword;
@@ -2032,18 +2322,11 @@ async function applyFilter(overrides = {}) {
     // Auto-switch to TV if filtering by Network
     if (network) {
         type = 'tv';
-        if(document.getElementById('filter-type')) document.getElementById('filter-type').value = 'tv';
     }
 
-    // Handle Genre Mapping (Action/Adventure splits)
-    const GENRE_MAPPING = {
-        '10759': '28|12', '10765': '878|14', '10768': '10752', '10762': '10751',
-        '28': '10759', '12': '10759', '878': '10765', '14': '10765', '10752': '10768',
-    };
-    if (genre && GENRE_MAPPING[genre]) {
-        if (type === 'movie' && ['10759', '10765', '10768', '10762'].includes(genre)) genre = GENRE_MAPPING[genre];
-        else if (type === 'tv' && ['28', '12', '878', '14', '10752'].includes(genre)) genre = GENRE_MAPPING[genre];
-    }
+    // Keep the (hidden) Discover modal's Type select in sync so reopening
+    // it reflects whatever the live header is currently showing.
+    if (document.getElementById('filter-type')) document.getElementById('filter-type').value = type;
 
     // Get Adult Setting
     const adultToggle = document.getElementById('filter-adult');
@@ -2060,104 +2343,80 @@ async function applyFilter(overrides = {}) {
     document.getElementById('top10-section').style.display = 'none';
     document.getElementById('continue-watching-section').classList.add('hidden');
 
-    // ==========================================
-    // HEADER TEXT GENERATION (FIXED)
-    // ==========================================
-    let headerStr = "";
+    // The old All/Movies/TV Shows slider only ever hid/showed cards that were
+    // ALREADY all one type (since every filtered fetch only ever pulled one
+    // type), making it useless here. Hide it whenever we're showing filtered
+    // results; clearFilters() brings it back for the default mixed feed.
+    const sliderWrap = document.getElementById('trending-slider-filter');
+    if (sliderWrap) sliderWrap.style.display = 'none';
 
+    let finalSort = document.getElementById('filter-sort') ? document.getElementById('filter-sort').value : 'popularity.desc';
+
+    // ==========================================
+    // HEADER GENERATION
+    // ==========================================
     if (textSearch) {
-        headerStr = `Results for "${textSearch}"`;
+        let headerStr = `Results for "${textSearch}"`;
         if (year) headerStr += ` (${year})`;
+        document.getElementById('trending-header').innerHTML = headerStr;
+        currentFilterState = null;
     } 
     else if (overrides.company || overrides.network) {
-        headerStr = activeFilterLabel ? `Titles from ${activeFilterLabel}` : "Production Search";
+        document.getElementById('trending-header').innerHTML = activeFilterLabel ? `Titles from ${activeFilterLabel}` : "Production Search";
+        currentFilterState = null;
     } 
     else if (overrides.keyword) {
-        headerStr = `Keyword: ${activeFilterLabel}`;
+        document.getElementById('trending-header').innerHTML = `Keyword: ${activeFilterLabel}`;
+        currentFilterState = null;
     } 
     else {
-        // 1. Base Title (Genre + Type)
-        let genreText = "All";
-        if (genre) {
-            // Use the label if we just clicked a tag, otherwise fetch from dropdown
-            if (overrides.genre && activeFilterLabel) {
-                genreText = activeFilterLabel;
-            } else {
-                const option = document.querySelector(`#filter-genre option[value="${genre}"]`);
-                if (option) genreText = option.text;
-            }
-        }
-        headerStr = `${genreText} ${type === 'movie' ? "Movies" : "TV Shows"}`;
+        // This is the "Discover" style filter (genre/type/country/language/year/rating).
+        // Build the canonical state object once and render it as a live, editable sentence -
+        // e.g. "All Movies Rated 4.5+" where every token is its own control.
+        const genreLabel = (overrides.genre && typeof overrides.genreLabel !== 'undefined')
+            ? overrides.genreLabel
+            : (overrides.genre && activeFilterLabel) ? activeFilterLabel : null;
+        const countryLabel = (overrides.country && typeof overrides.countryLabel !== 'undefined')
+            ? overrides.countryLabel
+            : (overrides.country && activeFilterLabel) ? activeFilterLabel : null;
 
-        // 2. Country
-        if (country) {
-            let countryName = country;
-            if (overrides.country && activeFilterLabel) {
-                countryName = activeFilterLabel;
-            } else {
-                const option = document.querySelector(`#filter-country option[value="${country}"]`);
-                if (option) countryName = option.text;
-            }
-            headerStr += ` from ${countryName}`;
-        }
+        currentFilterState = {
+            type, genre, genreLabel, country, countryLabel, language, year, rating,
+            sort: finalSort, company, network, keyword
+        };
 
-        // 3. Language
-        if (language) {
-            const option = document.querySelector(`#filter-language option[value="${language}"]`);
-            const langName = option ? option.text : language.toUpperCase();
-            headerStr += ` in ${langName}`;
-        }
-
-        // 4. Year
-        if (year) {
-            headerStr += ` released in ${year}`;
-        }
-
-        // 5. Rating
-        if (rating) {
-            headerStr += ` Rated ${rating}+`;
-        }
+        await renderInteractiveHeader(currentFilterState);
     }
-    
-    document.getElementById('trending-header').innerHTML = headerStr;
 
     // ==========================================
-    // BUILD URL
+    // BUILD URL(S)
     // ==========================================
-    let urlBase = "";
+    let urlSpec; // string for search/company/keyword, or array of {url, mediaType} for discover/"All"
 
     if (textSearch) {
-        urlBase = `${BASE_TMDB_URL}/search/${type}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(textSearch)}&include_adult=${includeAdult}`;
+        // /search/multi covers "All" naturally; movie/tv stay on their dedicated endpoints.
+        const searchType = type === 'all' ? 'multi' : type;
+        urlSpec = `${BASE_TMDB_URL}/search/${searchType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(textSearch)}&include_adult=${includeAdult}`;
         if (year) {
-            if (type === 'movie') urlBase += `&primary_release_year=${year}`;
-            else if (type === 'tv') urlBase += `&first_air_date_year=${year}`;
+            if (type === 'movie') urlSpec += `&primary_release_year=${year}`;
+            else if (type === 'tv') urlSpec += `&first_air_date_year=${year}`;
         }
-        if (language) urlBase += `&language=${language}`;
+        if (language) urlSpec += `&language=${language}`;
+    } else if (overrides.company || overrides.network || overrides.keyword) {
+        // Production/network/keyword browsing stays single-type (defaults to movie if "All" was left selected).
+        const concreteType = type === 'all' ? 'movie' : type;
+        urlSpec = buildDiscoverUrlForType(concreteType, { genre, country, language, year, rating, sort: finalSort, company, network, keyword, includeAdult });
     } else {
-        urlBase = `${BASE_TMDB_URL}/discover/${type}?api_key=${TMDB_API_KEY}&include_adult=${includeAdult}&include_video=false`;
-        
-        let finalSort = document.getElementById('filter-sort') ? document.getElementById('filter-sort').value : 'popularity.desc';
-        if (type === 'tv' && finalSort.includes('primary_release_date')) {
-            finalSort = finalSort.replace('primary_release_date', 'first_air_date');
-        }
-        urlBase += `&sort_by=${finalSort}`;
-        
-        if (finalSort.startsWith('vote_average')) urlBase += '&vote_count.gte=200';
-
-        if (year) {
-            if (type === 'movie') urlBase += `&primary_release_year=${year}`;
-            else if (type === 'tv') urlBase += `&first_air_date_year=${year}`;
-        }
-        if (genre) urlBase += `&with_genres=${genre}`;
-        if (rating) urlBase += `&vote_average.gte=${rating}`;
-        if (country) urlBase += `&with_origin_country=${country}`;
-        if (company) urlBase += `&with_companies=${company}`;
-        if (network) urlBase += `&with_networks=${network}`;
-        if (language) urlBase += `&with_original_language=${language}`;
-        if (keyword) urlBase += `&with_keywords=${keyword}`;
+        // Main Discover branch - this is the one that supports "All" by querying
+        // /discover/movie and /discover/tv in parallel and merging the results.
+        const concreteTypes = type === 'all' ? ['movie', 'tv'] : [type];
+        urlSpec = concreteTypes.map(ct => ({
+            url: buildDiscoverUrlForType(ct, { genre, country, language, year, rating, sort: finalSort, company, network, keyword, includeAdult }),
+            mediaType: ct
+        }));
     }
 
-    currentFetchUrl = urlBase;
+    currentFetchUrl = urlSpec;
 
     // ==========================================
     // FETCH & RENDER
@@ -2168,15 +2427,7 @@ async function applyFilter(overrides = {}) {
     trendingPage = 1;
 
     try {
-        const data = await fetchCached(`${currentFetchUrl}&page=1`);
-        let results = (data.results || []).map(i => ({ ...i, media_type: type }));
-
-        if (year) {
-            results = results.filter(item => {
-                const date = item.release_date || item.first_air_date;
-                return date && date.substring(0, 4) === year.toString();
-            });
-        }
+        const results = await fetchFilterPage(currentFetchUrl, 1);
 
         trendingContainer.innerHTML = '';
 
@@ -2380,7 +2631,6 @@ async function fetchMovieDetails(id, title) {
         }
 
         playerInterface.classList.remove('hidden');
-        await ensureLocalVideos();
         updatePlayer();
     } catch (e) { 
         showMessage("Failed to load details.", true); 
@@ -2435,7 +2685,6 @@ async function fetchShowDetails(id, title) {
         playerInterface.classList.remove('hidden');
 
         await fetchSeasonDetails(id, currentSeason);
-        await ensureLocalVideos();
         updatePlayer();
     } catch (e) { 
         showMessage("Failed to load show details.", true); 
@@ -2481,7 +2730,6 @@ window.changeSeason = async function(seasonVal, episodeVal = 1) {
     if (!accordionOpen) toggleAccordion();
 
     await fetchSeasonDetails(TMDB_ID, currentSeason);
-    await ensureLocalVideos();
     updatePlayer();
 }
 
