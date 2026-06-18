@@ -181,7 +181,7 @@
         .poster {
             position: relative; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 8px; overflow: hidden;
             cursor: pointer; transition: var(--transition); border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); will-change: transform;
         }
         .poster:hover { transform: scale(1.05); z-index: 20; border-color: rgba(255,255,255,0.5); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .poster img { width: 100%; height: 100%; object-fit: contain; padding: 15px; }
@@ -658,61 +658,82 @@
             try {
                 const response = await fetch(M3U_URL);
                 const text = await response.text();
-                
-                setTimeout(() => {
-                    const lines = text.split('\n');
-                    let current = {};
-                    const newApiChannels = [];
-                    
-                    for (let i = 0; i < lines.length; i++) {
-                        let line = lines[i].trim();
+                const lines = text.split('\n');
+                const newApiChannels = [];
+                let current = {};
+                let i = 0;
+                const CHUNK = 500;
+
+                // Parse in idle-time chunks so the main thread stays responsive
+                const scheduleChunk = typeof requestIdleCallback === 'function'
+                    ? (fn) => requestIdleCallback(fn)
+                    : (fn) => setTimeout(fn, 0);
+
+                function processChunk() {
+                    const end = Math.min(i + CHUNK, lines.length);
+                    for (; i < end; i++) {
+                        const line = lines[i].trim();
                         if (line.startsWith('#EXTINF')) {
                             const logoMatch = line.match(/tvg-logo="([^"]*)"/);
                             const name = line.split(',').pop();
                             current = { name, logo: logoMatch ? logoMatch[1] : '', type: 'hls' };
                         } else if (line.startsWith('http')) {
                             current.url = line;
-                            if (current.url.includes('.m3u8')) newApiChannels.push(current);
+                            if (line.includes('.m3u8')) newApiChannels.push({ ...current });
                         }
                     }
-                    
-                    apiChannels = newApiChannels;
-                    allChannels = [...premiumChannels, ...apiChannels];
-                    
-                    if (document.getElementById('search-input').value === '') {
-                        filteredChannels = [...allChannels];
-                        document.getElementById('load-more-container').style.display = filteredChannels.length > displayedCount ? 'flex' : 'none';
+                    if (i < lines.length) {
+                        scheduleChunk(processChunk);
+                    } else {
+                        // Done — merge results
+                        apiChannels = newApiChannels;
+                        allChannels = [...premiumChannels, ...apiChannels];
+                        if (document.getElementById('search-input').value === '') {
+                            filteredChannels = [...allChannels];
+                            document.getElementById('load-more-container').style.display = filteredChannels.length > displayedCount ? 'flex' : 'none';
+                        }
                     }
-                }, 100); 
-            } catch (e) { 
-                console.error("M3U Fetch Error:", e); 
+                }
+
+                scheduleChunk(processChunk);
+            } catch (e) {
+                console.error("M3U Fetch Error:", e);
             }
         }
 
         fetchChannels();
 
-        // Updated Hero Background Image Rotation Logic (Infinite Mode)
-const heroSection = document.querySelector('.hero');
+        // Hero Background: preload a fixed set of images once, then rotate locally — no repeated network fetches
+        const heroSection = document.querySelector('.hero');
+        const HERO_IMAGE_COUNT = 5;
+        const heroImages = [];
+        let heroIndex = 0;
 
-function updateHeroBackground() {
-    // Generate a unique URL by adding a timestamp to bypass caching
-    const randomImageUrl = `https://loremflickr.com/1920/1080/sports?random=${Date.now()}`;
-    
-    // Pre-load the image in the background for a smooth transition
-    const img = new Image();
-    img.src = randomImageUrl;
-    
-    img.onload = () => {
-        // Only change the background once the new image is fully downloaded
-        heroSection.style.backgroundImage = `url('${randomImageUrl}')`;
-    };
-}
+        function preloadHeroImages() {
+            const promises = Array.from({ length: HERO_IMAGE_COUNT }, (_, i) => {
+                return new Promise(resolve => {
+                    const img = new Image();
+                    img.src = `https://loremflickr.com/1920/1080/sports?random=${i}`;
+                    img.onload = () => resolve(img.src);
+                    img.onerror = () => resolve(null);
+                });
+            });
+            Promise.all(promises).then(urls => {
+                const loaded = urls.filter(Boolean);
+                heroImages.push(...loaded);
+                if (heroImages.length > 0) {
+                    heroSection.style.backgroundImage = `url('${heroImages[0]}')`;
+                    if (heroImages.length > 1) {
+                        setInterval(() => {
+                            heroIndex = (heroIndex + 1) % heroImages.length;
+                            heroSection.style.backgroundImage = `url('${heroImages[heroIndex]}')`;
+                        }, 8000);
+                    }
+                }
+            });
+        }
 
-// Initial load
-updateHeroBackground();
-
-// Fetch a brand new random image every 8 seconds
-setInterval(updateHeroBackground, 8000);
+        preloadHeroImages();
     </script>
 
 </body>
