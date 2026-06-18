@@ -2631,6 +2631,7 @@ async function fetchMovieDetails(id, title) {
         }
 
         playerInterface.classList.remove('hidden');
+        await ensureLocalVideos();
         updatePlayer();
     } catch (e) { 
         showMessage("Failed to load details.", true); 
@@ -2685,6 +2686,7 @@ async function fetchShowDetails(id, title) {
         playerInterface.classList.remove('hidden');
 
         await fetchSeasonDetails(id, currentSeason);
+        await ensureLocalVideos();
         updatePlayer();
     } catch (e) { 
         showMessage("Failed to load show details.", true); 
