@@ -124,7 +124,7 @@ let currentAnimeId = null;
 let currentMalId = null;
 let currentEp = 1;
 let audioMode = 'sub';
-let currentServer = 'vidsrc';
+let currentServer = 'megaplay';
 
 async function selectAnime(anime, targetEp = 1) {
     // If it lacks detailed stats, fetch the full profile (Added idMal here too)
@@ -228,26 +228,18 @@ function updatePlayer() {
     const iframe = document.getElementById('player-iframe');
     
     // Route to the correct server
-    if (currentServer === 'vidsrc') {
-        iframe.src = `https://vidsrc.cc/v2/embed/anime/ani${currentAnimeId}/${currentEp}/${audioMode}?autoPlay=false`;
-    } else if (currentServer === 'vidlink') {
-        if (currentMalId) {
-            // Using the ?fallback=true parameter you requested
-            iframe.src = `https://vidlink.pro/anime/${currentMalId}/${currentEp}/${audioMode}?fallback=true`;
-        } else {
-            // Very rarely, AniList doesn't have a MAL ID for an obscure show.
-            alert("VidLink requires a MyAnimeList ID, which is missing for this title. Falling back to VidSrc.");
-            setServer('vidsrc');
-            return;
-        }
+    if (currentServer === 'megaplay') {
+        iframe.src = `https://megaplay.buzz/stream/ani/${currentAnimeId}/${currentEp}/${audioMode}`;
+    } else if (currentServer === 'vidrock') {
+        iframe.src = `https://vidrock.pro/anime/${currentAnimeId}/${currentEp}/${audioMode}`;
     }
     
     // Update Button UI states
     document.getElementById('btn-sub').classList.toggle('active', audioMode === 'sub');
     document.getElementById('btn-dub').classList.toggle('active', audioMode === 'dub');
     
-    document.getElementById('btn-server1').classList.toggle('active', currentServer === 'vidsrc');
-    document.getElementById('btn-server2').classList.toggle('active', currentServer === 'vidlink');
+    document.getElementById('btn-server1').classList.toggle('active', currentServer === 'megaplay');
+    document.getElementById('btn-server2').classList.toggle('active', currentServer === 'vidrock');
 }
 
 // 5. SEARCH LOGIC
