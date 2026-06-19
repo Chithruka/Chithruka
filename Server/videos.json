@@ -222,6 +222,9 @@
     "507343": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/09/hls/pravegaya/pravegaya.m3u8" }
     ],
+    "1607671": [
+    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=cRhnnYHDYQf3M9xQmFuAxrAk&assetToken=rUqF9Ge3GkUgTuprxAniP31m" }
+],
     "879001": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/asu/asu.m3u8" }
     ],
@@ -246,15 +249,16 @@
     "1388768": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa0q9n0" }
     ],
-    "1174136": [
-      { "type": "youtube", "src": "https://m.youtube.com/watch?v=t_MC2prjTwg" }
-    ],
     "935173": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/kosthapal_punyasoma/kosthapal_punyasoma.m3u8" }
     ],
     "809088": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2019/03/hls/vijaya_kuweni/vijaya_kuweni.m3u8" }
     ],
+    "1174136": [
+    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=yUDAT3ZDF3PZngYrLDeaBQTG&assetToken=5G53nHw6XXMtA61EpGqpNzAF" },
+    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=XGc7SKiBNuKEBGWWSq7ddNth&assetToken=qUXGM778gfHAuhdfoHKM3sBm" }
+],
     "459881": [
       { "type": "hls", "src": "https://dyp5fjwik91fw.cloudfront.net/videos/332/hls/master.m3u8" }
     ],
@@ -310,11 +314,16 @@
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8pbfym" }
     ],
     "807515": [
-      { "type": "hls", "label": "https://www.dailymotion.com/embed/x8pbg9v", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" }
+      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/ran_kevita_01/ran_kevita_01.m3u8" },
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8pbg9v" }
     ],
     "553595": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=Os1bGdnYd58" }
     ],
+    "1553636": [
+    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=JZVxAY8bjmc4mCZkMdeuCT4Q&assetToken=5XRwBLc2bgujGDq5nDGoisTQ" },
+    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=GZryyatST3iPS5n4MerdwBjK&assetToken=4rjFutTV2c9KqsUJonzfdWmd" }
+],
     "1353428": [
       { "type": "telegram", "src": "https://t.me/ChithrukaStreamer/5" }
     ],
