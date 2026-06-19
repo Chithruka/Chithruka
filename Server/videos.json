@@ -223,7 +223,8 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/09/hls/pravegaya/pravegaya.m3u8" }
     ],
     "1607671": [
-    { "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=cRhnnYHDYQf3M9xQmFuAxrAk&assetToken=rUqF9Ge3GkUgTuprxAniP31m" }
+{ "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xafa05a" },
+{ "type": "iframe", "src": "https://iws.sinhalachr.workers.dev/?id=cRhnnYHDYQf3M9xQmFuAxrAk&assetToken=rUqF9Ge3GkUgTuprxAniP31m" }
 ],
     "879001": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/03/hls/asu/asu.m3u8" }
@@ -269,7 +270,16 @@
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2016/10/hls/hai_baby_hai/hai_baby_hai.m3u8" }
     ],
     "1448449": [
-      { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2024/08/hls/sihina_sameekarana_movie_premiere/sihina_sameekarana_movie_premiere.m3u8" }
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xa9iqmy" }
+    ],
+     "1715115": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xaboca6" }
+    ],
+     "1010404": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xabiziw" }
+    ],
+     "1104315": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xab3q0g" }
     ],
     "203221": [
       { "type": "hls", "src": "https://content.roopahala.com.au/uploads/content/2025/01/hls/ahasin_wetei/ahasin_wetei.m3u8" }
@@ -349,6 +359,7 @@
       { "type": "facebook", "src": "https://www.facebook.com/NimnayaOnline/videos/ice-cream-sinhala-full-movie/1436271277870122/" }
     ],
     "1302224": [
+    { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xacannq" },
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=7zvhRyPPCZk" }
     ],
     "1050898": [
