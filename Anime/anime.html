@@ -221,6 +221,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     <button class="server-btn active" id="btn-server1" onclick="setServer('megaplay')">MegaPlay</button>
                                     <button class="server-btn" id="btn-server2" onclick="setServer('vidrock')">VidRock</button>
+                                    <button class="server-btn" id="btn-server3" onclick="setServer('anikoto')" title="Better catalog coverage when available, falls back to MegaPlay automatically">MegaPlay HD</button>
                                 </div>
                             </div>
 
@@ -298,7 +299,7 @@
         </div>
 
         <div class="flex flex-col gap-4">
-            <input type="url" id="tracemoe-url" class="glass-input w-full p-3 rounded-xl text-sm" placeholder="Paste image URL here..." oninput="clearFileInput()">
+            <input type="url" id="tracemoe-url" class="glass-input w-full p-3 rounded-xl text-sm" placeholder="Paste image URL here..." oninput="handleTraceMoeUrlInput()">
             
             <div class="text-center text-xs text-gray-500 font-bold uppercase tracking-widest">- OR -</div>
 
@@ -309,7 +310,7 @@
                     <p class="text-sm text-gray-300 font-bold">Drag & drop or tap to upload</p>
                 </div>
 
-<div id="tracemoe-preview-state" class="absolute inset-0 w-full h-full hidden z-10 bg-black">
+<div id="tracemoe-preview-state" class="absolute inset-0 w-full h-full hidden z-50 bg-black">
     <img id="tracemoe-preview-img" src="" class="w-full h-full object-cover opacity-70" alt="Preview">
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none"></div>
     
@@ -317,7 +318,7 @@
         <p id="tracemoe-filename" class="text-xs text-white font-bold truncate drop-shadow-md bg-black/50 px-2 py-1 rounded inline-block max-w-full"></p>
     </div>
 
-    <button onclick="clearTraceMoeSelection(event)" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 hover:scale-110 transition-all shadow-lg z-30 pointer-events-auto" title="Remove image">
+    <button onclick="clearTraceMoeSelection(event)" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 hover:scale-110 transition-all shadow-lg pointer-events-auto" title="Remove image">
         <i class="fas fa-times text-sm"></i>
     </button>
 </div>
