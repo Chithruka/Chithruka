@@ -52,3 +52,13 @@
     max-width: 100%;
     flex-shrink: 1;
 }
+
+/* ============================================================
+   Wikipedia button (via TMDB wikidata_id) styling, to match
+   the existing .social-link-btn.imdb / .facebook / etc. set.
+   ============================================================ */
+.social-link-btn.wikipedia:hover {
+    background: #fff;
+    color: #000;
+    border-color: transparent;
+}

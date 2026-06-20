@@ -1797,6 +1797,7 @@ function renderPersonProfile(data, totalCredits) {
     const ids = data.external_ids;
     if (ids) {
         if (ids.imdb_id) socialsHtml += `<a href="https://www.imdb.com/name/${ids.imdb_id}" target="_blank" class="text-yellow-500 hover:text-white transition" title="IMDb"><i class="fab fa-imdb text-2xl"></i></a>`;
+        if (ids.wikidata_id) socialsHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" class="text-gray-300 hover:text-white transition" title="Wikipedia"><i class="fab fa-wikipedia-w text-2xl"></i></a>`;
         if (ids.facebook_id) socialsHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" class="text-blue-600 hover:text-white transition" title="Facebook"><i class="fab fa-facebook text-2xl"></i></a>`;
         if (ids.instagram_id) socialsHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" class="text-pink-500 hover:text-white transition" title="Instagram"><i class="fab fa-instagram text-2xl"></i></a>`;
         if (ids.twitter_id) socialsHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" class="text-blue-400 hover:text-white transition" title="X (Twitter)"><i class="fab fa-x-twitter text-2xl"></i></a>`;
@@ -2958,6 +2959,7 @@ function renderDetails(data, title) {
     if (data.external_ids) {
         const ids = data.external_ids;
         if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><i class="fab fa-imdb text-2xl"></i></a>`;
+        if (ids.wikidata_id) socialHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" title="Wikipedia" class="social-link-btn wikipedia"><i class="fab fa-wikipedia-w"></i></a>`;
         if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><i class="fab fa-facebook"></i></a>`;
         if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><i class="fab fa-instagram"></i></a>`;
         if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><i class="fab fa-x-twitter"></i></a>`;
