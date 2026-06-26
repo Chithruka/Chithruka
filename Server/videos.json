@@ -66,6 +66,9 @@
     "1106299": [
       { "type": "youtube", "src": "https://m.youtube.com/watch?v=AFPLRIdn1pk" }
     ],
+     "1050922": [
+      { "type": "youtube", "src": "https://m.youtube.com/watch?v=AzqC0NysrPQ" }
+    ],
      "443125": [
       { "type": "youtube", "src": "https://www.youtube.com/watch?v=Ii6m_I5uu6s" }
     ],
@@ -292,6 +295,9 @@
     ],
     "1302236": [
       { "type": "google-drive", "src": "https://drive.google.com/file/d/1Qu_hwXwQiYwjrymjg-rGj60IYXXHj1p6/view?usp=drivesdk" }
+    ],
+    "1618460": [
+      { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/xahxwiq" }
     ],
     "739904": [
       { "type": "dailymotion", "src": "https://www.dailymotion.com/embed/x8qcgyw" }
