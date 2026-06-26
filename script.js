@@ -4977,7 +4977,7 @@ function renderSimilar(data) {
     if(container) renderCards(results, container, false);
 }
 
-// --- UPDATED: FULL LOCALIZATION (Fixed Title Bug) ---
+// --- UPDATED: FULL LOCALIZATION (Videos, Gallery, Keywords, Genres synced) ---
 function handleTranslations(data) {
     if (!data.translations || !data.translations.translations) return;
 
@@ -4988,23 +4988,29 @@ function handleTranslations(data) {
     const posterImg = document.getElementById('detail-poster');
     const bgContainer = document.getElementById('page-background');
     const logoImg = document.getElementById('detail-logo');
-    
+
     // Remove existing selector
     const existingSelector = document.getElementById('lang-selector-container');
     if (existingSelector) existingSelector.remove();
 
     // 2. Filter Valid Translations
-    const availableTranslations = data.translations.translations.filter(t => 
-        (t.data.overview && t.data.overview.trim() !== "") || 
+    const availableTranslations = data.translations.translations.filter(t =>
+        (t.data.overview && t.data.overview.trim() !== "") ||
         (t.data.title && t.data.title.trim() !== "")
     );
 
     if (availableTranslations.length === 0) return;
 
     // 3. Store Original Data (English/Default)
-    // FIX: Use 'currentTitle' global fallback so we don't capture an empty string if the text is hidden.
+    const originalVideos = (data.videos && data.videos.results) ? data.videos.results : [];
+    const originalGallery = (data.images && data.images.backdrops && data.images.backdrops.length > 0)
+        ? data.images.backdrops
+        : (data.images ? data.images.posters || [] : []);
+    const originalKeywords = data.keywords ? (data.keywords.keywords || data.keywords.results || []) : [];
+    const originalGenres = data.genres || [];
+
     const originalData = {
-        title: currentTitle || titleEl.innerText, 
+        title: currentTitle || titleEl.innerText,
         overview: overviewEl.innerText,
         tagline: taglineEl.innerText,
         poster: posterImg.src,
@@ -5014,6 +5020,128 @@ function handleTranslations(data) {
         titleDisplay: titleEl.style.display
     };
 
+    // --- Helper: Render Videos ---
+    function renderVideos(videos) {
+        const videoContainer = document.getElementById('videos-container');
+        const videoList = document.getElementById('videos-list');
+        if (!videoContainer || !videoList) return;
+
+        const filtered = videos.filter(v => v.site === "YouTube" || v.site === "Vimeo");
+        if (filtered.length === 0) {
+            videoContainer.classList.add('hidden');
+            return;
+        }
+
+        videoContainer.classList.remove('hidden');
+        videoList.innerHTML = '';
+
+        filtered.sort((a, b) => {
+            const typeOrder = { "Trailer": 1, "Teaser": 2, "Featurette": 3, "Clip": 4 };
+            return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99);
+        });
+
+        filtered.forEach(video => {
+            const div = document.createElement('div');
+            div.className = "video-card flex-shrink-0 group";
+            const thumbSrc = video.site === "YouTube"
+                ? `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
+                : "https://placehold.co/480x360/1f1f1f/ffffff?text=Vimeo+Video";
+
+            div.innerHTML = `
+                <div class="video-thumbnail">
+                    <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <div class="video-type">${video.type}</div>
+                    <div class="video-title">${video.name}</div>
+                </div>
+            `;
+            div.onclick = () => {
+                const modal = document.getElementById('trailer-modal');
+                const iframe = document.getElementById('trailer-iframe');
+                modal.classList.remove('hidden');
+                iframe.src = video.site === "YouTube"
+                    ? `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0`
+                    : `https://player.vimeo.com/video/${video.key}?autoplay=1`;
+            };
+            videoList.appendChild(div);
+        });
+        updateScrollButtons(videoList);
+    }
+
+    // --- Helper: Render Gallery ---
+    function renderGallery(images) {
+        const galleryContainer = document.getElementById('gallery-container');
+        const galleryList = document.getElementById('gallery-list');
+        if (!galleryContainer || !galleryList) return;
+
+        if (!images || images.length === 0) {
+            galleryContainer.classList.add('hidden');
+            return;
+        }
+
+        galleryContainer.classList.remove('hidden');
+        galleryList.innerHTML = '';
+
+        images.slice(0, 15).forEach(img => {
+            const imgUrl = `${TMDB_POSTER_MD}${img.file_path}`;
+            const fullUrl = `${TMDB_BACKDROP_WEB}${img.file_path}`;
+            const div = document.createElement('div');
+            div.className = "gallery-item group relative flex-shrink-0 cursor-pointer w-48 md:w-64";
+            div.innerHTML = `
+                <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <i class="fas fa-expand-alt text-white text-xl"></i>
+                </div>
+            `;
+            div.onclick = () => openLightbox(fullUrl, "Image");
+            galleryList.appendChild(div);
+        });
+        updateScrollButtons(galleryList);
+    }
+
+    // --- Helper: Render Genres ---
+    function renderGenres(genres) {
+        const genreContainer = document.getElementById('detail-genres');
+        if (!genreContainer) return;
+        genreContainer.innerHTML = '';
+        genres.forEach(g => {
+            const tag = document.createElement('span');
+            tag.className = 'px-3 py-1 bg-white/10 text-gray-200 text-xs rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition';
+            tag.textContent = g.name;
+            tag.onclick = () => quickFilter('genre', g.id, g.name);
+            genreContainer.appendChild(tag);
+        });
+    }
+
+    // --- Helper: Render Keywords ---
+    function renderKeywords(keywords) {
+        const existingTags = document.getElementById('detail-keywords');
+        if (existingTags) existingTags.remove();
+
+        const genreContainer = document.getElementById('detail-genres');
+        if (!genreContainer || keywords.length === 0) return;
+
+        const keywordContainer = document.createElement('div');
+        keywordContainer.id = 'detail-keywords';
+        keywordContainer.className = "flex flex-wrap gap-2 mb-6 mt-2";
+
+        keywords.slice(0, 15).forEach(k => {
+            const span = document.createElement('span');
+            span.className = "keyword-tag";
+            span.innerHTML = `<i class="fas fa-hashtag text-[10px] text-gray-500 mr-1"></i>${k.name}`;
+            span.onclick = () => {
+                quickFilter('keyword', k.id, k.name);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            keywordContainer.appendChild(span);
+        });
+        genreContainer.parentNode.insertBefore(keywordContainer, genreContainer.nextSibling);
+    }
+
     // 4. Create UI
     const container = document.createElement('div');
     container.id = 'lang-selector-container';
@@ -5021,7 +5149,7 @@ function handleTranslations(data) {
 
     const iconLabel = document.createElement('div');
     iconLabel.innerHTML = `<i class="fas fa-language text-xl text-gray-400"></i>`;
-    
+
     const select = document.createElement('select');
     select.className = "glass-select p-2 rounded-lg text-sm cursor-pointer outline-none focus:border-red-500 transition-colors";
     select.style.minWidth = "160px";
@@ -5059,30 +5187,34 @@ function handleTranslations(data) {
             overviewEl.innerText = originalData.overview;
             taglineEl.innerText = originalData.tagline;
             taglineEl.classList.remove('hidden');
-            
+
             posterImg.src = originalData.poster;
             bgContainer.style.backgroundImage = originalData.backdrop;
-            
+
             logoImg.src = originalData.logoSrc;
             logoImg.style.display = originalData.logoDisplay;
             titleEl.style.display = originalData.titleDisplay;
-            
-            if(originalData.poster) {
+
+            if (originalData.poster) {
                 getDominantColor(originalData.poster).then(rgb => {
                     document.documentElement.style.setProperty('--ambient-color', rgb);
                 });
             }
+
+            // Revert all synced sections to original
+            renderVideos(originalVideos);
+            renderGallery(originalGallery);
+            renderGenres(originalGenres);
+            renderKeywords(originalKeywords);
             return;
         }
 
         // --- B. APPLY TRANSLATION ---
-        
+
         // 1. Text Swap
         const translation = availableTranslations.find(t => t.iso_639_1 === selectedLang);
         if (translation) {
-            // Use translated title, or fallback to the ROBUST original title
             titleEl.innerText = translation.data.title || originalData.title;
-            
             overviewEl.innerText = translation.data.overview || originalData.overview;
             if (translation.data.tagline) {
                 taglineEl.innerText = translation.data.tagline;
@@ -5097,14 +5229,21 @@ function handleTranslations(data) {
         // Visual loading feedback
         const castList = document.getElementById('cast-list');
         const crewList = document.getElementById('crew-list');
+        const videoList = document.getElementById('videos-list');
+        const galleryList = document.getElementById('gallery-list');
         castList.style.opacity = '0.5';
         crewList.style.opacity = '0.5';
-        posterImg.style.opacity = '0.7'; 
+        posterImg.style.opacity = '0.7';
+        if (videoList) videoList.style.opacity = '0.5';
+        if (galleryList) galleryList.style.opacity = '0.5';
 
         try {
-            const [creditsData, imageData] = await Promise.all([
+            const [creditsData, imageData, videoData, keywordData, genreData] = await Promise.all([
                 fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/credits?api_key=${TMDB_API_KEY}&language=${selectedLang}`),
-                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/images?api_key=${TMDB_API_KEY}&include_image_language=${selectedLang},null,en`)
+                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/images?api_key=${TMDB_API_KEY}&include_image_language=${selectedLang},null,en`),
+                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/videos?api_key=${TMDB_API_KEY}&language=${selectedLang}`),
+                fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/keywords?api_key=${TMDB_API_KEY}`),
+                fetchCached(`${BASE_TMDB_URL}/genre/${mediaType}/list?api_key=${TMDB_API_KEY}&language=${selectedLang}`)
             ]);
 
             // --- 2. IMAGE SWAP ---
@@ -5130,7 +5269,7 @@ function handleTranslations(data) {
                 titleEl.style.display = 'none';
             } else {
                 logoImg.style.display = 'none';
-                titleEl.style.display = 'block'; // Ensure title is visible if logo missing
+                titleEl.style.display = 'block';
             }
 
             // --- 3. CREDITS SWAP ---
@@ -5173,12 +5312,42 @@ function handleTranslations(data) {
                 });
             }
 
+            // --- 4. VIDEOS SWAP ---
+            // Only show videos for the selected language; hide section if none exist
+            const newVideos = (videoData && videoData.results) ? videoData.results : [];
+            renderVideos(newVideos);
+
+            // --- 5. GALLERY SWAP ---
+            const newBackdrops = imageData.backdrops && imageData.backdrops.length > 0
+                ? imageData.backdrops
+                : (imageData.posters || []);
+            renderGallery(newBackdrops);
+
+            // --- 6. GENRES SWAP ---
+            // Map the original genre IDs against the localized genre name list
+            const localizedGenreMap = new Map((genreData.genres || []).map(g => [g.id, g.name]));
+            const localizedGenres = originalGenres.map(g => ({
+                id: g.id,
+                name: localizedGenreMap.get(g.id) || g.name
+            }));
+            renderGenres(localizedGenres);
+
+            // --- 7. KEYWORDS SWAP ---
+            // Keywords are language-independent from TMDB (names don't change), but
+            // we re-render to keep DOM clean after genre swap re-inserts after genres
+            const newKeywords = keywordData
+                ? (keywordData.keywords || keywordData.results || [])
+                : originalKeywords;
+            renderKeywords(newKeywords);
+
         } catch (e) {
             console.error("Translation fetch failed", e);
         } finally {
             castList.style.opacity = '1';
             crewList.style.opacity = '1';
             posterImg.style.opacity = '1';
+            if (videoList) videoList.style.opacity = '1';
+            if (galleryList) galleryList.style.opacity = '1';
         }
     };
 
