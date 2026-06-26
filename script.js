@@ -1530,21 +1530,24 @@ async function performMultiSearch(query) {
     try {
         // Run all search requests in parallel for speed
         const [multiRes, collectionRes, companyRes, keywordRes] = await Promise.all([
-            fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=true`),
+            fetchCached(`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=true&page=1`),
             fetchCached(`${BASE_TMDB_URL}/search/collection?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
             fetchCached(`${BASE_TMDB_URL}/search/company?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
             fetchCached(`${BASE_TMDB_URL}/search/keyword?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`)
         ]);
 
-        // Process and Tag Results manually since specific endpoints don't add media_type
-        const multiData = (multiRes.results || []).slice(0, 6); // Top 6 standard results
-        
-        const collections = (collectionRes.results || []).slice(0, 2).map(i => ({ ...i, media_type: 'collection' }));
-        const companies = (companyRes.results || []).slice(0, 2).map(i => ({ ...i, media_type: 'company' }));
-        const keywords = (keywordRes.results || []).slice(0, 2).map(i => ({ ...i, media_type: 'keyword' }));
+        // Split multi results by type
+        const allMulti = multiRes.results || [];
+        const moviesAndTV = allMulti.filter(i => i.media_type === 'movie' || i.media_type === 'tv').slice(0, 12);
+        const people = allMulti.filter(i => i.media_type === 'person').slice(0, 2);
 
-        // Merge them: Priority -> Collections/Companies/Keywords at top if relevant, then Movies/TV
-        const combinedResults = [...collections, ...companies, ...keywords, ...multiData];
+        // Supplementary results — capped tightly so they don't crowd out content
+        const collections = (collectionRes.results || []).slice(0, 1).map(i => ({ ...i, media_type: 'collection' }));
+        const companies = (companyRes.results || []).slice(0, 1).map(i => ({ ...i, media_type: 'company' }));
+        const keywords = (keywordRes.results || []).slice(0, 1).map(i => ({ ...i, media_type: 'keyword' }));
+
+        // Priority: Movies & TV first, then people, then supplementary filters at the bottom
+        const combinedResults = [...moviesAndTV, ...people, ...collections, ...companies, ...keywords];
 
         displayResults(combinedResults);
 
