@@ -1656,6 +1656,14 @@ function displayResults(results) {
 
 // --- Accepts gender to display correct icon in header ---
 async function loadActorCredits(personId, personName, profilePath, gender) {
+    // --- URL & Title ---
+    document.title = `${personName} - Chithruka`;
+    window.history.pushState(
+        { id: personId, type: 'person', name: personName, profilePath, gender },
+        '',
+        `?id=${personId}&type=person&name=${encodeURIComponent(personName)}`
+    );
+
     // 1. Reset UI
     searchResults.innerHTML = '';
     searchInput.value = '';
@@ -1959,6 +1967,18 @@ window.quickFilter = function(type, value, label = "", logo = "") {
     document.getElementById('filter-country').value = "";
     document.getElementById('filter-year').value = "";
     document.getElementById('filter-rating').value = "";
+
+    // --- URL & Title for shareable filter types ---
+    const shareableTypes = ['company', 'keyword', 'network', 'genre', 'country'];
+    if (shareableTypes.includes(type) && value) {
+        const displayName = label || value;
+        document.title = `${displayName} - Chithruka`;
+        window.history.pushState(
+            { filter: type, id: value, name: displayName, logo },
+            '',
+            `?filter=${encodeURIComponent(type)}&id=${encodeURIComponent(value)}&name=${encodeURIComponent(displayName)}${logo ? '&logo=' + encodeURIComponent(logo) : ''}`
+        );
+    }
 
     // Allow passing specific types like 'company', 'keyword', or 'network'
     let overrides = { logoPath: logo };
@@ -2699,6 +2719,14 @@ async function fetchShowDetails(id, title) {
 }
 
 async function loadCollection(collectionId, collectionName) {
+    // --- URL & Title ---
+    document.title = `${collectionName} - Chithruka`;
+    window.history.pushState(
+        { id: collectionId, type: 'collection', name: collectionName },
+        '',
+        `?id=${collectionId}&type=collection&name=${encodeURIComponent(collectionName)}`
+    );
+
     try {
         const data = await fetchCached(`${BASE_TMDB_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`);
         const parts = data.parts.map(p => ({ ...p, media_type: 'movie' }));
@@ -4539,23 +4567,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- 4. Load "Continue Watching" History ---
-    // Only load this if we are on the homepage (not deep linking)
-    if (!urlParams.has('id')) {
+    // Only load this if we are on the homepage (not deep linking or filter linking)
+    if (!urlParams.has('id') && !urlParams.has('filter')) {
         loadProgress();
     }
 
     // --- 5. Routing Logic ---
-    if (urlParams.has('id') && urlParams.has('type')) {
-        // Deep Link: Go directly to content (Hide Hero/Trailers)
+    const deepType = urlParams.get('type');
+    const deepFilter = urlParams.get('filter');
+
+    if (urlParams.has('id') && deepType === 'person') {
+        // Deep Link: Person / Actor page
         heroSection.style.display = 'none';
-        
         const trailerSection = document.getElementById('trailers-section');
-        if(trailerSection) trailerSection.style.display = 'none'; 
-        
+        if (trailerSection) trailerSection.style.display = 'none';
         const deepId = Number(urlParams.get('id'));
-        // Ensure local video data is available for deep-linked content
+        const deepName = urlParams.get('name') || 'Person';
+        document.title = `${deepName} - Chithruka`;
+        // profilePath and gender aren't in the URL — pass nulls; renderPersonProfile fills them from the API
+        await loadActorCredits(deepId, deepName, null, null);
+
+    } else if (urlParams.has('id') && deepType === 'collection') {
+        // Deep Link: Collection page
+        heroSection.style.display = 'none';
+        const trailerSection = document.getElementById('trailers-section');
+        if (trailerSection) trailerSection.style.display = 'none';
+        const deepId = Number(urlParams.get('id'));
+        const deepName = urlParams.get('name') || 'Collection';
+        document.title = `${deepName} - Chithruka`;
+        detailsSection.classList.add('hidden');
+        playerInterface.classList.add('hidden');
+        await loadCollection(deepId, deepName);
+
+    } else if (deepFilter && urlParams.has('id')) {
+        // Deep Link: Company / Keyword / Network / Genre / Country filter
+        heroSection.style.display = 'none';
+        const trailerSection = document.getElementById('trailers-section');
+        if (trailerSection) trailerSection.style.display = 'none';
+        const deepId = urlParams.get('id');
+        const deepName = urlParams.get('name') || deepId;
+        const deepLogo = urlParams.get('logo') || '';
+        document.title = `${deepName} - Chithruka`;
+        quickFilter(deepFilter, isNaN(Number(deepId)) ? deepId : Number(deepId), deepName, deepLogo);
+
+    } else if (urlParams.has('id') && urlParams.has('type')) {
+        // Deep Link: Movie / TV — original behaviour
+        heroSection.style.display = 'none';
+        const trailerSection = document.getElementById('trailers-section');
+        if (trailerSection) trailerSection.style.display = 'none';
+        const deepId = Number(urlParams.get('id'));
         await ensureLocalVideos();
-        selectContent(deepId, "Loading Content...", urlParams.get('type'));
+        selectContent(deepId, "Loading Content...", deepType);
+
     } else {
         // Homepage: Load Trailers
         loadLatestTrailers();
@@ -4633,6 +4696,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 });
 
+
+// --- Browser Back / Forward Navigation ---
+window.addEventListener('popstate', async (event) => {
+    const state = event.state;
+
+    // No state = back to homepage
+    if (!state) {
+        document.title = 'Chithruka';
+        heroSection.style.display = 'block';
+        document.getElementById('top10-section').style.display = 'block';
+        detailsSection.classList.add('hidden');
+        playerInterface.classList.add('hidden');
+        collectionSection.classList.add('hidden');
+        const personContainer = document.getElementById('person-details-container');
+        if (personContainer) { personContainer.classList.add('hidden'); personContainer.innerHTML = ''; }
+        trendingContainer.innerHTML = '';
+        loadedIds.clear();
+        trendingPage = 1;
+        currentFetchUrl = '';
+        loadTrending();
+        return;
+    }
+
+    if (state.type === 'person') {
+        await loadActorCredits(state.id, state.name, state.profilePath, state.gender);
+    } else if (state.type === 'collection') {
+        detailsSection.classList.add('hidden');
+        playerInterface.classList.add('hidden');
+        heroSection.style.display = 'none';
+        await loadCollection(state.id, state.name);
+    } else if (state.filter) {
+        heroSection.style.display = 'none';
+        quickFilter(state.filter, state.id, state.name, state.logo || '');
+    } else if (state.type === 'movie' || state.type === 'tv') {
+        heroSection.style.display = 'none';
+        await selectContent(state.id, state.title || 'Loading...', state.type);
+    }
+});
 
 function renderLogos(data) {
     const container = document.getElementById('logos-container');
