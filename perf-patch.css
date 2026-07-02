@@ -54,6 +54,21 @@
 }
 
 /* ============================================================
+   Fix: Alert / toast (#message-box) appearing behind scroll
+   buttons and other stacking-context-creating elements.
+
+   Root cause: elements with backdrop-filter, isolation, or
+   will-change can create new stacking contexts that trap
+   children — including the message box — at a lower effective
+   z-index than their declared value. Forcing z-index here
+   (alongside position:fixed which is already on the element)
+   ensures the toast always renders above everything.
+   ============================================================ */
+#message-box {
+    z-index: 2147483647 !important; /* max safe integer — above all stacking contexts */
+}
+
+/* ============================================================
    Wikipedia button (via TMDB wikidata_id) styling, to match
    the existing .social-link-btn.imdb / .facebook / etc. set.
    ============================================================ */
@@ -61,4 +76,127 @@
     background: #fff;
     color: #000;
     border-color: transparent;
+}
+
+/* ============================================================
+   Netflix-dark solid theme for detail panels.
+   Replaces semi-transparent glass style (which relied on the
+   now-removed backdrop image). All panels now use a true-black
+   / dark-charcoal palette like Netflix's own UI.
+   ============================================================ */
+
+/* Page background: pure black, no image */
+#page-background {
+    background-image: none !important;
+    background-color: #000 !important;
+}
+#page-background::before,
+#page-background::after {
+    display: none !important;
+}
+
+/* Main detail card */
+#details-section {
+    background: #141414 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Glass panels (server bar, info blocks, etc.) */
+.glass-panel {
+    background: #1a1a1a !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Season select, accordion */
+.accordion-header {
+    background: #222 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.accordion-content {
+    background: #181818 !important;
+}
+
+/* Episode cards */
+.episode-rich-item {
+    background: #1f1f1f !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.episode-rich-item:hover {
+    background: #2a2a2a !important;
+}
+.episode-rich-item.active {
+    background: rgba(229, 9, 20, 0.12) !important;
+}
+
+/* Season cards */
+.season-rich-item {
+    background: #1f1f1f !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.season-rich-item:hover {
+    background: #2a2a2a !important;
+}
+
+/* Server buttons */
+.server-btn {
+    background: #1f1f1f !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.server-btn:hover {
+    background: #2a2a2a !important;
+}
+
+/* Message toast — keep it solid */
+#message-box-inner {
+    background: #141414 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Quote card */
+.card {
+    background: #141414 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Interact / rate buttons */
+.interact-btn {
+    background: #1f1f1f !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.interact-btn:hover {
+    background: #2a2a2a !important;
+}
+
+/* Video / trailer cards */
+.video-card,
+.trailer-card {
+    background: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Rating slider */
+.rating-slider-container {
+    background: #1f1f1f !important;
+}
+
+/* AI insight modal inner panel */
+.glass-panel.p-6 {
+    background: #141414 !important;
+}
+
+/* Search results dropdown */
+#search-results {
+    background: #141414 !important;
+}
+.search-result-item {
+    background: #141414 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+.search-result-item:hover {
+    background: #1f1f1f !important;
 }
