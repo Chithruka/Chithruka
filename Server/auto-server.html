@@ -264,87 +264,181 @@ const VIDEOS_JSON_PATH = 'videos.json';
 // Embed providers — tried in order when in embed mode.
 // [ID] = TMDB id, [S] = season, [E] = episode
 const EMBED_PROVIDERS = [
-    { name: 'VidSrc Pro',  movie: 'https://vidsrc.pro/embed/movie/[ID]',            tv: 'https://vidsrc.pro/embed/tv/[ID]/[S]/[E]' },
+    { name: 'VidRock',  movie: 'https://vidrock.ru/movie/[ID]',            tv: 'https://vidrock.ru/tv/[ID]/[S]/[E]' },
     { name: 'VidLink',     movie: 'https://vidlink.pro/movie/[ID]?autoplay=false',   tv: 'https://vidlink.pro/tv/[ID]/[S]/[E]?autoplay=false' },
     { name: 'VidSrc WTF',  movie: 'https://www.vidsrc.wtf/4/movie/[ID]',            tv: 'https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]' },
     { name: '1Embed',      movie: 'https://1embed.cc/embed/movie/[ID]',              tv: 'https://1embed.cc/embed/tv/[ID]/[S]/[E]' },
     { name: '2Embed',      movie: 'https://www.2embed.cc/embed/[ID]',               tv: 'https://www.2embed.cc/embedtv/[ID]&s=[S]&e=[E]' },
 ];
 
-// Aggregated (non-embed) providers — these expose real m3u8/mp4 URLs via an API/download page.
-// fetchSources(tmdb, type, s, e) should resolve to an array of { src, label?, type? }
-// or null/[] if unavailable. Tried in order; first one with valid sources wins.
-// If ALL fail, player falls through to embed mode automatically.
+// ── Aggregated providers ─────────────────────────────────────────────────────
+// Strategy: load the provider page in a hidden off-screen iframe, wait for it
+// to post video source URLs via window.postMessage (most embed players do this),
+// AND simultaneously scrape the iframe's DOM for <video src>, <source src>, and
+// any <a> links ending in .mp4/.m3u8/.mkv (used by download pages like 1embed).
+//
+// Each entry needs only:
+//   name       — display label
+//   embedUrl() — returns the URL to load
+//   timeout    — ms to wait before giving up (default 18000)
+// ─────────────────────────────────────────────────────────────────────────────
 const AGGREGATED_PROVIDERS = [
     {
-        name: 'Rivestream',
-        // Uses the Rivestream API endpoint that returns JSON with source URLs
-        fetchSources: async (id, type, s, e) => {
-            // Rivestream exposes a sources API at /api/sources
-            const url = type === 'movie'
-                ? `https://rivestream.ru/api/backendfetch?requestID=movieVideoProvider&id=${id}&service=agg`
-                : `https://rivestream.ru/api/backendfetch?requestID=tvVideoProvider&id=${id}&season=${s}&episode=${e}&service=agg`;
-            try {
-                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!res.ok) return null;
-                const json = await res.json();
-                // Rivestream returns { data: [ { url, quality, type } ] }
-                const items = json?.data ?? json?.sources ?? json?.streams ?? [];
-                if (!Array.isArray(items) || !items.length) return null;
-                return items.map(i => ({
-                    src:   i.url || i.src || i.link,
-                    label: i.quality || i.label || i.resolution || '',
-                    type:  (i.url||i.src||'').includes('.m3u8') ? 'hls' : 'mp4'
-                })).filter(i => i.src);
-            } catch { return null; }
-        }
+        name: '1Embed Download',
+        embedUrl: (id, type, s, e) => type === 'movie'
+            ? `https://1embed.cc/download/movie/${id}`
+            : `https://1embed.cc/download/tv/${id}/${s}/${e}`,
+        timeout: 15000,
     },
     {
-        name: 'Rivestream (app)',
-        fetchSources: async (id, type, s, e) => {
-            const url = type === 'movie'
-                ? `https://www.rivestream.app/api/backendfetch?requestID=movieVideoProvider&id=${id}&service=agg`
-                : `https://www.rivestream.app/api/backendfetch?requestID=tvVideoProvider&id=${id}&season=${s}&episode=${e}&service=agg`;
-            try {
-                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!res.ok) return null;
-                const json = await res.json();
-                const items = json?.data ?? json?.sources ?? json?.streams ?? [];
-                if (!Array.isArray(items) || !items.length) return null;
-                return items.map(i => ({
-                    src:   i.url || i.src || i.link,
-                    label: i.quality || i.label || i.resolution || '',
-                    type:  (i.url||i.src||'').includes('.m3u8') ? 'hls' : 'mp4'
-                })).filter(i => i.src);
-            } catch { return null; }
-        }
+        name: 'CineSrc Download',
+        embedUrl: (id, type, s, e) => type === 'movie'
+            ? `https://cinesrc.st/download/movie/${id}`
+            : `https://cinesrc.st/download/tv/${id}?s=${s}&e=${e}`,
+        timeout: 15000,
     },
     {
-        name: '1Embed (direct)',
-        // 1embed /download/ page returns JSON with direct source links
-        fetchSources: async (id, type, s, e) => {
-            const pageUrl = type === 'movie'
-                ? `https://1embed.cc/download/movie/${id}`
-                : `https://1embed.cc/download/tv/${id}/${s}/${e}`;
-            // 1embed has a JSON API at /api/download/*
-            const apiUrl = type === 'movie'
-                ? `https://1embed.cc/api/download/movie/${id}`
-                : `https://1embed.cc/api/download/tv/${id}/${s}/${e}`;
-            try {
-                const res = await fetch(apiUrl, { signal: AbortSignal.timeout(8000) });
-                if (!res.ok) return null;
-                const json = await res.json();
-                const items = json?.data ?? json?.sources ?? json?.links ?? [];
-                if (!Array.isArray(items) || !items.length) return null;
-                return items.map(i => ({
-                    src:   i.url || i.src || i.link,
-                    label: i.quality || i.label || i.resolution || '',
-                    type:  (i.url||i.src||'').includes('.m3u8') ? 'hls' : 'mp4'
-                })).filter(i => i.src);
-            } catch { return null; }
-        }
+        name: 'VidSrc Pro',
+        embedUrl: (id, type, s, e) => type === 'movie'
+            ? `https://vidsrc.pro/embed/movie/${id}`
+            : `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`,
+        timeout: 20000,
+    },
+    {
+        name: 'VidLink',
+        embedUrl: (id, type, s, e) => type === 'movie'
+            ? `https://vidlink.pro/movie/${id}?autoplay=false`
+            : `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=false`,
+        timeout: 20000,
     },
 ];
+
+// ── Hidden-iframe source extractor ───────────────────────────────────────────
+// Loads a provider URL in a sandboxed off-screen iframe, then:
+//   1. Listens for postMessage events containing video URLs.
+//   2. After iframe loads, scrapes its DOM for <video>, <source>, and <a> tags
+//      pointing to .m3u8/.mp4/.mkv URLs.
+// Returns a Promise<Array<{src, label, type}>> or null on timeout/failure.
+// ─────────────────────────────────────────────────────────────────────────────
+function extractSourcesFromIframe(providerUrl, timeoutMs = 18000) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const collected = [];
+        const seenUrls  = new Set();
+        let domTimer    = null;
+        let giveUpTimer = null;
+
+        function finish() {
+            if (settled) return;
+            settled = true;
+            clearTimeout(domTimer);
+            clearTimeout(giveUpTimer);
+            window.removeEventListener('message', onMessage);
+            // Remove the hidden iframe after a tiny delay so it finishes any cleanup
+            setTimeout(() => { try { iframe.remove(); } catch {} }, 200);
+            resolve(collected.length ? collected : null);
+        }
+
+        // ── Video URL detection ────────────────────────────────────────────
+        const VIDEO_EXT_RE = /\.(m3u8|mp4|mkv|webm|ts)(\?|$)/i;
+
+        function addUrl(url, label) {
+            if (!url || typeof url !== 'string') return;
+            // Filter out obvious non-video URLs
+            if (!VIDEO_EXT_RE.test(url) && !url.includes('manifest')) return;
+            if (seenUrls.has(url)) return;
+            seenUrls.add(url);
+            const type = url.includes('.m3u8') || url.includes('manifest') ? 'hls' : 'mp4';
+            collected.push({ src: url, label: label || '', type });
+        }
+
+        // ── postMessage listener ───────────────────────────────────────────
+        // Most embed players (vidlink, vidsrc, etc.) broadcast their sources
+        // as a postMessage before or right after playback starts.
+        function onMessage(evt) {
+            if (!evt.data) return;
+            const d = evt.data;
+            // Handle raw string URLs
+            if (typeof d === 'string' && VIDEO_EXT_RE.test(d)) {
+                addUrl(d, ''); return;
+            }
+            if (typeof d !== 'object') return;
+            // Common shapes seen in the wild:
+            // { url, quality } / { src, label } / { stream } / { file } / { sources: [...] }
+            // { type:'SOURCE', data: { file, label } } / { type:'STREAM', url }
+            const tryFields = (obj) => {
+                if (!obj || typeof obj !== 'object') return;
+                ['url','src','file','stream','link','source','hls','m3u8'].forEach(k => {
+                    if (obj[k] && typeof obj[k] === 'string') addUrl(obj[k], obj.quality || obj.label || obj.resolution || '');
+                });
+                // sources / tracks arrays
+                ['sources','tracks','streams','links','files'].forEach(k => {
+                    if (Array.isArray(obj[k])) obj[k].forEach(item => tryFields(item));
+                });
+            };
+            tryFields(d);
+            if (d.data) tryFields(d.data);
+        }
+        window.addEventListener('message', onMessage);
+
+        // ── DOM scrape (runs after iframe fires onload) ────────────────────
+        function scrapeDom() {
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                if (!doc) return;
+
+                // <video src="..."> and <source src="...">
+                doc.querySelectorAll('video[src], source[src]').forEach(el => {
+                    addUrl(el.getAttribute('src'), el.getAttribute('label') || '');
+                });
+
+                // <a href="...mp4"> style download links
+                doc.querySelectorAll('a[href]').forEach(el => {
+                    const href = el.getAttribute('href');
+                    if (href && VIDEO_EXT_RE.test(href)) {
+                        // Use the link text as a quality label (e.g. "1080p", "720p")
+                        addUrl(href, el.textContent.trim().slice(0, 20));
+                    }
+                });
+
+                // Inline scripts may contain URLs in JSON blobs
+                const scriptText = Array.from(doc.querySelectorAll('script'))
+                    .map(s => s.textContent).join(' ');
+                const urlMatches = scriptText.matchAll(/["']([^"']*\.(?:m3u8|mp4)(?:\?[^"']*)?)['"]/gi);
+                for (const m of urlMatches) addUrl(m[1], '');
+
+            } catch (e) {
+                // cross-origin DOM access will throw — that's fine, we rely on postMessage then
+                console.info('[agg] DOM scrape blocked (cross-origin), relying on postMessage');
+            }
+        }
+
+        // ── Build and inject hidden iframe ────────────────────────────────
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;';
+        iframe.setAttribute('allow', 'autoplay *; encrypted-media *');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+
+        iframe.onload = () => {
+            // Scrape DOM straight away for download-page style providers
+            scrapeDom();
+            // Also schedule a second scrape 2s later to catch dynamically rendered content
+            domTimer = setTimeout(() => {
+                scrapeDom();
+                // If we already have sources from the DOM scrape, we're done
+                if (collected.length) finish();
+            }, 2000);
+        };
+
+        iframe.onerror = () => finish();
+
+        iframe.src = providerUrl;
+        document.body.appendChild(iframe);
+
+        // Hard timeout — give up and resolve with whatever we have
+        giveUpTimer = setTimeout(finish, timeoutMs);
+    });
+}
 
 // If an iframe hasn't fired onload after this many ms, mark it as "slow"
 const SLOW_MS   = 8000;
@@ -626,8 +720,8 @@ function autoFallbackFromAgg(reason) {
 //  AGGREGATED MODE  (non-embed: real m3u8/mp4 from aggregators)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Try each AGGREGATED_PROVIDER in order; play the first one that returns sources.
-// If all fail, fall through to embed.
+// Try each AGGREGATED_PROVIDER in order using the hidden-iframe engine.
+// The first provider that yields at least one video URL wins; if none do, fall to embed.
 async function startAggregated(startIdx = 0) {
     mode = 'agg';
     setActiveTab('agg');
@@ -636,26 +730,27 @@ async function startAggregated(startIdx = 0) {
     for (let i = startIdx; i < AGGREGATED_PROVIDERS.length; i++) {
         aggIdx = i;
         const prov = AGGREGATED_PROVIDERS[i];
-        renderAggProviderButtons(i, true); // show as "trying"
-        spin(`Fetching sources from ${prov.name}…`);
+        renderAggProviderButtons(i, true);
+        spin(`Extracting sources via ${prov.name}…`);
 
+        const embedUrl = prov.embedUrl(TMDB, TYPE, SN, EP);
         let sources = null;
         try {
-            sources = await prov.fetchSources(TMDB, TYPE, SN, EP);
+            sources = await extractSourcesFromIframe(embedUrl, prov.timeout || 18000);
         } catch (err) {
-            console.warn(`[auto-server] Agg fetch error (${prov.name}):`, err);
+            console.warn(`[auto-server] Agg iframe error (${prov.name}):`, err);
         }
 
         if (sources && sources.length > 0) {
             aggSources = sources;
             unspin();
             renderAggProviderButtons(i, false);
-            setLabel(`Aggregated · ${prov.name}`);
+            setLabel(`Aggregated · ${prov.name} (${sources.length} source${sources.length > 1 ? 's' : ''})`);
 
-            // Play via VideoJS (same as direct)
+            // Play the extracted URLs directly in VideoJS
             playDirectVideoJS(sources, sources[0].type || detectType(sources[0].src));
 
-            // Override error handler: if VideoJS fails, try next aggregated
+            // If VideoJS errors on this batch, try the next aggregated provider
             if (vjsPlayer) {
                 vjsPlayer.off('error');
                 vjsPlayer.on('error', () => {
@@ -668,10 +763,9 @@ async function startAggregated(startIdx = 0) {
             return;
         }
 
-        console.info(`[auto-server] Agg provider ${prov.name} returned no sources`);
+        console.info(`[auto-server] Agg provider ${prov.name} returned no sources — trying next`);
     }
 
-    // All aggregated providers exhausted
     unspin();
     autoFallbackFromAgg('All aggregated providers returned no sources');
 }
