@@ -385,100 +385,6 @@ async function handleAISearch() {
 }
 
 async function displayAIResults(resultsList, aiMessage) {
-    // 1. Reset the UI
-    searchInput.value = `AI Search`;
-    searchResults.innerHTML = '';
-    heroSection.style.display = 'none';
-    document.getElementById('top10-section').style.display = 'none';
-    detailsSection.classList.add('hidden');
-    playerInterface.classList.add('hidden');
-    collectionSection.classList.add('hidden');
-    document.getElementById('continue-watching-section').classList.add('hidden');
-    
-    // 2. Set the Header
-    const header = document.getElementById('trending-header');
-    header.innerHTML = `
-        <div class="flex flex-col animate-fade-in">
-            <div class="flex items-center text-xl md:text-2xl font-bold text-white mb-2">
-            AI Recommendations
-            </div>
-            <span class="text-sm md:text-base font-normal text-gray-300 italic border-l-4 border-red-600 pl-4">
-                "${aiMessage}"
-            </span>
-        </div>
-    `;
-
-    // 3. Prepare Container
-    trendingContainer.innerHTML = '';
-    renderSkeletons(trendingContainer, 10);
-    loadedIds.clear();
-    trendingPage = 1;
-    currentFetchUrl = "STOP"; 
-
-    // 4. Smart Search Loop
-    const searchPromises = resultsList.map(async (item) => {
-        // Handle case where item might be just a string (legacy support)
-        const cleanName = item.name || item; 
-        const type = item.type || 'movie';
-
-        try {
-            let url = "";
-            
-            // ROUTE TO CORRECT ENDPOINT
-            if (type === 'company') {
-                url = `${BASE_TMDB_URL}/search/company?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}`;
-            } else {
-                // Multi search handles 'movie', 'tv', and 'person'
-                url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}&include_adult=true`;
-            }
-
-            const data = await fetchCached(url);
-            
-            if (!data.results || data.results.length === 0) return null;
-
-            // Take the best match
-            const bestMatch = data.results[0];
-
-            if (bestMatch) {
-                // Force media_type for companies since API doesn't always return it in 'search/company'
-                if (type === 'company') bestMatch.media_type = 'company';
-                return bestMatch;
-            }
-            return null;
-
-        } catch (e) {
-            console.error(`Search failed for ${cleanName}`, e);
-            return null;
-        }
-    });
-
-    try {
-        const resultsArray = await Promise.all(searchPromises);
-        const validResults = resultsArray.filter(i => i !== null);
-        const uniqueResults = Array.from(new Map(validResults.map(item => [item.id, item])).values());
-
-        trendingContainer.innerHTML = '';
-        
-        if (uniqueResults.length > 0) {
-            renderCards(uniqueResults, trendingContainer, true);
-        } else {
-            trendingContainer.innerHTML = '<div class="text-gray-400 p-4">No results found.</div>';
-        }
-
-        updateScrollButtons(trendingContainer);
-        setTimeout(() => {
-            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-
-    } catch (e) {
-        console.error("AI Result Display Error", e);
-        trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading AI results.</div>';
-    }
-}
-
-// In script.js
-
-async function displayAIResults(resultsList, aiMessage) {
     // 1. Reset UI
     searchInput.value = `AI Search`;
     searchResults.innerHTML = '';
@@ -559,9 +465,11 @@ async function displayAIResults(resultsList, aiMessage) {
         }
 
         updateScrollButtons(trendingContainer);
-        setTimeout(() => {
-            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
 
     } catch (e) {
         console.error("AI Result Display Error", e);
@@ -798,9 +706,11 @@ async function loadMyLibrary(type) {
     trendingContainer.innerHTML = '';
     renderSkeletons(trendingContainer, 10);
 
-    setTimeout(() => {
-        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
 
     try {
         const [resMovies, resTV] = await Promise.all([
@@ -1690,7 +1600,11 @@ async function loadActorCredits(personId, personName, profilePath, gender) {
 
     const imgHtml = getPersonFace(profilePath, gender, "w-8 h-8 rounded-full mr-3 border border-gray-600 inline-flex", "text-sm");
     document.getElementById('trending-header').innerHTML = `<div class="flex items-center">${imgHtml} <span class="ml-2">Featuring ${personName}</span></div>`;
-    document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
 
     try {
         const [personData, combinedCredits] = await Promise.all([
@@ -2466,7 +2380,11 @@ async function applyFilter(overrides = {}) {
             // subsequent pages exactly like the home trending feed does.
             attachTrendingObserver();
         }
-        document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.getElementById('trending-header').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
     } catch (e) {
         console.error("Filter Error:", e);
         trendingContainer.innerHTML = '<div class="text-red-500 p-4">Error loading results.</div>';
@@ -2589,7 +2507,12 @@ window.selectContent = async function(id, title, type) {
     // Defer reviews, recommendations & soundtrack until the user scrolls near them.
     setupDeferredSections(id, currentTitle);
 
-    setTimeout(() => { detailsSection.scrollIntoView({ behavior: 'smooth' }); }, 100);
+    // Scroll after fetch+render is complete and browser has laid out the section.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
 }
 
 // ==========================================
@@ -2638,8 +2561,6 @@ function setupDeferredSections(id, title) {
     if (soundSection)   { soundSection.dataset.deferred   = 'sound';   deferredSectionObserver.observe(soundSection); }
     if (reviewsSection) { reviewsSection.dataset.deferred = 'reviews'; deferredSectionObserver.observe(reviewsSection); }
 }
-
-window.scrollTo({ top: 0, behavior: 'smooth' });
 
 async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
@@ -2746,11 +2667,6 @@ async function loadCollection(collectionId, collectionName) {
             document.getElementById('collection-header').innerHTML = `${data.name}`;
             collectionSection.classList.remove('hidden');
             renderCards(parts, collectionContainer, false);
-            
-            // --- NEW: Scroll down to the collection section smoothly ---
-            setTimeout(() => {
-                collectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
         }
     } catch (e) { 
         console.error("Collection Load Error", e); 
@@ -2897,14 +2813,29 @@ function renderEpisodesRich() {
 function launchHeroTrailer(backdropPath, youtubeKey) {
     destroyHeroTrailer();
 
-    const backdropEl  = document.getElementById('detail-backdrop');
-    const posterPin   = document.querySelector('.detail-hero-poster-pin');
-    const trailerBtn  = document.getElementById('hero-trailer-btn');
+    const heroWrapper  = document.getElementById('detail-hero');
+    const backdropEl   = document.getElementById('detail-backdrop');
+    const posterPin    = document.querySelector('.detail-hero-poster-pin');
+    const trailerBtn   = document.getElementById('hero-trailer-btn');
 
-    if (backdropPath) {
-        backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
-        backdropEl.style.opacity = '1';
+    if (!backdropPath) {
+        // ── NO BACKDROP: switch to poster-centred layout ──────────
+        if (heroWrapper) heroWrapper.classList.add('no-backdrop');
+
+        // The large centred poster img is the same #detail-poster element
+        // already inside .detail-hero-poster-pin — we just let CSS do the
+        // repositioning.  Fade it in slightly delayed so the img has time
+        // to load.
+        if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 200);
+
+        // Never show the trailer button when there's no backdrop to sit on
+        if (trailerBtn) trailerBtn.classList.add('hidden');
+        return;
     }
+
+    // ── HAS BACKDROP: normal cinematic hero ──────────────────────
+    backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
+    backdropEl.style.opacity = '1';
 
     // Always use Ken Burns — it's the backdrop, not the iframe, that animates
     backdropEl.classList.add('kenburns');
@@ -2923,6 +2854,8 @@ function launchHeroTrailer(backdropPath, youtubeKey) {
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
+    const heroWrapper = document.getElementById('detail-hero');
+    if (heroWrapper) heroWrapper.classList.remove('no-backdrop');
     const backdropEl = document.getElementById('detail-backdrop');
     if (backdropEl) {
         backdropEl.style.backgroundImage = '';
