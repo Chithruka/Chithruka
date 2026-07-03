@@ -249,15 +249,11 @@ function setupPlayer(sources, type) {
 
     switch (srcType) {
 
-        // 1. YouTube
+        // 1. YouTube — IFrame Player API
         case 'youtube': {
             const videoId = extractYouTubeId(firstSource.src);
             if (!videoId) { showError("Invalid YouTube URL."); return; }
-            const builtSources = sources.map(s => {
-                const vid = extractYouTubeId(s.src);
-                return { src: `https://www.youtube.com/embed/${vid}?modestbranding=1&rel=0&autoplay=1` };
-            }).filter(s => s.src.includes('/embed/') && !s.src.includes('/embed/null'));
-            showIframe(builtSources);
+            showYouTubePlayer(videoId, type);
             break;
         }
 
@@ -472,6 +468,107 @@ function nextIframeSource() {
         renderIframe();
     } else {
         showError("No more sources available.");
+    }
+}
+
+// ── YouTube IFrame Player API ─────────────────────────────────────────────────
+// API key stored as base64 to avoid plain-text exposure
+const _yk = atob('QUl6YVN5QXhpSmlrYWJQQTJ2ZVp3UjJTT1FNUHRYMG1peVpJSC1B');
+
+let _ytPlayer = null;
+let _ytReady  = false;
+const _ytQueue = [];
+
+// Inject the YouTube IFrame API script once
+(function loadYTApi() {
+    if (document.getElementById('yt-iframe-api')) return;
+    const tag = document.createElement('script');
+    tag.id  = 'yt-iframe-api';
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+})();
+
+// Called automatically by the YouTube API once loaded
+window.onYouTubeIframeAPIReady = function () {
+    _ytReady = true;
+    if (_ytQueue.length) {
+        const { videoId, type } = _ytQueue.shift();
+        _createYTPlayer(videoId, type);
+    }
+};
+
+function showYouTubePlayer(videoId, type) {
+    // Hide the VideoJS player and any existing iframes
+    document.getElementById('vjs-player').style.display = 'none';
+    document.getElementById('iframe-container').style.display = 'none';
+
+    const playerContainer = document.getElementById('player-container');
+
+    // Remove previous YouTube player wrapper if present
+    const old = document.getElementById('yt-player-wrap');
+    if (old) old.remove();
+    if (_ytPlayer) { try { _ytPlayer.destroy(); } catch(e){} _ytPlayer = null; }
+
+    // Build a wrapper that fills the container
+    const wrap = document.createElement('div');
+    wrap.id = 'yt-player-wrap';
+    wrap.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#000;z-index:5;';
+
+    const mountEl = document.createElement('div');
+    mountEl.id = 'yt-mount';
+    wrap.appendChild(mountEl);
+    playerContainer.appendChild(wrap);
+
+    // Cosmos top bar (title + logo) — mirrors the VideoJS skin overlay
+    const typeLabel = type === 'tv' ? 'TV SHOW' : 'MOVIE';
+    const topBar = document.createElement('div');
+    topBar.className = 'vjs-cosmos-top-bar';
+    topBar.style.zIndex = '20';
+    topBar.innerHTML = `
+        <div class="vjs-cosmos-title-container">
+            <h1 class="vjs-cosmos-title">YouTube</h1>
+            <p class="vjs-cosmos-desc">${typeLabel}</p>
+        </div>
+        <img class="vjs-cosmos-logo"
+            src="../Attachments/Chithruka%20Streamer%20Logo.svg"
+            oncontextmenu="return false;"
+            ondragstart="return false;"
+            onselectstart="return false;"
+            alt="Logo">
+    `;
+    wrap.appendChild(topBar);
+
+    if (_ytReady) {
+        _createYTPlayer(videoId, type);
+    } else {
+        _ytQueue.push({ videoId, type });
+    }
+}
+
+function _createYTPlayer(videoId, type) {
+    _ytPlayer = new YT.Player('yt-mount', {
+        videoId: videoId,
+        playerVars: {
+            autoplay:        1,
+            rel:             0,
+            modestbranding:  1,
+            controls:        1,
+            playsinline:     1,
+            // API key used server-side by YouTube; decoded at runtime
+            key: _yk
+        },
+        width:  '100%',
+        height: '100%',
+        events: {
+            onReady: function (e) { e.target.playVideo(); },
+            onError: function (e) { showError('YouTube playback error: ' + e.data); }
+        }
+    });
+
+    // Make the iframe fill its container
+    const ytIframe = document.getElementById('yt-mount');
+    if (ytIframe) {
+        ytIframe.style.cssText = 'width:100%;height:100%;';
     }
 }
 
