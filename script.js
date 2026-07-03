@@ -2910,28 +2910,51 @@ function _heroError() {
     if (wrap) wrap.classList.remove('visible');
 }
 
+// ── postMessage listener — detect actual playback start ──────
+let _ytMessageHandler = null;
+function _listenForPlayback() {
+    if (_ytMessageHandler) window.removeEventListener('message', _ytMessageHandler);
+    _ytMessageHandler = function(e) {
+        if (!e.origin.includes('youtube.com')) return;
+        try {
+            const data = JSON.parse(e.data);
+            // playerState 1 = playing
+            if (data.event === 'infoDelivery' && data.info && data.info.playerState === 1) {
+                _revealTrailer();
+                window.removeEventListener('message', _ytMessageHandler);
+                _ytMessageHandler = null;
+            }
+        } catch(_) {}
+    };
+    window.addEventListener('message', _ytMessageHandler);
+}
+
 // ── Iframe embed ─────────────────────────────────────────────
 function _createHeroIframe(key) {
     const wrap = document.getElementById('detail-trailer-wrap');
     if (!wrap) return;
 
+    const origin = encodeURIComponent(window.location.origin);
     const iframe = document.createElement('iframe');
     iframe.id          = 'detail-trailer-iframe';
-    iframe.src         = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&loop=1&playlist=${key}&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0`;
+    // enablejsapi=1 + origin lets YouTube trust the embed and fires
+    // postMessage state events. mute=1 satisfies browser autoplay policy
+    // (muted autoplay is always permitted).
+    iframe.src         = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&loop=1&playlist=${key}&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1&origin=${origin}`;
     iframe.allow       = 'autoplay; encrypted-media';
     iframe.setAttribute('allowfullscreen', '');
     iframe.frameBorder = '0';
     iframe.tabIndex    = -1;
 
-    iframe.addEventListener('load', () => setTimeout(_revealTrailer, 1500));
-    iframe.addEventListener('error', _heroError);
-
     wrap.innerHTML = '';
     wrap.appendChild(iframe);
     _heroIframe = iframe;
 
-    // Safety net: reveal after 5s even if load event is unreliable
-    setTimeout(_revealTrailer, 5000);
+    // Listen for playerState=1 (playing) via postMessage
+    _listenForPlayback();
+
+    // Safety net: if postMessage never fires, reveal after 4s anyway
+    setTimeout(_revealTrailer, 4000);
 }
 
 // ── PUBLIC: launch the hero ───────────────────────────────────
@@ -2975,6 +2998,11 @@ window.toggleTrailerMute = function() {
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
+    // Cancel any pending postMessage listener
+    if (_ytMessageHandler) {
+        window.removeEventListener('message', _ytMessageHandler);
+        _ytMessageHandler = null;
+    }
     _heroIframe = null;
     _heroMuted  = true;
 
