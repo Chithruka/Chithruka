@@ -1072,7 +1072,8 @@ async function initHero(items) {
         document.head.appendChild(link);
     }
 
-    let slideCount = 0;
+    // --- Build real slides ---
+    const slideNodes = [];
     validItems.forEach((item, i) => {
         const title = item.title || item.name;
         const backdrop = `${TMDB_BACKDROP_WEB}${item.backdrop_path}`;
@@ -1085,7 +1086,7 @@ async function initHero(items) {
         }
 
         const slide = document.createElement('div');
-        slide.className = `hero-slide ${slideCount === 0 ? 'active' : ''}`;
+        slide.className = 'hero-slide';
         slide.style.backgroundImage = `url('${backdrop}')`;
 
         const titleHtml = logoUrl
@@ -1097,23 +1098,46 @@ async function initHero(items) {
                     <div class="hero-content fade-in">
                         ${titleHtml}
                         <p class="hero-text text-white text-gray-200">${item.overview}</p>
-                        <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3">
+                        <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3" tabindex="-1">
                             <i class="fas fa-play mr-2"></i> Watch Now
                         </button>
                     </div>
                 </div>
             `;
-        slidesContainer.appendChild(slide);
+        slideNodes.push(slide);
 
         const ind = document.createElement('div');
-        ind.className = `indicator ${slideCount === 0 ? 'active' : ''}`;
-        ind.onclick = () => showHeroSlide(slideCount);
+        ind.className = 'indicator';
+        ind.onclick = () => showHeroSlide(i);
         indicatorsContainer.appendChild(ind);
-        slideCount++;
     });
 
-    // --- FIX #9: Track hero index in a variable, no querySelectorAll every 6s ---
+    const slideCount = slideNodes.length;
+    if (slideCount === 0) return;
+
+    // --- Infinite-loop clone technique ---
+    // Structure: [clone-of-last] [slide-0] [slide-1] … [slide-N-1] [clone-of-first]
+    // We start the container at translateX(-100%) so slide-0 is in view.
+    const cloneFirst = slideNodes[0].cloneNode(true);
+    const cloneLast  = slideNodes[slideCount - 1].cloneNode(true);
+    [cloneFirst, cloneLast].forEach(c => c.querySelectorAll('button,a').forEach(el => el.tabIndex = -1));
+
+    slidesContainer.appendChild(cloneLast);   // position 0  (clone of last)
+    slideNodes.forEach(s => slidesContainer.appendChild(s)); // positions 1…N
+    slidesContainer.appendChild(cloneFirst);  // position N+1 (clone of first)
+
+    // currentHeroIndex tracks the REAL slide index (0-based)
     let currentHeroIndex = 0;
+    _heroRealCount = slideCount;
+
+    // Position to real slide 0 instantly (no animation)
+    slidesContainer.style.transition = 'none';
+    slidesContainer.style.transform = `translateX(-${1 * 100}%)`;
+    // Mark initial state
+    slideNodes[0].classList.add('active');
+    slideNodes[0].querySelectorAll('button,a').forEach(el => el.tabIndex = 0);
+    document.querySelectorAll('.indicator').forEach((ind, i) => ind.classList.toggle('active', i === 0));
+
     if (heroInterval) clearInterval(heroInterval);
     heroInterval = setInterval(() => {
         currentHeroIndex = (currentHeroIndex + 1) % slideCount;
@@ -1124,16 +1148,31 @@ async function initHero(items) {
 }
 
 function heroSlideStep(direction) {
-    const slides = document.querySelectorAll('.hero-slide');
-    if (!slides.length) return;
-    let activeIndex = Array.from(slides).findIndex(s => s.classList.contains('active'));
-    let nextIndex = (activeIndex + direction + slides.length) % slides.length;
+    const slideCount = _heroRealCount;
+    if (!slideCount) return;
+    const slidesContainer = document.getElementById('hero-slides');
+    if (!slidesContainer) return;
+
+    // Find current real index from active slide
+    const allSlides = slidesContainer.querySelectorAll('.hero-slide');
+    let activeReal = 0;
+    allSlides.forEach((s, i) => { if (s.classList.contains('active')) activeReal = i - 1; });
+
+    // Compute next index; allow -1 and slideCount so the clone transition fires
+    let nextIndex = activeReal + direction;
+    // Clamp to clone range: -1 wraps via clone-of-last, slideCount wraps via clone-of-first
+    if (nextIndex < -1) nextIndex = slideCount - 1;
+    if (nextIndex > slideCount) nextIndex = 0;
+
+    // For the interval, the real index after wrap
+    const realNext = ((nextIndex % slideCount) + slideCount) % slideCount;
+
     showHeroSlide(nextIndex);
-    // Interval is managed inside initHero; just clear here to avoid double-firing
+
     if (heroInterval) clearInterval(heroInterval);
-    let idx = nextIndex;
+    let idx = realNext;
     heroInterval = setInterval(() => {
-        idx = (idx + 1) % slides.length;
+        idx = (idx + 1) % slideCount;
         showHeroSlide(idx);
     }, 6000);
 }
@@ -1156,6 +1195,18 @@ function setupHeroDrag(slideCount) {
         dragged = false;
     };
 
+    const getSlidesContainer = () => document.getElementById('hero-slides');
+    // Returns the REAL slide index (0-based), not DOM index
+    const getCurrentRealIndex = () => {
+        const container = getSlidesContainer();
+        if (!container) return 0;
+        const slides = container.querySelectorAll('.hero-slide');
+        const domIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+        // DOM layout: [clone-last, slide-0 … slide-N-1, clone-first]
+        // real index = domIdx - 1
+        return Math.max(0, domIdx - 1);
+    };
+
     const onMove = (x, y, e) => {
         if (!isDragging) return;
         const dx = x - startX;
@@ -1163,14 +1214,28 @@ function setupHeroDrag(slideCount) {
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
             dragged = true;
             if (e.cancelable) e.preventDefault();
+            // Live drag: offset based on DOM position (realIndex + 1)
+            const container = getSlidesContainer();
+            if (container) {
+                const domIndex = getCurrentRealIndex() + 1;
+                const baseOffset = domIndex * 100;
+                const dragOffset = (dx / heroSection.offsetWidth) * 100;
+                container.style.transition = 'none';
+                container.style.transform = `translateX(${-baseOffset + dragOffset}%)`;
+            }
         }
     };
 
     const onEnd = (x) => {
         if (!isDragging) return;
         const dx = x - startX;
+        const container = getSlidesContainer();
+        if (container) container.style.transition = ''; // restore CSS transition
         if (Math.abs(dx) > threshold) {
             heroSlideStep(dx < 0 ? 1 : -1);
+        } else {
+            // Snap back to current real slide
+            showHeroSlide(getCurrentRealIndex());
         }
         isDragging = false;
     };
@@ -1208,13 +1273,54 @@ function setupHeroDrag(slideCount) {
     heroSection.addEventListener('mouseup', () => heroSection.style.cursor = 'grab');
 }
 
-function showHeroSlide(index) {
-    const slides = document.querySelectorAll('.hero-slide');
-    const indicators = document.querySelectorAll('.indicator');
-    slides.forEach(s => s.classList.remove('active'));
-    indicators.forEach(i => i.classList.remove('active'));
-    if (slides[index]) slides[index].classList.add('active');
-    if (indicators[index]) indicators[index].classList.add('active');
+// Tracks the real slide count for the infinite-loop helper
+let _heroRealCount = 0;
+
+function showHeroSlide(realIndex) {
+    const slidesContainer = document.getElementById('hero-slides');
+    if (!slidesContainer) return;
+    const slideCount = _heroRealCount;
+    if (slideCount === 0) return;
+
+    // In the DOM: [clone-last] [slide-0…slide-N-1] [clone-first]
+    // So real slide i lives at DOM position (i + 1)
+    const domIndex = realIndex + 1;
+
+    // Animate to the target (or clone) position
+    slidesContainer.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    slidesContainer.style.transform = `translateX(-${domIndex * 100}%)`;
+
+    // Update active class on real slides (DOM positions 1…N)
+    const allSlides = slidesContainer.querySelectorAll('.hero-slide');
+    allSlides.forEach((s, i) => {
+        const isReal = i >= 1 && i <= slideCount;
+        const isActive = isReal && (i - 1) === realIndex;
+        s.classList.toggle('active', isActive);
+        s.querySelectorAll('button, a').forEach(el => { el.tabIndex = isActive ? 0 : -1; });
+    });
+
+    // Update indicators
+    document.querySelectorAll('.indicator').forEach((ind, i) => ind.classList.toggle('active', i === realIndex));
+
+    // --- Seamless wrap: if we're at a clone, silently jump to the real counterpart ---
+    slidesContainer.addEventListener('transitionend', function onEnd() {
+        slidesContainer.removeEventListener('transitionend', onEnd);
+
+        let correctedIndex = realIndex;
+        // We went to clone-of-first (DOM position slideCount+1) → jump to real first (DOM position 1)
+        if (realIndex === slideCount) {
+            correctedIndex = 0;
+        }
+        // We went to clone-of-last (DOM position 0) → jump to real last (DOM position slideCount)
+        else if (realIndex === -1) {
+            correctedIndex = slideCount - 1;
+        }
+
+        if (correctedIndex !== realIndex) {
+            slidesContainer.style.transition = 'none';
+            slidesContainer.style.transform = `translateX(-${(correctedIndex + 1) * 100}%)`;
+        }
+    }, { once: true });
 }
 
 async function renderTop10ForFilter(type) {
