@@ -24,6 +24,17 @@
     <link rel="dns-prefetch" href="https://api.themoviedb.org">
 <link rel="dns-prefetch" href="https://image.tmdb.org">
     <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+<script>
+    // Define the YT callback BEFORE the IFrame API script so it's
+    // always in place when YouTube fires it — even on slow/CDN hosts
+    // (GitHub Pages) where the API loads faster than defer'd script.js.
+    window._ytIframeReadyCallbacks = window._ytIframeReadyCallbacks || [];
+    window.onYouTubeIframeAPIReady = function() {
+        window._ytAPILoaded = true;
+        window._ytIframeReadyCallbacks.forEach(function(cb) { cb(); });
+        window._ytIframeReadyCallbacks = [];
+    };
+</script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="output.css">

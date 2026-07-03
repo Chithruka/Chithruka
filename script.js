@@ -2899,8 +2899,11 @@ let _ytQuotaDead     = false;  // true for the rest of this session if quota exc
 let _ytUseFallback   = false;  // true when we've decided to use the raw iframe
 
 // ── IFrame API bootstrap ──────────────────────────────────────
-// script.js is `defer` so the YT API callback may fire before us.
-// We define the callback AND poll so both cases are covered.
+// index.html defines window.onYouTubeIframeAPIReady BEFORE the
+// IFrame API <script> tag, so the callback is never missed — even
+// on GitHub Pages where the YT API CDN loads faster than defer'd
+// scripts. We register here; if the API already fired (flag set),
+// we call immediately instead of waiting.
 function _onYTIframeReady() {
     if (_ytIframeReady) return;
     _ytIframeReady = true;
@@ -2909,11 +2912,14 @@ function _onYTIframeReady() {
         _pendingYTKey = null;
     }
 }
-window.onYouTubeIframeAPIReady = _onYTIframeReady;
-(function pollYT() {
-    if (window.YT && window.YT.Player) { _onYTIframeReady(); }
-    else { setTimeout(pollYT, 100); }
-})();
+// Register with the pre-defined callback queue in index.html
+if (window._ytAPILoaded) {
+    // API already fired before script.js ran — call immediately
+    _onYTIframeReady();
+} else {
+    window._ytIframeReadyCallbacks = window._ytIframeReadyCallbacks || [];
+    window._ytIframeReadyCallbacks.push(_onYTIframeReady);
+}
 
 // ── Helper: visual crossfade (shared by both paths) ──────────
 function _revealTrailer() {
