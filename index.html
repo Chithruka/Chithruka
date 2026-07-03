@@ -24,18 +24,7 @@
     <link rel="dns-prefetch" href="https://api.themoviedb.org">
 <link rel="dns-prefetch" href="https://image.tmdb.org">
     <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
-<script>
-    // Define the YT callback BEFORE the IFrame API script so it's
-    // always in place when YouTube fires it — even on slow/CDN hosts
-    // (GitHub Pages) where the API loads faster than defer'd script.js.
-    window._ytIframeReadyCallbacks = window._ytIframeReadyCallbacks || [];
-    window.onYouTubeIframeAPIReady = function() {
-        window._ytAPILoaded = true;
-        window._ytIframeReadyCallbacks.forEach(function(cb) { cb(); });
-        window._ytIframeReadyCallbacks = [];
-    };
-</script>
-<script src="https://www.youtube.com/iframe_api"></script>
+
 <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="output.css">
 <link rel="stylesheet" href="perf-patch.css">
@@ -216,19 +205,14 @@
     overflow: hidden; /* clips the 300%-wide iframe */
 }
 .detail-hero-trailer.visible { opacity: 1; }
-/* The div YT.Player replaces becomes the iframe — 300% width trick
-   pushes YT logo/title/end-cards outside the overflow:hidden boundary */
+/* 300% width trick pushes YT logo/title/end-cards outside
+   the overflow:hidden boundary of the wrapper */
 .detail-hero-trailer iframe {
     width: 300% !important;
     height: 100% !important;
     margin-left: -100% !important;
     border: none !important;
     pointer-events: none;
-}
-/* The YT API wraps the iframe in a div — make sure it fills the container */
-.detail-hero-trailer > div {
-    width: 100%;
-    height: 100%;
 }
 
 /* Layer 3 — bottom gradient */
@@ -509,7 +493,7 @@
             <!-- Layer 1: Backdrop image (Ken Burns when no trailer) -->
             <div id="detail-backdrop" class="detail-hero-backdrop"></div>
 
-            <!-- Layer 2: Muted autoplay YouTube trailer (YT IFrame API target) -->
+            <!-- Layer 2: Muted autoplay YouTube trailer (plain iframe embed) -->
             <div id="detail-trailer-wrap" class="detail-hero-trailer">
                 <div id="detail-trailer-iframe"></div>
             </div>

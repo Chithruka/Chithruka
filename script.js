@@ -2884,55 +2884,23 @@ function renderEpisodesRich() {
 }
 
 // ============================================================
-// CINEMATIC HERO TRAILER
-// Primary:  YouTube Data API v3  → YT IFrame Player (full mute control)
-// Fallback: raw iframe embed     → used when quota is exceeded
+// ============================================================
+// CINEMATIC HERO TRAILER — plain iframe embed (no IFrame API)
 // ============================================================
 
-const YT_DATA_ENCODED = "QUl6YVN5QXhpSmlrYWJQQTJ2ZVp3UjJTT1FNUHRYMG1peVpJSC1B";
-function getYTDataKey() { return atob(YT_DATA_ENCODED); }
+let _heroIframe = null;  // reference to the active <iframe> element
 
-let _ytPlayer        = null;   // YT.Player instance (IFrame API)
-let _ytIframeReady   = false;  // true once YT.Player constructor is available
-let _pendingYTKey    = null;   // key queued before IFrame API was ready
-let _ytQuotaDead     = false;  // true for the rest of this session if quota exceeded
-let _ytUseFallback   = false;  // true when we've decided to use the raw iframe
-
-// ── IFrame API bootstrap ──────────────────────────────────────
-// index.html defines window.onYouTubeIframeAPIReady BEFORE the
-// IFrame API <script> tag, so the callback is never missed — even
-// on GitHub Pages where the YT API CDN loads faster than defer'd
-// scripts. We register here; if the API already fired (flag set),
-// we call immediately instead of waiting.
-function _onYTIframeReady() {
-    if (_ytIframeReady) return;
-    _ytIframeReady = true;
-    if (_pendingYTKey) {
-        _createYTPlayer(_pendingYTKey);
-        _pendingYTKey = null;
-    }
-}
-// Register with the pre-defined callback queue in index.html
-if (window._ytAPILoaded) {
-    // API already fired before script.js ran — call immediately
-    _onYTIframeReady();
-} else {
-    window._ytIframeReadyCallbacks = window._ytIframeReadyCallbacks || [];
-    window._ytIframeReadyCallbacks.push(_onYTIframeReady);
-}
-
-// ── Helper: visual crossfade (shared by both paths) ──────────
+// ── Helper: visual crossfade ─────────────────────────────────
 function _revealTrailer() {
     const wrap     = document.getElementById('detail-trailer-wrap');
     const backdrop = document.getElementById('detail-backdrop');
     const muteBtn  = document.getElementById('trailer-mute-btn');
     if (wrap)     wrap.classList.add('visible');
     if (backdrop) setTimeout(() => { backdrop.style.opacity = '0'; }, 800);
-    if (muteBtn && !_ytUseFallback) muteBtn.classList.remove('hidden'); // fallback has no mute control
+    if (muteBtn)  muteBtn.classList.remove('hidden');
 }
 
 function _heroError() {
-    // Something went wrong — show Ken Burns backdrop as the safe fallback
     const backdrop = document.getElementById('detail-backdrop');
     if (backdrop) {
         backdrop.style.opacity = '1';
@@ -2942,49 +2910,32 @@ function _heroError() {
     if (wrap) wrap.classList.remove('visible');
 }
 
-// ── PRIMARY: YT IFrame Player ────────────────────────────────
-function _createYTPlayer(key) {
-    if (_ytPlayer) {
-        try { _ytPlayer.destroy(); } catch(e) {}
-        _ytPlayer = null;
-    }
-    const wrap = document.getElementById('detail-trailer-wrap');
-    if (!wrap) return;
-    wrap.innerHTML = '<div id="detail-trailer-iframe"></div>';
-
-    _ytPlayer = new YT.Player('detail-trailer-iframe', {
-        videoId: key,
-        playerVars: {
-            autoplay: 1, mute: 1, controls: 0, loop: 1,
-            playlist: key, modestbranding: 1, rel: 0,
-            iv_load_policy: 3, playsinline: 1, disablekb: 1, fs: 0
-        },
-        events: {
-            onReady:       (e) => { e.target.mute(); e.target.playVideo(); },
-            onStateChange: (e) => { if (e.data === YT.PlayerState.PLAYING) _revealTrailer(); },
-            onError:       ()  => _heroError()
-        }
-    });
-}
-
-// ── FALLBACK: raw iframe embed ───────────────────────────────
-function _createFallbackIframe(key) {
+// ── Iframe embed ─────────────────────────────────────────────
+function _createHeroIframe(key) {
     const wrap = document.getElementById('detail-trailer-wrap');
     if (!wrap) return;
 
-    wrap.innerHTML = `
-        <iframe
-            src="https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&loop=1&playlist=${key}&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0"
-            allow="autoplay; encrypted-media"
-            allowfullscreen frameborder="0" tabindex="-1">
-        </iframe>`;
+    const iframe = document.createElement('iframe');
+    iframe.id          = 'detail-trailer-iframe';
+    iframe.src         = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&loop=1&playlist=${key}&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0`;
+    iframe.allow       = 'autoplay; encrypted-media';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.frameBorder = '0';
+    iframe.tabIndex    = -1;
 
-    // No onStateChange available — use a timer to crossfade
-    setTimeout(_revealTrailer, 3000);
+    iframe.addEventListener('load', () => setTimeout(_revealTrailer, 1500));
+    iframe.addEventListener('error', _heroError);
+
+    wrap.innerHTML = '';
+    wrap.appendChild(iframe);
+    _heroIframe = iframe;
+
+    // Safety net: reveal after 5s even if load event is unreliable
+    setTimeout(_revealTrailer, 5000);
 }
 
 // ── PUBLIC: launch the hero ───────────────────────────────────
-async function launchHeroTrailer(backdropPath, youtubeKey) {
+function launchHeroTrailer(backdropPath, youtubeKey) {
     destroyHeroTrailer();
 
     const backdropEl = document.getElementById('detail-backdrop');
@@ -3001,83 +2952,36 @@ async function launchHeroTrailer(backdropPath, youtubeKey) {
         return;
     }
     backdropEl.classList.remove('kenburns');
-
-    // If quota already known dead this session, skip straight to fallback
-    if (_ytQuotaDead) {
-        _ytUseFallback = true;
-        _createFallbackIframe(youtubeKey);
-        return;
-    }
-
-    // ── Try YouTube Data API v3 to validate key & check quota ──
-    try {
-        const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos?part=id&id=${youtubeKey}&key=${getYTDataKey()}`
-        );
-        const json = await res.json();
-
-        // Check for quota exceeded error
-        const err = json?.error;
-        if (err) {
-            const isQuota = err.errors?.some(e =>
-                e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded'
-            );
-            if (isQuota) {
-                console.warn('[Hero] YouTube Data API quota exceeded — switching to iframe fallback');
-                _ytQuotaDead  = true;
-                _ytUseFallback = true;
-                _createFallbackIframe(youtubeKey);
-                return;
-            }
-            // Other API error (bad key, network, etc.) — still try IFrame player
-            console.warn('[Hero] YouTube Data API error, proceeding with IFrame player anyway', err);
-        }
-
-        // API is healthy — use the IFrame Player (primary path)
-        _ytUseFallback = false;
-        if (_ytIframeReady) {
-            _createYTPlayer(youtubeKey);
-        } else {
-            _pendingYTKey = youtubeKey;
-        }
-
-    } catch (e) {
-        // Network failure hitting the Data API — fall back silently
-        console.warn('[Hero] YouTube Data API unreachable — using iframe fallback', e);
-        _ytUseFallback = true;
-        _createFallbackIframe(youtubeKey);
-    }
+    _createHeroIframe(youtubeKey);
 }
 
-// ── Mute toggle (primary only; fallback has no JS handle) ────
+// ── Mute toggle (via postMessage since we have no JS handle) ─
+let _heroMuted = true;
 window.toggleTrailerMute = function() {
-    if (_ytUseFallback || !_ytPlayer || typeof _ytPlayer.isMuted !== 'function') return;
+    if (!_heroIframe) return;
     const icon    = document.getElementById('trailer-mute-icon');
     const muteBtn = document.getElementById('trailer-mute-btn');
-    if (_ytPlayer.isMuted()) {
-        _ytPlayer.unMute();
-        if (icon)    icon.className = 'fas fa-volume-up';
-        if (muteBtn) muteBtn.title  = 'Mute';
-    } else {
-        _ytPlayer.mute();
-        if (icon)    icon.className = 'fas fa-volume-mute';
-        if (muteBtn) muteBtn.title  = 'Unmute';
-    }
+    _heroMuted = !_heroMuted;
+    const command = _heroMuted ? 'mute' : 'unMute';
+    try {
+        _heroIframe.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func: command, args: [] }),
+            'https://www.youtube.com'
+        );
+    } catch(e) {}
+    if (icon)    icon.className = _heroMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+    if (muteBtn) muteBtn.title  = _heroMuted ? 'Unmute' : 'Mute';
 };
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
-    if (_ytPlayer) {
-        try { _ytPlayer.destroy(); } catch(e) {}
-        _ytPlayer = null;
-    }
-    _pendingYTKey  = null;
-    _ytUseFallback = false;
+    _heroIframe = null;
+    _heroMuted  = true;
 
     const wrap = document.getElementById('detail-trailer-wrap');
     if (wrap) {
         wrap.classList.remove('visible');
-        wrap.innerHTML = '<div id="detail-trailer-iframe"></div>';
+        wrap.innerHTML = '';
     }
     const muteBtn = document.getElementById('trailer-mute-btn');
     if (muteBtn) muteBtn.classList.add('hidden');
