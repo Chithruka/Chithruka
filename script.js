@@ -34,14 +34,9 @@ async function loadLocalVideos() {
 }
 let currentServerIndex = 0;
 
-// The base servers (excluding your local server)
-const BASE_SERVER_URLS = [
-    { name: "Server 1", movie: "https://vidrock.ru/movie/[ID]", tv: "https://vidrock.ru/tv/[ID]/[S]/[E]" },
-    { name: "Server 2", movie: "https://player.videasy.net/movie/[ID]", tv: "https://player.videasy.net/tv/[ID]/[S]/[E]?nextEpisode=true&episodeSelector=true" },
-    { name: "Server 3", movie: "https://vidlink.pro/movie/[ID]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&sub_label=English&fallback_url=https://streamimdb.ru/embed/movie/[ID]", tv: "https://vidlink.pro/tv/[ID]/[S]/[E]?primaryColor=E50914&secondaryColor=221F1F&iconColor=eefdec&icons=default&player=default&title=true&poster=true&autoplay=false&nextbutton=true&fallback_url=https://streamimdb.ru/embed/tv/[ID]" },
-   { name: "Server 4", movie: "https://www.vidsrc.wtf/4/movie/[ID]?color=e01621", tv: "https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]?color=e01621" },
-   { name: "Server 5", movie: "https://1embed.cc/embed/movie/[ID]", tv: "https://1embed.cc/embed/tv/[ID]/[S]/[E]" }
-];
+// External servers removed — auto-server.html handles provider cascade internally.
+// BASE_SERVER_URLS is kept as an empty array so nothing else in the code breaks.
+const BASE_SERVER_URLS = [];
 
 let mediaType = 'movie';
 let TMDB_ID = null;
@@ -888,14 +883,13 @@ function getActiveServers() {
         }
     }
 
-    if (hasLocalServer) {
-        // Inject your custom server at the beginning of the array
-        servers.unshift({
-            name: "My Server", // Placeholder; renamed in the map below
-            movie: "Server/my-server.html?id=[ID]&type=movie",
-            tv: "Server/my-server.html?id=[ID]&type=tv&s=[S]&e=[E]"
-        });
-    }
+    // Always inject auto-server — it checks videos.json itself and cascades
+    // through embed providers automatically if the content isn't found locally.
+    servers.unshift({
+        name: "My Server", // Placeholder; renamed in the map below
+        movie: "Server/auto-server.html?id=[ID]&type=movie",
+        tv: "Server/auto-server.html?id=[ID]&type=tv&s=[S]&e=[E]"
+    });
 
     // Standardize all names sequentially (Server 1, Server 2, etc.)
     return servers.map((server, index) => ({
@@ -1657,7 +1651,7 @@ function displayResults(results) {
 // --- Accepts gender to display correct icon in header ---
 async function loadActorCredits(personId, personName, profilePath, gender) {
     // --- URL & Title ---
-    document.title = `${personName} - Chithruka`;
+    updateMetaTags({ title: `${personName} - Chithruka`, description: `Browse all movies and TV shows featuring ${personName}.`, url: `${window.location.origin}${window.location.pathname}?id=${personId}&type=person&name=${encodeURIComponent(personName)}` });
     window.history.pushState(
         { id: personId, type: 'person', name: personName, profilePath, gender },
         '',
@@ -1972,7 +1966,7 @@ window.quickFilter = function(type, value, label = "", logo = "") {
     const shareableTypes = ['company', 'keyword', 'network', 'genre', 'country'];
     if (shareableTypes.includes(type) && value) {
         const displayName = label || value;
-        document.title = `${displayName} - Chithruka`;
+        updateMetaTags({ title: `${displayName} - Chithruka`, description: `Browse ${type === 'keyword' ? 'titles tagged' : 'titles from'} ${displayName} on Chithruka.`, url: `${window.location.origin}${window.location.pathname}?filter=${encodeURIComponent(type)}&id=${encodeURIComponent(value)}&name=${encodeURIComponent(displayName)}${logo ? '&logo=' + encodeURIComponent(logo) : ''}` });
         window.history.pushState(
             { filter: type, id: value, name: displayName, logo },
             '',
@@ -2023,6 +2017,7 @@ window.clearFilters = function() {
 
     const header = document.getElementById('trending-header');
     header.innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    updateMetaTags({ title: 'Chithruka', description: 'Stream movies and TV shows.', image: '', url: window.location.origin + window.location.pathname });
 
     // The All/Movies/TV Shows slider is only meaningful for the default mixed
     // trending feed (it actually contains both types there) - bring it back.
@@ -2720,7 +2715,7 @@ async function fetchShowDetails(id, title) {
 
 async function loadCollection(collectionId, collectionName) {
     // --- URL & Title ---
-    document.title = `${collectionName} - Chithruka`;
+    updateMetaTags({ title: `${collectionName} - Chithruka`, description: `Watch all films in the ${collectionName}.`, url: `${window.location.origin}${window.location.pathname}?id=${collectionId}&type=collection&name=${encodeURIComponent(collectionName)}` });
     window.history.pushState(
         { id: collectionId, type: 'collection', name: collectionName },
         '',
@@ -2875,6 +2870,39 @@ function renderEpisodesRich() {
     }
 }
 
+
+// ============================================================
+// OG / Twitter meta tag updater
+// ============================================================
+function updateMetaTags({ title, description, image, url }) {
+    const set = (sel, attr, val) => {
+        let el = document.querySelector(sel);
+        if (!el) {
+            el = document.createElement('meta');
+            const m = sel.match(/\[([^=]+)="([^"]+)"\]/);
+            el.setAttribute(m[1], m[2]);
+            document.head.appendChild(el);
+        }
+        el.setAttribute(attr, val || '');
+    };
+    const t = title || 'Chithruka';
+    const d = description || 'Stream movies and TV shows.';
+    const img = image || '';
+    const u = url || window.location.href;
+    document.title = t;
+    set('meta[property="og:title"]',        'content', t);
+    set('meta[property="og:description"]',  'content', d);
+    set('meta[property="og:image"]',        'content', img);
+    set('meta[property="og:url"]',          'content', u);
+    set('meta[property="og:type"]',         'content', 'website');
+    set('meta[property="og:site_name"]',    'content', 'Chithruka');
+    set('meta[name="twitter:card"]',        'content', img ? 'summary_large_image' : 'summary');
+    set('meta[name="twitter:title"]',       'content', t);
+    set('meta[name="twitter:description"]', 'content', d);
+    set('meta[name="twitter:image"]',       'content', img);
+    set('meta[name="description"]',         'content', d);
+}
+
 function renderDetails(data, title) {
     // ============================================================
     // 1. DATA PREPARATION & AI CONTEXT
@@ -2927,8 +2955,14 @@ function renderDetails(data, title) {
     // ============================================================
     // 2. VISUAL SETUP (Background & Colors)
     // ============================================================
-    if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
-    else pageBackground.style.backgroundImage = 'none';
+    // Backdrop image on title click removed — saves bandwidth; hero slides remain unaffected.
+    pageBackground.style.backgroundImage = 'none';
+
+    // --- OG / Twitter meta tags ---
+    const ogPoster = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '';
+    const ogTitle = `${aiContext.title}${aiContext.year !== 'N/A' ? ' (' + aiContext.year + ')' : ''} - Chithruka`;
+    const ogDesc = aiContext.overview ? aiContext.overview.slice(0, 200) + (aiContext.overview.length > 200 ? '...' : '') : '';
+    updateMetaTags({ title: ogTitle, description: ogDesc, image: ogPoster, url: window.location.href });
 
     const posterUrl = data.poster_path ? `${TMDB_POSTER_MD}${data.poster_path}` : null;
     if (posterUrl) {
@@ -3916,6 +3950,27 @@ function clearHistory() {
     showMessage("History Cleared");
 }
 
+function exportHistory() {
+    const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
+    if (history.length === 0) { showMessage("Nothing in history to export.", true); return; }
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chithruka-history-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showMessage("History exported!");
+}
+
+function clearApiCache() {
+    let count = 0;
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('tmdb_')) { localStorage.removeItem(key); count++; }
+    });
+    showMessage(`Cache cleared (${count} entries removed)`);
+}
+
 async function shareMovie() {
     const movieTitle = document.title;
     const movieUrl = window.location.href;
@@ -4583,7 +4638,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trailerSection) trailerSection.style.display = 'none';
         const deepId = Number(urlParams.get('id'));
         const deepName = urlParams.get('name') || 'Person';
-        document.title = `${deepName} - Chithruka`;
+        updateMetaTags({ title: `${deepName} - Chithruka`, description: `Browse all movies and TV shows featuring ${deepName}.`, image: '', url: window.location.href });
         // profilePath and gender aren't in the URL — pass nulls; renderPersonProfile fills them from the API
         await loadActorCredits(deepId, deepName, null, null);
 
@@ -4594,7 +4649,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trailerSection) trailerSection.style.display = 'none';
         const deepId = Number(urlParams.get('id'));
         const deepName = urlParams.get('name') || 'Collection';
-        document.title = `${deepName} - Chithruka`;
+        updateMetaTags({ title: `${deepName} - Chithruka`, description: `Watch all films in the ${deepName}.`, image: '', url: window.location.href });
         detailsSection.classList.add('hidden');
         playerInterface.classList.add('hidden');
         await loadCollection(deepId, deepName);
@@ -4697,13 +4752,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
+// ============================================================
+// Keyboard shortcuts
+// ============================================================
+document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement.isContentEditable;
+
+    // / — focus search (anywhere, unless already typing)
+    if (e.key === '/' && !isTyping) {
+        e.preventDefault();
+        const si = document.getElementById('search-input');
+        if (si) { si.focus(); si.select(); }
+        return;
+    }
+
+    if (isTyping) return; // All remaining shortcuts are navigation — don't fire while typing
+
+    // Escape — close modals first, then go home
+    if (e.key === 'Escape') {
+        const aiModal = document.getElementById('ai-insight-modal');
+        const filterModal = document.getElementById('filter-modal');
+        const lightbox = document.getElementById('image-lightbox');
+        const trailerModal = document.getElementById('trailer-modal');
+        if (aiModal && !aiModal.classList.contains('hidden'))      { closeAIInsight(); return; }
+        if (filterModal && !filterModal.classList.contains('hidden')){ closeFilterModal(); return; }
+        if (lightbox && !lightbox.classList.contains('hidden'))    { closeLightbox(); return; }
+        if (trailerModal && !trailerModal.classList.contains('hidden')){ closeTrailerModal(); return; }
+        // If content is showing, go back to home
+        if (!document.getElementById('details-section').classList.contains('hidden') ||
+            !document.getElementById('person-details-container')?.classList.contains('hidden')) {
+            window.history.back();
+        }
+        return;
+    }
+
+    // H — go home
+    if (e.key === 'h' || e.key === 'H') {
+        clearFilters();
+        return;
+    }
+});
+
 // --- Browser Back / Forward Navigation ---
 window.addEventListener('popstate', async (event) => {
     const state = event.state;
 
     // No state = back to homepage
     if (!state) {
-        document.title = 'Chithruka';
+        updateMetaTags({ title: 'Chithruka', description: 'Stream movies and TV shows.', image: '', url: window.location.origin + window.location.pathname });
         heroSection.style.display = 'block';
         document.getElementById('top10-section').style.display = 'block';
         detailsSection.classList.add('hidden');
@@ -5293,7 +5391,7 @@ function handleTranslations(data) {
             taglineEl.classList.remove('hidden');
 
             posterImg.src = originalData.poster;
-            bgContainer.style.backgroundImage = originalData.backdrop;
+            // bgContainer backdrop intentionally not restored — backdrop on detail view removed.
 
             logoImg.src = originalData.logoSrc;
             logoImg.style.display = originalData.logoDisplay;
@@ -5360,10 +5458,7 @@ function handleTranslations(data) {
                 });
             }
 
-            const newBackdrop = imageData.backdrops.find(b => b.iso_639_1 === selectedLang) || imageData.backdrops[0];
-            if (newBackdrop) {
-                bgContainer.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${newBackdrop.file_path}')`;
-            }
+            // Backdrop language swap removed — no backdrop shown on detail view.
 
             // Logo Logic
             const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
