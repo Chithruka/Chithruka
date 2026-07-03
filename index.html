@@ -194,8 +194,8 @@
     to   { transform: scale(1.07) translate(-1.5%, -1%); }
 }
 
-/* Layer 2 — trailer (YT IFrame API) */
-.detail-hero-trailer {
+/* Layer 2 — trailer (removed; now using Ken Burns backdrop only) */
+.detail-hero-trailer-unused {
     position: absolute; inset: 0;
     opacity: 0;
     transition: opacity 1.2s ease;
@@ -493,10 +493,7 @@
             <!-- Layer 1: Backdrop image (Ken Burns when no trailer) -->
             <div id="detail-backdrop" class="detail-hero-backdrop"></div>
 
-            <!-- Layer 2: Muted autoplay YouTube trailer (plain iframe embed) -->
-            <div id="detail-trailer-wrap" class="detail-hero-trailer">
-                <div id="detail-trailer-iframe"></div>
-            </div>
+
 
             <!-- Layer 3: Bottom gradient so hero bleeds into content -->
             <div class="detail-hero-gradient"></div>
@@ -506,9 +503,9 @@
                 <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover rounded-xl" loading="lazy">
             </div>
 
-            <!-- Mute/unmute toggle -->
-            <button id="trailer-mute-btn" class="detail-hero-mute-btn hidden" onclick="window.toggleTrailerMute()" title="Toggle sound">
-                <i id="trailer-mute-icon" class="fas fa-volume-mute"></i>
+            <!-- Watch Trailer button -->
+            <button id="hero-trailer-btn" class="detail-hero-mute-btn hidden" onclick="window.openTrailerModal()" title="Watch Trailer">
+                <i class="fas fa-play" style="margin-left:2px"></i>
             </button>
         </div>
         <!-- ── END HERO ZONE ── -->

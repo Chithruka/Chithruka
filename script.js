@@ -2885,136 +2885,54 @@ function renderEpisodesRich() {
 
 // ============================================================
 // ============================================================
-// CINEMATIC HERO TRAILER — plain iframe embed (no IFrame API)
+// CINEMATIC HERO — Ken Burns backdrop + Watch Trailer button
+// YouTube autoplay inside iframes is blocked by GitHub Pages
+// (and many other static hosts). We show the backdrop with a
+// Ken Burns pan/zoom and a play button that opens the trailer
+// in the existing modal, which uses youtube-nocookie.com and
+// is triggered by user gesture so autoplay always works.
 // ============================================================
-
-let _heroIframe = null;  // reference to the active <iframe> element
-
-// ── Helper: visual crossfade ─────────────────────────────────
-function _revealTrailer() {
-    const wrap     = document.getElementById('detail-trailer-wrap');
-    const backdrop = document.getElementById('detail-backdrop');
-    const muteBtn  = document.getElementById('trailer-mute-btn');
-    if (wrap)     wrap.classList.add('visible');
-    if (backdrop) setTimeout(() => { backdrop.style.opacity = '0'; }, 800);
-    if (muteBtn)  muteBtn.classList.remove('hidden');
-}
-
-function _heroError() {
-    const backdrop = document.getElementById('detail-backdrop');
-    if (backdrop) {
-        backdrop.style.opacity = '1';
-        backdrop.classList.add('kenburns');
-    }
-    const wrap = document.getElementById('detail-trailer-wrap');
-    if (wrap) wrap.classList.remove('visible');
-}
-
-// ── postMessage listener — detect actual playback start ──────
-let _ytMessageHandler = null;
-function _listenForPlayback() {
-    if (_ytMessageHandler) window.removeEventListener('message', _ytMessageHandler);
-    _ytMessageHandler = function(e) {
-        if (!e.origin.includes('youtube.com')) return;
-        try {
-            const data = JSON.parse(e.data);
-            // playerState 1 = playing
-            if (data.event === 'infoDelivery' && data.info && data.info.playerState === 1) {
-                _revealTrailer();
-                window.removeEventListener('message', _ytMessageHandler);
-                _ytMessageHandler = null;
-            }
-        } catch(_) {}
-    };
-    window.addEventListener('message', _ytMessageHandler);
-}
-
-// ── Iframe embed ─────────────────────────────────────────────
-function _createHeroIframe(key) {
-    const wrap = document.getElementById('detail-trailer-wrap');
-    if (!wrap) return;
-
-    const origin = encodeURIComponent(window.location.origin);
-    const iframe = document.createElement('iframe');
-    iframe.id          = 'detail-trailer-iframe';
-    // enablejsapi=1 + origin lets YouTube trust the embed and fires
-    // postMessage state events. mute=1 satisfies browser autoplay policy
-    // (muted autoplay is always permitted).
-    iframe.src         = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&loop=1&playlist=${key}&rel=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1&origin=${origin}`;
-    iframe.allow       = 'autoplay; encrypted-media';
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.frameBorder = '0';
-    iframe.tabIndex    = -1;
-
-    wrap.innerHTML = '';
-    wrap.appendChild(iframe);
-    _heroIframe = iframe;
-
-    // Listen for playerState=1 (playing) via postMessage
-    _listenForPlayback();
-
-    // Safety net: if postMessage never fires, reveal after 4s anyway
-    setTimeout(_revealTrailer, 4000);
-}
 
 // ── PUBLIC: launch the hero ───────────────────────────────────
 function launchHeroTrailer(backdropPath, youtubeKey) {
     destroyHeroTrailer();
 
-    const backdropEl = document.getElementById('detail-backdrop');
-    const posterPin  = document.querySelector('.detail-hero-poster-pin');
+    const backdropEl  = document.getElementById('detail-backdrop');
+    const posterPin   = document.querySelector('.detail-hero-poster-pin');
+    const trailerBtn  = document.getElementById('hero-trailer-btn');
 
     if (backdropPath) {
         backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
         backdropEl.style.opacity = '1';
     }
+
+    // Always use Ken Burns — it's the backdrop, not the iframe, that animates
+    backdropEl.classList.add('kenburns');
+
     if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 300);
 
-    if (!youtubeKey) {
-        backdropEl.classList.add('kenburns');
-        return;
+    // Show the Watch Trailer button only when there's a trailer to play
+    if (trailerBtn) {
+        if (youtubeKey) {
+            trailerBtn.classList.remove('hidden');
+        } else {
+            trailerBtn.classList.add('hidden');
+        }
     }
-    backdropEl.classList.remove('kenburns');
-    _createHeroIframe(youtubeKey);
 }
-
-// ── Mute toggle (via postMessage since we have no JS handle) ─
-let _heroMuted = true;
-window.toggleTrailerMute = function() {
-    if (!_heroIframe) return;
-    const icon    = document.getElementById('trailer-mute-icon');
-    const muteBtn = document.getElementById('trailer-mute-btn');
-    _heroMuted = !_heroMuted;
-    const command = _heroMuted ? 'mute' : 'unMute';
-    try {
-        _heroIframe.contentWindow.postMessage(
-            JSON.stringify({ event: 'command', func: command, args: [] }),
-            'https://www.youtube.com'
-        );
-    } catch(e) {}
-    if (icon)    icon.className = _heroMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-    if (muteBtn) muteBtn.title  = _heroMuted ? 'Unmute' : 'Mute';
-};
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
-    // Cancel any pending postMessage listener
-    if (_ytMessageHandler) {
-        window.removeEventListener('message', _ytMessageHandler);
-        _ytMessageHandler = null;
+    const backdropEl = document.getElementById('detail-backdrop');
+    if (backdropEl) {
+        backdropEl.style.backgroundImage = '';
+        backdropEl.style.opacity = '0';
+        backdropEl.classList.remove('kenburns');
     }
-    _heroIframe = null;
-    _heroMuted  = true;
-
-    const wrap = document.getElementById('detail-trailer-wrap');
-    if (wrap) {
-        wrap.classList.remove('visible');
-        wrap.innerHTML = '';
-    }
-    const muteBtn = document.getElementById('trailer-mute-btn');
-    if (muteBtn) muteBtn.classList.add('hidden');
-    const icon = document.getElementById('trailer-mute-icon');
-    if (icon) icon.className = 'fas fa-volume-mute';
+    const posterPin = document.querySelector('.detail-hero-poster-pin');
+    if (posterPin) posterPin.classList.remove('visible');
+    const trailerBtn = document.getElementById('hero-trailer-btn');
+    if (trailerBtn) trailerBtn.classList.add('hidden');
 }
 // ============================================================
 
