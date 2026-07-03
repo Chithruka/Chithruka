@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Chithruka">
+    <meta property="og:description" content="Stream movies and TV shows.">
+    <meta property="og:image" content="">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Chithruka">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Chithruka">
+    <meta name="twitter:description" content="Stream movies and TV shows.">
+    <meta name="twitter:image" content="">
+    <meta name="description" content="Stream movies and TV shows.">
+
     <title>Chithruka Streamer</title>
     
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
@@ -12,6 +24,7 @@
     <link rel="dns-prefetch" href="https://api.themoviedb.org">
 <link rel="dns-prefetch" href="https://image.tmdb.org">
     <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+<script src="https://www.youtube.com/iframe_api"></script>
 <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="output.css">
 <link rel="stylesheet" href="perf-patch.css">
@@ -151,6 +164,114 @@
     transform: scale(1.1); /* Subtle hover effect from Netflix UI */
 }
 
+/* ── CINEMATIC HERO ZONE ── */
+.detail-hero-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 6.5;
+    overflow: hidden;
+    background: #000;
+    min-height: 220px;
+}
+@media (max-width: 767px) {
+    .detail-hero-wrapper { aspect-ratio: 16 / 9; }
+}
+
+/* Layer 1 — backdrop */
+.detail-hero-backdrop {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center 20%;
+    transition: opacity 1s ease;
+    will-change: opacity;
+    z-index: 1;
+}
+.detail-hero-backdrop.kenburns {
+    animation: heroKenBurns 18s ease-in-out infinite alternate;
+}
+@keyframes heroKenBurns {
+    from { transform: scale(1)   translate(0, 0); }
+    to   { transform: scale(1.07) translate(-1.5%, -1%); }
+}
+
+/* Layer 2 — trailer (YT IFrame API) */
+.detail-hero-trailer {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    will-change: opacity;
+    z-index: 2;
+    pointer-events: none;
+    overflow: hidden; /* clips the 300%-wide iframe */
+}
+.detail-hero-trailer.visible { opacity: 1; }
+/* The div YT.Player replaces becomes the iframe — 300% width trick
+   pushes YT logo/title/end-cards outside the overflow:hidden boundary */
+.detail-hero-trailer iframe {
+    width: 300% !important;
+    height: 100% !important;
+    margin-left: -100% !important;
+    border: none !important;
+    pointer-events: none;
+}
+/* The YT API wraps the iframe in a div — make sure it fills the container */
+.detail-hero-trailer > div {
+    width: 100%;
+    height: 100%;
+}
+
+/* Layer 3 — bottom gradient */
+.detail-hero-gradient {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 75%;
+    background: linear-gradient(to bottom, transparent 0%, rgba(20,20,20,0.6) 55%, #141414 100%);
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Floating poster pin (bottom-left) */
+.detail-hero-poster-pin {
+    position: absolute;
+    bottom: 20px; left: 24px;
+    width: 90px;
+    aspect-ratio: 2 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+    border: 2px solid rgba(255,255,255,0.12);
+    z-index: 4;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s;
+}
+.detail-hero-poster-pin.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+@media (min-width: 768px) {
+    .detail-hero-poster-pin { width: 130px; bottom: 28px; left: 32px; }
+}
+
+/* Mute/unmute button */
+.detail-hero-mute-btn {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    z-index: 5;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s, opacity 0.3s;
+    backdrop-filter: blur(6px);
+}
+.detail-hero-mute-btn:hover { background: rgba(229,9,20,0.7); border-color: #e50914; }
+
+/* ── END CINEMATIC HERO ZONE ── */
+
 /* --- MOBILE PLAYER FULL BLEED FIX --- */
 @media (max-width: 767px) {
     #mobile-player-fix {
@@ -214,6 +335,8 @@
         <h3 class="text-white font-bold px-2 border-l-4 border-[#e50914] pl-3 text-lg">EXPLORE MORE</h3>
     </div>
     <div class="flex flex-col mt-4 gap-2">
+        <button onclick="exportHistory(); toggleMoreMenu();" class="drawer-link w-full text-left"><i class="fas fa-download nav-svg"></i> <span>Export History</span></button>
+        <button onclick="clearApiCache(); toggleMoreMenu();" class="drawer-link w-full text-left"><i class="fas fa-broom nav-svg"></i> <span>Clear API Cache</span></button>
         <a href="download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
         <a href="Games/Games.html" class="drawer-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
     <path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/>
@@ -256,6 +379,8 @@
             <div id="user-menu" class="user-menu">
                 <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><i class="fas fa-heart text-red-500 mr-2"></i> Favorites</div>
                 <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><i class="fas fa-bookmark text-blue-500 mr-2"></i> Watchlist</div>
+                <div class="user-menu-item" onclick="exportHistory()"><i class="fas fa-download text-blue-400 mr-2"></i> Export History</div>
+                <div class="user-menu-item" onclick="clearApiCache()"><i class="fas fa-broom text-gray-400 mr-2"></i> Clear Cache</div>
                 <div class="user-menu-item" onclick="logoutTMDB()"><i class="fas fa-sign-out-alt text-gray-400 mr-2"></i> Logout</div>
             </div>
         </div>
@@ -271,9 +396,14 @@
                 <h2 class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
                     Continue Watching
                 </h2>
-                <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-red-500 px-3 py-1 rounded-full transition-colors">
-                    Clear All
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="exportHistory()" title="Export watch history as JSON" class="text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-blue-400 px-3 py-1 rounded-full transition-colors">
+                        <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                    <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-red-500 px-3 py-1 rounded-full transition-colors">
+                        Clear All
+                    </button>
+                </div>
             </div>
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('continue-watching-container', -300)">
@@ -361,10 +491,37 @@
 </div>
     </div>
 
-    <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8">
+    <div id="details-section" class="glass-panel rounded-2xl hidden mb-8 overflow-hidden">
+
+        <!-- ── CINEMATIC HERO ZONE ── -->
+        <div id="detail-hero" class="detail-hero-wrapper">
+            <!-- Layer 1: Backdrop image (Ken Burns when no trailer) -->
+            <div id="detail-backdrop" class="detail-hero-backdrop"></div>
+
+            <!-- Layer 2: Muted autoplay YouTube trailer (YT IFrame API target) -->
+            <div id="detail-trailer-wrap" class="detail-hero-trailer">
+                <div id="detail-trailer-iframe"></div>
+            </div>
+
+            <!-- Layer 3: Bottom gradient so hero bleeds into content -->
+            <div class="detail-hero-gradient"></div>
+
+            <!-- Floating poster (bottom-left, small) -->
+            <div class="detail-hero-poster-pin">
+                <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover rounded-xl" loading="lazy">
+            </div>
+
+            <!-- Mute/unmute toggle -->
+            <button id="trailer-mute-btn" class="detail-hero-mute-btn hidden" onclick="window.toggleTrailerMute()" title="Toggle sound">
+                <i id="trailer-mute-icon" class="fas fa-volume-mute"></i>
+            </button>
+        </div>
+        <!-- ── END HERO ZONE ── -->
+
+        <div class="p-6 md:p-8">
         <div class="flex flex-col md:flex-row gap-8 md:items-start">
-            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52 detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
-                <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover" loading="lazy">
+            <div class="flex-shrink-0 mx-auto md:mx-0 w-0 md:w-0 detail-poster-wrapper rounded-xl overflow-hidden" style="display:none">
+                <!-- poster is now in the hero zone pinned overlay -->
             </div>
             <div class="flex-grow min-w-0">
                 <img id="detail-logo" src="" alt="Title Logo" class="title-logo" loading="lazy">
@@ -539,6 +696,7 @@
                 </div>
             </div>
         </div>
+        </div><!-- end .p-6 content wrapper -->
     </div>
 
     <div id="collection-section" class="mb-8 relative hidden">
