@@ -150,42 +150,12 @@
         font-size: 11px;
     }
 
-    /* ── Intro Overlay ── */
-    #intro-overlay {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: #000;
-        z-index: 200;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.5s ease;
-    }
-    #intro-overlay.fade-out {
-        opacity: 0;
-        pointer-events: none;
-    }
-    #intro-player-wrap {
-        width: 100%; height: 100%;
-        position: relative;
-    }
-    #intro-vjs-player {
-        width: 100% !important;
-        height: 100% !important;
-    }
 
 </style>
 </head>
 <body>
 
 <div id="player-container">
-
-    <!-- ── Intro Overlay ── -->
-    <div id="intro-overlay">
-        <div id="intro-player-wrap">
-            <video id="intro-vjs-player" class="video-js vjs-big-play-centered"></video>
-        </div>
-    </div>
 
     <div id="error-msg"></div>
     <video id="vjs-player" class="video-js vjs-big-play-centered" style="display:none;"></video>
@@ -519,25 +489,6 @@ function showYouTubePlayer(videoId, type) {
     wrap.appendChild(mountEl);
     playerContainer.appendChild(wrap);
 
-    // Cosmos top bar (title + logo) — mirrors the VideoJS skin overlay
-    const typeLabel = type === 'tv' ? 'TV SHOW' : 'MOVIE';
-    const topBar = document.createElement('div');
-    topBar.className = 'vjs-cosmos-top-bar';
-    topBar.style.zIndex = '20';
-    topBar.innerHTML = `
-        <div class="vjs-cosmos-title-container">
-            <h1 class="vjs-cosmos-title">YouTube</h1>
-            <p class="vjs-cosmos-desc">${typeLabel}</p>
-        </div>
-        <img class="vjs-cosmos-logo"
-            src="../Attachments/Chithruka%20Streamer%20Logo.svg"
-            oncontextmenu="return false;"
-            ondragstart="return false;"
-            onselectstart="return false;"
-            alt="Logo">
-    `;
-    wrap.appendChild(topBar);
-
     if (_ytReady) {
         _createYTPlayer(videoId, type);
     } else {
@@ -603,69 +554,16 @@ function extractVimeoId(url) {
     return match ? match[1] : null;
 }
 
-function hideSpinner() { /* spinner removed — intro video serves as loader */ }
+function hideSpinner() { /* no-op */ }
 
 function showError(msg) {
-    const overlay = document.getElementById('intro-overlay');
-    if (overlay) overlay.style.display = 'none';
     const el = document.getElementById('error-msg');
     el.innerText = msg;
     el.style.display = 'block';
 }
 
-// ── Intro Video (doubles as loading animation) ────────────────────────────────
-const INTRO_SRC = 'https://chithruka.github.io/Chithruka/Landing/src/video-devices-in-lq.mp4';
-
-function playIntro() {
-    return new Promise((resolve) => {
-        const overlay = document.getElementById('intro-overlay');
-        let ended = false; // guard against endIntro() firing more than once
-
-        const introPlayer = videojs('intro-vjs-player', {
-            controls: false,
-            autoplay: false,
-            muted: false,
-            fill: true,
-            sources: [{ src: INTRO_SRC, type: 'video/mp4' }]
-        });
-
-        function endIntro() {
-            if (ended) return;
-            ended = true;
-            introPlayer.dispose();
-            overlay.classList.add('fade-out');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                resolve();
-            }, 500);
-        }
-
-        introPlayer.ready(function () {
-            // Try unmuted first; fall back to muted if autoplay policy blocks it
-            const p = introPlayer.play();
-            if (p && typeof p.then === 'function') {
-                p.catch(() => {
-                    introPlayer.muted(true);
-                    const p2 = introPlayer.play();
-                    if (p2 && typeof p2.then === 'function') {
-                        p2.catch(endIntro); // fully blocked — skip silently
-                    }
-                });
-            }
-        });
-
-        introPlayer.on('ended', endIntro);
-        introPlayer.on('error', endIntro);
-    });
-}
-
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-async function bootstrap() {
-    await playIntro();
-    await init();
-}
-
-bootstrap();
+init();
 </script>
 </body>
 </html>
