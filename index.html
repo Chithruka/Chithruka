@@ -194,23 +194,25 @@
     to   { transform: scale(1.07) translate(-1.5%, -1%); }
 }
 
-/* Layer 2 — trailer (removed; now using Ken Burns backdrop only) */
-.detail-hero-trailer-unused {
+/* Layer 2 — background trailer */
+.detail-hero-trailer {
     position: absolute; inset: 0;
     opacity: 0;
     transition: opacity 1.2s ease;
     will-change: opacity;
     z-index: 2;
-    pointer-events: none;
-    overflow: hidden; /* clips the 300%-wide iframe */
+    pointer-events: none; /* lets users click things underneath */
+    overflow: hidden;
 }
 .detail-hero-trailer.visible { opacity: 1; }
-/* 300% width trick pushes YT logo/title/end-cards outside
-   the overflow:hidden boundary of the wrapper */
+/* 300% trick: scales iframe up and shifts it back to center,
+   pushing YT title/playbar/logo completely off-screen */
 .detail-hero-trailer iframe {
+    position: absolute;
+    top: -100%;
+    left: -100%;
     width: 300% !important;
-    height: 100% !important;
-    margin-left: -100% !important;
+    height: 300% !important;
     border: none !important;
     pointer-events: none;
 }
@@ -493,7 +495,10 @@
             <!-- Layer 1: Backdrop image (Ken Burns when no trailer) -->
             <div id="detail-backdrop" class="detail-hero-backdrop"></div>
 
-
+            <!-- Layer 2: Background trailer (Netflix-style) -->
+            <div id="detail-hero-trailer" class="detail-hero-trailer">
+                <div id="yt-player-container"></div>
+            </div>
 
             <!-- Layer 3: Bottom gradient so hero bleeds into content -->
             <div class="detail-hero-gradient"></div>
@@ -503,9 +508,9 @@
                 <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover rounded-xl" loading="lazy">
             </div>
 
-            <!-- Watch Trailer button -->
-            <button id="hero-trailer-btn" class="detail-hero-mute-btn hidden" onclick="window.openTrailerModal()" title="Watch Trailer">
-                <i class="fas fa-play" style="margin-left:2px"></i>
+            <!-- Mute/unmute toggle (shown when trailer is playing) -->
+            <button id="hero-mute-btn" class="detail-hero-mute-btn hidden" title="Toggle Sound">
+                <i class="fas fa-volume-mute"></i>
             </button>
         </div>
         <!-- ── END HERO ZONE ── -->

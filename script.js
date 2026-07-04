@@ -2907,71 +2907,139 @@ function renderEpisodesRich() {
 
 // ============================================================
 // ============================================================
-// CINEMATIC HERO — Ken Burns backdrop + Watch Trailer button
-// YouTube autoplay inside iframes is blocked by GitHub Pages
-// (and many other static hosts). We show the backdrop with a
-// Ken Burns pan/zoom and a play button that opens the trailer
-// in the existing modal, which uses youtube-nocookie.com and
-// is triggered by user gesture so autoplay always works.
+// ============================================================
+// CINEMATIC HERO — Netflix-style Background Trailer
 // ============================================================
 
+let ytApiLoaded = false;
+let heroPlayer = null;
+let isHeroMuted = true;
+let heroTrailerTimeout = null;
+
+// Dynamically load the YouTube Iframe API script (once)
+function loadYouTubeAPI() {
+    if (ytApiLoaded) return Promise.resolve();
+    return new Promise((resolve) => {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        window.onYouTubeIframeAPIReady = () => {
+            ytApiLoaded = true;
+            resolve();
+        };
+    });
+}
+
 // ── PUBLIC: launch the hero ───────────────────────────────────
-function launchHeroTrailer(backdropPath, youtubeKey) {
+async function launchHeroTrailer(backdropPath, youtubeKey) {
     destroyHeroTrailer();
 
     const heroWrapper  = document.getElementById('detail-hero');
     const backdropEl   = document.getElementById('detail-backdrop');
+    const trailerLayer = document.getElementById('detail-hero-trailer');
+    const muteBtn      = document.getElementById('hero-mute-btn');
     const posterPin    = document.querySelector('.detail-hero-poster-pin');
-    const trailerBtn   = document.getElementById('hero-trailer-btn');
 
     if (!backdropPath) {
-        // ── NO BACKDROP: switch to poster-centred layout ──────────
         if (heroWrapper) heroWrapper.classList.add('no-backdrop');
-
-        // The large centred poster img is the same #detail-poster element
-        // already inside .detail-hero-poster-pin — we just let CSS do the
-        // repositioning.  Fade it in slightly delayed so the img has time
-        // to load.
         if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 200);
-
-        // Never show the trailer button when there's no backdrop to sit on
-        if (trailerBtn) trailerBtn.classList.add('hidden');
         return;
     }
 
-    // ── HAS BACKDROP: normal cinematic hero ──────────────────────
+    // 1. Show the Ken Burns backdrop immediately
     backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
     backdropEl.style.opacity = '1';
-
-    // Always use Ken Burns — it's the backdrop, not the iframe, that animates
     backdropEl.classList.add('kenburns');
-
     if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 300);
 
-    // Show the Watch Trailer button only when there's a trailer to play
-    if (trailerBtn) {
-        if (youtubeKey) {
-            trailerBtn.classList.remove('hidden');
-        } else {
-            trailerBtn.classList.add('hidden');
-        }
+    // 2. If we have a trailer, delay 2s (Netflix style) then load the video
+    if (youtubeKey) {
+        heroTrailerTimeout = setTimeout(async () => {
+            await loadYouTubeAPI();
+
+            // Inject a fresh div for the API to target
+            trailerLayer.innerHTML = '<div id="yt-player-container"></div>';
+
+            heroPlayer = new YT.Player('yt-player-container', {
+                videoId: youtubeKey,
+                playerVars: {
+                    autoplay: 1,
+                    controls: 0,
+                    disablekb: 1,
+                    fs: 0,
+                    modestbranding: 1,
+                    rel: 0,
+                    showinfo: 0,
+                    mute: 1,        // Must start muted to guarantee autoplay
+                    loop: 1,
+                    playlist: youtubeKey  // Required for loop to work
+                },
+                events: {
+                    onReady: (event) => {
+                        event.target.playVideo();
+                    },
+                    onStateChange: (event) => {
+                        // Once playing, crossfade video in and backdrop out
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            trailerLayer.classList.add('visible');
+                            backdropEl.style.opacity = '0';
+
+                            // Show mute toggle
+                            muteBtn.classList.remove('hidden');
+                            muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                            isHeroMuted = true;
+
+                            muteBtn.onclick = () => {
+                                if (isHeroMuted) {
+                                    heroPlayer.unMute();
+                                    muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                                } else {
+                                    heroPlayer.mute();
+                                    muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                                }
+                                isHeroMuted = !isHeroMuted;
+                            };
+                        }
+                    }
+                }
+            });
+        }, 2000); // 2-second Netflix-style delay before trailer starts
     }
 }
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
-    const heroWrapper = document.getElementById('detail-hero');
+    clearTimeout(heroTrailerTimeout);
+
+    const heroWrapper  = document.getElementById('detail-hero');
+    const backdropEl   = document.getElementById('detail-backdrop');
+    const trailerLayer = document.getElementById('detail-hero-trailer');
+    const posterPin    = document.querySelector('.detail-hero-poster-pin');
+    const muteBtn      = document.getElementById('hero-mute-btn');
+
     if (heroWrapper) heroWrapper.classList.remove('no-backdrop');
-    const backdropEl = document.getElementById('detail-backdrop');
+    if (posterPin) posterPin.classList.remove('visible');
+
     if (backdropEl) {
         backdropEl.style.backgroundImage = '';
         backdropEl.style.opacity = '0';
         backdropEl.classList.remove('kenburns');
     }
-    const posterPin = document.querySelector('.detail-hero-poster-pin');
-    if (posterPin) posterPin.classList.remove('visible');
-    const trailerBtn = document.getElementById('hero-trailer-btn');
-    if (trailerBtn) trailerBtn.classList.add('hidden');
+
+    if (trailerLayer) {
+        trailerLayer.classList.remove('visible');
+        trailerLayer.innerHTML = '';
+    }
+    if (heroPlayer) {
+        try { heroPlayer.destroy(); } catch(e) {}
+        heroPlayer = null;
+    }
+
+    if (muteBtn) {
+        muteBtn.classList.add('hidden');
+        muteBtn.onclick = null;
+    }
 }
 // ============================================================
 
