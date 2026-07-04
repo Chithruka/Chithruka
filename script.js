@@ -2689,13 +2689,6 @@ window.selectContent = async function(id, title, type) {
 
     // Defer reviews, recommendations & soundtrack until the user scrolls near them.
     setupDeferredSections(id, currentTitle);
-
-    // Scroll after fetch+render is complete and browser has laid out the section.
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            detailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-    });
 }
 
 // ==========================================
@@ -3035,6 +3028,11 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
     const trailerLayer = document.getElementById('detail-hero-trailer');
     const muteBtn      = document.getElementById('hero-mute-btn');
     const posterPin    = document.querySelector('.detail-hero-poster-pin');
+
+    // Always hide the play/pause button at launch — it is only revealed once
+    // a video actually starts playing via onVideoPlaying(). This prevents the
+    // button from remaining visible on pages that have no video.
+    if (muteBtn) muteBtn.classList.add('hidden');
 
     const hasBackdrop = !!backdropPath;
     // Normalise: accept a single object (legacy) or an array
