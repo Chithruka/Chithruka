@@ -2913,7 +2913,6 @@ function renderEpisodesRich() {
 
 let ytApiLoaded = false;
 let heroPlayer = null;
-let isHeroMuted = true;
 let heroTrailerTimeout = null;
 
 // Dynamically load the YouTube Iframe API script (once)
@@ -2987,20 +2986,20 @@ async function launchHeroTrailer(backdropPath, youtubeKey) {
                             trailerLayer.classList.add('visible');
                             backdropEl.style.opacity = '0';
 
-                            // Show mute toggle
+                            // Show play/pause toggle
+                            let isHeroPaused = false;
                             muteBtn.classList.remove('hidden');
-                            muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                            isHeroMuted = true;
+                            muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
 
                             muteBtn.onclick = () => {
-                                if (isHeroMuted) {
-                                    heroPlayer.unMute();
-                                    muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                                if (isHeroPaused) {
+                                    heroPlayer.playVideo();
+                                    muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
                                 } else {
-                                    heroPlayer.mute();
-                                    muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                                    heroPlayer.pauseVideo();
+                                    muteBtn.innerHTML = '<i class="fas fa-play" style="margin-left:2px"></i>';
                                 }
-                                isHeroMuted = !isHeroMuted;
+                                isHeroPaused = !isHeroPaused;
                             };
                         }
                     }
