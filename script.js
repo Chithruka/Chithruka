@@ -2583,16 +2583,26 @@ window.openTrailerModal = async function() {
     trailerIframe.src = '';
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
     try {
-        const data = await fetchCached(`${BASE_TMDB_URL}/${endpoint}/${TMDB_ID}/videos?api_key=${TMDB_API_KEY}`);
-        const trailer = data.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || data.results.find(v => v.site === 'YouTube');
-        if (trailer) {
-            trailerIframe.src = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&origin=${window.location.origin}&enablejsapi=1&rel=0`;
+        const data = await fetchCached(`${BASE_TMDB_URL}/${endpoint}/${TMDB_ID}/videos?api_key=${TMDB_API_KEY}&include_video_language=en,null`);
+        const results = data.results || [];
+        // Priority: YouTube Trailer > YouTube Teaser > any YouTube > Vimeo Trailer > any Vimeo
+        const video = results.find(v => v.site === 'YouTube' && v.type === 'Trailer')
+                   || results.find(v => v.site === 'YouTube' && v.type === 'Teaser')
+                   || results.find(v => v.site === 'YouTube')
+                   || results.find(v => v.site === 'Vimeo' && v.type === 'Trailer')
+                   || results.find(v => v.site === 'Vimeo');
+        if (video) {
+            if (video.site === 'Vimeo') {
+                trailerIframe.src = `https://player.vimeo.com/video/${video.key}?autoplay=1&rel=0`;
+            } else {
+                trailerIframe.src = `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&origin=${window.location.origin}&enablejsapi=1&rel=0`;
+            }
         } else {
             trailerIframe.src = '';
-            showMessage("No trailer available.", true);
+            showMessage("No video available.", true);
             setTimeout(closeTrailerModal, 2000);
         }
-    } catch (e) { showMessage("Error loading trailer.", true); }
+    } catch (e) { showMessage("Error loading video.", true); }
 }
 window.closeTrailerModal = () => {
     trailerModal.classList.add('hidden');
@@ -2658,7 +2668,10 @@ window.selectContent = async function(id, title, type) {
     const heroBackdrop = document.getElementById('detail-backdrop');
     if (heroBackdrop) { heroBackdrop.style.opacity = '0'; heroBackdrop.classList.remove('kenburns'); }
     const heroPosterPin = document.querySelector('.detail-hero-poster-pin');
-    if (heroPosterPin) heroPosterPin.classList.remove('visible');
+    if (heroPosterPin) {
+        heroPosterPin.classList.remove('visible', 'poster-centered', 'poster-animating');
+        heroPosterPin.style.display = ''; // reset any inline display:none from previous render
+    }
 
     const posterImg = document.getElementById('detail-poster');
     posterImg.src = '';
@@ -2736,7 +2749,7 @@ async function fetchMovieDetails(id, title) {
     tvControls.classList.add('hidden');
     try {
         // Updated URL includes: similar, translations
-        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos,similar,translations`);
+        const detailData = await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos,similar,translations&include_video_language=en,null`);
         
         if (detailData.external_ids) IMDB_ID = detailData.external_ids.imdb_id;
 
@@ -2765,7 +2778,7 @@ async function fetchMovieDetails(id, title) {
 async function fetchShowDetails(id, title) {
     try {
         // Updated URL includes: aggregate_credits (vital for full TV cast), similar, translations
-        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,aggregate_credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations`);
+        const data = await fetchCached(`${BASE_TMDB_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,credits,aggregate_credits,content_ratings,alternative_titles,external_ids,keywords,videos,similar,translations&include_video_language=en,null`);
         
         if (data.external_ids) IMDB_ID = data.external_ids.imdb_id;
 
@@ -2978,6 +2991,7 @@ function renderEpisodesRich() {
 let ytApiLoaded = false;
 let heroPlayer = null;
 let heroTrailerTimeout = null;
+let heroSessionToken = 0; // incremented on every launch; guards stale async callbacks
 
 // Dynamically load the YouTube Iframe API script (once)
 function loadYouTubeAPI() {
@@ -2995,8 +3009,26 @@ function loadYouTubeAPI() {
 }
 
 // ── PUBLIC: launch the hero ───────────────────────────────────
-async function launchHeroTrailer(backdropPath, youtubeKey) {
+// backdropPath : TMDB backdrop path string, or null
+// videoQueue   : array of TMDB video objects ranked by preference, or []
+// hasPoster    : boolean — whether data.poster_path exists
+//
+// State matrix (Backdrop / Video / Poster):
+//   A  ✅ ✅ ✅  Ken Burns → video crossfade, poster pins bottom-left
+//   B  ✅ ✅ ❌  Ken Burns → video crossfade, no poster shell at all
+//   C  ✅ ❌ ✅  Ken Burns only, poster pins bottom-left
+//   D  ✅ ❌ ❌  Ken Burns only, no poster shell at all
+//   E  ❌ ❌ ✅  Hero collapses, poster shown centred
+//   F  ❌ ❌ ❌  Hero collapses, no poster shell (nothing rendered)
+//   G  ❌ ✅ ✅  Black bg, poster starts centred → animates to pin as video plays
+//   H  ❌ ✅ ❌  Black bg, video plays, no poster shell at all
+async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
     destroyHeroTrailer();
+
+    // Mint a new session token — any callback from a previous launch that fires
+    // late (stale YT onStateChange, stale setTimeout) will see a token mismatch
+    // and do nothing, preventing the mute button from appearing on the wrong page.
+    const myToken = ++heroSessionToken;
 
     const heroWrapper  = document.getElementById('detail-hero');
     const backdropEl   = document.getElementById('detail-backdrop');
@@ -3004,58 +3036,114 @@ async function launchHeroTrailer(backdropPath, youtubeKey) {
     const muteBtn      = document.getElementById('hero-mute-btn');
     const posterPin    = document.querySelector('.detail-hero-poster-pin');
 
-    if (!backdropPath) {
-        if (heroWrapper) heroWrapper.classList.add('no-backdrop');
-        if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 200);
+    const hasBackdrop = !!backdropPath;
+    // Normalise: accept a single object (legacy) or an array
+    const queue = Array.isArray(videoQueue) ? videoQueue : (videoQueue ? [videoQueue] : []);
+    const hasVideo = queue.length > 0;
+
+    // ── Poster shell visibility ───────────────────────────────────────────────
+    if (posterPin) {
+        posterPin.style.display = hasPoster ? '' : 'none';
+    }
+
+    // ── States E & F: no backdrop, no video ─────────────────────────────────
+    if (!hasBackdrop && !hasVideo) {
+        if (heroWrapper) heroWrapper.classList.add('hero-poster-only');
+        if (hasPoster && posterPin) {
+            posterPin.classList.remove('visible', 'poster-animating');
+            setTimeout(() => posterPin.classList.add('poster-centered'), 50);
+        }
         return;
     }
 
-    // 1. Show the Ken Burns backdrop immediately
-    backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
-    backdropEl.style.opacity = '1';
-    backdropEl.classList.add('kenburns');
-    if (posterPin) setTimeout(() => posterPin.classList.add('visible'), 300);
+    // ── States C & D: backdrop, no video ─────────────────────────────────────
+    if (hasBackdrop && !hasVideo) {
+        backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
+        backdropEl.style.opacity = '1';
+        backdropEl.classList.add('kenburns');
+        if (hasPoster && posterPin) {
+            setTimeout(() => posterPin.classList.add('visible'), 300);
+        }
+        return;
+    }
 
-    // 2. If we have a trailer, delay 2s (Netflix style) then load the video
-    if (youtubeKey) {
-        heroTrailerTimeout = setTimeout(async () => {
+    // ── States G & H: no backdrop, has video ─────────────────────────────────
+    if (!hasBackdrop) {
+        backdropEl.style.backgroundImage = '';
+        backdropEl.style.opacity = '0';
+        if (hasPoster && posterPin) {
+            posterPin.classList.remove('visible', 'poster-animating');
+            setTimeout(() => posterPin.classList.add('poster-centered'), 50);
+        }
+    }
+
+    // ── States A & B: backdrop + video ───────────────────────────────────────
+    if (hasBackdrop) {
+        backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
+        backdropEl.style.opacity = '1';
+        backdropEl.classList.add('kenburns');
+        if (hasPoster && posterPin) {
+            setTimeout(() => posterPin.classList.add('visible'), 300);
+        }
+    }
+
+    // ── Video loading — tries each video in the queue until one works ─────────
+    heroTrailerTimeout = setTimeout(async () => {
+        if (heroSessionToken !== myToken) return; // navigated away during the 2-second delay
+        await tryNextVideo(0);
+    }, 2000);
+
+    async function tryNextVideo(index) {
+        if (heroSessionToken !== myToken) return;
+        if (index >= queue.length) {
+            // Every video in the queue failed — fall back to Ken Burns / poster only
+            // (backdrop is already showing if there is one, so visually fine)
+            return;
+        }
+
+        const videoObj = queue[index];
+        const isVimeo  = videoObj.site === 'Vimeo';
+
+        // Called once a video is confirmed playing
+        function onVideoPlaying() {
+            if (heroSessionToken !== myToken) return; // stale — navigated away
+            trailerLayer.classList.add('visible');
+            if (hasBackdrop) backdropEl.style.opacity = '0';
+            if (hasPoster && posterPin && !hasBackdrop) {
+                posterPin.classList.remove('poster-centered');
+                posterPin.classList.add('poster-animating');
+            }
+            // Only now reveal the pause/play button
+            muteBtn.classList.remove('hidden');
+            muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+
+        // ── YouTube ───────────────────────────────────────────────────────────
+        if (!isVimeo) {
             await loadYouTubeAPI();
+            if (heroSessionToken !== myToken) return;
 
-            // Inject a fresh div for the API to target
             trailerLayer.innerHTML = '<div id="yt-player-container"></div>';
+            let videoHasStarted = false;
 
             heroPlayer = new YT.Player('yt-player-container', {
-                videoId: youtubeKey,
+                videoId: videoObj.key,
                 playerVars: {
-                    autoplay: 1,
-                    controls: 0,
-                    disablekb: 1,
-                    fs: 0,
-                    modestbranding: 1,
-                    rel: 0,
-                    showinfo: 0,
-                    mute: 1,        // Must start muted to guarantee autoplay
-                    loop: 1,
-                    playlist: youtubeKey, // Required for loop to work
-                    origin: window.location.origin, // Authorizes live domain for postMessage API control
-                    playsinline: 1  // Prevents Safari/iOS blocking autoplay or forcing fullscreen
+                    autoplay: 1, controls: 0, disablekb: 1, fs: 0,
+                    modestbranding: 1, rel: 0, showinfo: 0,
+                    mute: 1, loop: 1, playlist: videoObj.key,
+                    origin: window.location.origin, playsinline: 1
                 },
                 events: {
-                    onReady: (event) => {
-                        event.target.playVideo();
-                    },
-                    onStateChange: (event) => {
-                        // Once playing, crossfade video in and backdrop out
-                        if (event.data === YT.PlayerState.PLAYING) {
-                            trailerLayer.classList.add('visible');
-                            backdropEl.style.opacity = '0';
-
-                            // Show play/pause toggle
+                    onReady: (e) => e.target.playVideo(),
+                    onStateChange: (e) => {
+                        if (heroSessionToken !== myToken) return;
+                        if (e.data === YT.PlayerState.PLAYING && !videoHasStarted) {
+                            videoHasStarted = true;
+                            onVideoPlaying();
                             let isHeroPaused = false;
-                            muteBtn.classList.remove('hidden');
-                            muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
-
                             muteBtn.onclick = () => {
+                                if (heroSessionToken !== myToken) return;
                                 if (isHeroPaused) {
                                     heroPlayer.playVideo();
                                     muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -3066,15 +3154,80 @@ async function launchHeroTrailer(backdropPath, youtubeKey) {
                                 isHeroPaused = !isHeroPaused;
                             };
                         }
+                    },
+                    onError: () => {
+                        // Video unavailable (blocked, deleted, private) — try next in queue
+                        if (heroSessionToken !== myToken) return;
+                        try { heroPlayer.destroy(); } catch(e) {}
+                        heroPlayer = null;
+                        trailerLayer.innerHTML = '';
+                        tryNextVideo(index + 1);
                     }
                 }
             });
-        }, 2000); // 2-second Netflix-style delay before trailer starts
+
+        // ── Vimeo ─────────────────────────────────────────────────────────────
+        } else {
+            const vimeoSrc = `https://player.vimeo.com/video/${videoObj.key}?autoplay=1&muted=1&loop=1&background=1&autopause=0`;
+            trailerLayer.innerHTML = `<iframe
+                src="${vimeoSrc}"
+                frameborder="0"
+                allow="autoplay; fullscreen"
+                allowfullscreen
+                style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100%;min-width:177.78vh;transform:translate(-50%,-50%);pointer-events:none;"
+            ></iframe>`;
+
+            // Vimeo background iframes don't expose a reliable "playing" event via API
+            // without the SDK. We listen for postMessage from the iframe; if no "ready"
+            // message arrives within a timeout, treat it as blocked and try the next video.
+            let vimeoOk = false;
+
+            const vimeoMsgHandler = (evt) => {
+                if (heroSessionToken !== myToken) { window.removeEventListener('message', vimeoMsgHandler); return; }
+                try {
+                    const d = typeof evt.data === 'string' ? JSON.parse(evt.data) : evt.data;
+                    // Vimeo player posts { event: "ready" } or { method } messages
+                    if (d && (d.event === 'ready' || d.event === 'playProgress' || d.method)) {
+                        vimeoOk = true;
+                        window.removeEventListener('message', vimeoMsgHandler);
+                        onVideoPlaying();
+                        let isHeroPaused = false;
+                        const vimeoIframe = trailerLayer.querySelector('iframe');
+                        muteBtn.onclick = () => {
+                            if (heroSessionToken !== myToken) return;
+                            if (isHeroPaused) {
+                                if (vimeoIframe) vimeoIframe.src = vimeoSrc;
+                                muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            } else {
+                                if (vimeoIframe) vimeoIframe.src = '';
+                                muteBtn.innerHTML = '<i class="fas fa-play" style="margin-left:2px"></i>';
+                            }
+                            isHeroPaused = !isHeroPaused;
+                        };
+                    }
+                } catch(e) {}
+            };
+            window.addEventListener('message', vimeoMsgHandler);
+
+            // Fallback: if Vimeo hasn't responded in 5 s, assume it's blocked/deleted
+            setTimeout(() => {
+                if (heroSessionToken !== myToken) { window.removeEventListener('message', vimeoMsgHandler); return; }
+                if (!vimeoOk) {
+                    window.removeEventListener('message', vimeoMsgHandler);
+                    trailerLayer.innerHTML = '';
+                    tryNextVideo(index + 1);
+                }
+            }, 5000);
+        }
     }
 }
 
 // ── Cleanup ──────────────────────────────────────────────────
 function destroyHeroTrailer() {
+    // Invalidate all in-flight async callbacks (YT onStateChange, Vimeo postMessage,
+    // stale setTimeouts) from the previous launch before they can touch the UI.
+    heroSessionToken++;
+
     clearTimeout(heroTrailerTimeout);
 
     const heroWrapper  = document.getElementById('detail-hero');
@@ -3083,8 +3236,11 @@ function destroyHeroTrailer() {
     const posterPin    = document.querySelector('.detail-hero-poster-pin');
     const muteBtn      = document.getElementById('hero-mute-btn');
 
-    if (heroWrapper) heroWrapper.classList.remove('no-backdrop');
-    if (posterPin) posterPin.classList.remove('visible');
+    if (heroWrapper) heroWrapper.classList.remove('hero-poster-only', 'no-backdrop');
+    if (posterPin) {
+        posterPin.classList.remove('visible', 'poster-centered', 'poster-animating');
+        posterPin.style.display = ''; // reset inline hide from previous render
+    }
 
     if (backdropEl) {
         backdropEl.style.backgroundImage = '';
@@ -3321,14 +3477,25 @@ function renderDetails(data, title) {
     document.getElementById('detail-overview').textContent = data.overview || "No description available.";
 
     // Poster Image (in hero pin overlay)
+    // When there is no poster, we hide the entire pin shell — no empty placeholder shown.
+    // launchHeroTrailer() also checks hasPoster to decide pin visibility.
     const posterImg = document.getElementById('detail-poster');
+    const posterPinShell = document.querySelector('.detail-hero-poster-pin');
     if (data.poster_path) {
-        posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
         posterImg.style.display = 'block';
-        posterImg.onload = () => { posterImg.classList.remove('skeleton'); };
-        posterImg.onerror = () => { posterImg.style.display = 'none'; posterImg.classList.remove('skeleton'); };
+        if (posterPinShell) posterPinShell.style.display = '';
+        posterImg.src = `${TMDB_POSTER_LG}${data.poster_path}`;
+        posterImg.onload  = () => posterImg.classList.remove('skeleton');
+        posterImg.onerror = () => {
+            // Treat a broken image URL the same as no poster — collapse the shell
+            if (posterPinShell) posterPinShell.style.display = 'none';
+            posterImg.style.display = 'none';
+            posterImg.classList.remove('skeleton');
+        };
     } else {
+        // No poster — hide the pin shell entirely, no placeholder
         posterImg.style.display = 'none';
+        if (posterPinShell) posterPinShell.style.display = 'none';
         posterImg.classList.remove('skeleton');
     }
 
@@ -3523,10 +3690,24 @@ function renderDetails(data, title) {
             : [];
 
         // ── Launch the cinematic hero trailer ──
-        const trailerVideo = videos.find(v => v.site === 'YouTube' && v.type === 'Trailer')
-                          || videos.find(v => v.site === 'YouTube' && v.type === 'Teaser')
-                          || videos.find(v => v.site === 'YouTube');
-        launchHeroTrailer(data.backdrop_path || null, trailerVideo ? trailerVideo.key : null);
+        // Build a ranked queue — if the first video is blocked/deleted, we fall through to the next.
+        // Priority: YouTube Trailer > YouTube Teaser > any other YouTube > Vimeo Trailer > any Vimeo
+        const rankVideo = v => {
+            if (v.site === 'YouTube') {
+                if (v.type === 'Trailer') return 0;
+                if (v.type === 'Teaser')  return 1;
+                return 2;
+            }
+            if (v.site === 'Vimeo') {
+                if (v.type === 'Trailer') return 3;
+                return 4;
+            }
+            return 99;
+        };
+        const videoQueue = videos
+            .filter(v => v.site === 'YouTube' || v.site === 'Vimeo')
+            .sort((a, b) => rankVideo(a) - rankVideo(b));
+        launchHeroTrailer(data.backdrop_path || null, videoQueue, !!data.poster_path);
         // ────────────────────────────────────────
 
         if (videos.length > 0) {
@@ -4338,23 +4519,29 @@ async function playTrailerDirectly(id, type) {
     iframe.src = ''; // Clear previous video
 
     try {
-        const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/videos?api_key=${TMDB_API_KEY}`);
-        
-        // precise logic: Look for "Trailer" type first, fallback to any YouTube video
-        const trailer = data.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
-                        data.results.find(v => v.site === 'YouTube');
+        const data = await fetchCached(`${BASE_TMDB_URL}/${type}/${id}/videos?api_key=${TMDB_API_KEY}&include_video_language=en,null`);
+        const results = data.results || [];
 
-        if (trailer) {
-            // Autoplay enabled, no related videos (rel=0)
-            iframe.src = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`;
+        // Priority: YouTube Trailer > YouTube Teaser > any YouTube > Vimeo Trailer > any Vimeo
+        const video = results.find(v => v.site === 'YouTube' && v.type === 'Trailer')
+                   || results.find(v => v.site === 'YouTube' && v.type === 'Teaser')
+                   || results.find(v => v.site === 'YouTube')
+                   || results.find(v => v.site === 'Vimeo' && v.type === 'Trailer')
+                   || results.find(v => v.site === 'Vimeo');
+
+        if (video) {
+            if (video.site === 'Vimeo') {
+                iframe.src = `https://player.vimeo.com/video/${video.key}?autoplay=1&rel=0`;
+            } else {
+                iframe.src = `https://www.youtube-nocookie.com/embed/${video.key}?autoplay=1&rel=0`;
+            }
         } else {
-            showMessage("Trailer not found", true);
-            // Close modal automatically if no trailer found
+            showMessage("No video found", true);
             setTimeout(() => modal.classList.add('hidden'), 1500);
         }
     } catch (e) {
-        console.error("Trailer fetch failed", e);
-        showMessage("Error loading trailer", true);
+        console.error("Video fetch failed", e);
+        showMessage("Error loading video", true);
         modal.classList.add('hidden');
     }
 }

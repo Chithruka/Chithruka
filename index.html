@@ -172,9 +172,18 @@
     overflow: hidden;
     background: #000;
     min-height: 220px;
+    /* collapsed when there is no backdrop AND no video */
+    transition: min-height 0.4s ease, aspect-ratio 0.4s ease;
+}
+.detail-hero-wrapper.hero-poster-only {
+    /* size to just fit the centred poster — no wasted black space */
+    aspect-ratio: unset;
+    min-height: 240px; /* enough to show the poster without clipping */
+    background: transparent;
+    overflow: visible; /* don't clip the absolute-positioned poster */
 }
 @media (max-width: 767px) {
-    .detail-hero-wrapper { aspect-ratio: 16 / 9; }
+    .detail-hero-wrapper:not(.hero-poster-only) { aspect-ratio: 16 / 9; }
 }
 
 /* Layer 1 — backdrop */
@@ -201,12 +210,11 @@
     transition: opacity 1.2s ease;
     will-change: opacity;
     z-index: 2;
-    pointer-events: none; /* lets users click things underneath */
+    pointer-events: none;
     overflow: hidden;
 }
 .detail-hero-trailer.visible { opacity: 1; }
-/* 300% trick: scales iframe up and shifts it back to center,
-   pushing YT title/playbar/logo completely off-screen */
+/* 300% trick — hides YT chrome completely off-screen */
 .detail-hero-trailer iframe {
     position: absolute;
     top: -100%;
@@ -225,10 +233,17 @@
     pointer-events: none;
     z-index: 3;
 }
+/* hide gradient when there is nothing behind the poster */
+.detail-hero-wrapper.hero-poster-only .detail-hero-gradient { display: none; }
 
-/* Floating poster pin (bottom-left) */
+/* ── POSTER PIN ─────────────────────────────────────────────────
+   Default (pinned bottom-left): used in the normal backdrop/trailer flow.
+   .poster-centered: full-size centred poster (no backdrop, no trailer).
+   .poster-animating-to-pin: mid-flight from centre → pin.
+──────────────────────────────────────────────────────────────── */
 .detail-hero-poster-pin {
     position: absolute;
+    /* pinned position */
     bottom: 20px; left: 24px;
     width: 90px;
     aspect-ratio: 2 / 3;
@@ -236,17 +251,49 @@
     overflow: hidden;
     box-shadow: 0 8px 30px rgba(0,0,0,0.8);
     border: 2px solid rgba(255,255,255,0.12);
-    z-index: 4;
+    z-index: 5;
     opacity: 0;
     transform: translateY(8px);
-    transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s;
+    /* transition covers opacity, position, size simultaneously */
+    transition: opacity 0.7s ease, transform 0.7s ease,
+                width 0.8s cubic-bezier(0.4,0,0.2,1),
+                bottom 0.8s cubic-bezier(0.4,0,0.2,1),
+                left   0.8s cubic-bezier(0.4,0,0.2,1),
+                border-radius 0.8s ease;
 }
+@media (min-width: 768px) {
+    .detail-hero-poster-pin { width: 130px; bottom: 28px; left: 32px; }
+}
+
+/* State A/B — normal (backdrop present): just fade + slide up */
 .detail-hero-poster-pin.visible {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* State C — poster-only: centred, large, no pin chrome */
+.detail-hero-poster-pin.poster-centered {
+    /* override position to be centred inside the wrapper */
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, 50%);   /* centre of wrapper */
+    width: 140px;
+    opacity: 1;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+    border-color: rgba(255,255,255,0.18);
+}
 @media (min-width: 768px) {
-    .detail-hero-poster-pin { width: 130px; bottom: 28px; left: 32px; }
+    .detail-hero-poster-pin.poster-centered { width: 180px; }
+}
+
+/* State D — video-only: starts centred (poster-centered),
+   then JS removes poster-centered and adds visible → CSS
+   transitions smoothly to the pinned corner position. */
+.detail-hero-poster-pin.poster-animating {
+    /* identical to .visible — just a readable alias */
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* Mute/unmute button */
@@ -1103,6 +1150,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=9" defer></script>
+<script src="script.js?v=8" defer></script>
 </body>
 </html>
