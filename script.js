@@ -2973,7 +2973,9 @@ async function launchHeroTrailer(backdropPath, youtubeKey) {
                     showinfo: 0,
                     mute: 1,        // Must start muted to guarantee autoplay
                     loop: 1,
-                    playlist: youtubeKey  // Required for loop to work
+                    playlist: youtubeKey, // Required for loop to work
+                    origin: window.location.origin, // Authorizes live domain for postMessage API control
+                    playsinline: 1  // Prevents Safari/iOS blocking autoplay or forcing fullscreen
                 },
                 events: {
                     onReady: (event) => {
