@@ -1,7 +1,7 @@
 {
   "movies": {
-    "671": [
-      { "type": "mp4", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2001.720p.x264-DubZoneLK.mp4" }
+      "671": [
+      { "type": "google-drive", "src": "https://drive.google.com/file/d/1f2FeN5rh9eV2ESTSM_wQmUfi1qMq9ufr/view?usp=drivesdk" }
     ],
     "672": [
       { "type": "mp4", "src": "https://server-dubhublk.cloudew.workers.dev/1:/Remux/Dub/Harry.Potter.2002.720p.x264-DubZoneLK.mp4" }
@@ -5893,6 +5893,13 @@
       "1": {
         "1": [
           { "type": "youtube", "src": "https://www.youtube.com/watch?v=DE9nHreOHYk" }
+        ]
+      }
+    },
+    "66732": {
+      "5": {
+        "1": [
+          { "type": "mp4", "src": "https://cdn.sinhalasub.net/4095/Stranger.Things.S05E01%201080p.mp4" }
         ]
       }
     },
