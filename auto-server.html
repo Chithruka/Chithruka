@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chithruka Server</title>
+    <link href="https://unpkg.com/video.js@7/dist/video-js.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js@7/dist/video.min.js"></script>
+    <script src="https://unpkg.com/videojs-contrib-quality-levels@2.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
+    <script src="https://unpkg.com/videojs-http-source-selector@1.1.6/dist/videojs-http-source-selector.min.js"></script>
+    <link href="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.css" rel="stylesheet">
+    <script src="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; font-family:'Poppins',sans-serif; }
+#player-container { width:100%; height:100%; position:relative; }
+.video-js  { width:100% !important; height:100% !important; }
+.ext-iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
+#iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
+.iframe-wrapper   { position:relative; width:100%; height:100%; }
+
+/* ── Control bar ─────────────────────────────────────────────────────────── */
+/* Sits at the very bottom; always visible while in embed mode, hidden in direct */
+#control-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+    padding: 10px 14px 12px;
+    display: none;           /* shown by JS when needed */
+    flex-direction: column;
+    gap: 8px;
+    z-index: 120;
+    transition: opacity 0.3s ease;
+}
+#control-bar.visible { display: flex; }
+
+/* Top row: mode tabs + current source label */
+#bar-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mode-tab {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.mode-tab.active {
+    background: #d80027;
+    border-color: #d80027;
+    color: #fff;
+}
+.mode-tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+
+#source-label {
+    color: #888;
+    font-size: 11px;
+    margin-left: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+/* Bottom row: provider buttons (embed mode only) */
+#provider-row,
+#agg-provider-row {
+    display: none;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+#provider-row.visible,
+#agg-provider-row.visible { display: flex; }
+
+#bar-close {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+#bar-close:hover { color: #fff; }
+
+
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.07);
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+}
+.prov-btn:hover  { background: rgba(255,255,255,0.15); color:#fff; }
+.prov-btn.active { background:#d80027; border-color:#d80027; color:#fff; }
+.prov-btn.trying { border-color: rgba(216,0,39,0.5); color:#d80027; animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+#spinner {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    z-index: 115;
+    pointer-events: none;
+}
+#spinner.visible { display: flex; }
+.spin-ring {
+    width: 42px; height: 42px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: #d80027;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.spin-label { color:#777; font-size:12px; }
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+#error-msg {
+    display: none;
+    color: #fff;
+    font-size: 15px;
+    text-align: center;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.75);
+    padding: 20px 28px;
+    border-radius: 8px;
+    border-left: 4px solid #d80027;
+    z-index: 130;
+    max-width: 80%;
+}
+
+/* ── VideoJS skin ────────────────────────────────────────────────────────── */
+.video-js { font-family:'Poppins',sans-serif !important; }
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level { background:#d80027 !important; }
+.video-js .vjs-control-bar  { background:linear-gradient(to top,rgba(0,0,0,.9) 0%,transparent 100%) !important; }
+.video-js .vjs-big-play-button {
+    background:rgba(0,0,0,.5) !important;
+    border:2px solid #d80027 !important;
+    border-radius:50% !important;
+    width:2.5em !important; height:2.5em !important;
+    line-height:2.3em !important;
+    margin-top:-1.25em !important; margin-left:-1.25em !important;
+}
+.video-js:hover .vjs-big-play-button,
+.video-js .vjs-big-play-button:hover,
+.video-js .vjs-big-play-button:focus {
+    border-color:#d80027 !important;
+    background:rgba(216,0,39,.2) !important;
+    outline:none !important;
+}
+.video-js .vjs-control:hover,
+.video-js .vjs-control:focus {
+    color:#d80027 !important; outline:none !important;
+    text-shadow:0 0 5px rgba(216,0,39,.5) !important;
+}
+
+/* ── Cosmos top bar (inside VideoJS) ─────────────────────────────────────── */
+.vjs-cosmos-top-bar {
+    position:absolute; top:0; left:0; width:100%;
+    background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);
+    padding:10px 15px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    pointer-events:none; z-index:10;
+    transition:opacity .3s ease; gap:15px;
+}
+.vjs-cosmos-title-container { border-left:4px solid #d80027; padding-left:12px; flex:1; min-width:0; }
+.vjs-cosmos-title { color:#fff; font-size:18px; font-weight:600; margin:0; text-transform:capitalize; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vjs-cosmos-desc  { color:#aaa; font-size:12px; margin:2px 0 0 0; text-transform:uppercase; letter-spacing:1px; }
+.vjs-cosmos-logo  { max-height:30px; pointer-events:auto; flex-shrink:0; }
+.vjs-user-inactive .vjs-cosmos-top-bar { opacity:0; }
+
+/* ── Intro overlay ───────────────────────────────────────────────────────── */
+#intro-overlay {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    background:#000; z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .5s ease;
+}
+#intro-overlay.fade-out { opacity:0; pointer-events:none; }
+#intro-player-wrap { width:100%; height:100%; position:relative; }
+#intro-vjs-player  { width:100% !important; height:100% !important; }
+</style>
+</head>
+<body>
+<div id="player-container">
+
+    <!-- Intro branding -->
+    <div id="intro-overlay">
+        <div id="intro-player-wrap">
+            <video id="intro-vjs-player" class="video-js vjs-big-play-centered"></video>
+        </div>
+    </div>
+
+    <!-- Spinner -->
+    <div id="spinner">
+        <div class="spin-ring"></div>
+        <span class="spin-label" id="spin-label">Loading…</span>
+    </div>
+
+    <!-- VideoJS direct player -->
+    <video id="vjs-player" class="video-js vjs-big-play-centered" style="display:none;"></video>
+
+    <!-- Iframe embed container -->
+    <div id="iframe-container"></div>
+
+    <!-- Error -->
+    <div id="error-msg"></div>
+
+    <!-- ── Control bar (bottom) ── -->
+    <div id="control-bar">
+        <!-- Row 1: mode tabs + label -->
+        <div id="bar-top">
+            <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">⬤ Direct</button>
+            <button id="tab-agg"    class="mode-tab"        onclick="switchMode('agg')">⚡ Aggregated</button>
+            <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">⊞ Embed</button>
+            <span id="source-label"></span>
+            <button id="bar-close" onclick="hideBar()" title="Close">✕</button>
+        </div>
+        <!-- Row 2: provider buttons (embed only) -->
+        <div id="provider-row">
+            <!-- populated by JS -->
+        </div>
+        <!-- Row 3: aggregated provider buttons (agg mode only) -->
+        <div id="agg-provider-row">
+            <!-- populated by JS -->
+        </div>
+    </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIG  — edit here only
+// ═══════════════════════════════════════════════════════════════════════════
+
+const VIDEOS_JSON_PATH = 'videos.json';
+
+// Embed providers — tried in order when in embed mode.
+// [ID] = TMDB id, [S] = season, [E] = episode
+const EMBED_PROVIDERS = [
+    { name: 'VidRock',  movie: 'https://vidrock.ru/movie/[ID]',            tv: 'https://vidrock.ru/tv/[ID]/[S]/[E]' },
+    { name: 'VidLink',     movie: 'https://vidlink.pro/movie/[ID]?autoplay=false',   tv: 'https://vidlink.pro/tv/[ID]/[S]/[E]?autoplay=false' },
+    { name: 'VidSrc WTF',  movie: 'https://www.vidsrc.wtf/4/movie/[ID]',            tv: 'https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]' },
+    { name: '1Embed',      movie: 'https://1embed.cc/embed/movie/[ID]',              tv: 'https://1embed.cc/embed/tv/[ID]/[S]/[E]' },
+    { name: '2Embed',      movie: 'https://www.2embed.cc/embed/[ID]',               tv: 'https://www.2embed.cc/embedtv/[ID]&s=[S]&e=[E]' },
+];
+
+// ── Aggregated providers ─────────────────────────────────────────────────────
+// Strategy: call the same-origin /api endpoint (WASM/vidlink backend) directly.
+// This is reliable — no cross-origin iframe scraping, no postMessage guessing.
+//
+// Each entry needs:
+//   name      — display label
+//   fetchUrl  — function(id, type, s, e) → the /api URL to call
+// ─────────────────────────────────────────────────────────────────────────────
+const AGGREGATED_PROVIDERS = [
+    {
+        name: 'VidLink (WASM)',
+        fetchUrl: (id, type, s, e) => type === 'movie'
+            ? `/api?id=${id}`
+            : `/api?id=${id}&s=${s}&e=${e}`,
+    },
+];
+
+// ── Direct API source fetcher ─────────────────────────────────────────────────
+// Calls the same-origin /api endpoint (the WASM/vidlink backend from index.js).
+// Returns Promise<Array<{src, label, type}>> or null on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchSourcesFromApi(apiUrl) {
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        if (!data.url)  throw new Error('No URL in API response');
+        const src  = data.url;
+        const type = src.includes('.m3u8') || src.includes('manifest') ? 'hls' : 'mp4';
+        return [{ src, label: '', type }];
+    } catch (err) {
+        console.warn('[agg] API fetch failed:', err.message);
+        return null;
+    }
+}
+
+// If an iframe hasn't fired onload after this many ms, mark it as "slow"
+const SLOW_MS   = 8000;
+// Auto-advance to next embed after this many ms of silence (0 = never auto-advance)
+const AUTO_MS   = 0;
+
+const INTRO_SRC = 'https://chithruka.github.io/Chithruka/Landing/src/video-devices-in-lq.mp4';
+const LOGO_SRC  = '../Attachments/Chithruka%20Streamer%20Logo.svg';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  URL PARAMS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _p   = new URLSearchParams(window.location.search);
+const TMDB = _p.get('id')   || '';
+const TYPE = _p.get('type') || 'movie';
+const SN   = _p.get('s')    || '1';
+const EP   = _p.get('e')    || '1';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+let mode          = 'direct';  // 'direct' | 'agg' | 'embed'
+let directSources = null;      // array from videos.json, or null
+let aggSources    = null;      // sources fetched from aggregated providers, or null
+let aggIdx        = 0;         // current AGGREGATED_PROVIDERS index being tried
+let provIdx       = 0;         // current EMBED_PROVIDERS index
+let slowTimer     = null;
+let autoTimer     = null;
+let vjsPlayer     = null;      // active VideoJS instance
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function spin(msg)  { document.getElementById('spin-label').textContent = msg || 'Loading…'; document.getElementById('spinner').classList.add('visible'); }
+function unspin()   { document.getElementById('spinner').classList.remove('visible'); }
+
+function setLabel(txt) { document.getElementById('source-label').textContent = txt; }
+
+function showError(msg) {
+    document.getElementById('intro-overlay').style.display = 'none';
+    unspin();
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function showBar()  { document.getElementById('control-bar').classList.add('visible'); }
+function hideBar()  { document.getElementById('control-bar').classList.remove('visible'); }
+
+// ── Mode tabs ───────────────────────────────────────────────────────────────
+function setActiveTab(m) {
+    document.getElementById('tab-direct').classList.toggle('active', m === 'direct');
+    document.getElementById('tab-agg').classList.toggle('active',    m === 'agg');
+    document.getElementById('tab-embed').classList.toggle('active',  m === 'embed');
+    document.getElementById('provider-row').classList.toggle('visible', m === 'embed');
+    // Show agg-provider row only in agg mode
+    const aggRow = document.getElementById('agg-provider-row');
+    if (aggRow) aggRow.classList.toggle('visible', m === 'agg');
+}
+
+// ── Provider buttons ────────────────────────────────────────────────────────
+function renderProviderButtons(activeIdx, isTrying) {
+    const row = document.getElementById('provider-row');
+    row.innerHTML = '';
+    EMBED_PROVIDERS.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'prov-btn' +
+            (i === activeIdx && !isTrying ? ' active' : '') +
+            (i === activeIdx &&  isTrying ? ' trying' : '');
+        btn.textContent = p.name;
+        btn.onclick = () => loadEmbed(i);
+        row.appendChild(btn);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DIRECT MODE  (videos.json → VideoJS / source iframes)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function startDirect() {
+    if (!TMDB) { showError('No content ID provided.'); return; }
+
+    spin('Looking up your library…');
+
+    const db = await fetchDB();
+    if (!db) {
+        // Can't even reach the DB — go straight to embed
+        unspin();
+        autoFallbackToEmbed('Library unavailable');
+        return;
+    }
+
+    const sources = TYPE === 'movie'
+        ? db.movies?.[TMDB]
+        : db.tv?.[TMDB]?.[SN]?.[EP];
+
+    if (!sources || sources.length === 0) {
+        unspin();
+        autoFallbackToEmbed('Not in local library');
+        return;
+    }
+
+    directSources = sources;
+    unspin();
+    playDirect(sources);
+}
+
+async function fetchDB() {
+    try {
+        const res = await fetch(VIDEOS_JSON_PATH);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch { return null; }
+}
+
+function playDirect(sources) {
+    mode = 'direct';
+    setActiveTab('direct');
+
+    // Clear any running embed
+    clearEmbed();
+
+    const first   = sources[0];
+    const srcType = first.type || detectType(first.src);
+
+    // Native VideoJS types
+    if (srcType === 'mp4' || srcType === 'hls' || !first.src.match(/youtube|vimeo|dailymotion|drive\.google|mega\.nz|vk\.com|t\.me|telegram|facebook/)) {
+        playDirectVideoJS(sources, srcType);
+        return;
+    }
+
+    // Iframe-based types from your DB (YouTube, Dailymotion, etc.)
+    playDirectIframe(sources, srcType);
+}
+
+function playDirectVideoJS(sources, srcType) {
+    disposeVJS();
+    const el = document.getElementById('vjs-player');
+    el.style.display = 'block';
+
+    const isHLS = srcType === 'hls' || sources[0].src.includes('.m3u8');
+    const typeLabel = TYPE === 'tv' ? 'TV SHOW' : 'MOVIE';
+    const rawName   = sources[0].src.split('/').pop().split('?')[0].split('.')[0];
+    const title     = decodeURIComponent(rawName).replace(/[-_]/g, ' ');
+
+    const opts = {
+        controls: true, autoplay: false, fill: true,
+        sources: sources.map(s => ({
+            src:   s.src,
+            type:  (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/vnd.apple.mpegurl' : 'video/mp4',
+            label: s.label || undefined
+        })),
+        plugins: {}
+    };
+
+    if (!isHLS) {
+        opts.plugins.vjsdownload = {
+            beforeElement: 'fullscreenToggle',
+            textControl:   'Download Video',
+            name:          'downloadButton',
+            downloadURL:   sources[0].src
+        };
+    }
+
+    vjsPlayer = videojs('vjs-player', opts);
+    if (isHLS) vjsPlayer.ready(() => vjsPlayer.httpSourceSelector());
+
+    vjsPlayer.ready(() => {
+        const topBar = document.createElement('div');
+        topBar.className = 'vjs-cosmos-top-bar';
+        topBar.innerHTML = `
+            <div class="vjs-cosmos-title-container">
+                <h1 class="vjs-cosmos-title">${title}</h1>
+                <p class="vjs-cosmos-desc">${typeLabel}</p>
+            </div>
+            <img class="vjs-cosmos-logo" src="${LOGO_SRC}"
+                 oncontextmenu="return false;" ondragstart="return false;"
+                 onselectstart="return false;" alt="Logo">`;
+        vjsPlayer.el().appendChild(topBar);
+    });
+
+    // All sources failed → fall to next tier
+    vjsPlayer.on('error', () => {
+        console.warn('[auto-server] VideoJS: all sources failed (mode=' + mode + ')');
+        disposeVJS();
+        el.style.display = 'none';
+        if (mode === 'agg') {
+            // Will be overridden per-provider in startAggregated, but as a safety net:
+            autoFallbackFromAgg('VideoJS error in agg mode');
+        } else {
+            autoFallbackToEmbed('Direct sources failed');
+        }
+    });
+
+    setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
+    showBar();
+}
+
+function playDirectIframe(sources, srcType) {
+    const url = buildDirectIframeUrl(sources[0], srcType);
+    if (!url) { autoFallbackToEmbed('Invalid source URL'); return; }
+
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'iframe-wrapper';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.className = 'ext-iframe';
+    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
+    iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    iframe.onload  = unspin;
+    iframe.onerror = () => autoFallbackToEmbed('Source failed to load');
+
+    wrapper.appendChild(iframe);
+    container.appendChild(wrapper);
+
+    setLabel('Direct · ' + srcType);
+    showBar();
+}
+
+function buildDirectIframeUrl(s, srcType) {
+    switch (srcType) {
+        case 'youtube': {
+            const vid = extractYouTubeId(s.src);
+            return vid ? `https://www.youtube.com/embed/${vid}?modestbranding=1&rel=0&autoplay=1` : null;
+        }
+        case 'dailymotion': {
+            let url = s.src.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
+            return appendParam(url, 'autoplay', '1');
+        }
+        case 'google-drive': {
+            const m = s.src.match(/\/d\/(.+?)\//);
+            return m ? `https://drive.google.com/file/d/${m[1]}/preview` : null;
+        }
+        case 'mega':     return s.src.replace('/file/', '/embed/');
+        case 'vimeo': {
+            const vid = extractVimeoId(s.src);
+            return vid ? `https://player.vimeo.com/video/${vid}?autoplay=1&dnt=1` : null;
+        }
+        case 'vk':       return appendParam(s.src, 'autoplay', '1');
+        case 'telegram': return appendParam(appendParam(s.src, 'embed', '1'), 'autoplay', '1');
+        case 'facebook': {
+            const base = s.src.includes('plugins/video.php')
+                ? s.src
+                : `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(s.src)}&show_text=false`;
+            return appendParam(base, 'autoplay', '1');
+        }
+        default:         return s.src;
+    }
+}
+
+// Silent auto-fallback: tries aggregated first, then embed
+function autoFallbackToEmbed(reason) {
+    console.info(`[auto-server] Direct failed (${reason}) — trying aggregated`);
+    startAggregated();
+}
+
+// Final fallback: all aggregated sources exhausted, go to embed
+function autoFallbackFromAgg(reason) {
+    console.info(`[auto-server] Aggregated failed (${reason}) — falling back to embed`);
+    mode = 'embed';
+    setActiveTab('embed');
+    provIdx = 0;
+    renderProviderButtons(0, true);
+    showBar();
+    loadEmbed(0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AGGREGATED MODE  (non-embed: real m3u8/mp4 from aggregators)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Try each AGGREGATED_PROVIDER in order using the hidden-iframe engine.
+// The first provider that yields at least one video URL wins; if none do, fall to embed.
+async function startAggregated(startIdx = 0) {
+    mode = 'agg';
+    setActiveTab('agg');
+    showBar();
+
+    for (let i = startIdx; i < AGGREGATED_PROVIDERS.length; i++) {
+        aggIdx = i;
+        const prov = AGGREGATED_PROVIDERS[i];
+        renderAggProviderButtons(i, true);
+        spin(`Extracting sources via ${prov.name}…`);
+
+        const apiUrl = prov.fetchUrl(TMDB, TYPE, SN, EP);
+        const sources = await fetchSourcesFromApi(apiUrl);
+
+        if (sources && sources.length > 0) {
+            aggSources = sources;
+            unspin();
+            renderAggProviderButtons(i, false);
+            setLabel(`Aggregated · ${prov.name} (${sources.length} source${sources.length > 1 ? 's' : ''})`);
+
+            // Play the extracted URLs directly in VideoJS
+            playDirectVideoJS(sources, sources[0].type || detectType(sources[0].src));
+
+            // If VideoJS errors on this batch, try the next aggregated provider
+            if (vjsPlayer) {
+                vjsPlayer.off('error');
+                vjsPlayer.on('error', () => {
+                    console.warn(`[auto-server] Agg VideoJS error on ${prov.name}, trying next`);
+                    disposeVJS();
+                    document.getElementById('vjs-player').style.display = 'none';
+                    startAggregated(i + 1);
+                });
+            }
+            return;
+        }
+
+        console.info(`[auto-server] Agg provider ${prov.name} returned no sources — trying next`);
+    }
+
+    unspin();
+    autoFallbackFromAgg('All aggregated providers returned no sources');
+}
+
+function renderAggProviderButtons(activeIdx, isTrying) {
+    const row = document.getElementById('agg-provider-row');
+    if (!row) return;
+    row.innerHTML = '';
+    AGGREGATED_PROVIDERS.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'prov-btn' +
+            (i === activeIdx && !isTrying ? ' active' : '') +
+            (i === activeIdx &&  isTrying ? ' trying' : '');
+        btn.textContent = p.name;
+        btn.onclick = () => startAggregated(i);
+        row.appendChild(btn);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EMBED MODE  (third-party provider iframes)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function switchMode(m) {
+    if (m === mode && m === 'direct' && directSources) return;
+
+    clearTimers();
+
+    if (m === 'direct') {
+        if (directSources) {
+            clearEmbed();
+            playDirect(directSources);
+        } else {
+            flashTab('tab-direct');
+        }
+    } else if (m === 'agg') {
+        disposeVJS();
+        document.getElementById('vjs-player').style.display = 'none';
+        clearEmbed();
+        if (aggSources) {
+            // Already fetched — replay immediately
+            mode = 'agg';
+            setActiveTab('agg');
+            renderAggProviderButtons(aggIdx, false);
+            showBar();
+            playDirect(aggSources); // aggSources are direct m3u8/mp4 arrays
+        } else {
+            startAggregated();
+        }
+    } else {
+        mode = 'embed';
+        disposeVJS();
+        document.getElementById('vjs-player').style.display = 'none';
+        clearEmbed();
+        setActiveTab('embed');
+        renderProviderButtons(provIdx, true);
+        showBar();
+        loadEmbed(provIdx);
+    }
+}
+
+function flashTab(id) {
+    const el = document.getElementById(id);
+    el.style.opacity = '0.4';
+    setTimeout(() => el.style.opacity = '', 600);
+}
+
+function loadEmbed(idx) {
+    clearTimers();
+    if (idx < 0 || idx >= EMBED_PROVIDERS.length) return;
+
+    provIdx = idx;
+    const prov = EMBED_PROVIDERS[idx];
+    const url  = buildEmbedUrl(TYPE === 'movie' ? prov.movie : prov.tv);
+
+    spin(`Connecting to ${prov.name}…`);
+    renderProviderButtons(idx, true);
+    setLabel(`Embed · ${prov.name}`);
+
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'iframe-wrapper';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.className = 'ext-iframe';
+    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
+    iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    iframe.onload = () => {
+        clearTimers();
+        unspin();
+        renderProviderButtons(idx, false); // mark as loaded (not "trying")
+    };
+
+    iframe.onerror = () => {
+        // Hard network failure — skip immediately
+        clearTimers();
+        console.warn(`[auto-server] Network error: ${prov.name}`);
+        tryNextEmbed();
+    };
+
+    // After SLOW_MS with no load, update label but don't auto-advance
+    slowTimer = setTimeout(() => {
+        unspin();
+        setLabel(`Embed · ${prov.name} (slow…)`);
+        renderProviderButtons(idx, true);
+    }, SLOW_MS);
+
+    wrapper.appendChild(iframe);
+    container.appendChild(wrapper);
+}
+
+function tryNextEmbed() {
+    const next = provIdx + 1;
+    if (next >= EMBED_PROVIDERS.length) {
+        unspin();
+        showError('All embed sources failed. Please try again later.');
+        return;
+    }
+    loadEmbed(next);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CLEANUP HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function clearEmbed() {
+    clearTimers();
+    const c = document.getElementById('iframe-container');
+    c.style.display = 'none';
+    c.innerHTML = '';
+}
+
+function disposeVJS() {
+    if (vjsPlayer) {
+        try { vjsPlayer.dispose(); } catch {}
+        vjsPlayer = null;
+        // videojs dispose removes the element; recreate it
+        const container = document.getElementById('player-container');
+        const newEl = document.createElement('video');
+        newEl.id = 'vjs-player';
+        newEl.className = 'video-js vjs-big-play-centered';
+        newEl.style.display = 'none';
+        // Insert before iframe-container
+        container.insertBefore(newEl, document.getElementById('iframe-container'));
+    }
+}
+
+function clearTimers() {
+    clearTimeout(slowTimer);
+    clearTimeout(autoTimer);
+    slowTimer = null;
+    autoTimer = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UTILITY
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildEmbedUrl(t) {
+    return t.replace(/\[ID\]/g, TMDB).replace(/\[S\]/g, SN).replace(/\[E\]/g, EP);
+}
+
+function detectType(src) {
+    if (!src) return 'mp4';
+    if (src.includes('.m3u8'))                                    return 'hls';
+    if (src.includes('youtube.com') || src.includes('youtu.be')) return 'youtube';
+    if (src.includes('vimeo.com'))                               return 'vimeo';
+    if (src.includes('dailymotion.com'))                         return 'dailymotion';
+    if (src.includes('drive.google.com'))                        return 'google-drive';
+    if (src.includes('mega.nz'))                                 return 'mega';
+    if (src.includes('vk.com'))                                  return 'vk';
+    if (src.includes('t.me') || src.includes('telegram'))        return 'telegram';
+    if (src.includes('facebook.com'))                            return 'facebook';
+    return 'mp4';
+}
+
+function appendParam(url, key, val) {
+    if (url.includes(`${key}=`)) return url;
+    return url + (url.includes('?') ? '&' : '?') + `${key}=${val}`;
+}
+
+function extractYouTubeId(url) {
+    const m = url.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
+    return m ? m[1] : null;
+}
+
+function extractVimeoId(url) {
+    const m = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return m ? m[1] : null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function init() {
+    if (!TMDB) { showError('No content ID provided.'); return; }
+    await startDirect(); // always starts in direct mode
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INTRO
+// ═══════════════════════════════════════════════════════════════════════════
+
+function playIntro() {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('intro-overlay');
+        let ended = false;
+
+        const p = videojs('intro-vjs-player', {
+            controls:false, autoplay:false, muted:false, fill:true,
+            sources:[{ src:INTRO_SRC, type:'video/mp4' }]
+        });
+
+        function end() {
+            if (ended) return; ended = true;
+            p.dispose();
+            overlay.classList.add('fade-out');
+            setTimeout(() => { overlay.style.display='none'; resolve(); }, 500);
+        }
+
+        p.ready(function() {
+            const play = p.play();
+            if (play && typeof play.then === 'function') {
+                play.catch(() => {
+                    p.muted(true);
+                    const p2 = p.play();
+                    if (p2 && typeof p2.then === 'function') p2.catch(end);
+                });
+            }
+        });
+        p.on('ended', end);
+        p.on('error', end);
+    });
+}
+
+(async () => {
+    await playIntro();
+    await init();
+})();
+</script>
+</body>
+</html>
