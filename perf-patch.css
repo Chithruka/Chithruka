@@ -255,3 +255,22 @@
         width: 240px !important;
     }
 }
+
+/* ============================================================
+   Logo Fog Glow — applied dynamically by JS when a logo's
+   average pixel brightness is below the dark threshold.
+   Uses drop-shadow (not box-shadow) so the glow follows the
+   actual transparent shape of the PNG logo.
+   ============================================================ */
+.logo-fog-glow {
+    filter:
+        drop-shadow(0px 0px 18px rgba(255, 255, 255, 0.85))
+        drop-shadow(0px 0px 8px  rgba(255, 255, 255, 0.55))
+        drop-shadow(0px 0px 3px  rgba(255, 255, 255, 0.35));
+}
+
+/* Smooth transition for both hero slider and detail page logos */
+.title-logo,
+.hero-logo {
+    transition: filter 0.5s ease;
+}

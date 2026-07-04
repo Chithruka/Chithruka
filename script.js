@@ -75,7 +75,67 @@ let DUBBED_REGISTRY = {};
 
 // --- Auth State ---
 let sessionId = localStorage.getItem('tmdb_session_id');
-let accountId = localStorage.getItem('tmdb_account_id');
+// ============================================================
+// LOGO FOG SYSTEM
+// Restores the original drop-shadow approach — applied directly
+// to the logo image — but fixes the timing issue that caused it
+// to break on initial load.
+//
+// The problem before: requestAnimationFrame fires before the
+// browser has composited the image, so naturalWidth can be 0
+// and drawImage gets a blank canvas, reading 0 valid pixels and
+// never applying the class.
+//
+// The fix: img.decode() is a Promise that resolves only after
+// the image is fully decoded and ready to paint. We await that,
+// THEN run the brightness check. The class is applied after the
+// image is already visible, so there's never a flash or delay
+// in the logo appearing — only the glow arrives slightly after.
+// ============================================================
+async function applyFogIfLogoIsDark(imageElement) {
+    if (!imageElement) return;
+
+    imageElement.classList.remove('logo-fog-glow');
+
+    try {
+        // Wait until the image is fully decoded (works even if already complete)
+        await imageElement.decode();
+    } catch (e) {
+        // decode() rejects if the image fails to load — bail silently
+        return;
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width  = imageElement.naturalWidth  || 300;
+    canvas.height = imageElement.naturalHeight || 150;
+
+    try {
+        ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        let colorSum = 0, validPixels = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] > 128) {
+                // ITU-R BT.601 perceived brightness
+                colorSum += (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000;
+                validPixels++;
+            }
+        }
+        if (validPixels === 0) return;
+        if ((colorSum / validPixels) < 100) {
+            imageElement.classList.add('logo-fog-glow');
+        }
+    } catch (e) {
+        console.warn('[FogSystem] Canvas read blocked (CORS?):', e.message);
+    }
+}
+
+// No-op: stack cleanup no longer needed (no DOM wrapping)
+function resetFogStack(imageElement) {
+    // intentionally empty — kept so call sites don't throw
+}
+
 
 // In-memory cache (instant, no serialization cost)
 const memCache = new Map();
@@ -1090,7 +1150,7 @@ async function initHero(items) {
         slide.style.backgroundImage = `url('${backdrop}')`;
 
         const titleHtml = logoUrl
-            ? `<img src="${logoUrl}" class="hero-logo" alt="${title}" loading="lazy">`
+            ? `<img src="${logoUrl}" class="hero-logo" alt="${title}" loading="eager" crossorigin="anonymous">`
             : `<h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>`;
 
         slide.innerHTML = `
@@ -1125,6 +1185,9 @@ async function initHero(items) {
     slidesContainer.appendChild(cloneLast);   // position 0  (clone of last)
     slideNodes.forEach(s => slidesContainer.appendChild(s)); // positions 1…N
     slidesContainer.appendChild(cloneFirst);  // position N+1 (clone of first)
+
+    // Apply fog glow to every hero logo that is dark
+    slidesContainer.querySelectorAll('.hero-logo').forEach(applyFogIfLogoIsDark);
 
     // currentHeroIndex tracks the REAL slide index (0-based)
     let currentHeroIndex = 0;
@@ -2571,7 +2634,8 @@ window.selectContent = async function(id, title, type) {
     const taglineEl = document.getElementById('detail-tagline');
     
     if (logoImg) {
-        logoImg.src = ''; 
+        resetFogStack(logoImg); // remove any ghost stack from a previous logo
+        logoImg.src = '';
         logoImg.style.display = 'none';
     }
     if (textHeading) {
@@ -3127,7 +3191,9 @@ function renderDetails(data, title) {
         logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
         logoImg.style.display = 'block';
         textHeading.style.display = 'none';
+        applyFogIfLogoIsDark(logoImg);
     } else {
+        resetFogStack(logoImg);
         logoImg.style.display = 'none';
         textHeading.style.display = 'block';
         textHeading.textContent = title;
@@ -5547,7 +5613,9 @@ function handleTranslations(data) {
                 logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
                 logoImg.style.display = 'block';
                 titleEl.style.display = 'none';
+                applyFogIfLogoIsDark(logoImg);
             } else {
+                resetFogStack(logoImg);
                 logoImg.style.display = 'none';
                 titleEl.style.display = 'block';
             }
