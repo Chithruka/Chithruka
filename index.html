@@ -316,19 +316,23 @@
 
 /* ── END CINEMATIC HERO ZONE ── */
 
-/* --- MOBILE PLAYER FULL BLEED FIX --- */
-@media (max-width: 767px) {
+/* --- PLAYER FULL BLEED FIX --- */
+/* Escape the p-6 (24px) wrapper padding on mobile */
+#mobile-player-fix {
+    margin-left: -24px !important;
+    margin-right: -24px !important;
+    width: calc(100% + 48px) !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+/* Escape the md:p-8 (32px) wrapper padding on desktop */
+@media (min-width: 768px) {
     #mobile-player-fix {
-        /* Exact math to cancel out the px-4 (16px) and p-6 (24px) parent paddings */
-        margin-left: -40px !important;
-        margin-right: -40px !important;
-        width: calc(100% + 80px) !important;
-        max-width: none !important;
-        
-        /* Remove the curved edges and side borders so it sits flush against the phone screen */
-        border-radius: 0 !important;
-        border-left: none !important;
-        border-right: none !important;
+        margin-left: -32px !important;
+        margin-right: -32px !important;
+        width: calc(100% + 64px) !important;
     }
 }
 </style>
@@ -1150,6 +1154,6 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=8" defer></script>
+<script src="script.js?v=9" defer></script>
 </body>
 </html>
