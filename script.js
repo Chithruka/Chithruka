@@ -24,6 +24,11 @@ const TMDB_POSTER_XL = (() => {
     if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w500';
     return 'https://image.tmdb.org/t/p/w780';
 })();
+const TMDB_LOGO_SZ = (() => {
+    if (PIXEL_W <= 768) return 'https://image.tmdb.org/t/p/w300';
+    if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w500';
+    return 'https://image.tmdb.org/t/p/original';
+})();
 const TMDB_BACKDROP_WEB = (() => {
     if (PIXEL_W <= 640) return 'https://image.tmdb.org/t/p/w780';
     if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w1280';
@@ -2831,10 +2836,10 @@ function renderDetails(data, title) {
         if (bestLogo) logoPath = bestLogo.file_path;
     }
     if (logoPath) {
-        logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
         logoImg.style.display = 'block';
         textHeading.style.display = 'none';
-        applyFogIfLogoIsDark(logoImg);
+        logoImg.onload = () => applyFogIfLogoIsDark(logoImg);
+        logoImg.src = `${TMDB_LOGO_SZ}${logoPath}`;
     } else {
         resetFogStack(logoImg);
         logoImg.style.display = 'none';
@@ -4724,10 +4729,10 @@ function handleTranslations(data) {
             }
             const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
             if (newLogo) {
-                logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
                 logoImg.style.display = 'block';
                 titleEl.style.display = 'none';
-                applyFogIfLogoIsDark(logoImg);
+                logoImg.onload = () => applyFogIfLogoIsDark(logoImg);
+                logoImg.src = `${TMDB_LOGO_SZ}${newLogo.file_path}`;
             } else {
                 resetFogStack(logoImg);
                 logoImg.style.display = 'none';
