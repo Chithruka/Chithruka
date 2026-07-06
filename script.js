@@ -1716,32 +1716,88 @@ searchInput.addEventListener('input', () => {
 });
 
 // ============================================================
-// SEARCH SUGGESTIONS — text-only dropdown while user is typing
-// (like Google: shows the query + recent matches, no API calls)
+// SEARCH SUGGESTIONS — text-only dropdown while user is typing.
+// Layout (like Google):
+//   1. Exact query row (🔍 icon) — always first
+//   2. Live TMDB title suggestions (🔍 icon) — fetched async
+//   3. Matching recent searches (🕐 icon) — from localStorage
+// Clicking any row fires commitSearch(); no posters, no heavy API.
 // ============================================================
-function renderSearchSuggestions(query) {
+
+// Tracks the query that the current in-flight suggestion fetch belongs to,
+// so stale responses from slow network don't overwrite a newer query's UI.
+let _suggestionFetchQuery = '';
+
+const SEARCH_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;flex-shrink:0;"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>`;
+
+async function renderSearchSuggestions(query) {
     const lowerQuery = query.toLowerCase();
+    _suggestionFetchQuery = query;
 
-    // Match recent searches that contain the query
-    const recentMatches = getRecentSearches()
-        .filter(q => q.toLowerCase().includes(lowerQuery) && q.toLowerCase() !== lowerQuery)
-        .slice(0, 4);
-
+    // ── 1. Paint the skeleton immediately (exact query row + placeholders) ──
     searchResults.innerHTML = '';
 
-    // First item: the exact query the user typed (always shown)
-    const exactLi = document.createElement('li');
-    exactLi.className = 'search-result-item search-suggest-item';
-    exactLi.innerHTML = `
-        <span class="search-suggest-icon" style="color:#9ca3af;">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
-        </span>
-        <span class="search-suggest-title">${query}</span>
-    `;
-    exactLi.addEventListener('click', () => commitSearch(query));
-    searchResults.appendChild(exactLi);
+    // Exact-query row (always first, always visible instantly)
+    searchResults.appendChild(_buildSuggestRow('search', query, query));
 
-    // Then show matching recents with the clock/history icon
+    // Skeleton placeholder rows while TMDB loads
+    const SKELETON_COUNT = 3;
+    const skeletonFragment = document.createDocumentFragment();
+    for (let i = 0; i < SKELETON_COUNT; i++) {
+        const sk = document.createElement('li');
+        sk.className = 'search-result-item search-suggest-item suggest-skeleton';
+        sk.innerHTML = `
+            <span class="search-suggest-icon" style="color:#374151;">
+                ${SEARCH_ICON_SVG}
+            </span>
+            <span class="skeleton skeleton-text" style="height:11px;width:${55 + i * 15}%;border-radius:4px;"></span>
+        `;
+        skeletonFragment.appendChild(sk);
+    }
+    // Insert skeletons after the exact-query row
+    searchResults.appendChild(skeletonFragment);
+
+    // ── 2. Fetch TMDB suggestions in the background ──
+    let tmdbTitles = [];
+    try {
+        const url = `${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=true&page=1`;
+        const data = await fetchCached(url);
+
+        // Only use this response if the query hasn't changed while we were waiting
+        if (_suggestionFetchQuery !== query) return;
+
+        tmdbTitles = (data.results || [])
+            .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+            .slice(0, 5)
+            .map(item => item.title || item.name)
+            // Drop any title that is exactly what the user already typed
+            .filter(t => t.toLowerCase() !== lowerQuery);
+
+    } catch (_) {
+        // Network error — just show no suggestions (skeleton rows will be removed below)
+        if (_suggestionFetchQuery !== query) return;
+    }
+
+    // ── 3. Remove skeletons and rebuild the full list ──
+    searchResults.innerHTML = '';
+
+    // Row 1: exact query
+    searchResults.appendChild(_buildSuggestRow('search', query, query));
+
+    // Rows 2-N: live TMDB title suggestions
+    // De-duplicate against the exact query (already filtered above)
+    const seen = new Set([lowerQuery]);
+    tmdbTitles.forEach(title => {
+        if (seen.has(title.toLowerCase())) return;
+        seen.add(title.toLowerCase());
+        searchResults.appendChild(_buildSuggestRow('search', title, title));
+    });
+
+    // Rows N+: matching recents (with clock icon + remove button)
+    const recentMatches = getRecentSearches()
+        .filter(q => q.toLowerCase().includes(lowerQuery) && !seen.has(q.toLowerCase()))
+        .slice(0, 3);
+
     recentMatches.forEach(recentQuery => {
         const li = document.createElement('li');
         li.className = 'search-result-item search-suggest-item';
@@ -1749,7 +1805,7 @@ function renderSearchSuggestions(query) {
             <span class="search-suggest-icon recent-icon">${RECENT_SVG}</span>
             <span class="search-suggest-title">${recentQuery}</span>
             <button class="recent-remove-btn" title="Remove" aria-label="Remove ${recentQuery}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         `;
         li.querySelector('.recent-remove-btn').addEventListener('click', (e) => {
@@ -1763,6 +1819,23 @@ function renderSearchSuggestions(query) {
         });
         searchResults.appendChild(li);
     });
+}
+
+/** Builds a plain text suggestion row with a search icon. */
+function _buildSuggestRow(iconType, displayText, searchTerm) {
+    const li = document.createElement('li');
+    li.className = 'search-result-item search-suggest-item';
+    li.innerHTML = `
+        <span class="search-suggest-icon" style="color:#6b7280;">
+            ${SEARCH_ICON_SVG}
+        </span>
+        <span class="search-suggest-title">${displayText}</span>
+    `;
+    li.addEventListener('click', () => {
+        searchInput.value = searchTerm;
+        commitSearch(searchTerm);
+    });
+    return li;
 }
 
 // commitSearch: the single place that actually fires the search + saves to recents
