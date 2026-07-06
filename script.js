@@ -2,12 +2,87 @@
 const TMDB_ENCODED = "OTI4NTBhNzllNTA5MTdiOGNjMTk2MjM0NTVhZTIyNDA=";
 const TMDB_API_KEY = getTmdbKey();
 const BASE_TMDB_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMG_BASE_URL = 'https://image.tmdb.org/t/p/w92';
-const TMDB_POSTER_MD = 'https://image.tmdb.org/t/p/w342';
-const TMDB_POSTER_LG = 'https://image.tmdb.org/t/p/w300';
-const TMDB_POSTER_XL = 'https://image.tmdb.org/t/p/w500';
-const TMDB_BACKDROP_WEB = 'https://image.tmdb.org/t/p/w780';
-const TMDB_STILL_SZ = 'https://image.tmdb.org/t/p/w185';
+// --- RESPONSIVE TMDB IMAGE HELPERS ---
+// All size selections factor in devicePixelRatio so retina/HiDPI screens
+// get the next size up automatically.
+
+const DPR = window.devicePixelRatio || 1;
+const LOGICAL_W = window.innerWidth;
+const PIXEL_W = LOGICAL_W * DPR;
+
+// Small thumbnails: avatars, logos, search results (rendered ~40-92 px wide)
+const TMDB_IMG_BASE_URL = (() => {
+    if (PIXEL_W <= 480) return 'https://image.tmdb.org/t/p/w92';
+    if (PIXEL_W <= 1024) return 'https://image.tmdb.org/t/p/w154';
+    return 'https://image.tmdb.org/t/p/w185';
+})();
+
+// Card posters in horizontal sliders (~150-220 px wide on mobile, up to ~300 on desktop)
+const TMDB_POSTER_MD = (() => {
+    if (PIXEL_W <= 480) return 'https://image.tmdb.org/t/p/w185';
+    if (PIXEL_W <= 1024) return 'https://image.tmdb.org/t/p/w342';
+    return 'https://image.tmdb.org/t/p/w500';
+})();
+
+// Detail/hero poster pin (rendered ~90-180 px wide)
+const TMDB_POSTER_LG = (() => {
+    if (PIXEL_W <= 480) return 'https://image.tmdb.org/t/p/w185';
+    if (PIXEL_W <= 1024) return 'https://image.tmdb.org/t/p/w342';
+    return 'https://image.tmdb.org/t/p/w500';
+})();
+
+// Large posters: logos, gallery thumbnails (rendered up to 500 px wide)
+const TMDB_POSTER_XL = (() => {
+    if (PIXEL_W <= 768) return 'https://image.tmdb.org/t/p/w342';
+    if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w500';
+    return 'https://image.tmdb.org/t/p/w780';
+})();
+
+// Backdrop / hero background
+const TMDB_BACKDROP_WEB = (() => {
+    if (PIXEL_W <= 640) return 'https://image.tmdb.org/t/p/w780';
+    if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w1280';
+    return 'https://image.tmdb.org/t/p/original';
+})();
+
+// Episode stills (rendered ~120-300 px wide)
+const TMDB_STILL_SZ = (() => {
+    if (PIXEL_W <= 480) return 'https://image.tmdb.org/t/p/w92';
+    if (PIXEL_W <= 1024) return 'https://image.tmdb.org/t/p/w185';
+    return 'https://image.tmdb.org/t/p/w300';
+})();
+
+// Returns the best TMDB backdrop size for the current screen width.
+// TMDB sizes: w300 → w780 → w1280 → original
+function responsiveBackdropUrl(path) {
+    if (!path) return '';
+    if (PIXEL_W <= 640)  return `https://image.tmdb.org/t/p/w780${path}`;
+    if (PIXEL_W <= 1440) return `https://image.tmdb.org/t/p/w1280${path}`;
+    return `https://image.tmdb.org/t/p/original${path}`;
+}
+
+// Returns a flagpedia waving-flag URL for a given ISO 3166-1 alpha-2 country code.
+// Waving flags use WxH format with fixed 4:3 aspect ratio.
+// Available sizes: 20x15, 24x18, 32x24, 40x30, 48x36, 64x48, 80x60, 96x72, 128x96, 160x120
+// Reference: https://flagpedia.net/download/api
+function getFlagUrl(countryCode, size) {
+    if (!countryCode) return '';
+    const code = countryCode.toLowerCase();
+    // Pick a size appropriate to pixel density (waving flag WxH format)
+    const sz = size || (DPR >= 2 ? '48x36' : '24x18');
+    return `https://flagcdn.com/${sz}/${code}.png`;
+}
+
+// Builds an <img> for a waving country flag using the flagpedia API with srcset for HiDPI.
+function flagImgHtml(countryCode, altText, cssClass) {
+    if (!countryCode) return '';
+    const code = countryCode.toLowerCase();
+    const cls = cssClass || 'inline-block rounded-sm';
+    return `<img src="https://flagcdn.com/24x18/${code}.png"
+                 srcset="https://flagcdn.com/48x36/${code}.png 2x,
+                         https://flagcdn.com/72x54/${code}.png 3x"
+                 width="24" height="18" alt="${altText || code.toUpperCase()}" class="${cls}" loading="lazy">`;
+}
 
 // --- GEMINI AI CONFIGURATION ---
 const ENCODED_KEY = "QUl6YVN5QTVGRmxtOVo5VFM5Vk9pYXNBVkxRVDdrNEdzeWNNMG8w"; 
@@ -286,10 +361,10 @@ function updateSeasonStatusUI(airDate) {
     badge.classList.remove('hidden', 'text-green-400', 'text-yellow-400', 'text-gray-400');
 
     if (release > today) {
-        badge.innerHTML = '<i class="far fa-calendar-alt mr-1"></i> Upcoming';
+        badge.innerHTML = '<svg class="svg-icon mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M120 0c13.3 0 24 10.7 24 24l0 40 160 0 0-40c0-13.3 10.7-24 24-24s24 10.7 24 24l0 40 32 0c35.3 0 64 28.7 64 64l0 288c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 128C0 92.7 28.7 64 64 64l32 0 0-40c0-13.3 10.7-24 24-24zm0 112l-56 0c-8.8 0-16 7.2-16 16l0 48 352 0 0-48c0-8.8-7.2-16-16-16l-264 0zM48 224l0 192c0 8.8 7.2 16 16 16l320 0c8.8 0 16-7.2 16-16l0-192-352 0z"/></svg></i> Upcoming';
         badge.classList.add('text-yellow-400');
     } else {
-        badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Released';
+        badge.innerHTML = '<svg class="svg-icon mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zM374 145.7c-10.7-7.8-25.7-5.4-33.5 5.3L221.1 315.2 169 263.1c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l72 72c5 5 11.8 7.5 18.8 7s13.4-4.1 17.5-9.8L379.3 179.2c7.8-10.7 5.4-25.7-5.3-33.5z"/></svg></i> Released';
         badge.classList.add('text-green-400');
     }
 }
@@ -320,17 +395,17 @@ function getPersonFace(path, gender, cssClass, iconSize = 'text-2xl') {
     }
     
     // Default Icon (User / Unknown)
-    let icon = '<i class="fas fa-user"></i>'; 
+    let icon = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M224 248a120 120 0 1 0 0-240 120 120 0 1 0 0 240zm-29.7 56C95.8 304 16 383.8 16 482.3 16 498.7 29.3 512 45.7 512l356.6 0c16.4 0 29.7-13.3 29.7-29.7 0-98.5-79.8-178.3-178.3-178.3l-59.4 0z"/></svg></i>'; 
     let color = 'text-gray-500';
 
     if (gender === 1) { // Female
-        icon = '<i class="fa-solid fa-venus"></i>';
+        icon = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M80 176a112 112 0 1 1 224 0 112 112 0 1 1 -224 0zM223.9 349.1C305.9 334.1 368 262.3 368 176 368 78.8 289.2 0 192 0S16 78.8 16 176c0 86.3 62.1 158.1 144.1 173.1-.1 1-.1 1.9-.1 2.9l0 64-32 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l32 0 0 32c0 17.7 14.3 32 32 32s32-14.3 32-32l0-32 32 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0 0-64c0-1 0-1.9-.1-2.9z"/></svg></i>';
         color = 'text-pink-500';
     } else if (gender === 2) { // Male
-        icon = '<i class="fa-solid fa-mars"></i>';
+        icon = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M320 32c0-17.7 14.3-32 32-32L480 0c17.7 0 32 14.3 32 32l0 128c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-50.7-95 95c19.5 28.4 31 62.7 31 99.8 0 97.2-78.8 176-176 176S32 401.2 32 304 110.8 128 208 128c37 0 71.4 11.4 99.8 31l95-95-50.7 0c-17.7 0-32-14.3-32-32zM208 416a112 112 0 1 0 0-224 112 112 0 1 0 0 224z"/></svg></i>';
         color = 'text-blue-500';
     } else if (gender === 3) { // Non-binary
-        icon = '<i class="fa-solid fa-non-binary"></i>';
+        icon = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M80 176a112 112 0 1 1 224 0 112 112 0 1 1 -224 0zM223.9 349.1C305.9 334.1 368 262.3 368 176 368 78.8 289.2 0 192 0S16 78.8 16 176c0 86.3 62.1 158.1 144.1 173.1-.1 1-.1 1.9-.1 2.9l0 64-32 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l32 0 0 32c0 17.7 14.3 32 32 32s32-14.3 32-32l0-32 32 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0 0-64c0-1 0-1.9-.1-2.9z"/></svg></i>';
         color = 'text-purple-400';
     }
 
@@ -645,10 +720,10 @@ async function checkAccountStates(id, type) {
             const favIcon = favBtn.querySelector('i');
             if (data.favorite) {
                 favBtn.classList.add('active');
-                favIcon.className = 'fa-solid fa-heart';
+                favIcon.outerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z"/></svg>';
             } else {
                 favBtn.classList.remove('active');
-                favIcon.className = 'fa-regular fa-heart';
+                favIcon.outerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M378.9 80c-27.3 0-53 13.1-69 35.2l-34.4 47.6c-4.5 6.2-11.7 9.9-19.4 9.9s-14.9-3.7-19.4-9.9l-34.4-47.6c-16-22.1-41.7-35.2-69-35.2-47 0-85.1 38.1-85.1 85.1 0 49.9 32 98.4 68.1 142.3 41.1 50 91.4 94 125.9 120.3 3.2 2.4 7.9 4.2 14 4.2s10.8-1.8 14-4.2c34.5-26.3 84.8-70.4 125.9-120.3 36.2-43.9 68.1-92.4 68.1-142.3 0-47-38.1-85.1-85.1-85.1zM271 87.1c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 68.6-42.9 128.9-79.1 172.8-44.1 53.6-97.3 100.1-133.8 127.9-12.3 9.4-27.5 14.1-43.1 14.1s-30.8-4.7-43.1-14.1C176.4 438 123.2 391.5 79.1 338 42.9 294.1 0 233.7 0 165.1 0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1l15 20.7 15-20.7z"/></svg>';
             }
         }
 
@@ -656,10 +731,10 @@ async function checkAccountStates(id, type) {
             const watchIcon = watchBtn.querySelector('i');
             if (data.watchlist) {
                 watchBtn.classList.add('active');
-                watchIcon.className = 'fa-solid fa-bookmark';
+                watchIcon.outerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg>';
             } else {
                 watchBtn.classList.remove('active');
-                watchIcon.className = 'fa-regular fa-bookmark';
+                watchIcon.outerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L320 0c35.3 0 64 28.7 64 64l0 417.1c0 25.6-28.5 40.8-49.8 26.6L192 412.8 49.8 507.7C28.5 521.9 0 506.6 0 481.1L0 64zM64 48c-8.8 0-16 7.2-16 16l0 387.2 117.4-78.2c16.1-10.7 37.1-10.7 53.2 0L336 451.2 336 64c0-8.8-7.2-16-16-16L64 48z"/></svg>';
             }
         }
 
@@ -682,7 +757,7 @@ async function toggleFavorite() {
     const isFav = btn.classList.contains('active');
 
     btn.classList.toggle('active');
-    icon.className = isFav ? 'fa-regular fa-heart' : 'fa-solid fa-heart';
+    icon.outerHTML = isFav ? '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M378.9 80c-27.3 0-53 13.1-69 35.2l-34.4 47.6c-4.5 6.2-11.7 9.9-19.4 9.9s-14.9-3.7-19.4-9.9l-34.4-47.6c-16-22.1-41.7-35.2-69-35.2-47 0-85.1 38.1-85.1 85.1 0 49.9 32 98.4 68.1 142.3 41.1 50 91.4 94 125.9 120.3 3.2 2.4 7.9 4.2 14 4.2s10.8-1.8 14-4.2c34.5-26.3 84.8-70.4 125.9-120.3 36.2-43.9 68.1-92.4 68.1-142.3 0-47-38.1-85.1-85.1-85.1zM271 87.1c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 68.6-42.9 128.9-79.1 172.8-44.1 53.6-97.3 100.1-133.8 127.9-12.3 9.4-27.5 14.1-43.1 14.1s-30.8-4.7-43.1-14.1C176.4 438 123.2 391.5 79.1 338 42.9 294.1 0 233.7 0 165.1 0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1l15 20.7 15-20.7z"/></svg>' : '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z"/></svg>';
 
     try {
         await fetch(`${BASE_TMDB_URL}/account/${accountId}/favorite?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
@@ -693,7 +768,7 @@ async function toggleFavorite() {
         showMessage(isFav ? "Removed from Favorites" : "Added to Favorites");
     } catch (e) {
         btn.classList.toggle('active');
-        icon.className = isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        icon.outerHTML = isFav ? '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z"/></svg>' : '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M378.9 80c-27.3 0-53 13.1-69 35.2l-34.4 47.6c-4.5 6.2-11.7 9.9-19.4 9.9s-14.9-3.7-19.4-9.9l-34.4-47.6c-16-22.1-41.7-35.2-69-35.2-47 0-85.1 38.1-85.1 85.1 0 49.9 32 98.4 68.1 142.3 41.1 50 91.4 94 125.9 120.3 3.2 2.4 7.9 4.2 14 4.2s10.8-1.8 14-4.2c34.5-26.3 84.8-70.4 125.9-120.3 36.2-43.9 68.1-92.4 68.1-142.3 0-47-38.1-85.1-85.1-85.1zM271 87.1c25-34.6 65.2-55.1 107.9-55.1 73.5 0 133.1 59.6 133.1 133.1 0 68.6-42.9 128.9-79.1 172.8-44.1 53.6-97.3 100.1-133.8 127.9-12.3 9.4-27.5 14.1-43.1 14.1s-30.8-4.7-43.1-14.1C176.4 438 123.2 391.5 79.1 338 42.9 294.1 0 233.7 0 165.1 0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1l15 20.7 15-20.7z"/></svg>';
         showMessage("Action failed", true);
     }
 }
@@ -705,7 +780,7 @@ async function toggleWatchlist() {
     const isWatch = btn.classList.contains('active');
 
     btn.classList.toggle('active');
-    icon.className = isWatch ? 'fa-regular fa-bookmark' : 'fa-solid fa-bookmark';
+    icon.outerHTML = isWatch ? '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L320 0c35.3 0 64 28.7 64 64l0 417.1c0 25.6-28.5 40.8-49.8 26.6L192 412.8 49.8 507.7C28.5 521.9 0 506.6 0 481.1L0 64zM64 48c-8.8 0-16 7.2-16 16l0 387.2 117.4-78.2c16.1-10.7 37.1-10.7 53.2 0L336 451.2 336 64c0-8.8-7.2-16-16-16L64 48z"/></svg>' : '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg>';
 
     try {
         await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
@@ -716,7 +791,7 @@ async function toggleWatchlist() {
         showMessage(isWatch ? "Removed from Watchlist" : "Added to Watchlist");
     } catch (e) {
         btn.classList.toggle('active');
-        icon.className = isWatch ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+        icon.outerHTML = isWatch ? '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg>' : '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L320 0c35.3 0 64 28.7 64 64l0 417.1c0 25.6-28.5 40.8-49.8 26.6L192 412.8 49.8 507.7C28.5 521.9 0 506.6 0 481.1L0 64zM64 48c-8.8 0-16 7.2-16 16l0 387.2 117.4-78.2c16.1-10.7 37.1-10.7 53.2 0L336 451.2 336 64c0-8.8-7.2-16-16-16L64 48z"/></svg>';
         showMessage("Action failed", true);
     }
 }
@@ -845,7 +920,7 @@ function loadHome() {
         document.getElementById('continue-watching-section').classList.add('hidden');
     }
 
-    document.getElementById('trending-header').innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    document.getElementById('trending-header').innerHTML = '<svg class="svg-icon text-red-500 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M160.5-26.4c9.3-7.8 23-7.5 31.9 .9 12.3 11.6 23.3 24.4 33.9 37.4 13.5 16.5 29.7 38.3 45.3 64.2 5.2-6.8 10-12.8 14.2-17.9 1.1-1.3 2.2-2.7 3.3-4.1 7.9-9.8 17.7-22.1 30.8-22.1 13.4 0 22.8 11.9 30.8 22.1 1.3 1.7 2.6 3.3 3.9 4.8 10.3 12.4 24 30.3 37.7 52.4 27.2 43.9 55.6 106.4 55.6 176.6 0 123.7-100.3 224-224 224S0 411.7 0 288c0-91.1 41.1-170 80.5-225 19.9-27.7 39.7-49.9 54.6-65.1 8.2-8.4 16.5-16.7 25.5-24.2zM225.7 416c25.3 0 47.7-7 68.8-21 42.1-29.4 53.4-88.2 28.1-134.4-4.5-9-16-9.6-22.5-2l-25.2 29.3c-6.6 7.6-18.5 7.4-24.7-.5-17.3-22.1-49.1-62.4-65.3-83-5.4-6.9-15.2-8-21.5-1.9-18.3 17.8-51.5 56.8-51.5 104.3 0 68.6 50.6 109.2 113.7 109.2z"/></svg></i> Trending Now';
     document.querySelectorAll('.slider-filter-btn').forEach(b => {
         b.classList.toggle('active', b.textContent.trim() === 'All');
     });
@@ -925,11 +1000,11 @@ function showMessage(text, isError = false) {
 
     // Theme: error = red accent, success = green accent
     if (isError) {
-        icon.innerHTML = '<i class="fas fa-xmark"></i>';
+        icon.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></i>';
         icon.style.cssText = 'background: rgba(229,9,20,0.2); color: #e50914;';
         inner.style.borderColor = 'rgba(229,9,20,0.35)';
     } else {
-        icon.innerHTML = '<i class="fas fa-check"></i>';
+        icon.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></i>';
         icon.style.cssText = 'background: rgba(70,211,105,0.2); color: #46d369;';
         inner.style.borderColor = 'rgba(70,211,105,0.3)';
     }
@@ -1138,7 +1213,7 @@ async function initHero(items) {
         const link = document.createElement('link');
         link.rel = 'preload';
         link.as = 'image';
-        link.href = `${TMDB_BACKDROP_WEB}${validItems[0].backdrop_path}`;
+        link.href = responsiveBackdropUrl(validItems[0].backdrop_path);
         document.head.appendChild(link);
     }
 
@@ -1146,7 +1221,7 @@ async function initHero(items) {
     const slideNodes = [];
     validItems.forEach((item, i) => {
         const title = item.title || item.name;
-        const backdrop = `${TMDB_BACKDROP_WEB}${item.backdrop_path}`;
+        const backdrop = responsiveBackdropUrl(item.backdrop_path);
 
         let logoUrl = null;
         if (logoResults[i].status === 'fulfilled') {
@@ -1169,7 +1244,7 @@ async function initHero(items) {
                         ${titleHtml}
                         <p class="hero-text text-white text-gray-200">${item.overview}</p>
                         <button onclick="selectContent(${item.id}, '${title.replace(/'/g, "\\'")}', '${item.media_type}')" class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3" tabindex="-1">
-                            <i class="fas fa-play mr-2"></i> Watch Now
+                            <svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i> Watch Now
                         </button>
                     </div>
                 </div>
@@ -1559,7 +1634,7 @@ function renderCards(items, container, trackIds) {
                          onload="this.classList.remove('skeleton')"
                          onerror="this.onerror=null; this.src='${fallbackImage}'">
                     <div class="play-overlay">
-                        <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                        <div class="play-icon-circle"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i></div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -1567,7 +1642,7 @@ function renderCards(items, container, trackIds) {
                     ${charHtml}
                     <div class="card-meta">
                         <span>${year}</span>
-                        <span class="text-yellow-500 font-bold"><i class="fas fa-star mr-1"></i>${rating}</span>
+                        <span class="text-yellow-500 font-bold"><svg class="svg-icon mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i>${rating}</span>
                     </div>
                 </div>
             `;
@@ -2067,7 +2142,7 @@ function displayResults(results) {
             const logo = item.logo_path ? `${TMDB_IMG_BASE_URL}${item.logo_path}` : null;
             const imgHtml = logo 
                 ? `<img src="${logo}" class="result-poster" style="object-fit:contain; background:white; padding:2px;" loading="lazy">`
-                : `<div class="result-poster flex items-center justify-center bg-gray-700 text-gray-400"><i class="fas fa-building"></i></div>`;
+                : `<div class="result-poster flex items-center justify-center bg-gray-700 text-gray-400"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-384c0-35.3-28.7-64-64-64L64 0zM176 352l32 0c17.7 0 32 14.3 32 32l0 80-96 0 0-80c0-17.7 14.3-32 32-32zM96 112c0-8.8 7.2-16 16-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32zM240 96l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32c0-8.8 7.2-16 16-16zM96 240c0-8.8 7.2-16 16-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32zm144-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32c0-8.8 7.2-16 16-16z"/></svg></i></div>`;
             
             li.innerHTML = `
                 ${imgHtml}
@@ -2085,7 +2160,7 @@ function displayResults(results) {
         else if (item.media_type === 'keyword') {
             li.innerHTML = `
                 <div class="result-poster flex items-center justify-center bg-gray-800 text-gray-400 border border-gray-700">
-                    <i class="fas fa-hashtag"></i>
+                    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.7 .7c17.3 3.7 28.3 20.7 24.6 38l-19.1 89.3 126.5 0 22-102.7C372.4 8 389.4-3 406.7 .7s28.3 20.7 24.6 38L412.2 128 480 128c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-27.4 128 67.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38l19.1-89.3-126.5 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38L99.8 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 27.4-128-67.8 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 22-102.7C180.4 8 197.4-3 214.7 .7zM206.4 192l-27.4 128 126.5 0 27.4-128-126.5 0z"/></svg></i>
                 </div>
                 <div class="text-left">
                     <div class="font-bold text-white text-sm">${_highlightQuery(item.name, activeQuery)}</div>
@@ -2283,13 +2358,13 @@ function renderPersonProfile(data, totalCredits) {
     let socialsHtml = '';
     const ids = data.external_ids;
     if (ids) {
-        if (ids.imdb_id) socialsHtml += `<a href="https://www.imdb.com/name/${ids.imdb_id}" target="_blank" class="text-yellow-500 hover:text-white transition" title="IMDb"><i class="fab fa-imdb text-2xl"></i></a>`;
-        if (ids.wikidata_id) socialsHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" class="text-gray-300 hover:text-white transition" title="Wikipedia"><i class="fab fa-wikipedia-w text-2xl"></i></a>`;
-        if (ids.facebook_id) socialsHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" class="text-blue-600 hover:text-white transition" title="Facebook"><i class="fab fa-facebook text-2xl"></i></a>`;
-        if (ids.instagram_id) socialsHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" class="text-pink-500 hover:text-white transition" title="Instagram"><i class="fab fa-instagram text-2xl"></i></a>`;
-        if (ids.twitter_id) socialsHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" class="text-blue-400 hover:text-white transition" title="X (Twitter)"><i class="fab fa-x-twitter text-2xl"></i></a>`;
-        if (ids.tiktok_id) socialsHtml += `<a href="https://www.tiktok.com/@${ids.tiktok_id}" target="_blank" class="text-pink-400 hover:text-white transition" title="TikTok"><i class="fab fa-tiktok text-2xl"></i></a>`;
-        if (ids.youtube_id) socialsHtml += `<a href="https://www.youtube.com/${ids.youtube_id}" target="_blank" class="text-red-600 hover:text-white transition" title="YouTube"><i class="fab fa-youtube text-2xl"></i></a>`;
+        if (ids.imdb_id) socialsHtml += `<a href="https://www.imdb.com/name/${ids.imdb_id}" target="_blank" class="text-yellow-500 hover:text-white transition" title="IMDb"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M89.5 323.6l-35.6 0 0-137.4 35.6 0 0 137.4zm66.6-73.1l9.1-64.3 46.3 0 0 137.4-31 0 0-92.7-13.4 92.7-21.3 0-13-90.7-.1 90.7-31.2 0 0-137.4 46.1 0c.5 8.3 2.8 18.1 4.3 29.4l4.2 34.9zm67.6 73.1l0-137.4 26.6 0c17 0 27 .9 33 2.4 6.1 1.7 10.7 4.2 13.9 7.9 3.1 3.3 5.1 6.6 5.8 12 .9 4.4 1.4 13.1 1.4 26.2l0 48.2c0 12.3-.7 20.5-1.9 24.7-1.1 4.1-3.1 7.4-6 9.7-2.8 2.4-6.4 4.1-10.7 5-4.2 .8-10.6 1.3-19.1 1.3l-43 0zm35.5-113.9l0 89.4c5.1 0 8.3-1 9.4-2.3 1.1-2 1.8-7.6 1.8-16.7l0-53.3c0-6.2-.1-10.2-.7-12-.3-1.8-1.2-3-2.6-4.7-1.4 0-4.1-.4-7.9-.4zm57.3 113.9l0-137.4 34.1 0 0 43.9c2.9-2.4 6.1-4.9 9.5-6.6 3.6-1.5 8.8-2.4 12.8-2.4 4.8 0 8.9 .8 12.3 2.2 3.4 1.5 6 3.5 8 6.2 1.7 2.6 2.7 5.3 3.1 7.8 .4 2.6-.2 8-.2 16.2l0 38.6c0 8.2 .2 14.3-.8 18.4-1.1 4-3.8 7.6-7.8 9.6-4.1 3.9-8.9 5.3-14.6 5.3-4 0-9.2-.9-12.7-2.5-3.5-1.8-6.7-4.5-9.6-8l-2.1 8.7-32 0zm45.1-20.7c.7-1.8 1-6 1-12.5l0-35.4c0-5.6-.3-9.5-1.1-11.2-.7-1.9-3.7-2.7-5.8-2.7-2 0-3.4 .8-4.1 2.3-.6 1.5-1 5.4-1 11.6l0 36.4c0 6.1 .4 10 1.2 11.6 .6 1.7 2.1 2.5 4.1 2.5 2.2 0 4.2-.8 5.7-2.6zM418.4 32c15.7 1.2 28.7 15.2 28.7 31.9l0 384.2c0 16.4-11.9 30.4-28.2 31-.3 0-.5 .9-.8 .9L29.9 480c-.3 0-.6-.9-.8-.1-15.7-1.4-27.9-13.8-29-30.2L0 61.8C1.1 45.9 13.8 33.1 30.3 31.1l387.4 0c.2 0 .5 .9 .7 .9zM30.3 41.3C19 42 10 51 9.3 62.4l0 387.3c.4 5.4 2.7 10.5 6.4 14.3 3.8 3.9 8.8 6.3 14.2 6.7l388.2 0c11.5-1 20.6-11.6 20.6-22.6l0-384.2c0-5.7-2.1-11.3-6-15.5s-9.3-6.8-15-7.2l-387.4 0z"/></svg></i></a>`;
+        if (ids.wikidata_id) socialsHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" class="text-gray-300 hover:text-white transition" title="Wikipedia"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M640 51.2l-.3 12.2c-28.1 .8-45 15.8-55.8 40.3-25 57.8-103.3 240-155.3 358.6l-13.6 0-81.9-193.1c-32.5 63.6-68.3 130-99.2 193.1-.3 .3-15 0-15-.3-46.9-109.7-96.1-218.6-143.1-328.6-11.4-26.7-49.4-70-75.6-69.7 0-3.1-.3-10-.3-14.2l161.9 0 0 13.9c-19.2 1.1-52.8 13.3-43.3 34.2 21.9 49.7 103.6 240.3 125.6 288.6 15-29.7 57.8-109.2 75.3-142.8-13.9-28.3-58.6-133.9-72.8-160-9.7-17.8-36.1-19.4-55.8-19.7l0-13.9 142.5 .3 0 13.1c-19.4 .6-38.1 7.8-29.4 26.1 18.9 40 30.6 68.1 48.1 104.7 5.6-10.8 34.7-69.4 48.1-100.8 8.9-20.6-3.9-28.6-38.6-29.4 .3-3.6 0-10.3 .3-13.6 44.4-.3 111.1-.3 123.1-.6l0 13.6C462.4 64 439.1 76 426.8 94.9L367.6 217.7c6.4 16.1 63.3 142.8 69.2 156.7L559.2 91.8c-8.6-23.1-36.4-28.1-47.2-28.3l0-13.9 127.8 1.1 .2 .5z"/></svg></i></a>`;
+        if (ids.facebook_id) socialsHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" class="text-blue-600 hover:text-white transition" title="Facebook"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M512 256C512 114.6 397.4 0 256 0S0 114.6 0 256C0 376 82.7 476.8 194.2 504.5l0-170.3-52.8 0 0-78.2 52.8 0 0-33.7c0-87.1 39.4-127.5 125-127.5 16.2 0 44.2 3.2 55.7 6.4l0 70.8c-6-.6-16.5-1-29.6-1-42 0-58.2 15.9-58.2 57.2l0 27.8 83.6 0-14.4 78.2-69.3 0 0 175.9C413.8 494.8 512 386.9 512 256z"/></svg></i></a>`;
+        if (ids.instagram_id) socialsHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" class="text-pink-500 hover:text-white transition" title="Instagram"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M224.3 141a115 115 0 1 0 -.6 230 115 115 0 1 0 .6-230zm-.6 40.4a74.6 74.6 0 1 1 .6 149.2 74.6 74.6 0 1 1 -.6-149.2zm93.4-45.1a26.8 26.8 0 1 1 53.6 0 26.8 26.8 0 1 1 -53.6 0zm129.7 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM399 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg></i></a>`;
+        if (ids.twitter_id) socialsHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" class="text-blue-400 hover:text-white transition" title="X (Twitter)"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M357.2 48L427.8 48 273.6 224.2 455 464 313 464 201.7 318.6 74.5 464 3.8 464 168.7 275.5-5.2 48 140.4 48 240.9 180.9 357.2 48zM332.4 421.8l39.1 0-252.4-333.8-42 0 255.3 333.8z"/></svg></i></a>`;
+        if (ids.tiktok_id) socialsHtml += `<a href="https://www.tiktok.com/@${ids.tiktok_id}" target="_blank" class="text-pink-400 hover:text-white transition" title="TikTok"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M448.5 209.9c-44 .1-87-13.6-122.8-39.2l0 178.7c0 33.1-10.1 65.4-29 92.6s-45.6 48-76.6 59.6-64.8 13.5-96.9 5.3-60.9-25.9-82.7-50.8-35.3-56-39-88.9 2.9-66.1 18.6-95.2 40-52.7 69.6-67.7 62.9-20.5 95.7-16l0 89.9c-15-4.7-31.1-4.6-46 .4s-27.9 14.6-37 27.3-14 28.1-13.9 43.9 5.2 31 14.5 43.7 22.4 22.1 37.4 26.9 31.1 4.8 46-.1 28-14.4 37.2-27.1 14.2-28.1 14.2-43.8l0-349.4 88 0c-.1 7.4 .6 14.9 1.9 22.2 3.1 16.3 9.4 31.9 18.7 45.7s21.3 25.6 35.2 34.6c19.9 13.1 43.2 20.1 67 20.1l0 87.4z"/></svg></i></a>`;
+        if (ids.youtube_id) socialsHtml += `<a href="https://www.youtube.com/${ids.youtube_id}" target="_blank" class="text-red-600 hover:text-white transition" title="YouTube"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M549.7 124.1C543.5 100.4 524.9 81.8 501.4 75.5 458.9 64 288.1 64 288.1 64S117.3 64 74.7 75.5C51.2 81.8 32.7 100.4 26.4 124.1 15 167 15 256.4 15 256.4s0 89.4 11.4 132.3c6.3 23.6 24.8 41.5 48.3 47.8 42.6 11.5 213.4 11.5 213.4 11.5s170.8 0 213.4-11.5c23.5-6.3 42-24.2 48.3-47.8 11.4-42.9 11.4-132.3 11.4-132.3s0-89.4-11.4-132.3zM232.2 337.6l0-162.4 142.7 81.2-142.7 81.2z"/></svg></i></a>`;
     }
 
     // --- CHECK IF EMPTY ---
@@ -2498,7 +2573,7 @@ window.clearFilters = function() {
     }
 
     const header = document.getElementById('trending-header');
-    header.innerHTML = '<i class="fas fa-fire text-red-500 mr-3"></i> Trending Now';
+    header.innerHTML = '<svg class="svg-icon text-red-500 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M160.5-26.4c9.3-7.8 23-7.5 31.9 .9 12.3 11.6 23.3 24.4 33.9 37.4 13.5 16.5 29.7 38.3 45.3 64.2 5.2-6.8 10-12.8 14.2-17.9 1.1-1.3 2.2-2.7 3.3-4.1 7.9-9.8 17.7-22.1 30.8-22.1 13.4 0 22.8 11.9 30.8 22.1 1.3 1.7 2.6 3.3 3.9 4.8 10.3 12.4 24 30.3 37.7 52.4 27.2 43.9 55.6 106.4 55.6 176.6 0 123.7-100.3 224-224 224S0 411.7 0 288c0-91.1 41.1-170 80.5-225 19.9-27.7 39.7-49.9 54.6-65.1 8.2-8.4 16.5-16.7 25.5-24.2zM225.7 416c25.3 0 47.7-7 68.8-21 42.1-29.4 53.4-88.2 28.1-134.4-4.5-9-16-9.6-22.5-2l-25.2 29.3c-6.6 7.6-18.5 7.4-24.7-.5-17.3-22.1-49.1-62.4-65.3-83-5.4-6.9-15.2-8-21.5-1.9-18.3 17.8-51.5 56.8-51.5 104.3 0 68.6 50.6 109.2 113.7 109.2z"/></svg></i> Trending Now';
 
     // The All/Movies/TV Shows slider is only meaningful for the default mixed
     // trending feed (it actually contains both types there) - bring it back.
@@ -3250,7 +3325,7 @@ window.changeSeason = async function(seasonVal, episodeVal = 1) {
         updateSeasonStatusUI(selectedSeasonData.air_date);
     }
 
-    episodeAccordionContent.innerHTML = '<div class="text-center p-4 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading Season...</div>';
+    episodeAccordionContent.innerHTML = '<div class="text-center p-4 text-gray-400"><svg class="svg-icon mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M208 48a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm0 416a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zM48 208a48 48 0 1 1 0 96 48 48 0 1 1 0-96zm368 48a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zM75 369.1A48 48 0 1 1 142.9 437 48 48 0 1 1 75 369.1zM75 75A48 48 0 1 1 142.9 142.9 48 48 0 1 1 75 75zM437 369.1A48 48 0 1 1 369.1 437 48 48 0 1 1 437 369.1z"/></svg></i>Loading Season...</div>';
     
     // Auto-open accordion so user can see the episodes loading
     if (!accordionOpen) toggleAccordion();
@@ -3304,10 +3379,10 @@ function renderEpisodesRich() {
         // -------------------------------
 
         const metaString = `
-            <span class="text-yellow-500"><i class="fas fa-star text-[10px]"></i> ${rating}</span>
+            <span class="text-yellow-500"><svg class="svg-icon text-[10px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i> ${rating}</span>
             <span class="text-gray-600">|</span>
             <span>${date}</span>
-            ${runtime ? `<span class="text-gray-600">|</span> <span class="text-gray-300"><i class="far fa-clock text-[10px] mr-1"></i>${runtime}</span>` : ''}
+            ${runtime ? `<span class="text-gray-600">|</span> <span class="text-gray-300"><svg class="svg-icon text-[10px] mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M464 256a208 208 0 1 1 -416 0 208 208 0 1 1 416 0zM0 256a256 256 0 1 0 512 0 256 256 0 1 0 -512 0zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg></i>${runtime}</span>` : ''}
         `;
 
         episodesHtml += `
@@ -3327,7 +3402,7 @@ function renderEpisodesRich() {
     episodeAccordionContent.innerHTML = `
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-2 z-10 hidden" id="ep-btn-left" onclick="scrollContainer('episodes-scroll-list', -300)">
-                <i class="fas fa-chevron-left"></i>
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg></i>
             </button>
             
             <div id="episodes-scroll-list">
@@ -3335,7 +3410,7 @@ function renderEpisodesRich() {
             </div>
 
             <button class="scroll-btn right-0 -mr-2 z-10" id="ep-btn-right" onclick="scrollContainer('episodes-scroll-list', 300)">
-                <i class="fas fa-chevron-right"></i>
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></i>
             </button>
         </div>
     `;
@@ -3448,7 +3523,7 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
 
     // ── States C & D: backdrop, no video ─────────────────────────────────────
     if (hasBackdrop && !hasVideo) {
-        backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
+        backdropEl.style.backgroundImage = `url('${responsiveBackdropUrl(backdropPath)}')`;
         backdropEl.style.opacity = '1';
         backdropEl.classList.add('kenburns');
         if (hasPoster && posterPin) {
@@ -3469,7 +3544,7 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
 
     // ── States A & B: backdrop + video ───────────────────────────────────────
     if (hasBackdrop) {
-        backdropEl.style.backgroundImage = `url('https://image.tmdb.org/t/p/original${backdropPath}')`;
+        backdropEl.style.backgroundImage = `url('${responsiveBackdropUrl(backdropPath)}')`;
         backdropEl.style.opacity = '1';
         backdropEl.classList.add('kenburns');
         if (hasPoster && posterPin) {
@@ -3505,7 +3580,7 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
             }
             // Only now reveal the pause/play button
             muteBtn.classList.remove('hidden');
-            muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            muteBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80L0 432c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48L48 32zm224 0c-26.5 0-48 21.5-48 48l0 352c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48l-64 0z"/></svg></i>';
         }
 
         // ── YouTube ───────────────────────────────────────────────────────────
@@ -3536,10 +3611,10 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
                                 if (heroSessionToken !== myToken) return;
                                 if (isHeroPaused) {
                                     heroPlayer.playVideo();
-                                    muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                    muteBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80L0 432c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48L48 32zm224 0c-26.5 0-48 21.5-48 48l0 352c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48l-64 0z"/></svg></i>';
                                 } else {
                                     heroPlayer.pauseVideo();
-                                    muteBtn.innerHTML = '<i class="fas fa-play" style="margin-left:2px"></i>';
+                                    muteBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" style="margin-left:2px"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i>';
                                 }
                                 isHeroPaused = !isHeroPaused;
                             };
@@ -3587,10 +3662,10 @@ async function launchHeroTrailer(backdropPath, videoQueue, hasPoster = true) {
                             if (heroSessionToken !== myToken) return;
                             if (isHeroPaused) {
                                 if (vimeoIframe) vimeoIframe.src = vimeoSrc;
-                                muteBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                muteBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80L0 432c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48L48 32zm224 0c-26.5 0-48 21.5-48 48l0 352c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48l-64 0z"/></svg></i>';
                             } else {
                                 if (vimeoIframe) vimeoIframe.src = '';
-                                muteBtn.innerHTML = '<i class="fas fa-play" style="margin-left:2px"></i>';
+                                muteBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" style="margin-left:2px"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i>';
                             }
                             isHeroPaused = !isHeroPaused;
                         };
@@ -3706,7 +3781,7 @@ function renderDetails(data, title) {
     // ============================================================
     // 2. VISUAL SETUP (Background & Colors)
     // ============================================================
-    if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${data.backdrop_path}')`;
+    if (data.backdrop_path) pageBackground.style.backgroundImage = `url('${responsiveBackdropUrl(data.backdrop_path)}')`;
     else pageBackground.style.backgroundImage = 'none';
 
     const posterUrl = data.poster_path ? `${TMDB_POSTER_MD}${data.poster_path}` : null;
@@ -3765,16 +3840,16 @@ function renderDetails(data, title) {
     let socialHtml = '';
     // Official Homepage
     if (data.homepage) {
-        socialHtml += `<a href="${data.homepage}" target="_blank" title="Official Website" class="social-link-btn"><i class="fas fa-link"></i></a>`;
+        socialHtml += `<a href="${data.homepage}" target="_blank" title="Official Website" class="social-link-btn"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M419.5 96c-16.6 0-32.7 4.5-46.8 12.7-15.8-16-34.2-29.4-54.5-39.5 28.2-24 64.1-37.2 101.3-37.2 86.4 0 156.5 70 156.5 156.5 0 41.5-16.5 81.3-45.8 110.6l-71.1 71.1c-29.3 29.3-69.1 45.8-110.6 45.8-86.4 0-156.5-70-156.5-156.5 0-1.5 0-3 .1-4.5 .5-17.7 15.2-31.6 32.9-31.1s31.6 15.2 31.1 32.9c0 .9 0 1.8 0 2.6 0 51.1 41.4 92.5 92.5 92.5 24.5 0 48-9.7 65.4-27.1l71.1-71.1c17.3-17.3 27.1-40.9 27.1-65.4 0-51.1-41.4-92.5-92.5-92.5zM275.2 173.3c-1.9-.8-3.8-1.9-5.5-3.1-12.6-6.5-27-10.2-42.1-10.2-24.5 0-48 9.7-65.4 27.1L91.1 258.2c-17.3 17.3-27.1 40.9-27.1 65.4 0 51.1 41.4 92.5 92.5 92.5 16.5 0 32.6-4.4 46.7-12.6 15.8 16 34.2 29.4 54.6 39.5-28.2 23.9-64 37.2-101.3 37.2-86.4 0-156.5-70-156.5-156.5 0-41.5 16.5-81.3 45.8-110.6l71.1-71.1c29.3-29.3 69.1-45.8 110.6-45.8 86.6 0 156.5 70.6 156.5 156.9 0 1.3 0 2.6 0 3.9-.4 17.7-15.1 31.6-32.8 31.2s-31.6-15.1-31.2-32.8c0-.8 0-1.5 0-2.3 0-33.7-18-63.3-44.8-79.6z"/></svg></i></a>`;
     }
     // Social Networks
     if (data.external_ids) {
         const ids = data.external_ids;
-        if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><i class="fab fa-imdb text-2xl"></i></a>`;
-        if (ids.wikidata_id) socialHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" title="Wikipedia" class="social-link-btn wikipedia"><i class="fab fa-wikipedia-w"></i></a>`;
-        if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><i class="fab fa-facebook"></i></a>`;
-        if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><i class="fab fa-instagram"></i></a>`;
-        if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><i class="fab fa-x-twitter"></i></a>`;
+        if (ids.imdb_id) socialHtml += `<a href="https://www.imdb.com/title/${ids.imdb_id}" target="_blank" title="IMDb" class="social-link-btn imdb"><svg class="svg-icon text-2xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M89.5 323.6l-35.6 0 0-137.4 35.6 0 0 137.4zm66.6-73.1l9.1-64.3 46.3 0 0 137.4-31 0 0-92.7-13.4 92.7-21.3 0-13-90.7-.1 90.7-31.2 0 0-137.4 46.1 0c.5 8.3 2.8 18.1 4.3 29.4l4.2 34.9zm67.6 73.1l0-137.4 26.6 0c17 0 27 .9 33 2.4 6.1 1.7 10.7 4.2 13.9 7.9 3.1 3.3 5.1 6.6 5.8 12 .9 4.4 1.4 13.1 1.4 26.2l0 48.2c0 12.3-.7 20.5-1.9 24.7-1.1 4.1-3.1 7.4-6 9.7-2.8 2.4-6.4 4.1-10.7 5-4.2 .8-10.6 1.3-19.1 1.3l-43 0zm35.5-113.9l0 89.4c5.1 0 8.3-1 9.4-2.3 1.1-2 1.8-7.6 1.8-16.7l0-53.3c0-6.2-.1-10.2-.7-12-.3-1.8-1.2-3-2.6-4.7-1.4 0-4.1-.4-7.9-.4zm57.3 113.9l0-137.4 34.1 0 0 43.9c2.9-2.4 6.1-4.9 9.5-6.6 3.6-1.5 8.8-2.4 12.8-2.4 4.8 0 8.9 .8 12.3 2.2 3.4 1.5 6 3.5 8 6.2 1.7 2.6 2.7 5.3 3.1 7.8 .4 2.6-.2 8-.2 16.2l0 38.6c0 8.2 .2 14.3-.8 18.4-1.1 4-3.8 7.6-7.8 9.6-4.1 3.9-8.9 5.3-14.6 5.3-4 0-9.2-.9-12.7-2.5-3.5-1.8-6.7-4.5-9.6-8l-2.1 8.7-32 0zm45.1-20.7c.7-1.8 1-6 1-12.5l0-35.4c0-5.6-.3-9.5-1.1-11.2-.7-1.9-3.7-2.7-5.8-2.7-2 0-3.4 .8-4.1 2.3-.6 1.5-1 5.4-1 11.6l0 36.4c0 6.1 .4 10 1.2 11.6 .6 1.7 2.1 2.5 4.1 2.5 2.2 0 4.2-.8 5.7-2.6zM418.4 32c15.7 1.2 28.7 15.2 28.7 31.9l0 384.2c0 16.4-11.9 30.4-28.2 31-.3 0-.5 .9-.8 .9L29.9 480c-.3 0-.6-.9-.8-.1-15.7-1.4-27.9-13.8-29-30.2L0 61.8C1.1 45.9 13.8 33.1 30.3 31.1l387.4 0c.2 0 .5 .9 .7 .9zM30.3 41.3C19 42 10 51 9.3 62.4l0 387.3c.4 5.4 2.7 10.5 6.4 14.3 3.8 3.9 8.8 6.3 14.2 6.7l388.2 0c11.5-1 20.6-11.6 20.6-22.6l0-384.2c0-5.7-2.1-11.3-6-15.5s-9.3-6.8-15-7.2l-387.4 0z"/></svg></i></a>`;
+        if (ids.wikidata_id) socialHtml += `<a href="https://www.wikidata.org/wiki/Special:GoToLinkedPage/enwiki/${ids.wikidata_id}" target="_blank" title="Wikipedia" class="social-link-btn wikipedia"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M640 51.2l-.3 12.2c-28.1 .8-45 15.8-55.8 40.3-25 57.8-103.3 240-155.3 358.6l-13.6 0-81.9-193.1c-32.5 63.6-68.3 130-99.2 193.1-.3 .3-15 0-15-.3-46.9-109.7-96.1-218.6-143.1-328.6-11.4-26.7-49.4-70-75.6-69.7 0-3.1-.3-10-.3-14.2l161.9 0 0 13.9c-19.2 1.1-52.8 13.3-43.3 34.2 21.9 49.7 103.6 240.3 125.6 288.6 15-29.7 57.8-109.2 75.3-142.8-13.9-28.3-58.6-133.9-72.8-160-9.7-17.8-36.1-19.4-55.8-19.7l0-13.9 142.5 .3 0 13.1c-19.4 .6-38.1 7.8-29.4 26.1 18.9 40 30.6 68.1 48.1 104.7 5.6-10.8 34.7-69.4 48.1-100.8 8.9-20.6-3.9-28.6-38.6-29.4 .3-3.6 0-10.3 .3-13.6 44.4-.3 111.1-.3 123.1-.6l0 13.6C462.4 64 439.1 76 426.8 94.9L367.6 217.7c6.4 16.1 63.3 142.8 69.2 156.7L559.2 91.8c-8.6-23.1-36.4-28.1-47.2-28.3l0-13.9 127.8 1.1 .2 .5z"/></svg></i></a>`;
+        if (ids.facebook_id) socialHtml += `<a href="https://facebook.com/${ids.facebook_id}" target="_blank" title="Facebook" class="social-link-btn facebook"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M512 256C512 114.6 397.4 0 256 0S0 114.6 0 256C0 376 82.7 476.8 194.2 504.5l0-170.3-52.8 0 0-78.2 52.8 0 0-33.7c0-87.1 39.4-127.5 125-127.5 16.2 0 44.2 3.2 55.7 6.4l0 70.8c-6-.6-16.5-1-29.6-1-42 0-58.2 15.9-58.2 57.2l0 27.8 83.6 0-14.4 78.2-69.3 0 0 175.9C413.8 494.8 512 386.9 512 256z"/></svg></i></a>`;
+        if (ids.instagram_id) socialHtml += `<a href="https://instagram.com/${ids.instagram_id}" target="_blank" title="Instagram" class="social-link-btn instagram"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M224.3 141a115 115 0 1 0 -.6 230 115 115 0 1 0 .6-230zm-.6 40.4a74.6 74.6 0 1 1 .6 149.2 74.6 74.6 0 1 1 -.6-149.2zm93.4-45.1a26.8 26.8 0 1 1 53.6 0 26.8 26.8 0 1 1 -53.6 0zm129.7 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM399 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg></i></a>`;
+        if (ids.twitter_id) socialHtml += `<a href="https://twitter.com/${ids.twitter_id}" target="_blank" title="X (Twitter)" class="social-link-btn twitter"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M357.2 48L427.8 48 273.6 224.2 455 464 313 464 201.7 318.6 74.5 464 3.8 464 168.7 275.5-5.2 48 140.4 48 240.9 180.9 357.2 48zM332.4 421.8l39.1 0-252.4-333.8-42 0 255.3 333.8z"/></svg></i></a>`;
     }
 
     if (socialHtml) {
@@ -3803,7 +3878,7 @@ function renderDetails(data, title) {
         const countSpan = document.createElement('span');
         countSpan.id = 'detail-tv-stats';
         countSpan.className = "flex items-center text-gray-300 font-semibold";
-        countSpan.innerHTML = `<i class="fas fa-layer-group mr-2 text-gray-400"></i> ${data.number_of_seasons} Seasons • ${data.number_of_episodes} Episodes`;
+        countSpan.innerHTML = `<svg class="svg-icon mr-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M232.5 5.2c14.9-6.9 32.1-6.9 47 0l218.6 101c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 149.8C5.4 145.8 0 137.3 0 128s5.4-17.9 13.9-21.8L232.5 5.2zM48.1 218.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 277.8C5.4 273.8 0 265.3 0 256s5.4-17.9 13.9-21.8l34.1-15.8zM13.9 362.2l34.1-15.8 164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 405.8C5.4 401.8 0 393.3 0 384s5.4-17.9 13.9-21.8z"/></svg></i> ${data.number_of_seasons} Seasons • ${data.number_of_episodes} Episodes`;
         statusEl.parentElement.insertBefore(countSpan, statusEl);
     }
 
@@ -3818,7 +3893,7 @@ function renderDetails(data, title) {
         } catch (e) { }
 
         const span = countryEl.querySelector('span');
-        span.textContent = code;
+        span.innerHTML = `${flagImgHtml(code, fullName, 'inline-block rounded-sm mr-1 align-middle')}${fullName}`;
         countryEl.title = fullName;
         countryEl.onclick = () => quickFilter('country', code, fullName);
         countryEl.classList.remove('hidden');
@@ -3918,7 +3993,7 @@ function renderDetails(data, title) {
         keywords.slice(0, 15).forEach(k => {
             const span = document.createElement('span');
             span.className = "keyword-tag";
-            span.innerHTML = `<i class="fas fa-hashtag text-[10px] text-gray-500 mr-1"></i>${k.name}`;
+            span.innerHTML = `<svg class="svg-icon text-[10px] text-gray-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.7 .7c17.3 3.7 28.3 20.7 24.6 38l-19.1 89.3 126.5 0 22-102.7C372.4 8 389.4-3 406.7 .7s28.3 20.7 24.6 38L412.2 128 480 128c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-27.4 128 67.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38l19.1-89.3-126.5 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38L99.8 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 27.4-128-67.8 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 22-102.7C180.4 8 197.4-3 214.7 .7zM206.4 192l-27.4 128 126.5 0 27.4-128-126.5 0z"/></svg></i>${k.name}`;
             // --- FIX APPLIED HERE: Use quickFilter instead of search ---
             span.onclick = () => {
                 quickFilter('keyword', k.id, k.name);
@@ -3935,7 +4010,7 @@ function renderDetails(data, title) {
         aiBtn.id = 'btn-ai-intel';
         aiBtn.className = 'interact-btn cursor-pointer hover:bg-white/10 transition-all duration-200';
         aiBtn.title = "Ask AI Intel";
-        aiBtn.innerHTML = '<i class="fa-solid fa-user-astronaut"></i>';
+        aiBtn.innerHTML = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M224 336c74.6 0 138.4-46.4 164-112l4 0c13.3 0 24-10.7 24-24l0-80c0-13.3-10.7-24-24-24l-4 0C362.4 30.4 298.6-16 224-16S85.6 30.4 60 96l-4 0c-13.3 0-24 10.7-24 24l0 80c0 13.3 10.7 24 24 24l4 0c25.6 65.6 89.4 112 164 112zM208 80l32 0c53 0 96 43 96 96s-43 96-96 96l-32 0c-53 0-96-43-96-96s43-96 96-96zM16 484.6C16 499.7 28.3 512 43.4 512l52.6 0 0-48c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32l0 48 52.6 0c15.1 0 27.4-12.3 27.4-27.4 0-59.8-31.9-112.2-79.6-141-36.4 25.5-80.6 40.4-128.4 40.4s-92-14.9-128.4-40.4C47.9 372.4 16 424.8 16 484.6zM183.3 141.5c-.9-3.3-3.9-5.5-7.3-5.5s-6.4 2.2-7.3 5.5l-6 21.2-21.2 6c-3.3 .9-5.5 3.9-5.5 7.3s2.2 6.4 5.5 7.3l21.2 6 6 21.2c.9 3.3 3.9 5.5 7.3 5.5s6.4-2.2 7.3-5.5l6-21.2 21.2-6c3.3-.9 5.5-3.9 5.5-7.3s-2.2-6.4-5.5-7.3l-21.2-6-6-21.2zM152 488l0 24 48 0 0-24c0-13.3-10.7-24-24-24s-24 10.7-24 24zm120-24c-13.3 0-24 10.7-24 24l0 24 48 0 0-24c0-13.3-10.7-24-24-24z"/></svg></i>';
         aiBtn.onclick = openAIInsight;
         interactBar.prepend(aiBtn); 
     }
@@ -4052,7 +4127,7 @@ function renderDetails(data, title) {
                 div.innerHTML = `
                     <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <i class="fas fa-expand-alt text-white text-xl"></i>
+                        <svg class="svg-icon text-white text-xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z"/></svg></i>
                     </div>
                 `;
                 
@@ -4123,7 +4198,7 @@ function renderDetails(data, title) {
                     <div class="video-thumbnail">
                         <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
+                            <svg class="svg-icon text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zM188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9l0 176c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z"/></svg></i>
                         </div>
                     </div>
                     <div class="video-info">
@@ -4181,9 +4256,9 @@ function renderDetailedInfo(data) {
         prodList.parentElement.classList.remove('hidden');
 
         if (data.networks && data.networks.length > 0) {
-             prodHeader.innerHTML = '<i class="fas fa-broadcast-tower mr-2"></i> Networks & Studios';
+             prodHeader.innerHTML = '<svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M87.9 11.5c-11.3-6.9-26.1-3.2-33 8.1-24.8 41-39 89.1-39 140.4s14.2 99.4 39 140.4c6.9 11.3 21.6 15 33 8.1s15-21.6 8.1-33C75.7 241.9 64 202.3 64 160S75.7 78.1 96.1 44.4c6.9-11.3 3.2-26.1-8.1-33zm400.1 0c-11.3 6.9-15 21.6-8.1 33 20.4 33.7 32.1 73.3 32.1 115.6s-11.7 81.9-32.1 115.6c-6.9 11.3-3.2 26.1 8.1 33s26.1 3.2 33-8.1c24.8-41 39-89.1 39-140.4S545.8 60.6 521 19.6c-6.9-11.3-21.6-15-33-8.1zM320 215.4c19.1-11.1 32-31.7 32-55.4 0-35.3-28.7-64-64-64s-64 28.7-64 64c0 23.7 12.9 44.4 32 55.4L256 480c0 17.7 14.3 32 32 32s32-14.3 32-32l0-264.6zM180.2 91c7.2-11.2 3.9-26-7.2-33.2s-26-3.9-33.2 7.2c-17.6 27.4-27.8 60-27.8 95s10.2 67.6 27.8 95c7.2 11.2 22 14.4 33.2 7.2s14.4-22 7.2-33.2c-12.8-19.9-20.2-43.6-20.2-69s7.4-49.1 20.2-69zM436.2 65c-7.2-11.2-22-14.4-33.2-7.2s-14.4 22-7.2 33.2c12.8 19.9 20.2 43.6 20.2 69s-7.4 49.1-20.2 69c-7.2 11.2-3.9 26 7.2 33.2s26 3.9 33.2-7.2c17.6-27.4 27.8-60 27.8-95s-10.2-67.6-27.8-95z"/></svg></i> Networks & Studios';
         } else {
-             prodHeader.innerHTML = '<i class="fas fa-building mr-2"></i> Production';
+             prodHeader.innerHTML = '<svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-384c0-35.3-28.7-64-64-64L64 0zM176 352l32 0c17.7 0 32 14.3 32 32l0 80-96 0 0-80c0-17.7 14.3-32 32-32zM96 112c0-8.8 7.2-16 16-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32zM240 96l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32c0-8.8 7.2-16 16-16zM96 240c0-8.8 7.2-16 16-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32zm144-16l32 0c8.8 0 16 7.2 16 16l0 32c0 8.8-7.2 16-16 16l-32 0c-8.8 0-16-7.2-16-16l0-32c0-8.8 7.2-16 16-16z"/></svg></i> Production';
         }
 
         entities.forEach(p => {
@@ -4194,8 +4269,8 @@ function renderDetailedInfo(data) {
             if (p.logo_path) {
                 iconHtml = `<img src="${TMDB_IMG_BASE_URL}${p.logo_path}" class="w-8 h-8 object-contain bg-white rounded-md p-0.5" alt="${p.name}" loading="lazy">`;
             } else {
-                const iconClass = p.type === 'network' ? 'fa-broadcast-tower' : 'fa-industry';
-                iconHtml = `<div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-md"><i class="fas ${iconClass} text-gray-400 text-xs"></i></div>`;
+                const iconSvg = p.type === 'network' ? '<svg class="svg-icon text-gray-400 text-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M87.9 11.5c-11.3-6.9-26.1-3.2-33 8.1-24.8 41-39 89.1-39 140.4s14.2 99.4 39 140.4c6.9 11.3 21.6 15 33 8.1s15-21.6 8.1-33C75.7 241.9 64 202.3 64 160S75.7 78.1 96.1 44.4c6.9-11.3 3.2-26.1-8.1-33zm400.1 0c-11.3 6.9-15 21.6-8.1 33 20.4 33.7 32.1 73.3 32.1 115.6s-11.7 81.9-32.1 115.6c-6.9 11.3-3.2 26.1 8.1 33s26.1 3.2 33-8.1c24.8-41 39-89.1 39-140.4S545.8 60.6 521 19.6c-6.9-11.3-21.6-15-33-8.1zM320 215.4c19.1-11.1 32-31.7 32-55.4 0-35.3-28.7-64-64-64s-64 28.7-64 64c0 23.7 12.9 44.4 32 55.4L256 480c0 17.7 14.3 32 32 32s32-14.3 32-32l0-264.6zM180.2 91c7.2-11.2 3.9-26-7.2-33.2s-26-3.9-33.2 7.2c-17.6 27.4-27.8 60-27.8 95s10.2 67.6 27.8 95c7.2 11.2 22 14.4 33.2 7.2s14.4-22 7.2-33.2c-12.8-19.9-20.2-43.6-20.2-69s7.4-49.1 20.2-69zM436.2 65c-7.2-11.2-22-14.4-33.2-7.2s-14.4 22-7.2 33.2c12.8 19.9 20.2 43.6 20.2 69s-7.4 49.1-20.2 69c-7.2 11.2-3.9 26 7.2 33.2s26 3.9 33.2-7.2c17.6-27.4 27.8-60 27.8-95s-10.2-67.6-27.8-95z"/></svg>' : '<svg class="svg-icon text-gray-400 text-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64L0 432c0 26.5 21.5 48 48 48l416 0c26.5 0 48-21.5 48-48l0-279.8c0-18.2-19.4-29.7-35.4-21.1l-156.6 84.3 0-63.2c0-18.2-19.4-29.7-35.4-21.1L128 215.4 128 64c0-17.7-14.3-32-32-32L32 32z"/></svg>';
+                iconHtml = `<div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-md">${iconSvg}</div>`;
             }
 
             const networkBadge = p.type === 'network' 
@@ -4398,9 +4473,9 @@ function updatePlayer() {
                     const btnLabel = nextBtn.querySelector('span') || nextBtn; // Finds span if you have an icon
                     if (isLastEpisodeInSeason) {
                         const nextSeasonNum = episodeData[sIndex + 1].season;
-                        btnLabel.innerHTML = `<i class="fas fa-chevron-right mr-2"></i> Start Season ${nextSeasonNum}`;
+                        btnLabel.innerHTML = `<svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></i> Start Season ${nextSeasonNum}`;
                     } else {
-                        btnLabel.innerHTML = `<i class="fas fa-step-forward mr-2"></i> Next Episode`;
+                        btnLabel.innerHTML = `<svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M21 36.8c12.9-7 28.7-6.3 41 1.8L320 208.1 320 64c0-17.7 14.3-32 32-32s32 14.3 32 32l0 384c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-144.1-258 169.6c-12.3 8.1-28 8.8-41 1.8S0 454.7 0 440L0 72C0 57.3 8.1 43.8 21 36.8z"/></svg></i> Next Episode`;
                     }
                 }
             }
@@ -4437,7 +4512,7 @@ window.handleServerError = function() {
 
     const msg = document.getElementById('server-loading-msg');
     msg.innerHTML = `
-            <div class="text-2xl mb-4 text-red-500"><i class="fas fa-tools"></i></div>
+            <div class="text-2xl mb-4 text-red-500"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M509.4 98.6c7.6-7.6 20.3-5.7 24.1 4.3 6.8 17.7 10.5 37 10.5 57.1 0 88.4-71.6 160-160 160-17.5 0-34.4-2.8-50.2-8L146.9 498.9c-28.1 28.1-73.7 28.1-101.8 0s-28.1-73.7 0-101.8L232 210.2c-5.2-15.8-8-32.6-8-50.2 0-88.4 71.6-160 160-160 20.1 0 39.4 3.7 57.1 10.5 10 3.8 11.8 16.5 4.3 24.1l-88.7 88.7c-3 3-4.7 7.1-4.7 11.3l0 41.4c0 8.8 7.2 16 16 16l41.4 0c4.2 0 8.3-1.7 11.3-4.7l88.7-88.7z"/></svg></i></div>
             <h3 class="text-xl font-bold mb-2">Switching Server...</h3>
             <p class="text-gray-400 text-sm">Trying Source ${nextIndex + 1} of ${activeServers.length}</p>
         `;
@@ -4511,7 +4586,7 @@ function updateContinueWatchingUI() {
         card.innerHTML = `
                 <div class="poster-wrapper">
                     ${badgeHtml} <div class="remove-btn" onclick="removeFromHistory(${item.tmdbId}, event)" title="Remove from History">
-                        <i class="fas fa-times text-xs"></i>
+                        <svg class="svg-icon text-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></i>
                     </div>
                     
                     <img src="${item.poster}" 
@@ -4522,7 +4597,7 @@ function updateContinueWatchingUI() {
                          onerror="this.style.display='none'">
                          
                     <div class="play-overlay">
-                        <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                        <div class="play-icon-circle"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i></div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -4651,7 +4726,7 @@ window.toggleAccordion = function() {
     }
 
     // Toggle the arrow icon
-    icon.className = `fas fa-chevron-${accordionOpen ? 'up' : 'down'} transition-transform duration-300`;
+    icon.outerHTML = accordionOpen ? '<svg class="svg-icon transition-transform duration-300 rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>' : '<svg class="svg-icon transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>';
 }
 // ==========================================
 // DOWNLOAD MODAL LOGIC
@@ -4879,7 +4954,7 @@ async function loadLatestTrailers() {
             card.className = 'trailer-card';
             card.innerHTML = `
                 <img src="${imgUrl}" class="trailer-img" loading="lazy" alt="${item.title}">
-                <div class="trailer-play-icon"><i class="fas fa-play"></i></div>
+                <div class="trailer-play-icon"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i></div>
                 <div class="trailer-content">
                     <div class="trailer-title">${item.title}</div>
                     <div class="trailer-sub">Official Trailer</div>
@@ -5130,7 +5205,7 @@ async function fetchAIInsight(mode) {
         resultBox.classList.remove('hidden');
         
         resultText.innerHTML = `
-            <strong class="text-red-500"><i class="fas fa-exclamation-circle"></i> AI Error</strong><br>
+            <strong class="text-red-500"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/></svg></i> AI Error</strong><br>
             <span class="text-gray-400 text-sm">${error.message}</span>
         `;
     }
@@ -5146,7 +5221,7 @@ async function initQuotes() {
     if (!section) return;
 
     try {
-        const res = await fetch('https://movie-quotes-api.vercel.app/api/v1/quotes');
+        const res = await fetch('https://corsproxy.io/?url=https://movie-quotes-api.vercel.app/api/v1/quotes');
         if (!res.ok) throw new Error('API error');
         const json = await res.json();
         const movies = json.data || [];
@@ -5154,16 +5229,11 @@ async function initQuotes() {
         // Flatten every quote from every movie into individual cards
         movies.forEach(movie => {
             (movie.quotes || []).forEach(rawQuote => {
-                // Quotes are formatted as "Character: quote text" — split on first colon
-                const colonIdx = rawQuote.indexOf(':');
-                let character = 'Unknown';
-                let quote = rawQuote.trim();
-                if (colonIdx !== -1) {
-                    character = rawQuote.slice(0, colonIdx).trim();
-                    quote = rawQuote.slice(colonIdx + 1).trim();
-                }
+                // Use the first listed character as the speaker label.
+                // Colon-splitting is unreliable because many quotes are multi-character dialogues.
+                const character = (movie.characters && movie.characters[0]) || 'Unknown';
                 quotesData.push({
-                    quote,
+                    quote: rawQuote.trim(),
                     character,
                     movie: movie.title,
                     year: movie.year
@@ -5398,7 +5468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Helper function to update the UI
     const updateLocationUI = (name, code) => {
         if (countryEl && name && code) {
-            countryEl.innerHTML = `<i class="fa-solid fa-earth-asia text-blue-500 animate-pulse"></i> ${name}`;
+            countryEl.innerHTML = `${flagImgHtml(code, name, 'inline-block rounded-sm mr-1 align-middle')} ${name}`;
             countryEl.classList.add('cursor-pointer', 'hover:border-red-500', 'hover:text-white', 'group');
             countryEl.title = `Browse content from ${name}`;
             countryEl.onclick = () => {
@@ -5548,7 +5618,7 @@ function renderLogos(data) {
                 </div>
 
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                    <i class="fas fa-expand-alt text-white text-xl"></i>
+                    <svg class="svg-icon text-white text-xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z"/></svg></i>
                 </div>
             `;
 
@@ -5669,7 +5739,7 @@ function renderGallery(data) {
             </div>
 
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
-                <i class="fas fa-expand-alt text-white text-2xl drop-shadow-md transform scale-0 group-hover:scale-100 transition-transform duration-300"></i>
+                <svg class="svg-icon text-white text-2xl drop-shadow-md transform scale-0 group-hover:scale-100 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z"/></svg></i>
             </div>
         `;
 
@@ -5770,7 +5840,7 @@ function createReviewCard(review) {
         const stars = Math.round(ratingVal / 2); // TMDB rates /10, show /5
         starsHtml = `
             <div class="review-stars">
-                ${'<i class="fas fa-star"></i>'.repeat(stars)}${'<i class="far fa-star"></i>'.repeat(5 - stars)}
+                ${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i>'.repeat(stars)}${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i>'.repeat(5 - stars)}
                 <span class="ml-1 text-gray-400">${ratingVal}/10</span>
             </div>`;
     }
@@ -5904,7 +5974,7 @@ function handleTranslations(data) {
                 <div class="video-thumbnail">
                     <img src="${thumbSrc}" loading="lazy" alt="${video.name}">
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <i class="fas fa-play-circle text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg"></i>
+                        <svg class="svg-icon text-4xl text-white opacity-90 group-hover:scale-110 transition-transform drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zM188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9l0 176c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z"/></svg></i>
                     </div>
                 </div>
                 <div class="video-info">
@@ -5947,7 +6017,7 @@ function handleTranslations(data) {
             div.innerHTML = `
                 <img src="${imgUrl}" loading="lazy" alt="Gallery Image">
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <i class="fas fa-expand-alt text-white text-xl"></i>
+                    <svg class="svg-icon text-white text-xl" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z"/></svg></i>
                 </div>
             `;
             div.onclick = () => openLightbox(fullUrl, "Image");
@@ -5985,7 +6055,7 @@ function handleTranslations(data) {
         keywords.slice(0, 15).forEach(k => {
             const span = document.createElement('span');
             span.className = "keyword-tag";
-            span.innerHTML = `<i class="fas fa-hashtag text-[10px] text-gray-500 mr-1"></i>${k.name}`;
+            span.innerHTML = `<svg class="svg-icon text-[10px] text-gray-500 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.7 .7c17.3 3.7 28.3 20.7 24.6 38l-19.1 89.3 126.5 0 22-102.7C372.4 8 389.4-3 406.7 .7s28.3 20.7 24.6 38L412.2 128 480 128c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-27.4 128 67.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38l19.1-89.3-126.5 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38L99.8 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 27.4-128-67.8 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 22-102.7C180.4 8 197.4-3 214.7 .7zM206.4 192l-27.4 128 126.5 0 27.4-128-126.5 0z"/></svg></i>${k.name}`;
             span.onclick = () => {
                 quickFilter('keyword', k.id, k.name);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -6001,7 +6071,7 @@ function handleTranslations(data) {
     container.className = "mb-4 animate-fade-in flex items-center gap-3";
 
     const iconLabel = document.createElement('div');
-    iconLabel.innerHTML = `<i class="fas fa-language text-xl text-gray-400"></i>`;
+    iconLabel.innerHTML = `<svg class="svg-icon text-xl text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M160 0c17.7 0 32 14.3 32 32l0 32 128 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-9.6 0-8.4 23.1c-16.4 45.2-41.1 86.5-72.2 122 14.2 8.8 29 16.6 44.4 23.5l50.4 22.4 62.2-140c5.1-11.6 16.6-19 29.2-19s24.1 7.4 29.2 19l128 288c7.2 16.2-.1 35.1-16.2 42.2s-35.1-.1-42.2-16.2l-20-45-157.5 0-20 45c-7.2 16.2-26.1 23.4-42.2 16.2s-23.4-26.1-16.2-42.2l39.8-89.5-50.4-22.4c-23-10.2-45-22.4-65.8-36.4-21.3 17.2-44.6 32.2-69.5 44.7L78.3 380.6c-15.8 7.9-35 1.5-42.9-14.3s-1.5-35 14.3-42.9l34.5-17.3c16.3-8.2 31.8-17.7 46.4-28.3-13.8-12.7-26.8-26.4-38.9-40.9L81.6 224.7c-11.3-13.6-9.5-33.8 4.1-45.1s33.8-9.5 45.1 4.1l10.2 12.2c11.5 13.9 24.1 26.8 37.4 38.7 27.5-30.4 49.2-66.1 63.5-105.4l.5-1.2-210.3 0C14.3 128 0 113.7 0 96S14.3 64 32 64l96 0 0-32c0-17.7 14.3-32 32-32zM416 270.8L365.7 384 466.3 384 416 270.8z"/></svg></i>`;
 
     const select = document.createElement('select');
     select.className = "glass-select p-2 rounded-lg text-sm cursor-pointer outline-none focus:border-red-500 transition-colors";
@@ -6111,7 +6181,7 @@ function handleTranslations(data) {
 
             const newBackdrop = imageData.backdrops.find(b => b.iso_639_1 === selectedLang) || imageData.backdrops[0];
             if (newBackdrop) {
-                bgContainer.style.backgroundImage = `url('${TMDB_BACKDROP_WEB}${newBackdrop.file_path}')`;
+                bgContainer.style.backgroundImage = `url('${responsiveBackdropUrl(newBackdrop.file_path)}')`;
             }
 
             // Logo Logic
