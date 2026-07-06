@@ -810,6 +810,16 @@ function loadHome() {
     top10Filter = 'all';
     searchInput.value = '';
     searchResults.innerHTML = '';
+    // Reset unified search button back to search icon
+    const _searchIcon = document.getElementById('search-icon');
+    const _clearIcon = document.getElementById('clear-icon');
+    const _submitBtn = document.getElementById('search-submit-btn');
+    if (_submitBtn && _searchIcon && _clearIcon) {
+        _searchIcon.style.display = 'block';
+        _clearIcon.style.display = 'none';
+        _submitBtn.title = 'Search';
+        _submitBtn.onclick = () => commitSearch(document.getElementById('search-input').value);
+    }
     
     // Show Home Sections
     heroSection.style.display = 'block';
@@ -1704,6 +1714,25 @@ searchInput.addEventListener('focus', () => {
 searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
+
+    // Toggle search icon ↔ clear (×) icon on the unified button
+    const submitBtn = document.getElementById('search-submit-btn');
+    const searchIcon = document.getElementById('search-icon');
+    const clearIcon = document.getElementById('clear-icon');
+    if (submitBtn && searchIcon && clearIcon) {
+        if (query.length > 0) {
+            searchIcon.style.display = 'none';
+            clearIcon.style.display = 'block';
+            submitBtn.title = 'Clear search';
+            submitBtn.onclick = () => clearSearchInput();
+        } else {
+            searchIcon.style.display = 'block';
+            clearIcon.style.display = 'none';
+            submitBtn.title = 'Search';
+            submitBtn.onclick = () => commitSearch(document.getElementById('search-input').value);
+        }
+    }
+
     if (query.length === 0) {
         renderSearchDropdown();
         return;
@@ -1848,6 +1877,73 @@ function commitSearch(query) {
     performMultiSearch(query);
 }
 
+// ============================================================
+// CLEAR BUTTON — wipes the search input and resets state
+// ============================================================
+window.clearSearchInput = function() {
+    searchInput.value = '';
+    searchResults.innerHTML = '';
+    // Reset unified button back to search icon
+    const submitBtn = document.getElementById('search-submit-btn');
+    const searchIcon = document.getElementById('search-icon');
+    const clearIcon = document.getElementById('clear-icon');
+    if (submitBtn && searchIcon && clearIcon) {
+        searchIcon.style.display = 'block';
+        clearIcon.style.display = 'none';
+        submitBtn.title = 'Search';
+        submitBtn.onclick = () => commitSearch(document.getElementById('search-input').value);
+    }
+    searchInput.focus();
+    renderSearchDropdown();
+};
+
+// ============================================================
+// KEYBOARD NAVIGATION — Arrow ↑/↓ moves through dropdown items;
+// Enter selects; Escape closes the dropdown.
+// ============================================================
+searchInput.addEventListener('keydown', (e) => {
+    const items = Array.from(searchResults.querySelectorAll(
+        '.search-result-item:not(.suggest-skeleton)'
+    ));
+    if (!items.length) return;
+
+    // Find the currently "focused" item (we use a data attribute to track it)
+    let activeIdx = items.findIndex(li => li.dataset.kbActive === 'true');
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIdx = (activeIdx + 1) % items.length;
+        _setKbActive(items, activeIdx);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIdx = (activeIdx - 1 + items.length) % items.length;
+        _setKbActive(items, activeIdx);
+    } else if (e.key === 'Enter') {
+        // If an item is keyboard-highlighted, click it; otherwise fall through
+        // to the existing inline onkeydown handler that calls commitSearch
+        if (activeIdx >= 0) {
+            e.preventDefault();
+            items[activeIdx].click();
+        }
+    } else if (e.key === 'Escape') {
+        searchResults.innerHTML = '';
+        searchInput.blur();
+    }
+});
+
+function _setKbActive(items, idx) {
+    items.forEach((li, i) => {
+        if (i === idx) {
+            li.dataset.kbActive = 'true';
+            li.style.background = 'rgba(70,70,70,0.95)';
+            li.scrollIntoView({ block: 'nearest' });
+        } else {
+            li.dataset.kbActive = 'false';
+            li.style.background = '';
+        }
+    });
+}
+
 document.addEventListener('click', (e) => {
     if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         if (searchInput.value.trim().length === 0) {
@@ -1901,12 +1997,44 @@ async function performMultiSearch(query) {
     }
 }
 
+/**
+ * Wraps the first occurrence of `query` inside `text` with a <mark> tag
+ * so the matched portion appears visually highlighted.  Safe against XSS
+ * because we escape the text first, then inject the known-safe markup.
+ */
+function _highlightQuery(text, query) {
+    if (!query || !text) return _escapeHtml(text);
+    const escaped = _escapeHtml(text);
+    const escapedQuery = _escapeHtml(query);
+    // Case-insensitive replace of the FIRST occurrence only
+    const idx = escaped.toLowerCase().indexOf(escapedQuery.toLowerCase());
+    if (idx === -1) return escaped;
+    return (
+        escaped.slice(0, idx) +
+        '<mark style="background:transparent;color:#fff;font-weight:700;text-decoration:underline;text-decoration-color:rgba(229,9,20,0.7);">' +
+        escaped.slice(idx, idx + escapedQuery.length) +
+        '</mark>' +
+        escaped.slice(idx + escapedQuery.length)
+    );
+}
+
+function _escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 function displayResults(results) {
     searchResults.innerHTML = '';
     if (!results || !results.length) { 
         searchResults.innerHTML = '<li class="p-4 text-center text-gray-400">No results found.</li>'; 
         return; 
     }
+
+    // Grab the current query for highlight matching
+    const activeQuery = searchInput.value.trim();
 
     results.forEach(item => {
         const li = document.createElement('li');
@@ -1918,7 +2046,7 @@ function displayResults(results) {
             li.innerHTML = `
                 <img src="${poster}" class="result-poster" loading="lazy">
                 <div class="text-left">
-                    <div class="font-bold text-white text-sm">${item.name}</div>
+                    <div class="font-bold text-white text-sm">${_highlightQuery(item.name, activeQuery)}</div>
                     <div class="text-xs text-blue-400 uppercase font-bold tracking-wider">Collection</div>
                 </div>`;
             li.onclick = () => {
@@ -1944,7 +2072,7 @@ function displayResults(results) {
             li.innerHTML = `
                 ${imgHtml}
                 <div class="text-left">
-                    <div class="font-bold text-white text-sm">${item.name}</div>
+                    <div class="font-bold text-white text-sm">${_highlightQuery(item.name, activeQuery)}</div>
                     <div class="text-xs text-purple-400 uppercase font-bold tracking-wider">Company</div>
                 </div>`;
             li.onclick = () => {
@@ -1960,7 +2088,7 @@ function displayResults(results) {
                     <i class="fas fa-hashtag"></i>
                 </div>
                 <div class="text-left">
-                    <div class="font-bold text-white text-sm">${item.name}</div>
+                    <div class="font-bold text-white text-sm">${_highlightQuery(item.name, activeQuery)}</div>
                     <div class="text-xs text-gray-500 uppercase font-bold tracking-wider">Keyword</div>
                 </div>`;
             li.onclick = () => {
@@ -1973,7 +2101,7 @@ function displayResults(results) {
         else if (item.media_type === 'person') {
             const name = item.name;
             const imgHtml = getPersonFace(item.profile_path, item.gender, "result-poster rounded-full", "text-lg");
-            li.innerHTML = `${imgHtml}<div class="text-left"><div class="font-bold text-white text-sm">${name}</div><div class="text-xs text-gray-400">Person</div></div>`;
+            li.innerHTML = `${imgHtml}<div class="text-left"><div class="font-bold text-white text-sm">${_highlightQuery(name, activeQuery)}</div><div class="text-xs text-gray-400">Person</div></div>`;
             li.onclick = () => loadActorCredits(item.id, name, item.profile_path, item.gender);
         } 
 
@@ -1988,7 +2116,7 @@ function displayResults(results) {
             li.innerHTML = `
                 <img src="${poster}" class="result-poster" loading="lazy">
                 <div class="text-left">
-                    <div class="font-bold text-white text-sm">${title}</div>
+                    <div class="font-bold text-white text-sm">${_highlightQuery(title, activeQuery)}</div>
                     <div class="text-xs text-gray-400">${typeLabel} • ${year} • ${item.vote_average ? item.vote_average.toFixed(1) : 'NR'}</div>
                 </div>`;
             li.onclick = () => selectContent(item.id, title, item.media_type);
