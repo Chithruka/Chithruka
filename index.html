@@ -1039,6 +1039,70 @@
     </div>
 </div>
 
+<div id="ratings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl">
+        <button onclick="closeRatingsModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl" title="Close" aria-label="Close"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></i></button>
+
+        <div class="flex items-center gap-3 mb-5">
+            <h3 class="text-lg font-bold text-white tracking-wide">Critics &amp; Audience</h3>
+            <div class="rm-header-line"></div>
+        </div>
+
+        <div class="rm-ratings-container">
+
+            <div class="rm-block">
+                <div class="rm-imdb-logo">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo">
+                </div>
+                <div class="rm-info">
+                    <div class="rm-score-line">
+                        <span class="rm-score-value" id="rm-imdb-score">--</span>
+                        <span class="rm-score-max">/10</span>
+                    </div>
+                    <div class="rm-score-subtext" id="rm-imdb-votes">-- VOTES</div>
+                </div>
+            </div>
+
+            <div class="rm-block hidden" id="rm-rt-block">
+                <div class="rm-rt-icon">
+                    <img id="rm-rt-icon-img" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Rotten_Tomatoes_alternative_logo.svg" alt="Rotten Tomatoes">
+                </div>
+                <div class="rm-info">
+                    <div class="rm-score-line">
+                        <span class="rm-score-value" id="rm-rt-score">--</span>
+                    </div>
+                    <div class="rm-score-subtext">TOMATOMETER</div>
+                </div>
+            </div>
+
+            <div class="rm-block">
+                <div class="rm-meta-box" id="rm-meta-badge">--</div>
+                <div class="rm-info">
+                    <div class="rm-score-line">
+                        <span class="rm-score-value" id="rm-meta-score">--</span>
+                        <span class="rm-score-max">/100</span>
+                    </div>
+                    <div class="rm-score-subtext">METASCORE</div>
+                </div>
+            </div>
+
+            <div class="rm-block">
+                <div class="rm-tmdb-box rm-clickable" id="rm-tmdb-box" title="Filter by this rating">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB Logo">
+                </div>
+                <div class="rm-info">
+                    <div class="rm-score-line rm-clickable" id="rm-tmdb-score-line" title="Filter by this rating">
+                        <span class="rm-score-value rm-tmdb-gradient" id="rm-tmdb-score">(N/A)</span>
+                        <span class="rm-score-max">/10</span>
+                    </div>
+                    <div class="rm-score-subtext">TMDB RATING</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4 animate-fade-in">
     <div class="w-full max-w-lg relative flex flex-col items-center">
         <button style="cursor: pointer;" class="mt-8 text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2" onclick="toggleAIModal()">

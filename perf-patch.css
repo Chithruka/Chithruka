@@ -403,3 +403,133 @@
         opacity: 1;
     }
 }
+
+/* ============================
+   Ratings Modal (Critics & Audience)
+   ============================ */
+#ratings-modal {
+    --rm-line: #2a303c;
+    --rm-muted: #8b96a5;
+    --rm-meta-green: #1fbc5b;
+    --rm-meta-yellow: #f1c40f;
+    --rm-meta-red: #e74c3c;
+    --rm-tmdb-bg: #0d253f;
+    --rm-tmdb-start: #01b4e4;
+    --rm-tmdb-end: #90cea1;
+}
+
+.rm-header-line {
+    flex-grow: 1;
+    height: 1px;
+    background-color: var(--rm-line);
+}
+
+.rm-ratings-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    align-items: center;
+}
+
+.rm-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rm-imdb-logo {
+    width: 42px;
+    flex-shrink: 0;
+}
+
+.rm-imdb-logo img {
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+}
+
+.rm-meta-box,
+.rm-rt-icon,
+.rm-tmdb-box {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.rm-meta-box {
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    background-color: var(--rm-meta-green);
+}
+
+.rm-rt-icon img,
+.rm-tmdb-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.rm-tmdb-box {
+    background-color: var(--rm-tmdb-bg);
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+.rm-tmdb-box.rm-clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.rm-tmdb-box.rm-clickable:hover {
+    transform: scale(1.08);
+}
+
+.rm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rm-score-line {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    cursor: default;
+}
+
+.rm-score-line.rm-clickable {
+    cursor: pointer;
+}
+
+.rm-score-value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+}
+
+.rm-score-max {
+    font-size: 12px;
+    color: var(--rm-muted);
+    font-weight: 500;
+}
+
+.rm-score-subtext {
+    font-size: 11px;
+    color: var(--rm-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.rm-tmdb-gradient {
+    background: linear-gradient(90deg, var(--rm-tmdb-start), var(--rm-tmdb-end));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
