@@ -1,10 +1,4 @@
-/* ============================================================
-   perf-patch.css — Drop this AFTER your output.css <link>
-   Addresses: Fix #8 (will-change), Fix #2 (FA async hint)
-   ============================================================ */
 
-/* Fix #8: Pre-promote blurring elements to their own GPU layer
-   so backdrop-filter compositing doesn't stall the main thread */
 .sidebar {
     will-change: width;
 }
@@ -13,39 +7,28 @@
     will-change: transform;
 }
 
-/* Ensure the hero section's slide transitions are GPU-accelerated */
 .hero-slide {
     will-change: opacity;
 }
 
-/* Reduce repaint cost for poster hover effects —
-   already has will-change: transform on .poster-img,
-   but adding contain helps the browser limit repaint scope */
 .scroll-card {
     contain: layout style;
 }
 
-/* Prevent poster scale animations from causing full-page repaints */
 .poster-wrapper {
     isolation: isolate;
 }
 
-/* ============================================================
-   Fix: Live filter sentence wraps to next line instead of
-   expanding the page width with horizontal scrolling.
-   ============================================================ */
 
-/* Allow the filter-sentence heading tokens to wrap */
 #trending-header {
     flex-wrap: wrap;
     row-gap: 6px;
     align-items: center;
     min-width: 0;
     max-width: 100%;
-    white-space: normal; /* override any inherited nowrap */
+    white-space: normal;
 }
 
-/* Prevent inline <select> and <input> tokens from blowing out the width */
 #trending-header select,
 #trending-header input[type="number"] {
     min-width: 0;
@@ -53,39 +36,17 @@
     flex-shrink: 1;
 }
 
-/* ============================================================
-   Fix: Alert / toast (#message-box) appearing behind scroll
-   buttons and other stacking-context-creating elements.
-
-   Root cause: elements with backdrop-filter, isolation, or
-   will-change can create new stacking contexts that trap
-   children — including the message box — at a lower effective
-   z-index than their declared value. Forcing z-index here
-   (alongside position:fixed which is already on the element)
-   ensures the toast always renders above everything.
-   ============================================================ */
 #message-box {
-    z-index: 2147483647 !important; /* max safe integer — above all stacking contexts */
+    z-index: 2147483647 !important;
 }
 
-/* ============================================================
-   Wikipedia button (via TMDB wikidata_id) styling, to match
-   the existing .social-link-btn.imdb / .facebook / etc. set.
-   ============================================================ */
 .social-link-btn.wikipedia:hover {
     background: #fff;
     color: #000;
     border-color: transparent;
 }
 
-/* ============================================================
-   Netflix-dark solid theme for detail panels.
-   Replaces semi-transparent glass style (which relied on the
-   now-removed backdrop image). All panels now use a true-black
-   / dark-charcoal palette like Netflix's own UI.
-   ============================================================ */
 
-/* Page background: pure black, no image */
 #page-background {
     background-image: none !important;
     background-color: #000 !important;
@@ -95,14 +56,12 @@
     display: none !important;
 }
 
-/* Main detail card */
 #details-section {
     background: #141414 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* Glass panels (server bar, info blocks, etc.) */
 .glass-panel {
     background: #1a1a1a !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -110,7 +69,6 @@
     -webkit-backdrop-filter: none !important;
 }
 
-/* Season select, accordion */
 .accordion-header {
     background: #222 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -119,7 +77,6 @@
     background: #181818 !important;
 }
 
-/* Episode cards */
 .episode-rich-item {
     background: #1f1f1f !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -131,7 +88,6 @@
     background: rgba(229, 9, 20, 0.12) !important;
 }
 
-/* Season cards */
 .season-rich-item {
     background: #1f1f1f !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -140,7 +96,6 @@
     background: #2a2a2a !important;
 }
 
-/* Server buttons */
 .server-btn {
     background: #1f1f1f !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -149,7 +104,6 @@
     background: #2a2a2a !important;
 }
 
-/* Message toast — keep it solid */
 #message-box-inner {
     background: #141414 !important;
     border-color: rgba(255, 255, 255, 0.12) !important;
@@ -157,13 +111,11 @@
     -webkit-backdrop-filter: none !important;
 }
 
-/* Quote card */
 .card {
     background: #141414 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Interact / rate buttons */
 .interact-btn {
     background: #1f1f1f !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
@@ -172,24 +124,20 @@
     background: #2a2a2a !important;
 }
 
-/* Video / trailer cards */
 .video-card,
 .trailer-card {
     background: #1a1a1a !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Rating slider */
 .rating-slider-container {
     background: #1f1f1f !important;
 }
 
-/* AI insight modal inner panel */
 .glass-panel.p-6 {
     background: #141414 !important;
 }
 
-/* Search results dropdown */
 #search-results {
     background: #141414 !important;
 }
@@ -201,15 +149,7 @@
     background: #1f1f1f !important;
 }
 
-/* ============================================================
-   No-backdrop poster hero
-   When a title has no TMDB backdrop image we switch the hero
-   zone from a wide cinematic bar to a compact, centred poster
-   display so there's no awkward black rectangle.
-   ============================================================ */
 
-/* Override the fixed 16/6.5 aspect-ratio so the zone is just
-   tall enough to contain the poster card */
 #detail-hero.no-backdrop {
     aspect-ratio: unset !important;
     min-height: unset !important;
@@ -221,13 +161,10 @@
     padding: 32px 24px 24px;
 }
 
-/* Kill the bottom gradient — nothing to fade into */
 #detail-hero.no-backdrop .detail-hero-gradient {
     display: none !important;
 }
 
-/* Re-position the poster pin: un-absolute it, centre it,
-   and make it much larger so it IS the hero */
 #detail-hero.no-backdrop .detail-hero-poster-pin {
     position: static !important;
     width: 160px !important;
@@ -256,12 +193,6 @@
     }
 }
 
-/* ============================================================
-   Logo Fog Glow — applied dynamically by JS when a logo's
-   average pixel brightness is below the dark threshold.
-   Uses drop-shadow (not box-shadow) so the glow follows the
-   actual transparent shape of the PNG logo.
-   ============================================================ */
 .logo-fog-glow {
     filter:
         drop-shadow(0px 0px 18px rgba(255, 255, 255, 0.85))
@@ -269,18 +200,12 @@
         drop-shadow(0px 0px 3px  rgba(255, 255, 255, 0.35));
 }
 
-/* Smooth transition for both hero slider and detail page logos */
 .title-logo,
 .hero-logo {
     transition: filter 0.5s ease;
 }
 
-/* ============================================================
-   Search Dropdown — Recent Searches + Trending Searches
-   Google-style suggestion panel shown when input is focused+empty
-   ============================================================ */
 
-/* ── Section header (shared by both Recent and Trending) ── */
 .search-dropdown-header {
     display: flex;
     align-items: center;
@@ -302,14 +227,12 @@
     color: #6b7280;
 }
 
-/* ── Shared row styles for both Recent and Trending items ── */
 .recent-search-item,
 .trending-search-item {
     gap: 12px;
     padding: 9px 14px;
     cursor: pointer;
     transition: background 0.15s ease;
-    /* Make room for the × button on recent items */
     position: relative;
 }
 
@@ -318,7 +241,6 @@
     background: rgba(255, 255, 255, 0.04) !important;
 }
 
-/* ── Shared icon circle ── */
 .search-suggest-icon {
     display: flex;
     align-items: center;
@@ -329,7 +251,6 @@
     border-radius: 50%;
 }
 
-/* Recent icon: neutral grey */
 .recent-icon {
     background: rgba(255, 255, 255, 0.07);
     color: #9ca3af;
@@ -340,7 +261,6 @@
     color: #d1d5db;
 }
 
-/* Trending icon: red accent */
 .trending-icon {
     background: rgba(229, 9, 20, 0.1);
     color: #e50914;
@@ -350,7 +270,6 @@
     background: rgba(229, 9, 20, 0.18);
 }
 
-/* ── Title text (shared) ── */
 .search-suggest-title {
     font-size: 0.875rem;
     font-weight: 500;
@@ -367,7 +286,6 @@
     color: #fff;
 }
 
-/* ── Recent × remove button ── */
 .recent-remove-btn {
     flex-shrink: 0;
     display: flex;
@@ -383,11 +301,9 @@
     opacity: 0;
     transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
     padding: 0;
-    /* Ensure the button doesn't shrink the title */
     margin-left: auto;
 }
 
-/* Show × only when the row is hovered */
 .recent-search-item:hover .recent-remove-btn {
     opacity: 1;
 }
@@ -397,16 +313,12 @@
     color: #e50914;
 }
 
-/* Always show on touch devices (no real hover) */
 @media (hover: none) {
     .recent-remove-btn {
         opacity: 1;
     }
 }
 
-/* ============================
-   Ratings Modal (Critics & Audience)
-   ============================ */
 #ratings-modal {
     --rm-line: #2a303c;
     --rm-muted: #8b96a5;
