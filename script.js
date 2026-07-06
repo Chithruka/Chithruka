@@ -5136,157 +5136,55 @@ async function fetchAIInsight(mode) {
     }
 }
 
-const quotesData = [
-  {
-    "quote": "I'm gonna make him an offer he can't refuse.",
-    "character": "Michael Corleone",
-    "movie": "The Godfather",
-    "year": "1972",
-    "tmdb_id": 238,
-    "type": "movie"
-  },
-  {
-    "quote": "Why so serious?",
-    "character": "The Joker",
-    "movie": "The Dark Knight",
-    "year": "2008",
-    "tmdb_id": 155,
-    "type": "movie"
-  },
-  {
-    "quote": "Here's looking at you, kid.",
-    "character": "Rick Blaine",
-    "movie": "Casablanca",
-    "year": "1942",
-    "tmdb_id": 289,
-    "type": "movie"
-  },
-  {
-    "quote": "සර්, ඕක Answer කරන්න ම ඕන Call එකක්",
-    "character": "ජෙහාන්",
-    "movie": "කූඹියෝ",
-    "year": "2017",
-    "tmdb_id": 77068,
-    "type": "tv"
-  },
-  {
-    "quote": "May the Force be with you.",
-    "character": "Han Solo",
-    "movie": "Star Wars",
-    "year": "1977",
-    "tmdb_id": 11,
-    "type": "movie"
-  },
-  {
-    "quote": "You talking to me?",
-    "character": "Travis Bickle",
-    "movie": "Taxi Driver",
-    "year": "1976",
-    "tmdb_id": 103,
-    "type": "movie"
-  },
-  {
-    "quote": "I see dead people.",
-    "character": "Cole Sear",
-    "movie": "The Sixth Sense",
-    "year": "1999",
-    "tmdb_id": 745,
-    "type": "movie"
-  },
-  {
-    "quote": "I am the one who knocks!",
-    "character": "Walter White",
-    "movie": "Breaking Bad",
-    "year": "2008",
-    "tmdb_id": 1396,
-    "type": "tv"
-  },
-  {
-    "quote": "Winter is coming.",
-    "character": "Ned Stark",
-    "movie": "Game of Thrones",
-    "year": "2011",
-    "tmdb_id": 1399,
-    "type": "tv"
-  },
-  {
-    "quote": "Houston, we have a problem.",
-    "character": "Jim Lovell",
-    "movie": "Apollo 13",
-    "year": "1995",
-    "tmdb_id": 568,
-    "type": "movie"
-  },
-  {
-    "quote": "Keep your friends close, but your enemies closer.",
-    "character": "Michael Corleone",
-    "movie": "The Godfather Part II",
-    "year": "1974",
-    "tmdb_id": 240,
-    "type": "movie"
-  },
-  {
-    "quote": "Say 'hello' to my little friend!",
-    "character": "Tony Montana",
-    "movie": "Scarface",
-    "year": "1983",
-    "tmdb_id": 111,
-    "type": "movie"
-  },
-  {
-    "quote": "Do, or do not. There is no try.",
-    "character": "Yoda",
-    "movie": "The Empire Strikes Back",
-    "year": "1980",
-    "tmdb_id": 1891,
-    "type": "movie"
-  },
-  {
-    "quote": "It's alive! It's alive!",
-    "character": "Henry Frankenstein",
-    "movie": "Frankenstein",
-    "year": "1931",
-    "tmdb_id": 3035,
-    "type": "movie"
-  },
-  {
-    "quote": "Elementary, my dear Watson.",
-    "character": "Sherlock Holmes",
-    "movie": "The Adventures of Sherlock Holmes",
-    "year": "1939",
-    "tmdb_id": 10526,
-    "type": "movie"
-  },
-  {
-    "quote": "You're gonna need a bigger boat.",
-    "character": "Martin Brody",
-    "movie": "Jaws",
-    "year": "1975",
-    "tmdb_id": 578,
-    "type": "movie"
-  }
-];
-
+// --- Iconic Lines: live data from movie-quotes-api ---
+let quotesData = [];       // flat list of { quote, character, movie, year } populated on init
 let currentQuoteIdx = 0;
 let quoteTimer;
 
-function initQuotes() {
+async function initQuotes() {
     const section = document.getElementById('quote-section');
-    if (!section) return; 
+    if (!section) return;
 
-    // Randomize order on load
-    quotesData.sort(() => Math.random() - 0.5);
+    try {
+        const res = await fetch('https://movie-quotes-api.vercel.app/api/v1/quotes');
+        if (!res.ok) throw new Error('API error');
+        const json = await res.json();
+        const movies = json.data || [];
 
-    if (quotesData.length > 0) {
-        displayQuote(0);
-        startQuoteTimer();
+        // Flatten every quote from every movie into individual cards
+        movies.forEach(movie => {
+            (movie.quotes || []).forEach(rawQuote => {
+                // Quotes are formatted as "Character: quote text" — split on first colon
+                const colonIdx = rawQuote.indexOf(':');
+                let character = 'Unknown';
+                let quote = rawQuote.trim();
+                if (colonIdx !== -1) {
+                    character = rawQuote.slice(0, colonIdx).trim();
+                    quote = rawQuote.slice(colonIdx + 1).trim();
+                }
+                quotesData.push({
+                    quote,
+                    character,
+                    movie: movie.title,
+                    year: movie.year
+                });
+            });
+        });
+    } catch (e) {
+        console.warn('movie-quotes-api failed, hiding section.', e);
     }
+
+    if (quotesData.length === 0) { section.style.display = 'none'; return; }
+
+    // Randomize on every load so users see different quotes each visit
+    quotesData.sort(() => Math.random() - 0.5);
+    displayQuote(0);
+    startQuoteTimer();
 }
 
 function displayQuote(index) {
     if (quotesData.length === 0) return;
-    
-    // Ensure index wraps around correctly
+
     currentQuoteIdx = (index + quotesData.length) % quotesData.length;
     const q = quotesData[currentQuoteIdx];
 
@@ -5296,18 +5194,17 @@ function displayQuote(index) {
     const movieEl = document.getElementById('q-movie');
     const actorBtn = document.getElementById('q-actor');
 
-    // 1. Fade Out
+    // Fade out
     card.style.opacity = '0';
     card.style.transform = 'translateY(10px)';
 
     setTimeout(() => {
-        // 2. Change Content
         textEl.textContent = `"${q.quote}"`;
         charEl.textContent = q.character;
         movieEl.textContent = `${q.movie} (${q.year})`;
-        // actorBtn.textContent = "Watch Now"; 
+        if (actorBtn) actorBtn.textContent = 'Search This Film';
 
-        // 3. Fade In
+        // Fade in
         card.style.opacity = '1';
         card.style.transform = 'translateY(0)';
     }, 300);
@@ -5323,10 +5220,42 @@ function prevQuote() {
     resetQuoteTimer();
 }
 
-function openQuoteMovie() {
+async function openQuoteMovie() {
     const q = quotesData[currentQuoteIdx];
-    if (q && q.tmdb_id) {
-        selectContent(q.tmdb_id, q.movie, q.type || 'movie');
+    if (!q) return;
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const title = q.movie;
+    const year  = q.year;
+    const encodedTitle = encodeURIComponent(title);
+
+    try {
+        // /search/multi doesn't support year filtering, so hit movie + tv in parallel
+        const [movieRes, tvRes] = await Promise.all([
+            fetchCached(`${BASE_TMDB_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodedTitle}&primary_release_year=${year}&include_adult=true`),
+            fetchCached(`${BASE_TMDB_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodedTitle}&first_air_date_year=${year}&include_adult=true`)
+        ]);
+
+        const movies = (movieRes.results || []).map(r => ({ ...r, media_type: 'movie' }));
+        const shows  = (tvRes.results  || []).map(r => ({ ...r, media_type: 'tv'    }));
+
+        // Pick the highest-popularity result across both lists
+        const best = [...movies, ...shows].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
+
+        if (best) {
+            selectContent(best.id, title, best.media_type);
+        } else {
+            // Nothing matched the year — fall back to a plain title search
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = title;
+            commitSearch(title);
+        }
+    } catch (e) {
+        // Network error — fall back gracefully
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = title;
+        commitSearch(title);
     }
 }
 
@@ -5334,13 +5263,14 @@ function startQuoteTimer() {
     if (quoteTimer) clearInterval(quoteTimer);
     quoteTimer = setInterval(() => {
         displayQuote(currentQuoteIdx + 1);
-    }, 7000); // 7 seconds
+    }, 7000);
 }
 
 function resetQuoteTimer() {
     clearInterval(quoteTimer);
     startQuoteTimer();
 }
+
 /* ==========================================
    KEYBOARD NAVIGATION (Arrow Keys to Scroll)
    ========================================== */
