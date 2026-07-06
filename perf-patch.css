@@ -274,3 +274,132 @@
 .hero-logo {
     transition: filter 0.5s ease;
 }
+
+/* ============================================================
+   Search Dropdown — Recent Searches + Trending Searches
+   Google-style suggestion panel shown when input is focused+empty
+   ============================================================ */
+
+/* ── Section header (shared by both Recent and Trending) ── */
+.search-dropdown-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px 6px;
+    list-style: none;
+}
+
+.search-dropdown-header.has-separator {
+    margin-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 14px;
+}
+
+.dropdown-section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+/* ── Shared row styles for both Recent and Trending items ── */
+.recent-search-item,
+.trending-search-item {
+    gap: 12px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    /* Make room for the × button on recent items */
+    position: relative;
+}
+
+.recent-search-item:hover,
+.trending-search-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ── Shared icon circle ── */
+.search-suggest-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+/* Recent icon: neutral grey */
+.recent-icon {
+    background: rgba(255, 255, 255, 0.07);
+    color: #9ca3af;
+}
+
+.recent-search-item:hover .recent-icon {
+    background: rgba(255, 255, 255, 0.12);
+    color: #d1d5db;
+}
+
+/* Trending icon: red accent */
+.trending-icon {
+    background: rgba(229, 9, 20, 0.1);
+    color: #e50914;
+}
+
+.trending-search-item:hover .trending-icon {
+    background: rgba(229, 9, 20, 0.18);
+}
+
+/* ── Title text (shared) ── */
+.search-suggest-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #d1d5db;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.recent-search-item:hover .search-suggest-title,
+.trending-search-item:hover .search-suggest-title {
+    color: #fff;
+}
+
+/* ── Recent × remove button ── */
+.recent-remove-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    padding: 0;
+    /* Ensure the button doesn't shrink the title */
+    margin-left: auto;
+}
+
+/* Show × only when the row is hovered */
+.recent-search-item:hover .recent-remove-btn {
+    opacity: 1;
+}
+
+.recent-remove-btn:hover {
+    background: rgba(229, 9, 20, 0.15);
+    color: #e50914;
+}
+
+/* Always show on touch devices (no real hover) */
+@media (hover: none) {
+    .recent-remove-btn {
+        opacity: 1;
+    }
+}

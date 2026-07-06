@@ -1585,11 +1585,202 @@ async function loadRecommendations(type, id) {
     } catch (e) { console.error("Recs Error", e); }
 }
 
+// ============================================================
+// RECENT SEARCHES — persisted in localStorage, max 8 entries
+// ============================================================
+const RECENT_SEARCHES_KEY = 'chithruka_recent_searches';
+const MAX_RECENT = 8;
+
+function getRecentSearches() {
+    try {
+        return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveRecentSearch(query) {
+    if (!query || query.trim().length < 2) return;
+    const clean = query.trim();
+    let recent = getRecentSearches();
+    // Remove duplicate (case-insensitive) so it bubbles to top
+    recent = recent.filter(q => q.toLowerCase() !== clean.toLowerCase());
+    recent.unshift(clean);
+    recent = recent.slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent));
+}
+
+function removeRecentSearch(query) {
+    let recent = getRecentSearches();
+    recent = recent.filter(q => q.toLowerCase() !== query.toLowerCase());
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent));
+}
+
+// ============================================================
+// SEARCH DROPDOWN — shows Recent + Trending when input is empty
+// ============================================================
+const TRENDING_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8.49602399,4 L13.5439515,4.00178852 L13.630264,4.01676284 L13.6925634,4.03779224 L13.751259,4.06673495 L13.8131395,4.10892192 L13.8706024,4.16266854 L13.9112899,4.2133402 L13.9460221,4.27080947 L13.9782584,4.34880083 L13.9897684,4.39191422 L14.0010593,4.47831683 L14.0015268,9.5 C14.0015268,9.77614237 13.7776692,10 13.5015268,10 C13.2560669,10 13.0519184,9.82312484 13.0095825,9.58987563 L13.0015268,9.5 L13.001,5.707 L7.85781951,10.853475 C7.68439276,11.0269787 7.41516142,11.0464153 7.22027109,10.911677 L7.15100427,10.853923 L5.50036956,9.20673722 L2.85355339,11.8535534 C2.65829124,12.0488155 2.34170876,12.0488155 2.14644661,11.8535534 C1.97288026,11.679987 1.95359511,11.4105626 2.08859116,11.2156945 L2.14644661,11.1464466 L5.14644661,8.14644661 C5.31988462,7.9730086 5.58906947,7.95360702 5.7839278,8.08833082 L5.85318344,8.14607705 L7.50373972,9.79318452 L12.293,5 L8.49602399,5 C8.2505641,5 8.04641562,4.82312484 8.00407966,4.58987563 L7.99602399,4.5 C7.99602399,4.22385763 8.21988162,4 8.49602399,4 Z"></path></svg>`;
+
+const RECENT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14.947 13" aria-hidden="true"><path fill="currentColor" d="M8.447 0C5.441 0 2.911 2.055 2.172 4.832L.895 2.276 0 2.724 2.268 7.26 6.747 3.9l-.6-.8-3.092 2.319A5.509 5.509 0 0 1 8.447 1c3.033 0 5.5 2.467 5.5 5.5S11.48 12 8.447 12v1c3.584 0 6.5-2.916 6.5-6.5S12.031 0 8.447 0z"></path><path fill="currentColor" d="M7.947 3.5v3.268l3.223 2.148.555-.832-2.778-1.852V3.5z"></path></svg>`;
+
+function renderSearchDropdown() {
+    const query = searchInput.value.trim();
+    if (query.length > 0) return;
+
+    const recents = getRecentSearches();
+    const trendingItems = top10Pool.slice(0, 5);
+
+    // Nothing to show
+    if (!recents.length && !trendingItems.length) return;
+
+    searchResults.innerHTML = '';
+
+    // ── RECENT SEARCHES SECTION ──
+    if (recents.length > 0) {
+        const recentHeader = document.createElement('li');
+        recentHeader.className = 'search-dropdown-header';
+        recentHeader.innerHTML = `<span class="dropdown-section-label">Recent</span>`;
+        searchResults.appendChild(recentHeader);
+
+        recents.forEach(query => {
+            const li = document.createElement('li');
+            li.className = 'search-result-item recent-search-item';
+            li.innerHTML = `
+                <span class="search-suggest-icon recent-icon">${RECENT_SVG}</span>
+                <span class="search-suggest-title">${query}</span>
+                <button class="recent-remove-btn" title="Remove" aria-label="Remove ${query}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            `;
+            // Click on the × button removes; click elsewhere triggers the search
+            li.querySelector('.recent-remove-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeRecentSearch(query);
+                renderSearchDropdown();
+            });
+            li.addEventListener('click', () => {
+                searchInput.value = query;
+                commitSearch(query);
+            });
+            searchResults.appendChild(li);
+        });
+    }
+
+    // ── TRENDING SECTION ──
+    if (trendingItems.length > 0) {
+        const trendingHeader = document.createElement('li');
+        trendingHeader.className = 'search-dropdown-header';
+        // Add a thin separator if recent section is also showing
+        if (recents.length > 0) trendingHeader.classList.add('has-separator');
+        trendingHeader.innerHTML = `<span class="dropdown-section-label">Trending</span>`;
+        searchResults.appendChild(trendingHeader);
+
+        trendingItems.forEach((item) => {
+            const title = item.title || item.name;
+            const year = (item.release_date || item.first_air_date || '').substring(0, 4);
+            const displayText = year ? `${title} (${year})` : title;
+
+            const li = document.createElement('li');
+            li.className = 'search-result-item trending-search-item';
+            li.innerHTML = `
+                <span class="search-suggest-icon trending-icon">${TRENDING_SVG}</span>
+                <span class="search-suggest-title">${displayText}</span>
+            `;
+            li.addEventListener('click', () => {
+                searchInput.value = title;
+                commitSearch(title);
+            });
+            searchResults.appendChild(li);
+        });
+    }
+}
+
+searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim().length === 0) {
+        renderSearchDropdown();
+    }
+});
+
 searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
+    if (query.length === 0) {
+        renderSearchDropdown();
+        return;
+    }
     if (query.length < 2) { searchResults.innerHTML = ''; return; }
-    searchTimeout = setTimeout(() => performMultiSearch(query), 500);
+    // Show text-only suggestions (no API call, no saveRecentSearch)
+    searchTimeout = setTimeout(() => {
+        renderSearchSuggestions(query);
+    }, 150);
+});
+
+// ============================================================
+// SEARCH SUGGESTIONS — text-only dropdown while user is typing
+// (like Google: shows the query + recent matches, no API calls)
+// ============================================================
+function renderSearchSuggestions(query) {
+    const lowerQuery = query.toLowerCase();
+
+    // Match recent searches that contain the query
+    const recentMatches = getRecentSearches()
+        .filter(q => q.toLowerCase().includes(lowerQuery) && q.toLowerCase() !== lowerQuery)
+        .slice(0, 4);
+
+    searchResults.innerHTML = '';
+
+    // First item: the exact query the user typed (always shown)
+    const exactLi = document.createElement('li');
+    exactLi.className = 'search-result-item search-suggest-item';
+    exactLi.innerHTML = `
+        <span class="search-suggest-icon" style="color:#9ca3af;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
+        </span>
+        <span class="search-suggest-title">${query}</span>
+    `;
+    exactLi.addEventListener('click', () => commitSearch(query));
+    searchResults.appendChild(exactLi);
+
+    // Then show matching recents with the clock/history icon
+    recentMatches.forEach(recentQuery => {
+        const li = document.createElement('li');
+        li.className = 'search-result-item search-suggest-item';
+        li.innerHTML = `
+            <span class="search-suggest-icon recent-icon">${RECENT_SVG}</span>
+            <span class="search-suggest-title">${recentQuery}</span>
+            <button class="recent-remove-btn" title="Remove" aria-label="Remove ${recentQuery}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
+        li.querySelector('.recent-remove-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeRecentSearch(recentQuery);
+            renderSearchSuggestions(query);
+        });
+        li.addEventListener('click', () => {
+            searchInput.value = recentQuery;
+            commitSearch(recentQuery);
+        });
+        searchResults.appendChild(li);
+    });
+}
+
+// commitSearch: the single place that actually fires the search + saves to recents
+function commitSearch(query) {
+    query = (query || '').trim();
+    if (!query) return;
+    searchInput.value = query;
+    searchResults.innerHTML = '';
+    saveRecentSearch(query);
+    performMultiSearch(query);
+}
+
+document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        if (searchInput.value.trim().length === 0) {
+            searchResults.innerHTML = '';
+        }
+    }
 });
 
 async function performMultiSearch(query) {
