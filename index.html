@@ -420,19 +420,28 @@
             </div>
         </div>
 
+        <!-- Unified Login Button -->
         <div id="user-section" class="relative">
-            <button id="tmdb-login-btn" onclick="authenticateTMDB()" class="login-btn flex items-center justify-center" title="Login">
-    <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M352 96l64 0c17.7 0 32 14.3 32 32l0 256c0 17.7-14.3 32-32 32l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0c53 0 96-43 96-96l0-256c0-53-43-96-96-96l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32zm-9.4 182.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L242.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z"/></svg></i>
-</button>
+            <!-- Shown when logged out: single combined login button -->
+            <button id="unified-login-btn" onclick="openLoginModal()" class="login-btn flex items-center justify-center" title="Sign In">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M352 96l64 0c17.7 0 32 14.3 32 32l0 256c0 17.7-14.3 32-32 32l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0c53 0 96-43 96-96l0-256c0-53-43-96-96-96l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32zm-9.4 182.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L242.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z"/></svg>
+            </button>
+            <!-- Shown when logged in to TMDB: avatar opens dropdown -->
             <img id="user-avatar" src="" class="user-avatar hidden" onclick="toggleUserMenu()">
             <div id="user-menu" class="user-menu">
-                <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><svg class="svg-icon text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z"/></svg></i> Favorites</div>
-                <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><svg class="svg-icon text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg></i> Watchlist</div>
-                <div class="user-menu-item" onclick="exportHistory()"><svg class="svg-icon text-blue-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 210.7-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7 256 32zM64 320c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-46.9 0-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320 64 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg></i> Export History</div>
-                <div class="user-menu-item" onclick="clearApiCache()"><svg class="svg-icon text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M566.6 54.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192-34.7-34.7c-4.2-4.2-10-6.6-16-6.6-12.5 0-22.6 10.1-22.6 22.6l0 29.1 108.3 108.3 29.1 0c12.5 0 22.6-10.1 22.6-22.6 0-6-2.4-11.8-6.6-16l-34.7-34.7 192-192zM341.1 353.4L222.6 234.9c-42.7-3.7-85.2 11.7-115.8 42.3l-8 8c-22.3 22.3-34.8 52.5-34.8 84 0 6.8 7.1 11.2 13.2 8.2l51.1-25.5c5-2.5 9.5 4.1 5.4 7.9L7.3 473.4C2.7 477.6 0 483.6 0 489.9 0 502.1 9.9 512 22.1 512l173.3 0c38.8 0 75.9-15.4 103.4-42.8 30.6-30.6 45.9-73.1 42.3-115.8z"/></svg></i> Clear Cache</div>
-                <div class="user-menu-item" onclick="logoutTMDB()"><svg class="svg-icon text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M505 273c9.4-9.4 9.4-24.6 0-33.9L361 95c-6.9-6.9-17.2-8.9-26.2-5.2S320 102.3 320 112l0 80-112 0c-26.5 0-48 21.5-48 48l0 32c0 26.5 21.5 48 48 48l112 0 0 80c0 9.7 5.8 18.5 14.8 22.2s19.3 1.7 26.2-5.2L505 273zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z"/></svg></i> Logout</div>
+                <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><svg class="svg-icon text-red-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z"/></svg> Favorites</div>
+                <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><svg class="svg-icon text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg> Watchlist</div>
+                <div class="user-menu-item" onclick="exportHistory()"><svg class="svg-icon text-blue-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 210.7-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7 256 32zM64 320c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-46.9 0-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320 64 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg> Export History</div>
+                <div class="user-menu-item" onclick="clearApiCache()"><svg class="svg-icon text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M566.6 54.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192-34.7-34.7c-4.2-4.2-10-6.6-16-6.6-12.5 0-22.6 10.1-22.6 22.6l0 29.1 108.3 108.3 29.1 0c12.5 0 22.6-10.1 22.6-22.6 0-6-2.4-11.8-6.6-16l-34.7-34.7 192-192zM341.1 353.4L222.6 234.9c-42.7-3.7-85.2 11.7-115.8 42.3l-8 8c-22.3 22.3-34.8 52.5-34.8 84 0 6.8 7.1 11.2 13.2 8.2l51.1-25.5c5-2.5 9.5 4.1 5.4 7.9L7.3 473.4C2.7 477.6 0 483.6 0 489.9 0 502.1 9.9 512 22.1 512l173.3 0c38.8 0 75.9-15.4 103.4-42.8 30.6-30.6 45.9-73.1 42.3-115.8z"/></svg> Clear Cache</div>
+                <div class="user-menu-item" onclick="logoutTMDB()"><svg class="svg-icon text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M505 273c9.4-9.4 9.4-24.6 0-33.9L361 95c-6.9-6.9-17.2-8.9-26.2-5.2S320 102.3 320 112l0 80-112 0c-26.5 0-48 21.5-48 48l0 32c0 26.5 21.5 48 48 48l112 0 0 80c0 9.7 5.8 18.5 14.8 22.2s19.3 1.7 26.2-5.2L505 273zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z"/></svg> Logout</div>
             </div>
         </div>
+
+        <!-- Hidden legacy IDs kept for script.js compatibility -->
+        <button id="tmdb-login-btn" style="display:none;" onclick="authenticateTMDB()"></button>
+        <button id="trakt-login-btn" style="display:none;" onclick="traktStartLogin()"></button>
+        <button id="trakt-logout-btn" style="display:none;" onclick="traktLogout()"></button>
+        <span id="trakt-username-display" style="display:none;"></span>
     </nav>
 
     <div id="hero-section" class="skeleton">
@@ -602,6 +611,14 @@
                             <span>Share</span>
                         </button>
                     
+                    <!-- Trakt Watchlist -->
+                    <div id="trakt-watchlist-btn" onclick="traktToggleWatchlist()" class="interact-btn" title="Add to Trakt Watchlist" style="position:relative;">
+                        <svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="color:#ed5f23"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
+                    </div>
+                    <!-- Trakt Mark as Watched -->
+                    <div onclick="traktSyncWatched()" class="interact-btn" title="Mark as Watched on Trakt">
+                        <svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="color:#ed5f23"><path d="M256 48a208 208 0 1 1 0 416A208 208 0 1 1 256 48zm0-48C114.6 0 0 114.6 0 256S114.6 512 256 512s256-114.6 256-256S397.4 0 256 0zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/></svg>
+                    </div>
                     <div id="toast" class="toast">Link copied to clipboard!</div>
                     <div id="rating-slider" class="rating-slider-container">
                         <input type="range" min="1" max="10" step="0.5" id="rating-input" oninput="document.getElementById('rating-val').innerText = this.value">
@@ -1050,6 +1067,7 @@
 
         <div class="rm-ratings-container">
 
+            <!-- IMDb -->
             <div class="rm-block">
                 <div class="rm-imdb-logo">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo">
@@ -1063,6 +1081,7 @@
                 </div>
             </div>
 
+            <!-- Rotten Tomatoes Tomatometer -->
             <div class="rm-block hidden" id="rm-rt-block">
                 <div class="rm-rt-icon">
                     <img id="rm-rt-icon-img" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Rotten_Tomatoes_alternative_logo.svg" alt="Rotten Tomatoes">
@@ -1075,17 +1094,38 @@
                 </div>
             </div>
 
-            <div class="rm-block">
-                <div class="rm-meta-box" id="rm-meta-badge">--</div>
+            <!-- Popcornmeter (RT Audience Score) -->
+            <div class="rm-block hidden" id="rm-popcorn-block">
+                <div class="rm-rt-icon" style="background:#fff1e6;border-radius:8px;padding:4px;box-sizing:border-box;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+                    <svg viewBox="0 0 36 36" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 14h16l-3 16H13L10 14z" fill="#f97316"/>
+                        <path d="M8 14c0-2 1.5-4 4-4s3 2 4 2 2-2 4-2 4 2 4 4H8z" fill="#facc15"/>
+                        <circle cx="18" cy="8" r="2.5" fill="#f97316"/>
+                    </svg>
+                </div>
                 <div class="rm-info">
                     <div class="rm-score-line">
-                        <span class="rm-score-value" id="rm-meta-score">--</span>
-                        <span class="rm-score-max">/100</span>
+                        <span class="rm-score-value" id="rm-popcorn-score">--</span>
                     </div>
-                    <div class="rm-score-subtext">METASCORE</div>
+                    <div class="rm-score-subtext">POPCORNMETER</div>
                 </div>
             </div>
 
+            <!-- Trakt -->
+            <div class="rm-block hidden" id="rm-trakt-block">
+                <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#1a1a2e;padding:3px;box-sizing:border-box;">
+                    <svg viewBox="0 0 512 512" width="26" height="26" fill="#ed5f23" xmlns="http://www.w3.org/2000/svg"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
+                </div>
+                <div class="rm-info">
+                    <div class="rm-score-line">
+                        <span class="rm-score-value" id="rm-trakt-score">--</span>
+                        <span class="rm-score-max">/10</span>
+                    </div>
+                    <div class="rm-score-subtext" id="rm-trakt-votes">-- VOTES</div>
+                </div>
+            </div>
+
+            <!-- TMDB -->
             <div class="rm-block">
                 <div class="rm-tmdb-box rm-clickable" id="rm-tmdb-box" title="Filter by this rating">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB Logo">
@@ -1219,6 +1259,278 @@
         </div>
     </div>
 </div>
-<script src="script.js?v=4" defer></script>
+<script src="script.js?v=9" defer></script>
+
+<!-- ═══════════════════════════════════════════════════
+     UNIFIED LOGIN MODAL
+════════════════════════════════════════════════════ -->
+<style>
+/* --- Modal Overlay --- */
+#login-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+#login-modal-overlay.open { display: flex; }
+
+/* --- Card --- */
+#login-modal-card {
+    background: #1a1a1a;
+    padding: 36px 30px 30px;
+    border-radius: 18px;
+    width: 310px;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    color: #fff;
+    animation: lmPopIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes lmPopIn {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+/* --- Close button --- */
+#login-modal-close {
+    position: absolute;
+    top: 14px; right: 16px;
+    background: none; border: none;
+    font-size: 26px; line-height: 1;
+    color: #555; cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+}
+#login-modal-close:hover { color: #fff; }
+
+/* --- Title --- */
+#login-modal-card h2 {
+    margin: 0 0 22px;
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 0.3px;
+    text-align: center;
+}
+
+/* --- Connected accounts status strip --- */
+.lm-status-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+.lm-account-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+}
+.lm-account-row.connected { border-color: rgba(255,255,255,0.15); }
+.lm-account-row img.lm-service-logo { height: 18px; flex-shrink: 0; }
+.lm-account-row .lm-account-info { flex: 1; min-width: 0; }
+.lm-account-row .lm-account-label {
+    font-size: 11px; color: #888; margin-bottom: 1px;
+}
+.lm-account-row .lm-account-name {
+    font-size: 13px; font-weight: 600; color: #e5e7eb;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lm-connect-btn, .lm-disconnect-btn {
+    flex-shrink: 0;
+    border: none; border-radius: 7px;
+    font-size: 12px; font-weight: 600;
+    padding: 5px 12px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+.lm-connect-btn:active, .lm-disconnect-btn:active { transform: scale(0.96); }
+.lm-connect-btn { background: #fff; color: #000; }
+.lm-connect-btn:hover { opacity: 0.85; }
+.lm-disconnect-btn { background: rgba(229,9,20,0.15); color: #e50914; border: 1px solid rgba(229,9,20,0.3); }
+.lm-disconnect-btn:hover { background: rgba(229,9,20,0.25); }
+
+/* Trakt logo SVG inline colour */
+.lm-trakt-logo { fill: #ed5f23; }
+
+/* --- Divider --- */
+.lm-divider {
+    display: flex; align-items: center;
+    color: #555; font-size: 11px; font-weight: 600;
+    margin: 4px 0 18px;
+    letter-spacing: 0.5px;
+}
+.lm-divider::before, .lm-divider::after {
+    content: ''; flex: 1; border-bottom: 1px solid #333;
+}
+.lm-divider:not(:empty)::before { margin-right: 8px; }
+.lm-divider:not(:empty)::after  { margin-left: 8px; }
+
+/* --- Provider buttons --- */
+.lm-providers { display: flex; flex-direction: column; gap: 10px; }
+.lm-provider-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; height: 46px;
+    border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+.lm-provider-btn:hover  { opacity: 0.9; }
+.lm-provider-btn:active { transform: scale(0.98); }
+.lm-provider-btn img { height: 16px; }
+
+.lm-btn-tmdb  { background: #0d253f; color: #fff; }
+.lm-btn-trakt { background: #ed1c24; color: #fff; }
+.lm-btn-trakt svg { height: 22px; width: 22px; fill: #fff; }
+</style>
+
+<!-- Modal markup -->
+<div id="login-modal-overlay" onclick="handleLoginOverlayClick(event)">
+    <div id="login-modal-card">
+        <button id="login-modal-close" onclick="closeLoginModal()" aria-label="Close">&times;</button>
+        <h2>Sign In</h2>
+
+        <!-- Live status of connected accounts (populated by JS) -->
+        <div class="lm-status-strip" id="lm-status-strip"></div>
+
+        <div class="lm-divider">CONNECT AN ACCOUNT</div>
+
+        <div class="lm-providers" id="lm-providers"></div>
+    </div>
+</div>
+
+<script>
+/* ── Login Modal Controller ─────────────────────────────────── */
+function openLoginModal() {
+    renderLoginModal();
+    document.getElementById('login-modal-overlay').classList.add('open');
+}
+function closeLoginModal() {
+    document.getElementById('login-modal-overlay').classList.remove('open');
+}
+function handleLoginOverlayClick(e) {
+    if (e.target === document.getElementById('login-modal-overlay')) closeLoginModal();
+}
+
+function renderLoginModal() {
+    const strip     = document.getElementById('lm-status-strip');
+    const providers = document.getElementById('lm-providers');
+
+    /* ── detect current login states ── */
+    const tmdbLoggedIn  = !!localStorage.getItem('tmdb_session_id');
+    const traktLoggedIn = !!localStorage.getItem('trakt_access_token');
+    const tmdbUser      = localStorage.getItem('tmdb_account_id')  || '';
+    const traktUser     = localStorage.getItem('trakt_username')    || '';
+
+    /* ── Status strip ── */
+    let stripHtml = '';
+
+    if (tmdbLoggedIn) {
+        stripHtml += `
+        <div class="lm-account-row connected">
+            <img class="lm-service-logo" src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" alt="TMDB">
+            <div class="lm-account-info">
+                <div class="lm-account-label">TMDB — Connected</div>
+                <div class="lm-account-name">${tmdbUser ? 'Account #' + tmdbUser : 'Logged in'}</div>
+            </div>
+            <button class="lm-disconnect-btn" onclick="logoutTMDB(); closeLoginModal();">Logout</button>
+        </div>`;
+    }
+
+    if (traktLoggedIn) {
+        stripHtml += `
+        <div class="lm-account-row connected">
+            <svg class="lm-service-logo lm-trakt-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/>
+            </svg>
+            <div class="lm-account-info">
+                <div class="lm-account-label">Trakt — Connected</div>
+                <div class="lm-account-name">${traktUser || 'Logged in'}</div>
+            </div>
+            <button class="lm-disconnect-btn" onclick="traktLogout(); renderLoginModal();">Logout</button>
+        </div>`;
+    }
+
+    if (!tmdbLoggedIn && !traktLoggedIn) {
+        stripHtml = `<p style="text-align:center;color:#666;font-size:13px;margin:0 0 4px;">No accounts connected yet.</p>`;
+    }
+
+    strip.innerHTML = stripHtml;
+
+    /* ── Provider buttons (only show if not already connected) ── */
+    let provHtml = '';
+
+    if (!tmdbLoggedIn) {
+        provHtml += `
+        <button class="lm-provider-btn lm-btn-tmdb" onclick="authenticateTMDB()">
+            <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bdc75aaebeb75dc7ae79426ddd9be3b2be1e342510f8202baf6bffa71d7f5c4.svg" alt="TMDB">
+            <span>Login with TMDB</span>
+        </button>`;
+    }
+
+    if (!traktLoggedIn) {
+        provHtml += `
+        <button class="lm-provider-btn lm-btn-trakt" onclick="traktStartLogin(); closeLoginModal();">
+            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/>
+            </svg>
+            <span>Connect Trakt</span>
+        </button>`;
+    }
+
+    if (!provHtml) {
+        provHtml = `<p style="text-align:center;color:#555;font-size:12px;margin:0;">All accounts connected ✓</p>`;
+    }
+
+    providers.innerHTML = provHtml;
+}
+
+/* Patch updateAuthUI so the unified button hides when TMDB avatar appears */
+const _origUpdateAuthUI = window.updateAuthUI;
+document.addEventListener('DOMContentLoaded', () => {
+    // Override updateAuthUI after script.js has defined it
+    const patchAuthUI = () => {
+        if (typeof updateAuthUI === 'function') {
+            const original = updateAuthUI;
+            window.updateAuthUI = function(user) {
+                original(user);
+                const unifiedBtn = document.getElementById('unified-login-btn');
+                if (unifiedBtn) {
+                    unifiedBtn.classList.toggle('hidden', !!user);
+                }
+            };
+        } else {
+            setTimeout(patchAuthUI, 100);
+        }
+    };
+    patchAuthUI();
+});
+
+/* Patch updateTraktUI so modal reflects Trakt state without page reload */
+document.addEventListener('DOMContentLoaded', () => {
+    const patchTraktUI = () => {
+        if (typeof updateTraktUI === 'function') {
+            const original = updateTraktUI;
+            window.updateTraktUI = function() {
+                original();
+                // If modal is open, refresh it
+                const overlay = document.getElementById('login-modal-overlay');
+                if (overlay && overlay.classList.contains('open')) renderLoginModal();
+            };
+        } else {
+            setTimeout(patchTraktUI, 100);
+        }
+    };
+    patchTraktUI();
+});
+</script>
 </body>
 </html>
