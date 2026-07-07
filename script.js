@@ -24,11 +24,6 @@ const TMDB_POSTER_XL = (() => {
     if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w500';
     return 'https://image.tmdb.org/t/p/w780';
 })();
-const TMDB_LOGO_SZ = (() => {
-    if (PIXEL_W <= 768) return 'https://image.tmdb.org/t/p/w300';
-    if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w500';
-    return 'https://image.tmdb.org/t/p/original';
-})();
 const TMDB_BACKDROP_WEB = (() => {
     if (PIXEL_W <= 640) return 'https://image.tmdb.org/t/p/w780';
     if (PIXEL_W <= 1440) return 'https://image.tmdb.org/t/p/w1280';
@@ -69,12 +64,9 @@ function getTmdbKey() {
 }
 const GEMINI_API_KEY = getGeminiKey();
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-const OMDB_ENCODED = "OTZjNWVhMw==";
-function getOmdbKey() {
-    return atob(OMDB_ENCODED);
-}
-const OMDB_API_KEY = getOmdbKey();
-const OMDB_API_URL = 'https://www.omdbapi.com/';
+const TRAKT_CLIENT_ID = 'de8e2e618da15ff73c3734cad9698ab20ce5061d9d650d62b2cd284dea257caf';
+const TRAKT_CLIENT_SECRET = 'dd145422f3bf0858456a4f406082fb21315955a10dc17d4fc3a2cf01b651d149';
+const TRAKT_API = 'https://api.trakt.tv';
 let LOCAL_VIDEOS = { movies: {}, tv: {} }; 
 async function loadLocalVideos() {
     try {
@@ -122,6 +114,12 @@ let aiModalOpen = false;
 let userCountryCode = 'US';
 let DUBBED_REGISTRY = {};
 let sessionId = localStorage.getItem('tmdb_session_id');
+let IMDB_ID = null;
+let traktAccessToken = localStorage.getItem('trakt_access_token');
+let traktRefreshToken = localStorage.getItem('trakt_refresh_token');
+let traktExpiresAt = Number(localStorage.getItem('trakt_expires_at')) || 0;
+let traktUsername = localStorage.getItem('trakt_username') || null;
+let traktDevicePollTimer = null;
 async function applyFogIfLogoIsDark(imageElement) {
     if (!imageElement) return;
     imageElement.classList.remove('logo-fog-glow');
@@ -154,6 +152,235 @@ async function applyFogIfLogoIsDark(imageElement) {
 }
 function resetFogStack(imageElement) {
 }
+async function traktRefreshTokenIfNeeded() {
+    if (!traktRefreshToken) return;
+    if (Date.now() < traktExpiresAt - 86400000) return; 
+    try {
+        const res = await fetch(`${TRAKT_API}/oauth/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                refresh_token: traktRefreshToken,
+                client_id: TRAKT_CLIENT_ID,
+                client_secret: TRAKT_CLIENT_SECRET,
+                grant_type: 'refresh_token'
+            })
+        });
+        if (!res.ok) throw new Error('Refresh failed');
+        const token = await res.json();
+        traktAccessToken = token.access_token;
+        traktRefreshToken = token.refresh_token;
+        traktExpiresAt = Date.now() + token.expires_in * 1000;
+        localStorage.setItem('trakt_access_token', traktAccessToken);
+        localStorage.setItem('trakt_refresh_token', traktRefreshToken);
+        localStorage.setItem('trakt_expires_at', traktExpiresAt);
+    } catch (e) {
+        console.warn('[Trakt] Token refresh failed:', e);
+    }
+}
+async function traktFetch(endpoint, authenticated = false, method = 'GET', body = null) {
+    if (authenticated) await traktRefreshTokenIfNeeded();
+    const headers = {
+        'Content-Type': 'application/json',
+        'trakt-api-key': TRAKT_CLIENT_ID,
+        'trakt-api-version': '2'
+    };
+    if (authenticated && traktAccessToken) {
+        headers['Authorization'] = `Bearer ${traktAccessToken}`;
+    }
+    const opts = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(`${TRAKT_API}${endpoint}`, opts);
+    if (!res.ok) throw new Error(`Trakt ${res.status}: ${endpoint}`);
+    if (res.status === 204) return null;
+    return res.json();
+}
+async function traktStartLogin() {
+    try {
+        const codeData = await traktFetch('/oauth/device/code', false, 'POST', { client_id: TRAKT_CLIENT_ID });
+        showTraktLoginPrompt(codeData.user_code, codeData.verification_url);
+        if (traktDevicePollTimer) clearInterval(traktDevicePollTimer);
+        traktDevicePollTimer = setInterval(async () => {
+            try {
+                const res = await fetch(`${TRAKT_API}/oauth/device/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: codeData.device_code,
+                        client_id: TRAKT_CLIENT_ID,
+                        client_secret: TRAKT_CLIENT_SECRET
+                    })
+                });
+                if (res.status === 200) {
+                    clearInterval(traktDevicePollTimer);
+                    traktDevicePollTimer = null;
+                    const token = await res.json();
+                    traktAccessToken = token.access_token;
+                    traktRefreshToken = token.refresh_token;
+                    traktExpiresAt = Date.now() + token.expires_in * 1000;
+                    localStorage.setItem('trakt_access_token', traktAccessToken);
+                    localStorage.setItem('trakt_refresh_token', traktRefreshToken);
+                    localStorage.setItem('trakt_expires_at', traktExpiresAt);
+                    await traktFetchProfile();
+                    hideTraktLoginPrompt();
+                    updateTraktUI();
+                    showMessage('Trakt login successful!');
+                }
+                if (res.status === 410 || res.status === 404) {
+                    clearInterval(traktDevicePollTimer);
+                    traktDevicePollTimer = null;
+                    hideTraktLoginPrompt();
+                    showMessage('Trakt code expired. Please try again.', true);
+                }
+            } catch (e) {  }
+        }, (codeData.interval || 5) * 1000);
+    } catch (e) {
+        showMessage('Failed to start Trakt login.', true);
+        console.error('[Trakt] Login error:', e);
+    }
+}
+async function traktFetchProfile() {
+    try {
+        const profile = await traktFetch('/users/me', true);
+        traktUsername = profile.username;
+        localStorage.setItem('trakt_username', traktUsername);
+    } catch (e) {
+        console.warn('[Trakt] Profile fetch failed:', e);
+    }
+}
+function traktLogout() {
+    traktAccessToken = null;
+    traktRefreshToken = null;
+    traktExpiresAt = 0;
+    traktUsername = null;
+    localStorage.removeItem('trakt_access_token');
+    localStorage.removeItem('trakt_refresh_token');
+    localStorage.removeItem('trakt_expires_at');
+    localStorage.removeItem('trakt_username');
+    updateTraktUI();
+    showMessage('Logged out of Trakt.');
+}
+function updateTraktUI() {
+    const loginBtn  = document.getElementById('trakt-login-btn');
+    const logoutBtn = document.getElementById('trakt-logout-btn');
+    const userEl    = document.getElementById('trakt-username-display');
+    if (!loginBtn) return;
+    if (traktAccessToken && traktUsername) {
+        loginBtn.classList.add('hidden');
+        if (logoutBtn)  logoutBtn.classList.remove('hidden');
+        if (userEl)     userEl.textContent = traktUsername;
+    } else {
+        loginBtn.classList.remove('hidden');
+        if (logoutBtn)  logoutBtn.classList.add('hidden');
+        if (userEl)     userEl.textContent = '';
+    }
+}
+function showTraktLoginPrompt(code, url) {
+    let el = document.getElementById('trakt-device-prompt');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'trakt-device-prompt';
+        el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:99999;background:#1a1a2e;border:1px solid rgba(237,95,35,0.5);border-radius:14px;padding:18px 24px;text-align:center;color:#fff;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.7)';
+        document.body.appendChild(el);
+    }
+    el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 512 512" fill="#ed5f23"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
+            <span style="font-weight:700;font-size:1rem">Connect to Trakt</span>
+        </div>
+        <p style="font-size:.85rem;color:#aaa;margin-bottom:14px">Go to <a href="${url}" target="_blank" style="color:#ed5f23;font-weight:600">${url}</a> and enter this code:</p>
+        <div style="font-size:2rem;font-weight:800;letter-spacing:.2em;color:#ed5f23;margin-bottom:14px">${code}</div>
+        <button onclick="hideTraktLoginPrompt()" style="background:rgba(255,255,255,.08);border:none;color:#aaa;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:.8rem">Cancel</button>
+    `;
+}
+window.hideTraktLoginPrompt = function() {
+    if (traktDevicePollTimer) { clearInterval(traktDevicePollTimer); traktDevicePollTimer = null; }
+    const el = document.getElementById('trakt-device-prompt');
+    if (el) el.remove();
+};
+async function traktSyncWatched() {
+    if (!traktAccessToken || !TMDB_ID) return;
+    const type = mediaType === 'movie' ? 'movies' : 'episodes';
+    const payload = mediaType === 'movie'
+        ? { movies: [{ ids: { tmdb: TMDB_ID } }] }
+        : { episodes: [{ ids: { tmdb: TMDB_ID }, season: currentSeason, number: currentEpisode }] };
+    try {
+        await traktFetch('/sync/history', true, 'POST', payload);
+        showMessage('Marked as watched on Trakt ✓');
+    } catch (e) {
+        console.error('[Trakt] Sync watched failed:', e);
+        showMessage('Failed to sync with Trakt.', true);
+    }
+}
+async function traktToggleWatchlist() {
+    if (!traktAccessToken) { showMessage('Connect Trakt to use this feature.', true); return; }
+    if (!TMDB_ID) return;
+    const btn = document.getElementById('trakt-watchlist-btn');
+    const isAdded = btn && btn.classList.contains('active');
+    const endpoint = isAdded ? '/sync/watchlist/remove' : '/sync/watchlist';
+    const payload = mediaType === 'movie'
+        ? { movies: [{ ids: { tmdb: TMDB_ID } }] }
+        : { shows: [{ ids: { tmdb: TMDB_ID } }] };
+    try {
+        await traktFetch(endpoint, true, 'POST', payload);
+        if (btn) btn.classList.toggle('active');
+        showMessage(isAdded ? 'Removed from Trakt Watchlist' : 'Added to Trakt Watchlist ✓');
+    } catch (e) {
+        console.error('[Trakt] Watchlist toggle failed:', e);
+        showMessage('Failed to update Trakt Watchlist.', true);
+    }
+}
+async function traktCheckWatchlistStatus() {
+    if (!traktAccessToken || !TMDB_ID) return;
+    const btn = document.getElementById('trakt-watchlist-btn');
+    if (!btn) return;
+    try {
+        const type = mediaType === 'movie' ? 'movies' : 'shows';
+        const list = await traktFetch(`/sync/watchlist/${type}`, true);
+        const found = list && list.some(item =>
+            item[mediaType === 'movie' ? 'movie' : 'show']?.ids?.tmdb === TMDB_ID
+        );
+        btn.classList.toggle('active', !!found);
+    } catch (e) {
+        console.warn('[Trakt] Watchlist check failed:', e);
+    }
+}
+const traktRatingsCache = new Map();
+async function fetchTraktRatings(tmdbId, type) {
+    const key = `${type}-${tmdbId}`;
+    if (traktRatingsCache.has(key)) return traktRatingsCache.get(key);
+    try {
+        const searchType = type === 'movie' ? 'movie' : 'show';
+        const results = await traktFetch(`/search/tmdb/${tmdbId}?type=${searchType}`);
+        if (!results || results.length === 0) return null;
+        const item = results[0][searchType];
+        const traktId = item.ids.trakt;
+        const endpoint = type === 'movie' ? `/movies/${traktId}/ratings` : `/shows/${traktId}/ratings`;
+        const ratingsData = await traktFetch(endpoint);
+        const extEndpoint = type === 'movie' ? `/movies/${traktId}?extended=full` : `/shows/${traktId}?extended=full`;
+        const extData = await traktFetch(extEndpoint);
+        const combined = {
+            trakt_rating: ratingsData.rating,   
+            trakt_votes: ratingsData.votes,
+            imdb_rating: extData.ratings?.imdb?.rating ?? null,
+            imdb_votes: extData.ratings?.imdb?.votes ?? null,
+            rt_score: extData.ratings?.rotten_tomatoes?.score ?? null,
+            rt_audience: extData.ratings?.rotten_tomatoes?.user_score ?? null,
+            popcornmeter: extData.ratings?.rotten_tomatoes?.user_score ?? null, 
+            tmdb_id: tmdbId,
+            trakt_id: traktId
+        };
+        traktRatingsCache.set(key, combined);
+        return combined;
+    } catch (e) {
+        console.warn('[Trakt] Ratings fetch failed:', e);
+        return null;
+    }
+}
+window.traktToggleWatchlist = traktToggleWatchlist;
+window.traktStartLogin = traktStartLogin;
+window.traktLogout = traktLogout;
+window.traktSyncWatched = traktSyncWatched;
 const memCache = new Map();
 async function fetchCached(url) {
     const cacheKey = "tmdb_" + url.replace(TMDB_API_KEY, "").replace(GEMINI_API_KEY, "");
@@ -2361,6 +2588,7 @@ window.selectContent = async function(id, title, type) {
     posterImg.onload = null;
     posterImg.onerror = null;
     checkAccountStates(id, type);
+    traktCheckWatchlistStatus();
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
     setupDeferredSections(id, currentTitle);
@@ -2836,10 +3064,10 @@ function renderDetails(data, title) {
         if (bestLogo) logoPath = bestLogo.file_path;
     }
     if (logoPath) {
+        logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
         logoImg.style.display = 'block';
         textHeading.style.display = 'none';
-        logoImg.onload = () => applyFogIfLogoIsDark(logoImg);
-        logoImg.src = `${TMDB_LOGO_SZ}${logoPath}`;
+        applyFogIfLogoIsDark(logoImg);
     } else {
         resetFogStack(logoImg);
         logoImg.style.display = 'none';
@@ -3585,44 +3813,13 @@ const RM_RT_ROTTEN_URL = "https://upload.wikimedia.org/wikipedia/commons/5/52/Ro
 const RM_RT_FRESH_URL = "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg";
 const RM_RT_CERTIFIED_URL = "https://upload.wikimedia.org/wikipedia/commons/f/f3/Fresh_Tomato_logo.svg";
 const RM_RT_DEFAULT_URL = "https://upload.wikimedia.org/wikipedia/commons/4/45/Rotten_Tomatoes_alternative_logo.svg";
-const OMDB_CACHE_LIMIT = 2;
-const omdbCache = new Map();
-function getCachedOmdbData(imdbId) {
-    if (!omdbCache.has(imdbId)) return null;
-    const value = omdbCache.get(imdbId);
-    omdbCache.delete(imdbId);
-    omdbCache.set(imdbId, value);
-    return value;
-}
-function setCachedOmdbData(imdbId, data) {
-    if (omdbCache.has(imdbId)) omdbCache.delete(imdbId);
-    omdbCache.set(imdbId, data);
-    while (omdbCache.size > OMDB_CACHE_LIMIT) {
-        const oldestKey = omdbCache.keys().next().value;
-        omdbCache.delete(oldestKey);
-    }
-}
-function rmFormatVotes(votesString) {
-    if (!votesString || votesString === "N/A") return "0";
-    const votes = parseInt(votesString.replace(/,/g, ''), 10);
-    if (isNaN(votes)) return "0";
-    if (votes >= 1000000) return (votes / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (votes >= 1000) return (votes / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return votes.toString();
-}
-function rmUpdateMetascoreColor(score, element) {
-    const numScore = parseInt(score, 10);
-    if (isNaN(numScore)) {
-        element.style.backgroundColor = 'var(--rm-meta-green)';
-        return;
-    }
-    if (numScore >= 61) {
-        element.style.backgroundColor = 'var(--rm-meta-green)';
-    } else if (numScore >= 40) {
-        element.style.backgroundColor = 'var(--rm-meta-yellow)';
-    } else {
-        element.style.backgroundColor = 'var(--rm-meta-red)';
-    }
+function rmFormatVotes(votes) {
+    if (!votes) return "0";
+    const n = typeof votes === 'string' ? parseInt(votes.replace(/,/g, ''), 10) : votes;
+    if (isNaN(n)) return "0";
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return n.toString();
 }
 function rmResetFields() {
     document.getElementById('rm-imdb-score').textContent = "--";
@@ -3630,9 +3827,10 @@ function rmResetFields() {
     document.getElementById('rm-rt-block').classList.add('hidden');
     const rtIconEl = document.getElementById('rm-rt-icon-img');
     if (rtIconEl) rtIconEl.src = RM_RT_DEFAULT_URL;
-    document.getElementById('rm-meta-badge').textContent = "--";
-    document.getElementById('rm-meta-score').textContent = "--";
-    document.getElementById('rm-meta-badge').style.backgroundColor = 'var(--rm-meta-green)';
+    const popcornBlock = document.getElementById('rm-popcorn-block');
+    if (popcornBlock) popcornBlock.classList.add('hidden');
+    const traktBlock = document.getElementById('rm-trakt-block');
+    if (traktBlock) traktBlock.classList.add('hidden');
 }
 window.openRatingsModal = async function(tmdbVoteAverage) {
     const modal = document.getElementById('ratings-modal');
@@ -3644,10 +3842,7 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
         tmdbScoreEl.textContent = tmdbVoteAverage.toFixed(1);
         tmdbClickTargets.forEach(el => {
             if (!el) return;
-            el.onclick = () => {
-                closeRatingsModal();
-                quickFilter('rating', tmdbVoteAverage);
-            };
+            el.onclick = () => { closeRatingsModal(); quickFilter('rating', tmdbVoteAverage); };
         });
     } else {
         tmdbScoreEl.textContent = "(N/A)";
@@ -3656,44 +3851,38 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     if (window.toggleMobileNav) window.toggleMobileNav(true);
-    if (!IMDB_ID) return;
+    if (!TMDB_ID) return;
     try {
-        let data = getCachedOmdbData(IMDB_ID);
-        if (!data) {
-            const response = await fetch(`${OMDB_API_URL}?i=${IMDB_ID}&apikey=${OMDB_API_KEY}`);
-            data = await response.json();
-            setCachedOmdbData(IMDB_ID, data);
+        const ratings = await fetchTraktRatings(TMDB_ID, mediaType);
+        if (!ratings) return;
+        if (ratings.imdb_rating) {
+            document.getElementById('rm-imdb-score').textContent = Number(ratings.imdb_rating).toFixed(1);
+            document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(ratings.imdb_votes)} VOTES`;
         }
-        if (data.Response === "True") {
-            document.getElementById('rm-imdb-score').textContent = data.imdbRating && data.imdbRating !== "N/A" ? data.imdbRating : "--";
-            document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(data.imdbVotes)} VOTES`;
-            const rtIconEl = document.getElementById('rm-rt-icon-img');
-            const rtData = (data.Ratings && data.Ratings.length > 0)
-                ? data.Ratings.find(r => r.Source === "Rotten Tomatoes")
-                : null;
-            if (rtData) {
-                document.getElementById('rm-rt-score').textContent = rtData.Value;
-                const rtScoreNum = parseInt(rtData.Value, 10);
-                if (rtScoreNum < 60) {
-                    rtIconEl.src = RM_RT_ROTTEN_URL;
-                } else if (rtScoreNum >= 75) {
-                    rtIconEl.src = RM_RT_CERTIFIED_URL;
-                } else {
-                    rtIconEl.src = RM_RT_FRESH_URL;
-                }
-                document.getElementById('rm-rt-block').classList.remove('hidden');
-            } else if (rtIconEl) {
-                rtIconEl.src = RM_RT_DEFAULT_URL;
-            }
-            const metaScore = data.Metascore && data.Metascore !== "N/A" ? data.Metascore : "--";
-            document.getElementById('rm-meta-badge').textContent = metaScore;
-            document.getElementById('rm-meta-score').textContent = metaScore;
-            rmUpdateMetascoreColor(metaScore, document.getElementById('rm-meta-badge'));
-        } else {
-            console.error("OMDb API Error:", data.Error);
+        const rtIconEl = document.getElementById('rm-rt-icon-img');
+        if (ratings.rt_score != null) {
+            document.getElementById('rm-rt-score').textContent = `${Math.round(ratings.rt_score)}%`;
+            const rtNum = Math.round(ratings.rt_score);
+            if (rtNum < 60) rtIconEl.src = RM_RT_ROTTEN_URL;
+            else if (rtNum >= 75) rtIconEl.src = RM_RT_CERTIFIED_URL;
+            else rtIconEl.src = RM_RT_FRESH_URL;
+            document.getElementById('rm-rt-block').classList.remove('hidden');
+        } else if (rtIconEl) {
+            rtIconEl.src = RM_RT_DEFAULT_URL;
+        }
+        const popcornBlock = document.getElementById('rm-popcorn-block');
+        if (popcornBlock && ratings.popcornmeter != null) {
+            document.getElementById('rm-popcorn-score').textContent = `${Math.round(ratings.popcornmeter)}%`;
+            popcornBlock.classList.remove('hidden');
+        }
+        const traktBlock = document.getElementById('rm-trakt-block');
+        if (traktBlock && ratings.trakt_rating != null) {
+            document.getElementById('rm-trakt-score').textContent = Number(ratings.trakt_rating).toFixed(1);
+            document.getElementById('rm-trakt-votes').textContent = `${rmFormatVotes(ratings.trakt_votes)} VOTES`;
+            traktBlock.classList.remove('hidden');
         }
     } catch (error) {
-        console.error("Failed to fetch OMDb ratings:", error);
+        console.error('[Trakt] openRatingsModal failed:', error);
     }
 };
 window.closeRatingsModal = function() {
@@ -4729,10 +4918,10 @@ function handleTranslations(data) {
             }
             const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
             if (newLogo) {
+                logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
                 logoImg.style.display = 'block';
                 titleEl.style.display = 'none';
-                logoImg.onload = () => applyFogIfLogoIsDark(logoImg);
-                logoImg.src = `${TMDB_LOGO_SZ}${newLogo.file_path}`;
+                applyFogIfLogoIsDark(logoImg);
             } else {
                 resetFogStack(logoImg);
                 logoImg.style.display = 'none';
@@ -4828,6 +5017,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    updateTraktUI();
 });
 document.addEventListener('click', function(e) {
     const drawer = document.getElementById('mobile-more-drawer');
