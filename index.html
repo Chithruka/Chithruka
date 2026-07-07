@@ -612,11 +612,11 @@
                         </button>
                     
                     <!-- Trakt Watchlist -->
-                    <div id="trakt-watchlist-btn" onclick="traktToggleWatchlist()" class="interact-btn" title="Add to Trakt Watchlist" style="position:relative;">
+                    <div id="trakt-watchlist-btn" onclick="traktToggleWatchlist()" class="interact-btn" title="Add to Trakt Watchlist" style="position:relative;display:none;">
                         <svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="color:#ed5f23"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
                     </div>
                     <!-- Trakt Mark as Watched -->
-                    <div onclick="traktSyncWatched()" class="interact-btn" title="Mark as Watched on Trakt">
+                    <div id="trakt-watched-btn" onclick="traktSyncWatched()" class="interact-btn" title="Mark as Watched on Trakt" style="display:none;">
                         <svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="color:#ed5f23"><path d="M256 48a208 208 0 1 1 0 416A208 208 0 1 1 256 48zm0-48C114.6 0 0 114.6 0 256S114.6 512 256 512s256-114.6 256-256S397.4 0 256 0zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/></svg>
                     </div>
                     <div id="toast" class="toast">Link copied to clipboard!</div>
@@ -1057,85 +1057,122 @@
 </div>
 
 <div id="ratings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-    <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl">
-        <button onclick="closeRatingsModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl" title="Close" aria-label="Close"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></i></button>
+    <div class="rm-modal-panel glass-panel rounded-2xl w-full relative shadow-2xl">
+        <button onclick="closeRatingsModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl" title="Close" aria-label="Close" style="z-index:1"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></i></button>
 
-        <div class="flex items-center gap-3 mb-5">
-            <h3 class="text-lg font-bold text-white tracking-wide">Critics &amp; Audience</h3>
-            <div class="rm-header-line"></div>
+        <!-- Scrollable inner content -->
+        <div class="rm-modal-scroll">
+
+            <div class="flex items-center gap-3 mb-5">
+                <h3 class="text-lg font-bold text-white tracking-wide">Critics &amp; Audience</h3>
+                <div class="rm-header-line"></div>
+            </div>
+
+            <div class="rm-ratings-container">
+
+                <!-- IMDb -->
+                <div class="rm-block">
+                    <div class="rm-imdb-logo">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo">
+                    </div>
+                    <div class="rm-info">
+                        <div class="rm-score-line">
+                            <span class="rm-score-value" id="rm-imdb-score">--</span>
+                            <span class="rm-score-max">/10</span>
+                        </div>
+                        <div class="rm-score-subtext" id="rm-imdb-votes">-- VOTES</div>
+                    </div>
+                </div>
+
+                <!-- Rotten Tomatoes Tomatometer -->
+                <div class="rm-block hidden" id="rm-rt-block">
+                    <div class="rm-rt-icon">
+                        <img id="rm-rt-icon-img" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Rotten_Tomatoes_alternative_logo.svg" alt="Rotten Tomatoes">
+                    </div>
+                    <div class="rm-info">
+                        <div class="rm-score-line">
+                            <span class="rm-score-value" id="rm-rt-score">--</span>
+                        </div>
+                        <div class="rm-score-subtext">TOMATOMETER</div>
+                    </div>
+                </div>
+
+                <!-- Metacritic -->
+                <div class="rm-block hidden" id="rm-meta-block">
+                    <div id="rm-meta-badge" style="width:32px;height:32px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border-radius:6px;background:#1fbc5b;flex-shrink:0;">--</div>
+                    <div class="rm-info">
+                        <div class="rm-score-line">
+                            <span class="rm-score-value" id="rm-meta-score">--</span>
+                            <span class="rm-score-max">/100</span>
+                        </div>
+                        <div class="rm-score-subtext">METASCORE</div>
+                    </div>
+                </div>
+
+                <!-- Trakt -->
+                <div class="rm-block hidden" id="rm-trakt-block">
+                    <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#1a1a2e;padding:3px;box-sizing:border-box;">
+<img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Trakt.tv-favicon.svg"/>
+                    </div>
+                    <div class="rm-info">
+                        <div class="rm-score-line">
+                            <span class="rm-score-value" id="rm-trakt-score">--</span>
+                            <span class="rm-score-max">/10</span>
+                        </div>
+                        <div class="rm-score-subtext" id="rm-trakt-votes">-- VOTES</div>
+                    </div>
+                </div>
+
+                <!-- TMDB -->
+                <div class="rm-block">
+                    <div class="rm-tmdb-box rm-clickable" id="rm-tmdb-box" title="Open on TMDB">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB Logo">
+                    </div>
+                    <div class="rm-info">
+                        <div class="rm-score-line rm-clickable" id="rm-tmdb-score-line" title="Open on TMDB">
+                            <span class="rm-score-value rm-tmdb-gradient" id="rm-tmdb-score">(N/A)</span>
+                            <span class="rm-score-max">/10</span>
+                        </div>
+                        <div class="rm-score-subtext">TMDB RATING</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── REVIEWS SECTION ── -->
+            <div class="rm-reviews-section" id="rm-reviews-section">
+                <div class="rm-reviews-header">
+                    <div class="rm-reviews-title">
+                        <span>Reviews</span>
+                        <svg viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="opacity:0.5"><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+                        <small id="rm-reviews-source">via Trakt</small>
+                    </div>
+                    <button class="rm-see-all-btn" id="rm-see-all-btn" onclick="openReviewsSheet()">See all</button>
+                </div>
+                <div class="rm-reviews-scroller" id="rm-reviews-scroll">
+                    <div class="rm-reviews-loader" id="rm-reviews-loader">
+                        <svg class="rm-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>
+                        Loading reviews…
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end .rm-modal-scroll -->
+    </div><!-- end .rm-modal-panel -->
+
+    <!-- ── REVIEWS BOTTOM SHEET (inside modal overlay) ── -->
+    <div class="rm-sheet-overlay" id="rm-sheet-overlay" onclick="closeReviewsSheet()"></div>
+    <div class="rm-bottom-sheet" id="rm-bottom-sheet">
+        <div class="rm-drag-handle" id="rm-drag-handle"></div>
+        <div class="rm-sheet-header">
+            <span class="rm-sheet-title">All Reviews</span>
+            <button class="rm-sheet-close" onclick="closeReviewsSheet()" aria-label="Close reviews">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" width="14" height="14"><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg>
+            </button>
         </div>
-
-        <div class="rm-ratings-container">
-
-            <!-- IMDb -->
-            <div class="rm-block">
-                <div class="rm-imdb-logo">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/IMDB_Logo_2016.svg" alt="IMDb Logo">
-                </div>
-                <div class="rm-info">
-                    <div class="rm-score-line">
-                        <span class="rm-score-value" id="rm-imdb-score">--</span>
-                        <span class="rm-score-max">/10</span>
-                    </div>
-                    <div class="rm-score-subtext" id="rm-imdb-votes">-- VOTES</div>
-                </div>
-            </div>
-
-            <!-- Rotten Tomatoes Tomatometer -->
-            <div class="rm-block hidden" id="rm-rt-block">
-                <div class="rm-rt-icon">
-                    <img id="rm-rt-icon-img" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Rotten_Tomatoes_alternative_logo.svg" alt="Rotten Tomatoes">
-                </div>
-                <div class="rm-info">
-                    <div class="rm-score-line">
-                        <span class="rm-score-value" id="rm-rt-score">--</span>
-                    </div>
-                    <div class="rm-score-subtext">TOMATOMETER</div>
-                </div>
-            </div>
-
-            <!-- Metacritic -->
-            <div class="rm-block hidden" id="rm-meta-block">
-                <div id="rm-meta-badge" style="width:32px;height:32px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border-radius:6px;background:#1fbc5b;flex-shrink:0;">--</div>
-                <div class="rm-info">
-                    <div class="rm-score-line">
-                        <span class="rm-score-value" id="rm-meta-score">--</span>
-                        <span class="rm-score-max">/100</span>
-                    </div>
-                    <div class="rm-score-subtext">METASCORE</div>
-                </div>
-            </div>
-
-            <!-- Trakt -->
-            <div class="rm-block hidden" id="rm-trakt-block">
-                <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#1a1a2e;padding:3px;box-sizing:border-box;">
-                    <svg viewBox="0 0 512 512" width="26" height="26" fill="#ed5f23" xmlns="http://www.w3.org/2000/svg"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
-                </div>
-                <div class="rm-info">
-                    <div class="rm-score-line">
-                        <span class="rm-score-value" id="rm-trakt-score">--</span>
-                        <span class="rm-score-max">/10</span>
-                    </div>
-                    <div class="rm-score-subtext" id="rm-trakt-votes">-- VOTES</div>
-                </div>
-            </div>
-
-            <!-- TMDB -->
-            <div class="rm-block">
-                <div class="rm-tmdb-box rm-clickable" id="rm-tmdb-box" title="Open on TMDB">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Tmdb.new.logo.svg" alt="TMDB Logo">
-                </div>
-                <div class="rm-info">
-                    <div class="rm-score-line rm-clickable" id="rm-tmdb-score-line" title="Open on TMDB">
-                        <span class="rm-score-value rm-tmdb-gradient" id="rm-tmdb-score">(N/A)</span>
-                        <span class="rm-score-max">/10</span>
-                    </div>
-                    <div class="rm-score-subtext">TMDB RATING</div>
-                </div>
-            </div>
-
-        </div>
+        <div class="rm-sheet-scroll" id="rm-sheet-scroll"></div>
     </div>
+
 </div>
 
 <div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4 animate-fade-in">
@@ -1352,8 +1389,8 @@
 .lm-disconnect-btn { background: rgba(229,9,20,0.15); color: #e50914; border: 1px solid rgba(229,9,20,0.3); }
 .lm-disconnect-btn:hover { background: rgba(229,9,20,0.25); }
 
-/* Trakt logo SVG inline colour */
-.lm-trakt-logo { fill: #ed5f23; }
+/* Trakt logo — external SVG, no fill override */
+.lm-trakt-logo { }
 
 /* --- Divider --- */
 .lm-divider {
@@ -1443,9 +1480,7 @@ function renderLoginModal() {
     if (traktLoggedIn) {
         stripHtml += `
         <div class="lm-account-row connected">
-            <svg class="lm-service-logo lm-trakt-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/>
-            </svg>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Trakt.tv-favicon.svg"/>
             <div class="lm-account-info">
                 <div class="lm-account-label">Trakt — Connected</div>
                 <div class="lm-account-name">${traktUser || 'Logged in'}</div>
@@ -1474,9 +1509,7 @@ function renderLoginModal() {
     if (!traktLoggedIn) {
         provHtml += `
         <button class="lm-provider-btn lm-btn-trakt" onclick="traktStartLogin(); closeLoginModal();">
-            <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/>
-            </svg>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Trakt.tv-favicon.svg"/>
             <span>Connect Trakt</span>
         </button>`;
     }
