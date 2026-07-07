@@ -406,13 +406,24 @@
     box-sizing: border-box;
 }
 
-.rm-tmdb-box.rm-clickable {
+.rm-tmdb-box.rm-clickable,
+.rm-tmdb-box[style*="cursor: pointer"] {
     cursor: pointer;
     transition: transform 0.15s ease;
 }
 
-.rm-tmdb-box.rm-clickable:hover {
+.rm-tmdb-box.rm-clickable:hover,
+.rm-tmdb-box[style*="cursor: pointer"]:hover {
     transform: scale(1.08);
+}
+
+/* Whole rm-block becomes clickable (set via JS onclick) */
+.rm-block[style*="cursor: pointer"] {
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.rm-block[style*="cursor: pointer"]:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
 }
 
 .rm-info {

@@ -351,7 +351,7 @@ async function fetchOMDBRatings(imdbId) {
     if (!imdbId) return null;
     if (omdbRatingsCache.has(imdbId)) return omdbRatingsCache.get(imdbId);
     try {
-        const res = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
+        const res = await fetch(`https://www.omdbapi.com/?i=${imdbId}&tomatoes=true&apikey=${OMDB_API_KEY}`);
         const data = await res.json();
         if (data.Response !== 'True') return null;
         const rtEntry = data.Ratings?.find(r => r.Source === 'Rotten Tomatoes');
@@ -359,6 +359,7 @@ async function fetchOMDBRatings(imdbId) {
             imdb_rating: data.imdbRating !== 'N/A' ? data.imdbRating : null,
             imdb_votes: data.imdbVotes !== 'N/A' ? data.imdbVotes : null,
             rt_score: rtEntry ? parseInt(rtEntry.Value, 10) : null,
+            rt_url: (data.tomatoURL && data.tomatoURL !== 'N/A') ? data.tomatoURL : null,
             metascore: data.Metascore !== 'N/A' ? data.Metascore : null,
         };
         omdbRatingsCache.set(imdbId, result);
@@ -378,13 +379,15 @@ async function fetchTraktRatings(tmdbId, type) {
         if (!results || results.length === 0) return null;
         const item = results[0][searchType];
         const traktId = item.ids.trakt;
+        const traktSlug = item.ids.slug || null;
         const endpoint = type === 'movie' ? `/movies/${traktId}/ratings` : `/shows/${traktId}/ratings`;
         const ratingsData = await traktFetch(endpoint);
         const combined = {
             trakt_rating: ratingsData.rating,
             trakt_votes: ratingsData.votes,
             tmdb_id: tmdbId,
-            trakt_id: traktId
+            trakt_id: traktId,
+            trakt_slug: traktSlug
         };
         traktRatingsCache.set(key, combined);
         return combined;
@@ -3825,6 +3828,13 @@ if (downloadModalEl) {
         if (e.target === downloadModalEl) closeDownloadModal(); 
     });
 }
+function slugifyTitle(title) {
+    return title
+        .toLowerCase()
+        .replace(/['']/g, '')          
+        .replace(/[^a-z0-9]+/g, '-')  
+        .replace(/^-+|-+$/g, '');     
+}
 const RM_RT_ROTTEN_URL = "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg";
 const RM_RT_FRESH_URL = "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg";
 const RM_RT_CERTIFIED_URL = "https://upload.wikimedia.org/wikipedia/commons/f/f3/Fresh_Tomato_logo.svg";
@@ -3850,22 +3860,39 @@ function rmResetFields() {
     const traktBlock = document.getElementById('rm-trakt-block');
     if (traktBlock) traktBlock.classList.add('hidden');
 }
+function rmOpenUrl(url) {
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+}
+function rmMakeClickable(el, url) {
+    if (!el) return;
+    if (url) {
+        el.style.cursor = 'pointer';
+        el.title = 'Open page';
+        el.onclick = () => rmOpenUrl(url);
+    } else {
+        el.style.cursor = 'default';
+        el.title = '';
+        el.onclick = null;
+    }
+}
 window.openRatingsModal = async function(tmdbVoteAverage) {
     const modal = document.getElementById('ratings-modal');
     if (!modal) return;
     rmResetFields();
     const tmdbScoreEl = document.getElementById('rm-tmdb-score');
+    const tmdbUrl = TMDB_ID ? `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${TMDB_ID}` : null;
     const tmdbClickTargets = [document.getElementById('rm-tmdb-box'), document.getElementById('rm-tmdb-score-line')];
     if (tmdbVoteAverage) {
         tmdbScoreEl.textContent = tmdbVoteAverage.toFixed(1);
-        tmdbClickTargets.forEach(el => {
-            if (!el) return;
-            el.onclick = () => { closeRatingsModal(); quickFilter('rating', tmdbVoteAverage); };
-        });
     } else {
         tmdbScoreEl.textContent = "(N/A)";
-        tmdbClickTargets.forEach(el => { if (el) el.onclick = null; });
     }
+    tmdbClickTargets.forEach(el => {
+        if (!el) return;
+        el.title = 'Open on TMDB';
+        el.style.cursor = tmdbUrl ? 'pointer' : 'default';
+        el.onclick = tmdbUrl ? () => rmOpenUrl(tmdbUrl) : null;
+    });
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     if (window.toggleMobileNav) window.toggleMobileNav(true);
@@ -3875,27 +3902,33 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             fetchTraktRatings(TMDB_ID, mediaType),
             fetchOMDBRatings(IMDB_ID)
         ]);
-
-        // IMDb — from OMDB
+        const imdbBlock = document.getElementById('rm-imdb-score')?.closest('.rm-block');
+        const imdbUrl = IMDB_ID ? `https://www.imdb.com/title/${IMDB_ID}/` : null;
         if (omdbRatings?.imdb_rating) {
             document.getElementById('rm-imdb-score').textContent = Number(omdbRatings.imdb_rating).toFixed(1);
             document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(omdbRatings.imdb_votes)} VOTES`;
         }
-
-        // Rotten Tomatoes Tomatometer — from OMDB
+        rmMakeClickable(imdbBlock, imdbUrl);
         const rtIconEl = document.getElementById('rm-rt-icon-img');
+        const rtBlock = document.getElementById('rm-rt-block');
+        let rtUrl = omdbRatings?.rt_url || null;
+        if (!rtUrl && currentTitle) {
+            const rtType = mediaType === 'tv' ? 'tv' : 'm';
+            rtUrl = `https://www.rottentomatoes.com/${rtType}/${slugifyTitle(currentTitle)}`;
+        }
         if (omdbRatings?.rt_score != null) {
             document.getElementById('rm-rt-score').textContent = `${omdbRatings.rt_score}%`;
             if (omdbRatings.rt_score < 60) rtIconEl.src = RM_RT_ROTTEN_URL;
             else if (omdbRatings.rt_score >= 75) rtIconEl.src = RM_RT_CERTIFIED_URL;
             else rtIconEl.src = RM_RT_FRESH_URL;
-            document.getElementById('rm-rt-block').classList.remove('hidden');
+            rtBlock.classList.remove('hidden');
         } else if (rtIconEl) {
             rtIconEl.src = RM_RT_DEFAULT_URL;
         }
-
-        // Metacritic — from OMDB
+        rmMakeClickable(rtBlock, rtUrl);
         const metaBlock = document.getElementById('rm-meta-block');
+        const metaTypeSlug = mediaType === 'tv' ? 'tv' : 'movie';
+        const metaUrl = currentTitle ? `https://www.metacritic.com/${metaTypeSlug}/${slugifyTitle(currentTitle)}/` : null;
         if (metaBlock && omdbRatings?.metascore != null) {
             const metaNum = parseInt(omdbRatings.metascore, 10);
             const metaBadge = document.getElementById('rm-meta-badge');
@@ -3908,14 +3941,19 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             }
             metaBlock.classList.remove('hidden');
         }
-
-        // Trakt — from Trakt API only
+        rmMakeClickable(metaBlock, metaUrl);
         const traktBlock = document.getElementById('rm-trakt-block');
+        let traktUrl = null;
+        if (traktRatings?.trakt_slug) {
+            const traktSection = mediaType === 'tv' ? 'shows' : 'movies';
+            traktUrl = `https://trakt.tv/${traktSection}/${traktRatings.trakt_slug}`;
+        }
         if (traktBlock && traktRatings?.trakt_rating != null) {
             document.getElementById('rm-trakt-score').textContent = Number(traktRatings.trakt_rating).toFixed(1);
             document.getElementById('rm-trakt-votes').textContent = `${rmFormatVotes(traktRatings.trakt_votes)} VOTES`;
             traktBlock.classList.remove('hidden');
         }
+        rmMakeClickable(traktBlock, traktUrl);
     } catch (error) {
         console.error('[Ratings] openRatingsModal failed:', error);
     }
