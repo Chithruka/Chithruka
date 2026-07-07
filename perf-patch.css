@@ -1,4 +1,18 @@
 
+@font-face {
+    font-family: 'MPAARatings';
+    src: url('Attachments/MPAA Ratings.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+#detail-age span {
+    font-family: 'MPAARatings', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0;
+}
+
 .sidebar {
     will-change: width;
 }
