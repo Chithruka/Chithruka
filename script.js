@@ -345,6 +345,29 @@ async function traktCheckWatchlistStatus() {
         console.warn('[Trakt] Watchlist check failed:', e);
     }
 }
+const OMDB_API_KEY = '96c5ea3';
+const omdbRatingsCache = new Map();
+async function fetchOMDBRatings(imdbId) {
+    if (!imdbId) return null;
+    if (omdbRatingsCache.has(imdbId)) return omdbRatingsCache.get(imdbId);
+    try {
+        const res = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`);
+        const data = await res.json();
+        if (data.Response !== 'True') return null;
+        const rtEntry = data.Ratings?.find(r => r.Source === 'Rotten Tomatoes');
+        const result = {
+            imdb_rating: data.imdbRating !== 'N/A' ? data.imdbRating : null,
+            imdb_votes: data.imdbVotes !== 'N/A' ? data.imdbVotes : null,
+            rt_score: rtEntry ? parseInt(rtEntry.Value, 10) : null,
+            metascore: data.Metascore !== 'N/A' ? data.Metascore : null,
+        };
+        omdbRatingsCache.set(imdbId, result);
+        return result;
+    } catch (e) {
+        console.warn('[OMDB] Ratings fetch failed:', e);
+        return null;
+    }
+}
 const traktRatingsCache = new Map();
 async function fetchTraktRatings(tmdbId, type) {
     const key = `${type}-${tmdbId}`;
@@ -357,16 +380,9 @@ async function fetchTraktRatings(tmdbId, type) {
         const traktId = item.ids.trakt;
         const endpoint = type === 'movie' ? `/movies/${traktId}/ratings` : `/shows/${traktId}/ratings`;
         const ratingsData = await traktFetch(endpoint);
-        const extEndpoint = type === 'movie' ? `/movies/${traktId}?extended=full` : `/shows/${traktId}?extended=full`;
-        const extData = await traktFetch(extEndpoint);
         const combined = {
-            trakt_rating: ratingsData.rating,   
+            trakt_rating: ratingsData.rating,
             trakt_votes: ratingsData.votes,
-            imdb_rating: extData.ratings?.imdb?.rating ?? null,
-            imdb_votes: extData.ratings?.imdb?.votes ?? null,
-            rt_score: extData.ratings?.rotten_tomatoes?.score ?? null,
-            rt_audience: extData.ratings?.rotten_tomatoes?.user_score ?? null,
-            popcornmeter: extData.ratings?.rotten_tomatoes?.user_score ?? null, 
             tmdb_id: tmdbId,
             trakt_id: traktId
         };
@@ -3827,8 +3843,10 @@ function rmResetFields() {
     document.getElementById('rm-rt-block').classList.add('hidden');
     const rtIconEl = document.getElementById('rm-rt-icon-img');
     if (rtIconEl) rtIconEl.src = RM_RT_DEFAULT_URL;
-    const popcornBlock = document.getElementById('rm-popcorn-block');
-    if (popcornBlock) popcornBlock.classList.add('hidden');
+    const metaBlock = document.getElementById('rm-meta-block');
+    if (metaBlock) metaBlock.classList.add('hidden');
+    const metaBadge = document.getElementById('rm-meta-badge');
+    if (metaBadge) { metaBadge.textContent = '--'; metaBadge.style.backgroundColor = '#1fbc5b'; }
     const traktBlock = document.getElementById('rm-trakt-block');
     if (traktBlock) traktBlock.classList.add('hidden');
 }
@@ -3853,36 +3871,53 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
     if (window.toggleMobileNav) window.toggleMobileNav(true);
     if (!TMDB_ID) return;
     try {
-        const ratings = await fetchTraktRatings(TMDB_ID, mediaType);
-        if (!ratings) return;
-        if (ratings.imdb_rating) {
-            document.getElementById('rm-imdb-score').textContent = Number(ratings.imdb_rating).toFixed(1);
-            document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(ratings.imdb_votes)} VOTES`;
+        const [traktRatings, omdbRatings] = await Promise.all([
+            fetchTraktRatings(TMDB_ID, mediaType),
+            fetchOMDBRatings(IMDB_ID)
+        ]);
+
+        // IMDb — from OMDB
+        if (omdbRatings?.imdb_rating) {
+            document.getElementById('rm-imdb-score').textContent = Number(omdbRatings.imdb_rating).toFixed(1);
+            document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(omdbRatings.imdb_votes)} VOTES`;
         }
+
+        // Rotten Tomatoes Tomatometer — from OMDB
         const rtIconEl = document.getElementById('rm-rt-icon-img');
-        if (ratings.rt_score != null) {
-            document.getElementById('rm-rt-score').textContent = `${Math.round(ratings.rt_score)}%`;
-            const rtNum = Math.round(ratings.rt_score);
-            if (rtNum < 60) rtIconEl.src = RM_RT_ROTTEN_URL;
-            else if (rtNum >= 75) rtIconEl.src = RM_RT_CERTIFIED_URL;
+        if (omdbRatings?.rt_score != null) {
+            document.getElementById('rm-rt-score').textContent = `${omdbRatings.rt_score}%`;
+            if (omdbRatings.rt_score < 60) rtIconEl.src = RM_RT_ROTTEN_URL;
+            else if (omdbRatings.rt_score >= 75) rtIconEl.src = RM_RT_CERTIFIED_URL;
             else rtIconEl.src = RM_RT_FRESH_URL;
             document.getElementById('rm-rt-block').classList.remove('hidden');
         } else if (rtIconEl) {
             rtIconEl.src = RM_RT_DEFAULT_URL;
         }
-        const popcornBlock = document.getElementById('rm-popcorn-block');
-        if (popcornBlock && ratings.popcornmeter != null) {
-            document.getElementById('rm-popcorn-score').textContent = `${Math.round(ratings.popcornmeter)}%`;
-            popcornBlock.classList.remove('hidden');
+
+        // Metacritic — from OMDB
+        const metaBlock = document.getElementById('rm-meta-block');
+        if (metaBlock && omdbRatings?.metascore != null) {
+            const metaNum = parseInt(omdbRatings.metascore, 10);
+            const metaBadge = document.getElementById('rm-meta-badge');
+            document.getElementById('rm-meta-score').textContent = omdbRatings.metascore;
+            metaBadge.textContent = omdbRatings.metascore;
+            if (!isNaN(metaNum)) {
+                if (metaNum >= 61) metaBadge.style.backgroundColor = '#1fbc5b';
+                else if (metaNum >= 40) metaBadge.style.backgroundColor = '#f1c40f';
+                else metaBadge.style.backgroundColor = '#e74c3c';
+            }
+            metaBlock.classList.remove('hidden');
         }
+
+        // Trakt — from Trakt API only
         const traktBlock = document.getElementById('rm-trakt-block');
-        if (traktBlock && ratings.trakt_rating != null) {
-            document.getElementById('rm-trakt-score').textContent = Number(ratings.trakt_rating).toFixed(1);
-            document.getElementById('rm-trakt-votes').textContent = `${rmFormatVotes(ratings.trakt_votes)} VOTES`;
+        if (traktBlock && traktRatings?.trakt_rating != null) {
+            document.getElementById('rm-trakt-score').textContent = Number(traktRatings.trakt_rating).toFixed(1);
+            document.getElementById('rm-trakt-votes').textContent = `${rmFormatVotes(traktRatings.trakt_votes)} VOTES`;
             traktBlock.classList.remove('hidden');
         }
     } catch (error) {
-        console.error('[Trakt] openRatingsModal failed:', error);
+        console.error('[Ratings] openRatingsModal failed:', error);
     }
 };
 window.closeRatingsModal = function() {
