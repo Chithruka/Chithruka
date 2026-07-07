@@ -261,18 +261,24 @@ function traktLogout() {
     showMessage('Logged out of Trakt.');
 }
 function updateTraktUI() {
-    const loginBtn  = document.getElementById('trakt-login-btn');
-    const logoutBtn = document.getElementById('trakt-logout-btn');
-    const userEl    = document.getElementById('trakt-username-display');
+    const loginBtn       = document.getElementById('trakt-login-btn');
+    const logoutBtn      = document.getElementById('trakt-logout-btn');
+    const userEl         = document.getElementById('trakt-username-display');
+    const watchlistBtn   = document.getElementById('trakt-watchlist-btn');
+    const watchedBtn     = document.getElementById('trakt-watched-btn');
     if (!loginBtn) return;
     if (traktAccessToken && traktUsername) {
         loginBtn.classList.add('hidden');
-        if (logoutBtn)  logoutBtn.classList.remove('hidden');
-        if (userEl)     userEl.textContent = traktUsername;
+        if (logoutBtn)    logoutBtn.classList.remove('hidden');
+        if (userEl)       userEl.textContent = traktUsername;
+        if (watchlistBtn) watchlistBtn.style.display = '';
+        if (watchedBtn)   watchedBtn.style.display = '';
     } else {
         loginBtn.classList.remove('hidden');
-        if (logoutBtn)  logoutBtn.classList.add('hidden');
-        if (userEl)     userEl.textContent = '';
+        if (logoutBtn)    logoutBtn.classList.add('hidden');
+        if (userEl)       userEl.textContent = '';
+        if (watchlistBtn) watchlistBtn.style.display = 'none';
+        if (watchedBtn)   watchedBtn.style.display = 'none';
     }
 }
 function showTraktLoginPrompt(code, url) {
@@ -285,7 +291,7 @@ function showTraktLoginPrompt(code, url) {
     }
     el.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px">
-            <svg width="22" height="22" viewBox="0 0 512 512" fill="#ed5f23"><path d="M255.6 0C114.6 0 0 114.5 0 255.5S114.6 511 255.6 511 511 396.5 511 255.5 396.7 0 255.6 0zm116 346.5c-4.6 7.5-14.4 9.8-21.9 5.2L242 285.2v103.6c0 8.7-7.1 15.8-15.8 15.8H140c-8.7 0-15.8-7.1-15.8-15.8V123.2c0-8.7 7.1-15.8 15.8-15.8h86.2c8.7 0 15.8 7.1 15.8 15.8v103.6l107.7-66.5c7.5-4.6 17.3-2.3 21.9 5.2l43.8 71c4.5 7.5 2.3 17.3-5.2 21.9l-.1-.1-38.5 23.8 38.5 23.8c7.5 4.6 9.8 14.4 5.2 21.9l-43.8 71z"/></svg>
+            <svg viewBox="0 0 512 512" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><circle cx="256" cy="256" r="256" fill="#ed1c24"/><path d="M255.6 57C142.8 57 51 148.8 51 261.5S142.8 466 255.6 466 460 374.3 460 261.5 368.3 57 255.6 57zm100.3 246.5c-4 6.5-12.5 8.5-19 4.5L231 239.3v89.8c0 7.5-6.2 13.7-13.7 13.7H143c-7.5 0-13.7-6.2-13.7-13.7V133.3c0-7.5 6.2-13.7 13.7-13.7h74.7c7.5 0 13.7 6.2 13.7 13.7v89.8l93.3-57.6c6.5-4 15-2 19 4.5l38 61.5c4 6.5 2 15-4.5 19l-.1-.1-33.4 20.6 33.4 20.6c6.5 4 8.5 12.5 4.5 19l-26.7 36.3z" fill="#fff"/></svg>
             <span style="font-weight:700;font-size:1rem">Connect to Trakt</span>
         </div>
         <p style="font-size:.85rem;color:#aaa;margin-bottom:14px">Go to <a href="${url}" target="_blank" style="color:#ed5f23;font-weight:600">${url}</a> and enter this code:</p>
@@ -3828,12 +3834,13 @@ if (downloadModalEl) {
         if (e.target === downloadModalEl) closeDownloadModal(); 
     });
 }
+// Converts a movie/show title to a URL-friendly slug for Metacritic / RT fallback
 function slugifyTitle(title) {
     return title
         .toLowerCase()
-        .replace(/['']/g, '')          
-        .replace(/[^a-z0-9]+/g, '-')  
-        .replace(/^-+|-+$/g, '');     
+        .replace(/['']/g, '')          // remove apostrophes
+        .replace(/[^a-z0-9]+/g, '-')  // non-alphanumeric → dash
+        .replace(/^-+|-+$/g, '');     // trim leading/trailing dashes
 }
 const RM_RT_ROTTEN_URL = "https://upload.wikimedia.org/wikipedia/commons/5/52/Rotten_Tomatoes_rotten.svg";
 const RM_RT_FRESH_URL = "https://upload.wikimedia.org/wikipedia/commons/5/5b/Rotten_Tomatoes.svg";
@@ -3859,10 +3866,22 @@ function rmResetFields() {
     if (metaBadge) { metaBadge.textContent = '--'; metaBadge.style.backgroundColor = '#1fbc5b'; }
     const traktBlock = document.getElementById('rm-trakt-block');
     if (traktBlock) traktBlock.classList.add('hidden');
+    // Reset reviews
+    const reviewsScroll = document.getElementById('rm-reviews-scroll');
+    if (reviewsScroll) {
+        reviewsScroll.innerHTML = '<div class="rm-reviews-loader"><svg class="rm-spinner" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg> Loading reviews…</div>';
+    }
+    const sheetScroll = document.getElementById('rm-sheet-scroll');
+    if (sheetScroll) sheetScroll.innerHTML = '';
+    const seeAllBtn = document.getElementById('rm-see-all-btn');
+    if (seeAllBtn) seeAllBtn.style.display = 'none';
+    closeReviewsSheet();
 }
+// Helper: open a URL in a new tab, called from rating block clicks
 function rmOpenUrl(url) {
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
 }
+// Helper: make a rating block clickable with a pointer cursor
 function rmMakeClickable(el, url) {
     if (!el) return;
     if (url) {
@@ -3875,11 +3894,14 @@ function rmMakeClickable(el, url) {
         el.onclick = null;
     }
 }
+
 window.openRatingsModal = async function(tmdbVoteAverage) {
     const modal = document.getElementById('ratings-modal');
     if (!modal) return;
     rmResetFields();
     const tmdbScoreEl = document.getElementById('rm-tmdb-score');
+
+    // TMDB block — now opens TMDB page instead of rating filter
     const tmdbUrl = TMDB_ID ? `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${TMDB_ID}` : null;
     const tmdbClickTargets = [document.getElementById('rm-tmdb-box'), document.getElementById('rm-tmdb-score-line')];
     if (tmdbVoteAverage) {
@@ -3893,6 +3915,7 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
         el.style.cursor = tmdbUrl ? 'pointer' : 'default';
         el.onclick = tmdbUrl ? () => rmOpenUrl(tmdbUrl) : null;
     });
+
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     if (window.toggleMobileNav) window.toggleMobileNav(true);
@@ -3902,6 +3925,8 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             fetchTraktRatings(TMDB_ID, mediaType),
             fetchOMDBRatings(IMDB_ID)
         ]);
+
+        // IMDb — opens imdb.com
         const imdbBlock = document.getElementById('rm-imdb-score')?.closest('.rm-block');
         const imdbUrl = IMDB_ID ? `https://www.imdb.com/title/${IMDB_ID}/` : null;
         if (omdbRatings?.imdb_rating) {
@@ -3909,6 +3934,8 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             document.getElementById('rm-imdb-votes').textContent = `${rmFormatVotes(omdbRatings.imdb_votes)} VOTES`;
         }
         rmMakeClickable(imdbBlock, imdbUrl);
+
+        // Rotten Tomatoes — opens RT page (from OMDB tomatoURL, or slug fallback)
         const rtIconEl = document.getElementById('rm-rt-icon-img');
         const rtBlock = document.getElementById('rm-rt-block');
         let rtUrl = omdbRatings?.rt_url || null;
@@ -3926,6 +3953,8 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             rtIconEl.src = RM_RT_DEFAULT_URL;
         }
         rmMakeClickable(rtBlock, rtUrl);
+
+        // Metacritic — opens metacritic.com using title slug
         const metaBlock = document.getElementById('rm-meta-block');
         const metaTypeSlug = mediaType === 'tv' ? 'tv' : 'movie';
         const metaUrl = currentTitle ? `https://www.metacritic.com/${metaTypeSlug}/${slugifyTitle(currentTitle)}/` : null;
@@ -3942,6 +3971,8 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             metaBlock.classList.remove('hidden');
         }
         rmMakeClickable(metaBlock, metaUrl);
+
+        // Trakt — opens trakt.tv using slug
         const traktBlock = document.getElementById('rm-trakt-block');
         let traktUrl = null;
         if (traktRatings?.trakt_slug) {
@@ -3954,6 +3985,17 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
             traktBlock.classList.remove('hidden');
         }
         rmMakeClickable(traktBlock, traktUrl);
+
+        // Reviews — use trakt slug if available, otherwise skip
+        if (traktRatings?.trakt_slug) {
+            fetchAndRenderReviews(traktRatings.trakt_slug, mediaType);
+        } else {
+            const scrollEl = document.getElementById('rm-reviews-scroll');
+            if (scrollEl) {
+                scrollEl.innerHTML = '<div class="rm-reviews-empty">Reviews unavailable for this title.</div>';
+            }
+        }
+
     } catch (error) {
         console.error('[Ratings] openRatingsModal failed:', error);
     }
@@ -3965,6 +4007,7 @@ window.closeRatingsModal = function() {
         document.body.style.overflow = '';
         if (window.toggleMobileNav) window.toggleMobileNav(false);
     }
+    closeReviewsSheet();
 };
 const ratingsModalEl = document.getElementById('ratings-modal');
 if (ratingsModalEl) {
@@ -3972,6 +4015,144 @@ if (ratingsModalEl) {
         if (e.target === ratingsModalEl) closeRatingsModal();
     });
 }
+
+/* ── Trakt Reviews ──────────────────────────────────────────── */
+const traktReviewsCache = new Map();
+
+function rmFormatReviewDate(isoString) {
+    const date = new Date(isoString);
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function rmBuildReviewCard(review, fullText = false) {
+    const user = review.user;
+    const username = user.username || user.name || 'Anonymous';
+    const date = rmFormatReviewDate(review.created_at);
+    const text = (review.comment || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const likes = review.likes || 0;
+    const replies = review.replies || 0;
+    const rating = review.user_rating || null;
+    const avatarUrl = user.images?.avatar?.full
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&size=64`;
+
+    const starsHtml = rating != null
+        ? `<span class="rm-review-stars">${rating}
+               <svg class="rm-review-star-icon" viewBox="0 0 576 512" fill="currentColor" width="10" height="10"><path d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg>
+           </span>`
+        : '';
+
+    const card = document.createElement('div');
+    card.className = 'rm-review-card';
+    card.innerHTML = `
+        <div class="rm-review-card-header">
+            <img class="rm-review-avatar" src="${avatarUrl}" alt="${username}"
+                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&size=64'">
+            <div class="rm-review-user">
+                <span class="rm-review-username">${username}</span>
+                <span class="rm-review-date">${date}</span>
+            </div>
+            ${starsHtml}
+        </div>
+        <div class="rm-review-body${fullText ? ' rm-review-body--full' : ''}">${text}</div>
+        <div class="rm-review-footer">
+            <div class="rm-review-stat likes">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="13" height="13" fill="currentColor"><path d="M235.5 102.8C256.3 68 300.5 54 338 71.6L345.2 75.4C380 96.3 394 140.5 376.4 178L376.4 178L362.3 208L472 208L479.4 208.4C515.7 212.1 544 242.8 544 280C544 293.2 540.4 305.4 534.2 316C540.3 326.6 543.9 338.8 544 352C544 370.3 537.1 386.8 526 399.5C527.3 404.8 528 410.3 528 416C528 441.1 515.1 463 495.8 475.9C493.9 511.4 466.4 540.1 431.4 543.6L424 544L319.9 544C301.9 544 284 540.6 267.3 534.1L260.2 531.1L259.5 530.8L252.9 527.6L252.2 527.3L240 520.8C227.7 514.3 216.7 506.1 207.1 496.7C203 523.6 179.8 544.1 151.8 544.1L119.8 544.1C88.9 544.1 63.8 519 63.8 488.1L64 264C64 233.1 89.1 208 120 208L152 208C162.8 208 172.9 211.1 181.5 216.5L231.6 110L232.2 108.8L234.9 103.8L235.5 102.9zM120 256C115.6 256 112 259.6 112 264L112 488C112 492.4 115.6 496 120 496L152 496C156.4 496 160 492.4 160 488L160 264C160 259.6 156.4 256 152 256L120 256zM317.6 115C302.8 108.1 285.3 113.4 276.9 127L274.7 131L217.9 251.9C214.4 259.4 212.4 267.4 211.9 275.6L211.8 279.8L211.8 392.7L212 400.6C214.4 433.3 233.4 462.7 262.7 478.3L274.2 484.4L280.5 487.5C292.9 493.1 306.3 496 319.9 496L424 496L426.4 495.9C438.5 494.7 448 484.4 448 472L447.8 469.4C447.7 468.5 447.6 467.7 447.4 466.8C444.7 454.7 451.7 442.6 463.4 438.8C473.1 435.7 480 426.6 480 416C480 411.7 478.9 407.8 476.9 404.2C470.6 393.1 474.1 379 484.9 372.2C491.7 367.9 496.1 360.4 496.1 352C496.1 344.9 493 338.5 487.9 334C482.7 329.4 479.7 322.9 479.7 316C479.7 309.1 482.7 302.6 487.9 298C493 293.5 496.1 287.1 496.1 280L496 277.6C494.9 266.3 485.9 257.3 474.6 256.2L472.2 256.1L324.7 256.1C316.5 256.1 308.9 251.9 304.5 245C300.1 238.1 299.5 229.3 303 221.9L333 157.6C340 142.6 334.4 124.9 320.5 116.6L317.6 115z"/></svg>
+                ${likes}
+            </div>
+            <div class="rm-review-stat">
+                <svg viewBox="0 0 512 512" width="13" height="13" fill="currentColor"><path d="M256 448c141.4 0 256-93.1 256-208S397.4 32 256 32S0 125.1 0 240c0 45.1 17.7 86.8 47.7 120.9c-1.9 24.5-11.4 46.3-21.4 62.9c-5.5 9.2-11.1 16.6-15.2 21.6c-2.1 2.5-3.7 4.4-4.9 5.7c-.6 .6-1 1.1-1.3 1.4l-.3 .3c-4.6 4.6-5.9 11.4-3.4 17.4c2.5 6 8.3 9.9 14.8 9.9c28.7 0 57.6-8.9 81.6-19.3c22.9-10 42.4-21.9 54.3-30.6c31.8 11.5 67 17.9 104.1 17.9z"/></svg>
+                ${replies}
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+async function fetchAndRenderReviews(traktSlug, type) {
+    const cacheKey = `${type}-${traktSlug}`;
+    const scrollEl  = document.getElementById('rm-reviews-scroll');
+    const sheetEl   = document.getElementById('rm-sheet-scroll');
+    const loaderEl  = document.getElementById('rm-reviews-loader');
+    const seeAllBtn = document.getElementById('rm-see-all-btn');
+    if (!scrollEl) return;
+
+    // Reset
+    scrollEl.innerHTML = '';
+    if (sheetEl) sheetEl.innerHTML = '';
+    if (seeAllBtn) seeAllBtn.style.display = 'none';
+
+    // Show spinner
+    const spinner = document.createElement('div');
+    spinner.className = 'rm-reviews-loader';
+    spinner.innerHTML = `<svg class="rm-spinner" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg> Loading reviews…`;
+    scrollEl.appendChild(spinner);
+
+    let reviews;
+    if (traktReviewsCache.has(cacheKey)) {
+        reviews = traktReviewsCache.get(cacheKey);
+    } else {
+        try {
+            const endpoint = type === 'movie'
+                ? `/movies/${traktSlug}/comments/newest?extended=full`
+                : `/shows/${traktSlug}/comments/newest?extended=full`;
+            reviews = await traktFetch(endpoint);
+            if (Array.isArray(reviews)) traktReviewsCache.set(cacheKey, reviews);
+        } catch (e) {
+            console.warn('[Reviews] fetch failed:', e);
+            reviews = null;
+        }
+    }
+
+    scrollEl.innerHTML = '';
+
+    if (!reviews || reviews.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'rm-reviews-empty';
+        empty.textContent = 'No reviews found for this title.';
+        scrollEl.appendChild(empty);
+        return;
+    }
+
+    const preview = reviews.slice(0, 10);
+    preview.forEach(r => {
+        const card = rmBuildReviewCard(r, false);
+        card.addEventListener('click', () => openReviewsSheet());
+        scrollEl.appendChild(card);
+    });
+
+    // Populate bottom sheet with full text
+    if (sheetEl) {
+        reviews.slice(0, 30).forEach(r => {
+            sheetEl.appendChild(rmBuildReviewCard(r, true));
+        });
+    }
+
+    if (seeAllBtn) seeAllBtn.style.display = reviews.length > 3 ? '' : 'none';
+}
+
+window.openReviewsSheet = function() {
+    document.getElementById('rm-sheet-overlay')?.classList.add('active');
+    document.getElementById('rm-bottom-sheet')?.classList.add('active');
+};
+
+window.closeReviewsSheet = function() {
+    document.getElementById('rm-sheet-overlay')?.classList.remove('active');
+    document.getElementById('rm-bottom-sheet')?.classList.remove('active');
+};
+
+// Drag-to-dismiss on the bottom sheet handle
+(function() {
+    let _startY = 0;
+    document.addEventListener('DOMContentLoaded', () => {
+        const handle = document.getElementById('rm-drag-handle');
+        if (!handle) return;
+        handle.addEventListener('touchstart', e => { _startY = e.touches[0].clientY; }, { passive: true });
+        handle.addEventListener('touchmove', e => {
+            if (e.touches[0].clientY - _startY > 60) closeReviewsSheet();
+        }, { passive: true });
+    });
+})();
 function clearHistory() {
     if (!confirm("Are you sure you want to clear your watch history?")) return;
     localStorage.removeItem('watch_history');
@@ -4723,7 +4904,7 @@ function createReviewCard(review) {
         const stars = Math.round(ratingVal / 2); 
         starsHtml = `
             <div class="review-stars">
-                ${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i>'.repeat(stars)}${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg></i>'.repeat(5 - stars)}
+                ${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="#eab308" aria-hidden="true"><path d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg>'.repeat(stars)}${'<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="#4b5563" aria-hidden="true"><path d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg>'.repeat(5 - stars)}
                 <span class="ml-1 text-gray-400">${ratingVal}/10</span>
             </div>`;
     }
