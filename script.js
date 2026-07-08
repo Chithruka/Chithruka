@@ -2612,6 +2612,12 @@ window.selectContent = async function(id, title, type) {
        playerInterface.classList.add('hidden');
     detailsSection.classList.add('hidden');
     collectionSection.classList.add('hidden');
+    // Every new selection starts fresh at the top of the page, regardless of media type.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // The episode accordion is a single global toggle that otherwise carries over
+    // from a previously viewed show, causing the page to auto-expand and scroll
+    // to the episode list instead of staying at the top. Reset it here.
+    resetAccordionState();
     const playerIframe = document.getElementById('player-iframe');
     if (playerIframe) {
         playerIframe.src = "about:blank";
@@ -2655,6 +2661,12 @@ window.selectContent = async function(id, title, type) {
     if (mediaType === 'tv') await fetchShowDetails(id, title);
     else await fetchMovieDetails(id, title);
     setupDeferredSections(id, currentTitle);
+    // Everything that can shift page layout (details, collection, episode list)
+    // has now finished rendering. Re-assert the scroll position in case any of
+    // it shifted the page while the initial scroll above was still settling.
+    requestAnimationFrame(() => {
+        if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 }
 let deferredSectionObserver = null;
 function setupDeferredSections(id, title) {
@@ -2698,7 +2710,7 @@ async function fetchMovieDetails(id, title) {
         renderDetails(detailData, currentTitle);
         renderGallery(detailData);
         if (detailData.belongs_to_collection) {
-            loadCollection(detailData.belongs_to_collection.id, detailData.belongs_to_collection.name);
+            await loadCollection(detailData.belongs_to_collection.id, detailData.belongs_to_collection.name);
         }
         playerInterface.classList.remove('hidden');
         await ensureLocalVideos();
@@ -3810,6 +3822,20 @@ window.toggleAccordion = function() {
     }
     icon.outerHTML = accordionOpen ? '<svg class="svg-icon transition-transform duration-300 rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>' : '<svg class="svg-icon transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>';
 }
+/**
+ * Forces the episode accordion back to its closed state and clears the
+ * accordionOpen flag. Must be called whenever a new title is selected,
+ * since accordionOpen is a single global flag that otherwise leaks an
+ * "expanded" state from a previously viewed show into the next one.
+ */
+function resetAccordionState() {
+    accordionOpen = false;
+    if (episodeAccordionContent) episodeAccordionContent.style.maxHeight = '0';
+    const icon = document.getElementById('accordion-icon');
+    if (icon) {
+        icon.outerHTML = '<svg id="accordion-icon" class="svg-icon transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M201.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 338.7 54.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>';
+    }
+}
 window.openDownloadModal = async function() {
     if (!TMDB_ID || !mediaType) {
         showMessage("No content selected to download.", true);
@@ -4780,7 +4806,7 @@ function renderLogos(data) {
             const div = document.createElement('div');
             div.className = "flex-shrink-0 cursor-pointer w-56 aspect-video bg-white/5 border border-white/10 rounded-xl relative group flex items-center justify-center p-4 hover:border-white/30 transition-all";
             div.innerHTML = `
-                <img src="${imgUrl}" loading="lazy" class="max-w-full max-h-full object-contain drop-shadow-lg" alt="${langLabel} Logo">
+                <img src="${imgUrl}" loading="lazy" crossorigin="anonymous" class="max-w-full max-h-full object-contain drop-shadow-lg" alt="${langLabel} Logo">
                 <div class="absolute top-2 right-2 bg-black/60 px-2 py-0.5 rounded text-[10px] text-gray-300 font-bold uppercase tracking-wider border border-white/10">
                     ${langLabel}
                 </div>
