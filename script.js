@@ -151,6 +151,44 @@ async function applyFogIfLogoIsDark(imageElement) {
     }
 }
 function resetFogStack(imageElement) {
+    if (imageElement) imageElement.classList.remove('logo-fog-glow');
+}
+
+/**
+ * Loads a title logo with fog support, but degrades gracefully: if the
+ * crossorigin=anonymous load fails (e.g. because the same image URL was
+ * already cached by a non-CORS <img>, such as the Official Logos gallery),
+ * retry the load without CORS so the logo still appears — just without fog.
+ */
+function setTitleLogo(imgEl, textEl, src, fallbackText) {
+    if (!imgEl) return;
+    resetFogStack(imgEl);
+    if (!src) {
+        imgEl.removeAttribute('src');
+        imgEl.style.display = 'none';
+        if (textEl) {
+            textEl.style.display = 'block';
+            if (fallbackText !== undefined) textEl.textContent = fallbackText;
+        }
+        return;
+    }
+    imgEl.style.display = 'block';
+    if (textEl) textEl.style.display = 'none';
+    imgEl.setAttribute('crossorigin', 'anonymous');
+    imgEl.onerror = () => {
+        // Retry once without CORS so the logo still shows (fog just won't apply).
+        imgEl.onerror = () => {
+            imgEl.style.display = 'none';
+            if (textEl) {
+                textEl.style.display = 'block';
+                if (fallbackText !== undefined) textEl.textContent = fallbackText;
+            }
+        };
+        imgEl.removeAttribute('crossorigin');
+        imgEl.src = src;
+    };
+    imgEl.src = src;
+    applyFogIfLogoIsDark(imgEl);
 }
 async function traktRefreshTokenIfNeeded() {
     if (!traktRefreshToken) return;
@@ -3088,17 +3126,7 @@ function renderDetails(data, title) {
         const bestLogo = englishLogo || data.images.logos[0];
         if (bestLogo) logoPath = bestLogo.file_path;
     }
-    if (logoPath) {
-        logoImg.src = `${TMDB_POSTER_XL}${logoPath}`;
-        logoImg.style.display = 'block';
-        textHeading.style.display = 'none';
-        applyFogIfLogoIsDark(logoImg);
-    } else {
-        resetFogStack(logoImg);
-        logoImg.style.display = 'none';
-        textHeading.style.display = 'block';
-        textHeading.textContent = title;
-    }
+    setTitleLogo(logoImg, textHeading, logoPath ? `${TMDB_POSTER_XL}${logoPath}` : null, title);
     const taglineEl = document.getElementById('detail-tagline');
     if (data.tagline) {
         taglineEl.textContent = `"${data.tagline}"`;
@@ -5115,9 +5143,7 @@ function handleTranslations(data) {
             taglineEl.classList.remove('hidden');
             posterImg.src = originalData.poster;
             bgContainer.style.backgroundImage = originalData.backdrop;
-            logoImg.src = originalData.logoSrc;
-            logoImg.style.display = originalData.logoDisplay;
-            titleEl.style.display = originalData.titleDisplay;
+            setTitleLogo(logoImg, titleEl, originalData.logoSrc || null, originalData.title);
             if (originalData.poster) {
                 getDominantColor(originalData.poster).then(rgb => {
                     document.documentElement.style.setProperty('--ambient-color', rgb);
@@ -5171,16 +5197,7 @@ function handleTranslations(data) {
                 bgContainer.style.backgroundImage = `url('${responsiveBackdropUrl(newBackdrop.file_path)}')`;
             }
             const newLogo = imageData.logos.find(l => l.iso_639_1 === selectedLang);
-            if (newLogo) {
-                logoImg.src = `${TMDB_POSTER_XL}${newLogo.file_path}`;
-                logoImg.style.display = 'block';
-                titleEl.style.display = 'none';
-                applyFogIfLogoIsDark(logoImg);
-            } else {
-                resetFogStack(logoImg);
-                logoImg.style.display = 'none';
-                titleEl.style.display = 'block';
-            }
+            setTitleLogo(logoImg, titleEl, newLogo ? `${TMDB_POSTER_XL}${newLogo.file_path}` : null, originalData.title);
             castList.innerHTML = '';
             if (creditsData.cast && creditsData.cast.length > 0) {
                 creditsData.cast.forEach(c => {
