@@ -746,3 +746,89 @@
 }
 .rm-sheet-scroll .rm-review-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
 .rm-sheet-scroll .rm-review-body { -webkit-line-clamp: unset; }
+
+/* ── Like button "plastic" burst animation ── */
+/* Recreated in the spirit of a bouncy heart-like checkbox (uiverse.io style):
+   heart pops with a jelly-like bounce and a small particle burst radiates outward. */
+.heart-btn { position: relative; overflow: visible; }
+.heart-btn svg { transition: transform .25s ease; transform-origin: center; }
+.heart-btn.heart-pop svg {
+    animation: heartPopBounce .6s cubic-bezier(.17,.89,.32,1.49);
+}
+@keyframes heartPopBounce {
+    0%   { transform: scale(1); }
+    25%  { transform: scale(.75); }
+    55%  { transform: scale(1.35); }
+    75%  { transform: scale(.92); }
+    100% { transform: scale(1); }
+}
+.heart-btn.heart-pop::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: transparent;
+    pointer-events: none;
+    box-shadow:
+        0 0 var(--accent),
+        0 0 var(--accent),
+        0 0 var(--accent),
+        0 0 var(--accent),
+        0 0 var(--accent),
+        0 0 var(--accent);
+    animation: heartBurstParticles .6s ease-out forwards;
+}
+@keyframes heartBurstParticles {
+    0% {
+        opacity: 1;
+        box-shadow:
+            0 0 var(--accent),
+            0 0 var(--accent),
+            0 0 var(--accent),
+            0 0 var(--accent),
+            0 0 var(--accent),
+            0 0 var(--accent);
+    }
+    100% {
+        opacity: 0;
+        box-shadow:
+            22px -14px var(--accent),
+            27px 6px var(--accent),
+            16px 22px var(--accent),
+            -16px 22px var(--accent),
+            -27px 6px var(--accent),
+            -22px -14px var(--accent);
+    }
+}
+
+/* ── Star rating fill animation ── */
+/* Star starts as an outline so users don't mistake it for "already rated".
+   It fills in with a bouncy pop (in the spirit of an animated rating checkbox)
+   only after the user actually submits a rating. */
+#btn-rate .star-icon {
+    transition: fill .25s ease, stroke .25s ease, filter .25s ease;
+    transform-origin: center;
+}
+#btn-rate.is-rated .star-icon {
+    fill: #f5c518;
+    stroke: #f5c518;
+    filter: drop-shadow(0 0 6px rgba(245,197,24,.65));
+}
+#btn-rate.is-rated {
+    border-color: #f5c518;
+    color: #f5c518;
+    background: rgba(245,197,24,.1);
+}
+#btn-rate.rated-pop .star-icon {
+    animation: starFillPop .7s cubic-bezier(.17,.89,.32,1.49);
+}
+@keyframes starFillPop {
+    0%   { transform: scale(1) rotate(0deg); }
+    35%  { transform: scale(1.5) rotate(-18deg); }
+    55%  { transform: scale(.88) rotate(10deg); }
+    75%  { transform: scale(1.18) rotate(-5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
