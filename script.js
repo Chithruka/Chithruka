@@ -64,6 +64,31 @@ function getTmdbKey() {
 }
 const GEMINI_API_KEY = getGeminiKey();
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+// System instruction for the "AI Search" modal (natural-language -> structured recommendations).
+// Kept as a plain-text system_instruction so it's set once and can't be confused with the user's query.
+const AI_SEARCH_SYSTEM_INSTRUCTION = `You are an expert Media Recommendation Engine embedded in a movie/TV browsing app.
+
+Task: read the user's query and return matching movies, TV shows, people, or companies for the app to look up on TMDB.
+
+Output rules:
+- Return ONLY a JSON object matching this exact shape, no markdown fences, no extra text:
+  {
+    "message": "Short, friendly one-line comment about the results",
+    "results": [
+      { "name": "Title or Person Name", "type": "movie" | "person" | "company" }
+    ]
+  }
+- "movie" covers both movies and TV shows (the app resolves the exact one via TMDB search).
+- Use "person" for actors, directors, or other individuals (e.g. "Tom Cruise", "the director of Tenet").
+- Use "company" for studios/networks (e.g. "HBO", "A24", "Marvel").
+- Never mention that you are an AI, and never add commentary outside the JSON object.`;
+
+// System instruction for the "AI Intel" panel (Hype / Trivia / Parent's Guide) on a title's detail page.
+const AI_INSIGHT_SYSTEM_INSTRUCTION = `You are a knowledgeable film and TV critic embedded in a movie/TV browsing app.
+You will be told the title, year, and type (movie or TV show) of something the user is currently viewing.
+Use your own knowledge (and web search when available) to answer — don't ask the user for more details, and don't
+mention that you had to look anything up. Keep responses tight and skimmable; no filler intros like "Sure, here is...".`;
 const TRAKT_CLIENT_ID = 'de8e2e618da15ff73c3734cad9698ab20ce5061d9d650d62b2cd284dea257caf';
 const TRAKT_CLIENT_SECRET = 'dd145422f3bf0858456a4f406082fb21315955a10dc17d4fc3a2cf01b651d149';
 const TRAKT_API = 'https://api.trakt.tv';
@@ -625,30 +650,21 @@ async function handleAISearch() {
     const inputCont = document.getElementById('ai-input-container');
     inputCont.classList.add('hidden');
     loader.classList.remove('hidden');
-    const systemInstruction = `You are an expert Media Recommendation Engine. 
-    Strict Rules:
-    1. Return ONLY a valid JSON object. Do not add intro text or markdown formatting.
-    2. Structure: { 
-         "message": "Short comment", 
-         "results": [
-            { "name": "Title or Name", "type": "movie" }, 
-            { "name": "Name", "type": "person" },
-            { "name": "Company/Network", "type": "company" }
-         ] 
-       }
-    3. Allowed types: 'movie' (for movies/tv), 'person' (actors/directors), 'company' (networks/studios).
-    4. If the user asks for a specific person (e.g. "Tom Cruise", "Director of Tenet"), return type: "person".
-    5. If the user asks for a network/studio (e.g. "HBO", "A24", "Marvel"), return type: "company".
-    6. Do not mention that you are an AI.`;
-    const fullPrompt = `${systemInstruction}\n\nUser Query: ${query}`;
     try {
         const response = await fetch(GEMINI_API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                system_instruction: {
+                    parts: [{ text: AI_SEARCH_SYSTEM_INSTRUCTION }]
+                },
                 contents: [{
-                    parts: [{ text: fullPrompt }]
-                }]
+                    role: "user",
+                    parts: [{ text: query }]
+                }],
+                generationConfig: {
+                    response_mime_type: "application/json"
+                }
             })
         });
         const data = await response.json();
@@ -4475,17 +4491,23 @@ async function fetchAIInsight(mode) {
     options.classList.add('hidden');
     loader.classList.remove('hidden');
     resultBox.classList.add('hidden');
-    const jsonContext = JSON.stringify(currentMovieData, null, 2);
-    let promptInstruction = "";
+    // Only send the identifiers needed to uniquely resolve the title — the model
+    // looks up plot/cast/trivia itself via Google Search grounding rather than
+    // us shipping the full TMDB payload (overview, cast list, budget, etc) every time.
+    const displayTitle = currentMovieData.year && currentMovieData.year !== "N/A"
+        ? `${currentMovieData.title} (${currentMovieData.year})`
+        : currentMovieData.title;
+    const subject = `${displayTitle}, a ${currentMovieData.type === 'tv' ? 'TV show' : 'movie'}`;
+    let userPrompt = "";
     switch (mode) {
         case 'hype':
-            promptInstruction = `Analyze this movie JSON and write a short, high-energy paragraph (max 60 words) telling the user why they absolutely MUST watch this. Focus on the plot hooks and actors. JSON: ${jsonContext}`;
+            userPrompt = `Write a short, high-energy paragraph (max 60 words) telling the user why they absolutely MUST watch ${subject}. Focus on the plot hooks and actors.`;
             break;
         case 'trivia':
-            promptInstruction = `Generate 3 interesting, obscure trivia facts based on this movie JSON. Format them as a simple bulleted list. JSON: ${jsonContext}`;
+            userPrompt = `Give 3 interesting, obscure trivia facts about ${subject}. Format them as a simple bulleted list.`;
             break;
         case 'parents':
-            promptInstruction = `Act as a strict Parent's Guide. Explain the Age Rating and content warnings (violence, language, etc) based on this JSON. Keep it concise. JSON: ${jsonContext}`;
+            userPrompt = `Act as a strict Parent's Guide for ${subject}. Explain the age rating and content warnings (violence, language, etc). Keep it concise.`;
             break;
     }
     try {
@@ -4493,9 +4515,14 @@ async function fetchAIInsight(mode) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+                system_instruction: {
+                    parts: [{ text: AI_INSIGHT_SYSTEM_INSTRUCTION }]
+                },
                 contents: [{
-                    parts: [{ text: promptInstruction }]
-                }]
+                    role: "user",
+                    parts: [{ text: userPrompt }]
+                }],
+                tools: [{ google_search: {} }]
             })
         });
         const data = await response.json();
