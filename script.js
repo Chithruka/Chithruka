@@ -916,6 +916,34 @@ async function toggleFavorite() {
         showMessage("Action failed", true);
     }
 }
+const WL_ICON_OUTLINE = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0L320 0c35.3 0 64 28.7 64 64l0 417.1c0 25.6-28.5 40.8-49.8 26.6L192 412.8 49.8 507.7C28.5 521.9 0 506.6 0 481.1L0 64zM64 48c-8.8 0-16 7.2-16 16l0 387.2 117.4-78.2c16.1-10.7 37.1-10.7 53.2 0L336 451.2 336 64c0-8.8-7.2-16-16-16L64 48z"/></svg>';
+const WL_ICON_SOLID = '<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M64 0C28.7 0 0 28.7 0 64L0 480c0 11.5 6.2 22.2 16.2 27.8s22.3 5.5 32.2-.4L192 421.3 335.5 507.4c9.9 5.9 22.2 6.1 32.2 .4S384 491.5 384 480l0-416c0-35.3-28.7-64-64-64L64 0z"/></svg>';
+
+/* Quick add/remove for poster cards (Top 10, Trending, Recommendations, etc.) — doesn't require opening the detail page. */
+async function quickToggleWatchlist(id, type, btnEl, evt) {
+    if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+    if (!sessionId || !accountId) {
+        showMessage("Please login with TMDB first", true);
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+    }
+    const isWatch = btnEl.classList.contains('active');
+    btnEl.classList.toggle('active');
+    btnEl.innerHTML = isWatch ? WL_ICON_OUTLINE : WL_ICON_SOLID;
+    try {
+        await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ media_type: type, media_id: id, watchlist: !isWatch })
+        });
+        showMessage(isWatch ? "Removed from Watchlist" : "Added to Watchlist ✓");
+    } catch (e) {
+        btnEl.classList.toggle('active');
+        btnEl.innerHTML = isWatch ? WL_ICON_SOLID : WL_ICON_OUTLINE;
+        showMessage("Failed to update Watchlist", true);
+    }
+}
+window.quickToggleWatchlist = quickToggleWatchlist;
 async function toggleWatchlist() {
     if (!sessionId) return showMessage("Please login first", true);
     const btn = document.getElementById('btn-watchlist');
@@ -1572,6 +1600,7 @@ function renderCards(items, container, trackIds) {
                     <div class="play-overlay">
                         <div class="play-icon-circle"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M91.2 36.9c-12.4-6.8-27.4-6.5-39.6 .7S32 57.9 32 72l0 368c0 14.1 7.5 27.2 19.6 34.4s27.2 7.5 39.6 .7l336-184c12.8-7 20.8-20.5 20.8-35.1s-8-28.1-20.8-35.1l-336-184z"/></svg></i></div>
                     </div>
+                    <button type="button" class="wl-add-btn" title="Add to Watchlist" onclick="quickToggleWatchlist(${item.id}, '${item.media_type}', this, event)">${WL_ICON_OUTLINE}</button>
                 </div>
                 <div class="card-body">
                     <div class="card-title" title="${title}">${title}</div>
@@ -4073,13 +4102,32 @@ window.openRatingsModal = async function(tmdbVoteAverage) {
         }
         rmMakeClickable(traktBlock, traktUrl);
 
-        // Reviews — use trakt slug if available, otherwise skip
+        // Reviews — use trakt slug if available, otherwise fall back to a
+        // TMDB-id-based key so people can still post local reviews.
         if (traktRatings?.trakt_slug) {
             fetchAndRenderReviews(traktRatings.trakt_slug, mediaType);
         } else {
+            const fallbackKey = `tmdb-${mediaType}-${TMDB_ID}`;
+            rmSetReviewContext(fallbackKey, mediaType);
             const scrollEl = document.getElementById('rm-reviews-scroll');
+            const sheetEl = document.getElementById('rm-sheet-scroll');
+            if (sheetEl) sheetEl.innerHTML = '';
+            const localStore = rmLoadReviewStore(fallbackKey);
             if (scrollEl) {
-                scrollEl.innerHTML = '<div class="rm-reviews-empty">Reviews unavailable for this title.</div>';
+                if (localStore.userReviews.length) {
+                    scrollEl.innerHTML = '';
+                    localStore.userReviews.slice(0, 10).forEach(r => {
+                        const card = rmBuildReviewCard(r, false, fallbackKey);
+                        card.addEventListener('click', (e) => {
+                            if (e.target.closest('[data-action]') || e.target.closest('.rm-reply-form')) return;
+                            openReviewsSheet();
+                        });
+                        scrollEl.appendChild(card);
+                    });
+                    if (sheetEl) localStore.userReviews.forEach(r => sheetEl.appendChild(rmBuildReviewCard(r, true, fallbackKey)));
+                } else {
+                    scrollEl.innerHTML = '<div class="rm-reviews-empty">No reviews yet. Be the first to write one!</div>';
+                }
             }
         }
 
@@ -4112,16 +4160,62 @@ function rmFormatReviewDate(isoString) {
     return date.toLocaleDateString('en-US', options);
 }
 
-function rmBuildReviewCard(review, fullText = false) {
+/* ── Local interactive-review storage (likes, replies, user-posted reviews) ──
+   Everything here lives in the visitor's own browser (localStorage), scoped
+   per title, so it doesn't touch the real Trakt data — it just layers
+   interactivity on top of it. */
+function rmReviewStoreKey(cacheKey) {
+    return `rm_review_store_${cacheKey}`;
+}
+function rmLoadReviewStore(cacheKey) {
+    try {
+        const raw = localStorage.getItem(rmReviewStoreKey(cacheKey));
+        if (!raw) return { likedIds: [], replies: {}, userReviews: [] };
+        const parsed = JSON.parse(raw);
+        return {
+            likedIds: parsed.likedIds || [],
+            replies: parsed.replies || {},
+            userReviews: parsed.userReviews || []
+        };
+    } catch (e) {
+        return { likedIds: [], replies: {}, userReviews: [] };
+    }
+}
+function rmSaveReviewStore(cacheKey, store) {
+    try {
+        localStorage.setItem(rmReviewStoreKey(cacheKey), JSON.stringify(store));
+    } catch (e) { /* storage unavailable — fail silently */ }
+}
+function rmReviewId(review) {
+    if (review.id != null) return String(review.id);
+    const raw = `${review.user?.username || ''}|${review.created_at || ''}|${(review.comment || '').slice(0, 40)}`;
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0; }
+    return 'h' + hash;
+}
+function rmEscapeHtml(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function rmInitials(name) {
+    return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+}
+
+function rmBuildReviewCard(review, fullText = false, cacheKey = '') {
     const user = review.user;
     const username = user.username || user.name || 'Anonymous';
     const date = rmFormatReviewDate(review.created_at);
     const text = (review.comment || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const likes = review.likes || 0;
-    const replies = review.replies || 0;
     const rating = review.user_rating || null;
     const avatarUrl = user.images?.avatar?.full
         || `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&size=64`;
+
+    const reviewId = rmReviewId(review);
+    const store = cacheKey ? rmLoadReviewStore(cacheKey) : { likedIds: [], replies: {}, userReviews: [] };
+    const isLiked = store.likedIds.includes(reviewId);
+    const localReplies = store.replies[reviewId] || [];
+    const likeCount = (review.likes || 0) + (isLiked ? 1 : 0);
+    const replyCount = (review.replies || 0) + localReplies.length;
+    const isUserReview = !!review._local;
 
     const starsHtml = rating != null
         ? `<span class="rm-review-stars">${rating}
@@ -4130,34 +4224,226 @@ function rmBuildReviewCard(review, fullText = false) {
         : '';
 
     const card = document.createElement('div');
-    card.className = 'rm-review-card';
+    card.className = 'rm-review-card' + (isUserReview ? ' rm-review-card--user' : '');
+    card.dataset.reviewId = reviewId;
     card.innerHTML = `
         <div class="rm-review-card-header">
             <img class="rm-review-avatar" src="${avatarUrl}" alt="${username}"
                  onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&size=64'">
             <div class="rm-review-user">
-                <span class="rm-review-username">${username}</span>
+                <span class="rm-review-username">${rmEscapeHtml(username)}${isUserReview ? '<span class="rm-review-badge-you">YOU</span>' : ''}</span>
                 <span class="rm-review-date">${date}</span>
             </div>
             ${starsHtml}
         </div>
         <div class="rm-review-body${fullText ? ' rm-review-body--full' : ''}">${text}</div>
         <div class="rm-review-footer">
-            <div class="rm-review-stat likes">
+            <button type="button" class="rm-review-stat likes interactive heart-btn${isLiked ? ' liked' : ''}" data-action="like">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="13" height="13" fill="currentColor"><path d="M235.5 102.8C256.3 68 300.5 54 338 71.6L345.2 75.4C380 96.3 394 140.5 376.4 178L376.4 178L362.3 208L472 208L479.4 208.4C515.7 212.1 544 242.8 544 280C544 293.2 540.4 305.4 534.2 316C540.3 326.6 543.9 338.8 544 352C544 370.3 537.1 386.8 526 399.5C527.3 404.8 528 410.3 528 416C528 441.1 515.1 463 495.8 475.9C493.9 511.4 466.4 540.1 431.4 543.6L424 544L319.9 544C301.9 544 284 540.6 267.3 534.1L260.2 531.1L259.5 530.8L252.9 527.6L252.2 527.3L240 520.8C227.7 514.3 216.7 506.1 207.1 496.7C203 523.6 179.8 544.1 151.8 544.1L119.8 544.1C88.9 544.1 63.8 519 63.8 488.1L64 264C64 233.1 89.1 208 120 208L152 208C162.8 208 172.9 211.1 181.5 216.5L231.6 110L232.2 108.8L234.9 103.8L235.5 102.9zM120 256C115.6 256 112 259.6 112 264L112 488C112 492.4 115.6 496 120 496L152 496C156.4 496 160 492.4 160 488L160 264C160 259.6 156.4 256 152 256L120 256zM317.6 115C302.8 108.1 285.3 113.4 276.9 127L274.7 131L217.9 251.9C214.4 259.4 212.4 267.4 211.9 275.6L211.8 279.8L211.8 392.7L212 400.6C214.4 433.3 233.4 462.7 262.7 478.3L274.2 484.4L280.5 487.5C292.9 493.1 306.3 496 319.9 496L424 496L426.4 495.9C438.5 494.7 448 484.4 448 472L447.8 469.4C447.7 468.5 447.6 467.7 447.4 466.8C444.7 454.7 451.7 442.6 463.4 438.8C473.1 435.7 480 426.6 480 416C480 411.7 478.9 407.8 476.9 404.2C470.6 393.1 474.1 379 484.9 372.2C491.7 367.9 496.1 360.4 496.1 352C496.1 344.9 493 338.5 487.9 334C482.7 329.4 479.7 322.9 479.7 316C479.7 309.1 482.7 302.6 487.9 298C493 293.5 496.1 287.1 496.1 280L496 277.6C494.9 266.3 485.9 257.3 474.6 256.2L472.2 256.1L324.7 256.1C316.5 256.1 308.9 251.9 304.5 245C300.1 238.1 299.5 229.3 303 221.9L333 157.6C340 142.6 334.4 124.9 320.5 116.6L317.6 115z"/></svg>
-                ${likes}
-            </div>
-            <div class="rm-review-stat">
+                <span class="rm-like-count">${likeCount}</span>
+            </button>
+            <button type="button" class="rm-review-stat replies-toggle interactive" data-action="toggle-replies">
                 <svg viewBox="0 0 512 512" width="13" height="13" fill="currentColor"><path d="M256 448c141.4 0 256-93.1 256-208S397.4 32 256 32S0 125.1 0 240c0 45.1 17.7 86.8 47.7 120.9c-1.9 24.5-11.4 46.3-21.4 62.9c-5.5 9.2-11.1 16.6-15.2 21.6c-2.1 2.5-3.7 4.4-4.9 5.7c-.6 .6-1 1.1-1.3 1.4l-.3 .3c-4.6 4.6-5.9 11.4-3.4 17.4c2.5 6 8.3 9.9 14.8 9.9c28.7 0 57.6-8.9 81.6-19.3c22.9-10 42.4-21.9 54.3-30.6c31.8 11.5 67 17.9 104.1 17.9z"/></svg>
-                ${replies}
+                <span class="rm-reply-count">${replyCount}</span>
+            </button>
+        </div>
+        <div class="rm-replies-box" data-role="replies-box">
+            <div class="rm-reply-list" data-role="reply-list"></div>
+            <div class="rm-reply-form">
+                <input type="text" class="rm-reply-input" data-role="reply-input" placeholder="Write a reply…" maxlength="300">
+                <button type="button" class="rm-reply-send" data-action="send-reply">Reply</button>
             </div>
         </div>
     `;
+
+    if (cacheKey) {
+        const likeBtn = card.querySelector('[data-action="like"]');
+        likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            rmToggleLike(cacheKey, reviewId, card);
+        });
+
+        const repliesToggle = card.querySelector('[data-action="toggle-replies"]');
+        const repliesBox = card.querySelector('[data-role="replies-box"]');
+        const replyList = card.querySelector('[data-role="reply-list"]');
+        const replyInput = card.querySelector('[data-role="reply-input"]');
+        const replySend = card.querySelector('[data-action="send-reply"]');
+
+        function renderReplies() {
+            const s = rmLoadReviewStore(cacheKey);
+            const list = s.replies[reviewId] || [];
+            replyList.innerHTML = list.length
+                ? list.map(r => `
+                    <div class="rm-reply-item">
+                        <div class="rm-reply-avatar">${rmEscapeHtml(rmInitials(r.name))}</div>
+                        <div class="rm-reply-content">
+                            <span class="rm-reply-name">${rmEscapeHtml(r.name)}</span>
+                            <span class="rm-reply-date">${rmFormatReviewDate(r.date)}</span>
+                            <div class="rm-reply-text">${rmEscapeHtml(r.text)}</div>
+                        </div>
+                    </div>`).join('')
+                : '<div class="rm-reply-empty">No replies yet — be the first.</div>';
+        }
+
+        repliesToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = repliesBox.classList.toggle('open');
+            repliesToggle.classList.toggle('open', open);
+            if (open) renderReplies();
+        });
+
+        function submitReply() {
+            const val = replyInput.value.trim();
+            if (!val) return;
+            const s = rmLoadReviewStore(cacheKey);
+            if (!s.replies[reviewId]) s.replies[reviewId] = [];
+            const name = (localStorage.getItem('rm_reviewer_name') || 'You').trim() || 'You';
+            s.replies[reviewId].push({ name, text: val, date: new Date().toISOString() });
+            rmSaveReviewStore(cacheKey, s);
+            replyInput.value = '';
+            renderReplies();
+            card.querySelector('.rm-reply-count').textContent = (review.replies || 0) + s.replies[reviewId].length;
+        }
+        replySend.addEventListener('click', (e) => { e.stopPropagation(); submitReply(); });
+        replyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); submitReply(); }
+            e.stopPropagation();
+        });
+        replyInput.addEventListener('click', (e) => e.stopPropagation());
+    }
+
     return card;
+}
+
+function rmToggleLike(cacheKey, reviewId, clickedCardEl) {
+    const store = rmLoadReviewStore(cacheKey);
+    const idx = store.likedIds.indexOf(reviewId);
+    const nowLiked = idx === -1;
+    if (nowLiked) store.likedIds.push(reviewId); else store.likedIds.splice(idx, 1);
+    rmSaveReviewStore(cacheKey, store);
+
+    // The same review can appear both in the horizontal scroller and the
+    // bottom sheet at once — keep every visible copy of it in sync.
+    document.querySelectorAll(`.rm-review-card[data-review-id="${CSS.escape(reviewId)}"]`).forEach(el => {
+        const btn = el.querySelector('[data-action="like"]');
+        const countEl = el.querySelector('.rm-like-count');
+        if (!btn || !countEl) return;
+        const base = parseInt(countEl.textContent, 10) || 0;
+        countEl.textContent = String(nowLiked ? base + 1 : Math.max(0, base - 1));
+        btn.classList.toggle('liked', nowLiked);
+        if (nowLiked && el === clickedCardEl) {
+            btn.classList.remove('heart-pop');
+            void btn.offsetWidth; // restart animation
+            btn.classList.add('heart-pop');
+        }
+    });
+}
+
+/* ── Write-a-review overlay ── */
+window.__rmReviewCtx = null; // { cacheKey, type }
+
+function rmSetReviewContext(cacheKey, type) {
+    window.__rmReviewCtx = { cacheKey, type };
+}
+
+window.openWriteReviewForm = function() {
+    const overlay = document.getElementById('rm-wr-overlay');
+    if (!overlay) return;
+    const nameInput = document.getElementById('rm-wr-name');
+    const savedName = localStorage.getItem('rm_reviewer_name');
+    if (savedName) nameInput.value = savedName;
+    document.getElementById('rm-wr-text').value = '';
+    document.getElementById('rm-wr-error').textContent = '';
+    rmWriteReviewRating = 0;
+    rmRenderWriteReviewStars();
+    overlay.classList.add('active');
+};
+window.closeWriteReviewForm = function() {
+    document.getElementById('rm-wr-overlay')?.classList.remove('active');
+};
+
+let rmWriteReviewRating = 0;
+function rmRenderWriteReviewStars() {
+    const wrap = document.getElementById('rm-wr-stars');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('span');
+        star.className = 'rm-wr-star' + (i <= rmWriteReviewRating ? ' filled' : '');
+        star.innerHTML = `<svg viewBox="0 0 576 512" fill="currentColor" width="24" height="24"><path d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg>`;
+        star.addEventListener('click', () => {
+            rmWriteReviewRating = i;
+            rmRenderWriteReviewStars();
+        });
+        wrap.appendChild(star);
+    }
+}
+
+window.submitWrittenReview = function() {
+    const ctx = window.__rmReviewCtx;
+    const errorEl = document.getElementById('rm-wr-error');
+    const text = document.getElementById('rm-wr-text').value.trim();
+    const nameRaw = document.getElementById('rm-wr-name').value.trim();
+    const name = nameRaw || 'Anonymous';
+
+    if (!ctx) { errorEl.textContent = "Couldn't identify this title — please reopen and try again."; return; }
+    if (!text) { errorEl.textContent = 'Please write something before posting.'; return; }
+    if (text.length < 3) { errorEl.textContent = 'Your review is a little too short.'; return; }
+
+    localStorage.setItem('rm_reviewer_name', name);
+
+    const store = rmLoadReviewStore(ctx.cacheKey);
+    const newReview = {
+        id: 'local-' + Date.now(),
+        user: { username: name },
+        created_at: new Date().toISOString(),
+        comment: text,
+        likes: 0,
+        replies: 0,
+        user_rating: rmWriteReviewRating > 0 ? rmWriteReviewRating : null,
+        _local: true
+    };
+    store.userReviews.unshift(newReview);
+    rmSaveReviewStore(ctx.cacheKey, store);
+
+    closeWriteReviewForm();
+    rmRerenderReviewsFromStore(ctx.cacheKey, ctx.type);
+    openReviewsSheet();
+};
+
+// Re-renders both the horizontal scroller and the bottom sheet, merging any
+// locally-posted reviews together with whatever was last fetched from Trakt.
+function rmRerenderReviewsFromStore(cacheKey, type) {
+    const scrollEl = document.getElementById('rm-reviews-scroll');
+    const sheetEl = document.getElementById('rm-sheet-scroll');
+    const seeAllBtn = document.getElementById('rm-see-all-btn');
+    const store = rmLoadReviewStore(cacheKey);
+    const fetched = traktReviewsCache.get(cacheKey) || [];
+    const all = [...store.userReviews, ...fetched];
+
+    if (!all.length) return;
+
+    if (scrollEl) {
+        scrollEl.innerHTML = '';
+        all.slice(0, 10).forEach(r => {
+            const card = rmBuildReviewCard(r, false, cacheKey);
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('[data-action]') || e.target.closest('.rm-reply-form')) return;
+                openReviewsSheet();
+            });
+            scrollEl.appendChild(card);
+        });
+    }
+    if (sheetEl) {
+        sheetEl.innerHTML = '';
+        all.slice(0, 30).forEach(r => sheetEl.appendChild(rmBuildReviewCard(r, true, cacheKey)));
+    }
+    if (seeAllBtn) seeAllBtn.style.display = all.length > 3 ? '' : 'none';
 }
 
 async function fetchAndRenderReviews(traktSlug, type) {
     const cacheKey = `${type}-${traktSlug}`;
+    rmSetReviewContext(cacheKey, type);
     const scrollEl  = document.getElementById('rm-reviews-scroll');
     const sheetEl   = document.getElementById('rm-sheet-scroll');
     const loaderEl  = document.getElementById('rm-reviews-loader');
@@ -4193,29 +4479,36 @@ async function fetchAndRenderReviews(traktSlug, type) {
 
     scrollEl.innerHTML = '';
 
-    if (!reviews || reviews.length === 0) {
+    // Layer in anything the visitor has posted locally for this title
+    const localStore = rmLoadReviewStore(cacheKey);
+    const allReviews = [...localStore.userReviews, ...(reviews || [])];
+
+    if (allReviews.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'rm-reviews-empty';
-        empty.textContent = 'No reviews found for this title.';
+        empty.textContent = 'No reviews found for this title. Be the first to write one!';
         scrollEl.appendChild(empty);
         return;
     }
 
-    const preview = reviews.slice(0, 10);
+    const preview = allReviews.slice(0, 10);
     preview.forEach(r => {
-        const card = rmBuildReviewCard(r, false);
-        card.addEventListener('click', () => openReviewsSheet());
+        const card = rmBuildReviewCard(r, false, cacheKey);
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('[data-action]') || e.target.closest('.rm-reply-form')) return;
+            openReviewsSheet();
+        });
         scrollEl.appendChild(card);
     });
 
     // Populate bottom sheet with full text
     if (sheetEl) {
-        reviews.slice(0, 30).forEach(r => {
-            sheetEl.appendChild(rmBuildReviewCard(r, true));
+        allReviews.slice(0, 30).forEach(r => {
+            sheetEl.appendChild(rmBuildReviewCard(r, true, cacheKey));
         });
     }
 
-    if (seeAllBtn) seeAllBtn.style.display = reviews.length > 3 ? '' : 'none';
+    if (seeAllBtn) seeAllBtn.style.display = allReviews.length > 3 ? '' : 'none';
 }
 
 window.openReviewsSheet = function() {

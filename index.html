@@ -162,6 +162,43 @@
     transform: scale(1.1); /* Subtle hover effect from Netflix UI */
 }
 
+/* --- Quick "Add to Watchlist" button on poster cards --- */
+.poster-wrapper, .top-10-card { position: relative; }
+.wl-add-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 5;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.wl-add-btn svg { width: 14px; height: 14px; }
+.poster-wrapper:hover .wl-add-btn,
+.top-10-card:hover .wl-add-btn,
+.wl-add-btn.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+.wl-add-btn:hover { background: rgba(229, 9, 20, 0.85); border-color: #e50914; }
+.wl-add-btn.active { background: #e50914; border-color: #e50914; }
+@media (max-width: 767px) {
+    /* always visible on touch devices since there's no hover */
+    .wl-add-btn { opacity: 1; transform: translateY(0); }
+}
+
 /* ── CINEMATIC HERO ZONE ── */
 .detail-hero-wrapper {
     position: relative;
@@ -509,6 +546,27 @@
             </button>
         </div>
     </div>
+ <div class="mb-12 relative">
+        <div class="flex justify-between items-center px-2 mb-4 md:mb-6 flex-wrap gap-3">
+            <h2 id="trending-header" class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
+                Trending Now
+            </h2>
+            <div class="slider-filter" id="trending-slider-filter">
+                <button class="slider-filter-btn active" onclick="setSliderFilter('trending-container','all',this)">All</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','movie',this)">Movies</button>
+                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','tv',this)">TV Shows</button>
+            </div>
+        </div>
+        <div class="relative group px-2">
+            <button id="scroll-left" class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg></i>
+            </button>
+            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button id="scroll-right" class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></i>
+            </button>
+        </div>
+    </div>
  <div id="quote-section" class="mb-16 relative">
     <h2 class="text-xl md:text-2xl font-bold mb-8 text-white flex items-center px-2 section-title">
         Iconic Lines
@@ -803,27 +861,6 @@
             </button>
             <div id="similar-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
             <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('similar-container', 300)">
-                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></i>
-            </button>
-        </div>
-    </div>
-    <div class="mb-12 relative">
-        <div class="flex justify-between items-center px-2 mb-4 md:mb-6 flex-wrap gap-3">
-            <h2 id="trending-header" class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
-                Trending Now
-            </h2>
-            <div class="slider-filter" id="trending-slider-filter">
-                <button class="slider-filter-btn active" onclick="setSliderFilter('trending-container','all',this)">All</button>
-                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','movie',this)">Movies</button>
-                <button class="slider-filter-btn" onclick="setSliderFilter('trending-container','tv',this)">TV Shows</button>
-            </div>
-        </div>
-        <div class="relative group px-2">
-            <button id="scroll-left" class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
-                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg></i>
-            </button>
-            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
-            <button id="scroll-right" class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
                 <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg></i>
             </button>
         </div>
@@ -1146,7 +1183,10 @@
                         <svg viewBox="0 0 512 512" width="10" height="10" fill="currentColor" style="opacity:0.5"><path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
                         <small id="rm-reviews-source">via Trakt</small>
                     </div>
-                    <button class="rm-see-all-btn" id="rm-see-all-btn" onclick="openReviewsSheet()">See all</button>
+                    <div class="rm-reviews-header-actions">
+                        <button class="rm-write-review-btn" id="rm-write-review-btn" onclick="openWriteReviewForm()">Write a review</button>
+                        <button class="rm-see-all-btn" id="rm-see-all-btn" onclick="openReviewsSheet()">See all</button>
+                    </div>
                 </div>
                 <div class="rm-reviews-scroller" id="rm-reviews-scroll">
                     <div class="rm-reviews-loader" id="rm-reviews-loader">
@@ -1165,11 +1205,40 @@
         <div class="rm-drag-handle" id="rm-drag-handle"></div>
         <div class="rm-sheet-header">
             <span class="rm-sheet-title">All Reviews</span>
-            <button class="rm-sheet-close" onclick="closeReviewsSheet()" aria-label="Close reviews">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" width="14" height="14"><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg>
-            </button>
+            <div class="rm-sheet-header-actions">
+                <button class="rm-write-review-btn" onclick="openWriteReviewForm()">Write a review</button>
+                <button class="rm-sheet-close" onclick="closeReviewsSheet()" aria-label="Close reviews">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" width="14" height="14"><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg>
+                </button>
+            </div>
         </div>
         <div class="rm-sheet-scroll" id="rm-sheet-scroll"></div>
+    </div>
+
+    <!-- ── WRITE A REVIEW OVERLAY ── -->
+    <div class="rm-wr-overlay" id="rm-wr-overlay" onclick="if(event.target===this) closeWriteReviewForm()">
+        <div class="rm-wr-panel">
+            <div class="rm-wr-header">
+                <span>Write a Review</span>
+                <button class="rm-sheet-close" onclick="closeWriteReviewForm()" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" width="14" height="14"><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg>
+                </button>
+            </div>
+            <div class="rm-wr-body">
+                <label class="rm-wr-label" for="rm-wr-name">Your name</label>
+                <input type="text" id="rm-wr-name" class="rm-wr-input" placeholder="Anonymous" maxlength="40">
+
+                <label class="rm-wr-label">Your rating</label>
+                <div class="rm-wr-stars" id="rm-wr-stars"></div>
+
+                <label class="rm-wr-label" for="rm-wr-text">Your review</label>
+                <textarea id="rm-wr-text" class="rm-wr-textarea" rows="5" maxlength="2000" placeholder="What did you think?"></textarea>
+
+                <div class="rm-wr-error" id="rm-wr-error"></div>
+
+                <button class="rm-wr-submit" id="rm-wr-submit" onclick="submitWrittenReview()">Post Review</button>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1185,8 +1254,8 @@
                 <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5005 23C13.3376 23 13.1791 22.9469 13.049 22.8487C12.9189 22.7505 12.8243 22.6127 12.7795 22.456L11.9665 19.61C11.7915 18.9971 11.4631 18.4389 11.0124 17.9882C10.5616 17.5374 10.0035 17.209 9.39054 17.034L6.54454 16.221C6.38795 16.1761 6.25021 16.0815 6.15216 15.9514C6.05411 15.8214 6.00108 15.6629 6.00108 15.5C6.00108 15.3371 6.05411 15.1786 6.15216 15.0486C6.25021 14.9185 6.38795 14.8239 6.54454 14.779L9.39054 13.966C10.0035 13.791 10.5616 13.4626 11.0124 13.0118C11.4631 12.5611 11.7915 12.0029 11.9665 11.39L12.7795 8.544C12.8244 8.38741 12.919 8.24967 13.0491 8.15162C13.1792 8.05357 13.3376 8.00054 13.5005 8.00054C13.6634 8.00054 13.8219 8.05357 13.952 8.15162C14.0821 8.24967 14.1767 8.38741 14.2215 8.544L15.0345 11.39C15.2096 12.0029 15.538 12.5611 15.9887 13.0118C16.4394 13.4626 16.9976 13.791 17.6105 13.966L20.4565 14.779C20.6131 14.8239 20.7509 14.9185 20.8489 15.0486C20.947 15.1786 21 15.3371 21 15.5C21 15.6629 20.947 15.8214 20.8489 15.9514C20.7509 16.0815 20.6131 16.1761 20.4565 16.221L17.6105 17.034C16.9976 17.209 16.4394 17.5374 15.9887 17.9882C15.538 18.4389 15.2096 18.9971 15.0345 19.61L14.2215 22.456C14.1768 22.6127 14.0822 22.7505 13.9521 22.8487C13.822 22.9469 13.6635 23 13.5005 23Z" fill="currentColor"></path>
             </svg>
             <input class="search" id="ai-search-input" type="text" placeholder="Describe a plot or mood..." onkeydown="if(event.key === 'Enter') handleAISearch()" />
-            <button id="ai-mic-btn" onclick="startVoiceInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
-                <svg class="svg-icon text-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M192 0C139 0 96 43 96 96l0 128c0 53 43 96 96 96s96-43 96-96l0-128c0-53-43-96-96-96zM48 184c0-13.3-10.7-24-24-24S0 170.7 0 184l0 40c0 97.9 73.3 178.7 168 190.5l0 49.5-48 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-48 0 0-49.5c94.7-11.8 168-92.6 168-190.5l0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40c0 79.5-64.5 144-144 144S48 303.5 48 224l0-40z"/></svg>
+            <button id="ai-mic-btn" onclick="startVoiceInput()" class="absolute right-3 top-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10" style="transform: translateY(-50%); width: 34px; height: 34px; padding: 0; margin: 0; line-height: 0;">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true" style="width: 16px; height: 16px; display: block; margin: 0;"><path fill="currentColor" d="M192 0C139 0 96 43 96 96l0 128c0 53 43 96 96 96s96-43 96-96l0-128c0-53-43-96-96-96zM48 184c0-13.3-10.7-24-24-24S0 170.7 0 184l0 40c0 97.9 73.3 178.7 168 190.5l0 49.5-48 0c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-48 0 0-49.5c94.7-11.8 168-92.6 168-190.5l0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40c0 79.5-64.5 144-144 144S48 303.5 48 224l0-40z"/></svg>
             </button>
         </div>
 
