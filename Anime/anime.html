@@ -8,7 +8,13 @@
     <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="../output.css">
     <style>
-        #tracemoe-results {
+        #player-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 240px;
+}
+#tracemoe-results {
     /* Ensures smooth scrolling on iOS */
     -webkit-overflow-scrolling: touch;
 }
@@ -209,8 +215,8 @@
                 <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
                 
                 <div id="player-interface" class="hidden fade-in">
-                    <div class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
-                        <iframe id="player-iframe" src="" frameborder="0" scrolling="no" allowfullscreen class="w-full aspect-video rounded-xl shadow-2xl"></iframe>
+                    <div id="player-container" class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
+                        <iframe id="player-iframe" src="" frameborder="0" scrolling="no" allowfullscreen class="rounded-xl shadow-2xl"></iframe>
                     </div>
 
                     <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">

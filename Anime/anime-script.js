@@ -210,7 +210,7 @@ window.setServer = function(server) {
 function updatePlayer() {
     const iframe = document.getElementById('player-iframe');
     
-    if (currentServer === 'megaplay') {
+    if (currentServer === 'megaplay' || currentServer === 'anikoto') {
         iframe.src = `https://megaplay.buzz/stream/ani/${currentAnimeId}/${currentEp}/${audioMode}`;
     } else if (currentServer === 'vidrock') {
         iframe.src = `https://vidrock.ru/anime/${currentAnimeId}/${currentEp}/${audioMode}`;
@@ -221,6 +221,7 @@ function updatePlayer() {
     
     document.getElementById('btn-server1').classList.toggle('active', currentServer === 'megaplay');
     document.getElementById('btn-server2').classList.toggle('active', currentServer === 'vidrock');
+    document.getElementById('btn-server3').classList.toggle('active', currentServer === 'anikoto');
 }
 
 function setupSearch() {
