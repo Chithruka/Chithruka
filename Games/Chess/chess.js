@@ -88,7 +88,7 @@ function pawnPromotion(color,callback,id){const squareEl=document.getElementById
 function showCheckmateAnimation(losingColor){const winningColor=losingColor==="white"?"black":"white";const loserKing=globalPiece[`${losingColor}_king`];const winnerKing=globalPiece[`${winningColor}_king`];if(loserKing?.current_position){const loserBadge=document.createElement("div");loserBadge.classList.add("checkmateBadge","checkmateBadgeRed");const loserImg=document.createElement("img");loserImg.src=loserKing.img;loserImg.classList.add("checkmateRotate");loserBadge.appendChild(loserImg);document.getElementById(loserKing.current_position)?.appendChild(loserBadge)}
 if(winnerKing?.current_position){const winnerBadge=document.createElement("div");winnerBadge.classList.add("checkmateBadge","checkmateBadgeGreen");const winnerImg=document.createElement("img");winnerImg.src=`Assets/images/pieces/${winningColor}/queen.png`;winnerBadge.appendChild(winnerImg);document.getElementById(winnerKing.current_position)?.appendChild(winnerBadge)}}
 function resetGame(){ROOT_DIV.innerHTML="";const freshBoard=initGame();globalState.length=0;freshBoard.forEach((row)=>globalState.push(row));Object.keys(keySquareMapper).forEach((k)=>delete keySquareMapper[k]);globalState.flat().forEach((square)=>{keySquareMapper[square.id]=square});Object.keys(globalPiece).forEach((k)=>delete globalPiece[k]);inTurn="white";whoInCheck=null;selfHighlightState=null;moveState=null;enPassant=null;gameOver=!1;hightlight_state=!1;initGameRender(globalState)}
-function showEndModal(message){const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent=message;const rematchBtn=document.createElement("button");rematchBtn.textContent="Rematch";rematchBtn.classList.add("rematchBtn");box.appendChild(closeBtn);box.appendChild(msg);box.appendChild(rematchBtn);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();rematchBtn.onclick=()=>{modal.hide();resetGame()};modal.show()}
+function showEndModal(message){const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent=message;const btnRow=document.createElement("div");btnRow.classList.add("endModalBtnRow");const rematchBtn=document.createElement("button");rematchBtn.textContent="Rematch";rematchBtn.classList.add("rematchBtn");const reviewBtn=document.createElement("button");reviewBtn.textContent="Review Game";reviewBtn.classList.add("rematchBtn","reviewBtn");btnRow.append(rematchBtn,reviewBtn);box.appendChild(closeBtn);box.appendChild(msg);box.appendChild(btnRow);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();rematchBtn.onclick=()=>{modal.hide();resetGame()};reviewBtn.onclick=()=>{modal.hide();openGameReview()};modal.show()}
 let hightlight_state=!1;let inTurn="white";let whoInCheck=null;let selfHighlightState=null;let moveState=null;let enPassant=null;let gameOver=!1;function changeTurn(){inTurn=inTurn==="white"?"black":"white"}
 function getPiecesByColor(color){const singles=Object.keys(globalPiece).filter((k)=>k.startsWith(color)&&k!==`${color}_pawns`).map((k)=>globalPiece[k]);const pawns=globalPiece[`${color}_pawns`]||[];return singles.concat(pawns).filter((p)=>p&&p.current_position)}
 function sliderAttackSquares(dirArray){const result=[];for(const sq of dirArray){result.push(sq);if(keySquareMapper[sq].piece)break}
@@ -158,14 +158,15 @@ function undoMove(){stopPlayback();if(moveHistory.length===0)return;moveHistory.
 
 const ENGINE_LOGO_URL="https://images.chesscomfiles.com/uploads/v1/bot_personality/4c07340e-8a5d-11ea-9abb-79b3443058a1.6bfb2f43.384x384o.9fad36f33baf.png";const PLAYER_AVATAR_URL="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#689f38"/><circle cx="16" cy="12" r="6" fill="#fff"/><path d="M4 30c0-7 5-11 12-11s12 4 12 11" fill="#fff"/></svg>');let playerName="You";let engineName="Stockfish";
 function createPlayerBar(id){const bar=document.createElement("div");bar.classList.add("playerBar");bar.id=id;bar.innerHTML=`<img class="playerAvatar" id="${id}Avatar" alt=""><div class="playerNameWrap"><span class="playerName" id="${id}Name"></span></div><div class="playerCaptured" id="${id}Captured"></div><span class="materialAdv" id="${id}Adv"></span>`;return bar}
-function wrapBoardWithNav(){const wrapper=document.createElement("div");wrapper.id="gameWrap";document.body.insertBefore(wrapper,ROOT_DIV);const boardColumn=document.createElement("div");boardColumn.id="boardColumn";wrapper.appendChild(boardColumn);const topBar=createPlayerBar("topBar");const bottomBar=createPlayerBar("bottomBar");boardColumn.appendChild(topBar);boardColumn.appendChild(ROOT_DIV);boardColumn.appendChild(bottomBar);const nav=document.createElement("div");nav.id="bottomNav";wrapper.appendChild(nav);window._bottomNavEl=nav;document.getElementById("topBarAvatar").src=ENGINE_LOGO_URL;document.getElementById("bottomBarAvatar").src=PLAYER_AVATAR_URL;renderPlayerNames()}
-function renderPlayerNames(){const pColor=playerColor||"white";document.getElementById("bottomBarName").textContent=`${playerName} (${pColor === "white" ? "White" : "Black"})`;document.getElementById("topBarName").textContent=`${engineName} (${pColor === "white" ? "Black" : "White"})`}
+function wrapBoardWithNav(){const wrapper=document.createElement("div");wrapper.id="gameWrap";document.body.insertBefore(wrapper,ROOT_DIV);const boardColumn=document.createElement("div");boardColumn.id="boardColumn";wrapper.appendChild(boardColumn);const topBar=createPlayerBar("topBar");const bottomBar=createPlayerBar("bottomBar");const boardRow=document.createElement("div");boardRow.id="boardRow";const evalBarWrap=document.createElement("div");evalBarWrap.id="evalBarWrap";evalBarWrap.innerHTML=`<span class="evalBarScore" id="evalBarScore">0.0</span><div class="evalBarFill" id="evalBarFill"></div>`;boardRow.appendChild(evalBarWrap);boardRow.appendChild(ROOT_DIV);boardColumn.appendChild(topBar);boardColumn.appendChild(boardRow);boardColumn.appendChild(bottomBar);const nav=document.createElement("div");nav.id="bottomNav";wrapper.appendChild(nav);window._bottomNavEl=nav;document.getElementById("topBarAvatar").src=ENGINE_LOGO_URL;document.getElementById("bottomBarAvatar").src=PLAYER_AVATAR_URL;renderPlayerNames()}
+function getBottomColor(){return boardFlipped?"black":"white"}
+function renderPlayerNames(){const bottomColor=getBottomColor();const topColor=bottomColor==="white"?"black":"white";const bottomIsPlayer=bottomColor===(playerColor||"white");document.getElementById("bottomBarName").textContent=`${bottomIsPlayer?playerName:engineName} (${bottomColor === "white" ? "White" : "Black"})`;document.getElementById("topBarName").textContent=`${bottomIsPlayer?engineName:playerName} (${topColor === "white" ? "White" : "Black"})`;const bottomAvatarEl=document.getElementById("bottomBarAvatar"),topAvatarEl=document.getElementById("topBarAvatar");if(bottomAvatarEl)bottomAvatarEl.src=bottomIsPlayer?PLAYER_AVATAR_URL:ENGINE_LOGO_URL;if(topAvatarEl)topAvatarEl.src=bottomIsPlayer?ENGINE_LOGO_URL:PLAYER_AVATAR_URL}
 const PIECE_VALUE={QUEEN:9,ROOK:5,BISHOP:3,KNIGHT:3,PAWN:1};const PIECE_ORDER=["QUEEN","ROOK","BISHOP","KNIGHT","PAWN"];
 function computeCapturedNames(){const capturedWhite=[],capturedBlack=[];Object.values(pieceByUid).forEach((p)=>{if(!p||p.current_position||p.piece_name.includes("KING"))return;if(p.piece_name.startsWith("WHITE"))capturedWhite.push(p.piece_name);else capturedBlack.push(p.piece_name)});return{capturedWhite,capturedBlack}}
 function sumValue(names){return names.reduce((sum,n)=>sum+(PIECE_VALUE[n.split("_")[1]]||0),0)}
 function renderCapturedRow(containerId,names,color){const container=document.getElementById(containerId);if(!container)return;container.innerHTML="";const counts={};names.forEach((n)=>{const type=n.split("_")[1];counts[type]=(counts[type]||0)+1});PIECE_ORDER.forEach((type)=>{const c=counts[type];if(!c)return;const group=document.createElement("span");group.classList.add("capturedGroup");for(let i=0;i<c;i++){const img=document.createElement("img");img.src=`Assets/images/pieces/${color}/${type.toLowerCase()}.png`;img.classList.add("capturedPieceIcon");if(i>0)img.style.marginLeft="-9px";group.appendChild(img)}
 container.appendChild(group)})}
-function renderPlayerBars(){if(!document.getElementById("topBar"))return;const pColor=playerColor||"white";const oColor=pColor==="white"?"black":"white";const{capturedWhite,capturedBlack}=computeCapturedNames();const bottomCaptured=pColor==="white"?capturedBlack:capturedWhite;const topCaptured=pColor==="white"?capturedWhite:capturedBlack;renderCapturedRow("bottomBarCaptured",bottomCaptured,oColor);renderCapturedRow("topBarCaptured",topCaptured,pColor);const bottomVal=sumValue(bottomCaptured),topVal=sumValue(topCaptured);const diff=bottomVal-topVal;document.getElementById("bottomBarAdv").textContent=diff>0?`+${diff}`:"";document.getElementById("topBarAdv").textContent=diff<0?`+${-diff}`:"";renderPlayerNames()}
+function renderPlayerBars(){if(!document.getElementById("topBar"))return;const bottomColor=getBottomColor();const topColor=bottomColor==="white"?"black":"white";const{capturedWhite,capturedBlack}=computeCapturedNames();const bottomCaptured=bottomColor==="white"?capturedBlack:capturedWhite;const topCaptured=topColor==="white"?capturedBlack:capturedWhite;renderCapturedRow("bottomBarCaptured",bottomCaptured,topColor);renderCapturedRow("topBarCaptured",topCaptured,bottomColor);const bottomVal=sumValue(bottomCaptured),topVal=sumValue(topCaptured);const diff=bottomVal-topVal;document.getElementById("bottomBarAdv").textContent=diff>0?`+${diff}`:"";document.getElementById("topBarAdv").textContent=diff<0?`+${-diff}`:"";renderPlayerNames()}
 
 function pieceLetter(name){if(name.includes("KNIGHT"))return"N";if(name.includes("KING"))return"K";if(name.includes("QUEEN"))return"Q";if(name.includes("ROOK"))return"R";if(name.includes("BISHOP"))return"B";return""}
 
@@ -190,7 +191,8 @@ if(castle)return;
 let san;
 if(isCastleMove){san=id[0]==="g"?"O-O":"O-O-O"}else{const letter=pieceLetter(pieceName);let promo="";const postPiece=keySquareMapper[id]&&keySquareMapper[id].piece;if(isPawn&&postPiece&&!postPiece.piece_name.includes("PAWN"))promo="="+pieceLetter(postPiece.piece_name);if(letter===""){san=(capture?fromPos[0]+"x":"")+id+promo}else{san=letter+(capture?"x":"")+id}}
 const opponent=color==="white"?"black":"white";if(whoInCheck===opponent)san+=gameOver?"#":"+";
-const moveNumber=Math.floor(moveHistory.length/2)+1;moveHistory.push({san,color,moveNumber,snapshot:takeSnapshot(),fullState:captureGameState(),checkColor:whoInCheck,checkmate:gameOver&&!!whoInCheck});viewingIndex=moveHistory.length-1;renderMoveList();renderPlayerBars()};
+const promoLetter=isPawn?(()=>{const p=keySquareMapper[id]&&keySquareMapper[id].piece;return p&&!p.piece_name.includes("PAWN")?pieceLetter(p.piece_name).toLowerCase():null})():null;
+const moveNumber=Math.floor(moveHistory.length/2)+1;moveHistory.push({san,color,moveNumber,from:fromPos,to:id,promotion:promoLetter,snapshot:takeSnapshot(),fullState:captureGameState(),checkColor:whoInCheck,checkmate:gameOver&&!!whoInCheck});viewingIndex=moveHistory.length-1;renderMoveList();renderPlayerBars()};
 
 const _origResetGame=resetGame;
 resetGame=function(){stopPlayback();_origResetGame();rebuildPieceRegistry();moveHistory=[];viewingIndex=-1;boardFlipped=!1;startSnapshot=takeSnapshot();startFullState=captureGameState();renderMoveList();renderPlayerBars();playerColor=null;colorChosen=!1;showColorPicker()};
@@ -200,7 +202,7 @@ function clearCheckVisuals(){document.querySelectorAll(".checkmateBadge").forEac
 function applyMoveVisuals(entry){clearCheckVisuals();if(!entry)return;if(entry.checkColor){const kingEntry=entry.snapshot.find((p)=>p.piece_name===`${entry.checkColor.toUpperCase()}_KING`);if(kingEntry)document.getElementById(kingEntry.id)?.classList.add("inCheck")}
 if(entry.checkmate&&entry===moveHistory[moveHistory.length-1]&&gameOver)showCheckmateAnimation(entry.checkColor)}
 
-function goToMove(index){viewingIndex=index;const snap=index===-1?startSnapshot:moveHistory[index].snapshot;restoreSnapshot(snap);applyMoveVisuals(index===-1?null:moveHistory[index]);renderMoveList();renderPlayerBars()}
+function goToMove(index){viewingIndex=index;const snap=index===-1?startSnapshot:moveHistory[index].snapshot;restoreSnapshot(snap);applyMoveVisuals(index===-1?null:moveHistory[index]);renderMoveList();renderPlayerBars();syncReviewPanelSelection()}
 
 let isPlaying=!1;let playbackTimer=null;const PLAYBACK_STEP_MS=650;
 
@@ -217,24 +219,24 @@ function togglePlayback(){if(isPlaying)stopPlayback();else startPlayback()}
 
 function renderMoveList(){const scrollEl=document.getElementById("moveListScroll");if(!scrollEl)return;scrollEl.innerHTML="";for(let i=0;i<moveHistory.length;i+=2){const pairEl=document.createElement("span");pairEl.classList.add("movePair");const num=document.createElement("span");num.classList.add("moveNum");num.textContent=`${moveHistory[i].moveNumber}.`;pairEl.appendChild(num);const whiteSpan=document.createElement("span");whiteSpan.classList.add("moveSan");whiteSpan.textContent=moveHistory[i].san;if(i===viewingIndex)whiteSpan.classList.add("activeMove");whiteSpan.onclick=()=>{stopPlayback();goToMove(i)};pairEl.appendChild(whiteSpan);if(moveHistory[i+1]){const blackSpan=document.createElement("span");blackSpan.classList.add("moveSan");blackSpan.textContent=moveHistory[i+1].san;if(i+1===viewingIndex)blackSpan.classList.add("activeMove");blackSpan.onclick=()=>{stopPlayback();goToMove(i+1)};pairEl.appendChild(blackSpan)}
 scrollEl.appendChild(pairEl)}
-requestAnimationFrame(()=>{const active=scrollEl.querySelector(".activeMove");if(active)active.scrollIntoView({inline:"center",block:"nearest"})});updateUndoButtonState()}
+requestAnimationFrame(()=>{const active=scrollEl.querySelector(".activeMove");if(active){const target=active.offsetLeft-scrollEl.clientWidth/2+active.offsetWidth/2;scrollEl.scrollLeft=Math.max(0,target)}});updateUndoButtonState()}
 
 function updateCoordLabels(){document.querySelectorAll("#root .coord").forEach((el)=>el.remove());const rows=Array.from(ROOT_DIV.children);rows.forEach((rowEl,rowIdx)=>{const squares=Array.from(rowEl.children);squares.forEach((sq,colIdx)=>{const id=sq.id;if(colIdx===0){const rankLabel=document.createElement("span");rankLabel.classList.add("coord","coord-rank");rankLabel.textContent=id[1];sq.appendChild(rankLabel)}
 if(rowIdx===rows.length-1){const fileLabel=document.createElement("span");fileLabel.classList.add("coord","coord-file");fileLabel.textContent=id[0];sq.appendChild(fileLabel)}})});}
 
 function flipBoard(){boardFlipped=!boardFlipped;const rows=Array.from(ROOT_DIV.children).reverse();rows.forEach((rowEl)=>{ROOT_DIV.appendChild(rowEl);const squares=Array.from(rowEl.children).reverse();squares.forEach((sq)=>rowEl.appendChild(sq))});updateCoordLabels()}
 
-function resignGame(){if(gameOver)return;const resigningColor=playerColor||inTurn;const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent=`Resign as ${resigningColor==="white"?"White":"Black"}?`;const yesBtn=document.createElement("button");yesBtn.textContent="Resign";yesBtn.classList.add("rematchBtn");box.append(closeBtn,msg,yesBtn);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();yesBtn.onclick=()=>{modal.hide();gameOver=!0;const winner=resigningColor==="white"?"Black":"White";showEndModal(`${resigningColor==="white"?"White":"Black"} resigned. ${winner} wins`)};modal.show()}
+function resignGame(){if(gameOver)return;const resigningColor=playerColor||inTurn;const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent="Resign this game?";const yesBtn=document.createElement("button");yesBtn.textContent="Resign";yesBtn.classList.add("rematchBtn");box.append(closeBtn,msg,yesBtn);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();yesBtn.onclick=()=>{modal.hide();gameOver=!0;const winner=resigningColor==="white"?"Black":"White";showEndModal(`${resigningColor==="white"?"White":"Black"} resigned. ${winner} wins`)};modal.show()}
 
 function openOptionsMenu(){const box=document.createElement("div");box.classList.add("optionsBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const title=document.createElement("h3");title.classList.add("optionsTitle");title.textContent="Options";const list=document.createElement("div");list.classList.add("optionsList");const switchBtn=document.createElement("button");switchBtn.classList.add("optionItem");switchBtn.textContent="Switch Sides";const flipBtn=document.createElement("button");flipBtn.classList.add("optionItem");flipBtn.textContent="Flip Board";const newBtn=document.createElement("button");newBtn.classList.add("optionItem");newBtn.textContent="New Game";if(moveHistory.length>0){switchBtn.disabled=!0;switchBtn.classList.add("optionItemDisabled");switchBtn.title="Only available before the first move"}
 list.append(switchBtn,flipBtn,newBtn);box.append(closeBtn,title,list);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","optionsModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();switchBtn.onclick=()=>{if(switchBtn.disabled)return;stopPlayback();modal.hide();showColorPicker()};flipBtn.onclick=()=>{stopPlayback();flipBoard();modal.hide()};newBtn.onclick=()=>{stopPlayback();modal.hide();resetGame()};modal.show()}
 
-function buildBottomNav(){startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();renderMoveList();updateUndoButtonState()}
+function buildBottomNav(){if(typeof reviewActive!=="undefined")reviewActive=!1;if(typeof reviewRowEls!=="undefined")reviewRowEls=null;const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.remove("evalBarVisible");startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button></div><div class="reviewPanel" id="reviewPanel"><div class="reviewPanelHeader"><span>Game Review</span><button class="reviewCloseBtn" id="reviewCloseBtn" aria-label="Close review">&times;</button></div><div class="reviewMoveList" id="reviewMoveList"></div></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();document.getElementById("reviewCloseBtn").onclick=()=>closeGameReview();renderMoveList();updateUndoButtonState()}
 const _origCallbackPawnPromotion=callbackPawnPromotion;
-callbackPawnPromotion=function(pieceFn,id){_origCallbackPawnPromotion(pieceFn,id);if(moveHistory.length===0)return;const last=moveHistory[moveHistory.length-1];const promotedPiece=keySquareMapper[id]&&keySquareMapper[id].piece;if(promotedPiece&&!last.san.includes("=")){const letter=pieceLetter(promotedPiece.piece_name);const base=last.san.replace(/[+#]$/,"");const suffix=last.san.slice(base.length);last.san=base+"="+letter+suffix}
+callbackPawnPromotion=function(pieceFn,id){_origCallbackPawnPromotion(pieceFn,id);if(moveHistory.length===0)return;const last=moveHistory[moveHistory.length-1];const promotedPiece=keySquareMapper[id]&&keySquareMapper[id].piece;if(promotedPiece&&!last.san.includes("=")){const letter=pieceLetter(promotedPiece.piece_name);const base=last.san.replace(/[+#]$/,"");const suffix=last.san.slice(base.length);last.san=base+"="+letter+suffix;last.promotion=letter.toLowerCase()}
 registerPiece(promotedPiece);last.snapshot=takeSnapshot();last.fullState=captureGameState();renderMoveList()};
 
-function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="1";slider.max="15";slider.step="1";slider.value=String(ENGINE_DEPTH);slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=Number(slider.value);document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();renderPlayerBars()}
+function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="5";slider.max="15";slider.step="1";slider.value=String(ENGINE_DEPTH);slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=Number(slider.value);document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();renderPlayerBars()}
 whiteBtn.onclick=()=>choose("white");blackBtn.onclick=()=>choose("black")}
 
 /* ===================== Drag and Drop ===================== */
@@ -266,28 +268,75 @@ const _origResetGameForCursor=resetGame;resetGame=function(){_origResetGameForCu
 
 const _origGoToMoveForCursor=goToMove;goToMove=function(index){_origGoToMoveForCursor(index);updateGrabCursors()};
 
-/* ===================== Stockfish Online integration ===================== */
-const STOCKFISH_API_URL="https://stockfish.online/api/s/v2.php";
-let ENGINE_DEPTH=12; // 1-15, higher = stronger but slower
-const STRENGTH_LABELS={1:"~800 Elo",2:"~900 Elo",3:"~1000 Elo",4:"~1100 Elo",5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
+/* ===================== Local Stockfish engine (Web Worker, no 3rd-party API) ===================== */
+const STOCKFISH_WORKER_URL="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js";
+
+class LocalStockfish{
+  constructor(){this.worker=null;this.readyPromise=this._init();this._queue=Promise.resolve()}
+  async _init(){
+    const res=await fetch(STOCKFISH_WORKER_URL);
+    if(!res.ok)throw new Error("Failed to fetch Stockfish engine script");
+    const scriptText=await res.text();
+    const blobUrl=URL.createObjectURL(new Blob([scriptText],{type:"application/javascript"}));
+    this.worker=new Worker(blobUrl);
+    await this._sendAndWait("uci","uciok");
+    await this._sendAndWait("isready","readyok");
+  }
+  _sendAndWait(cmd,waitFor){
+    return new Promise((resolve)=>{
+      const onMsg=(e)=>{const line=typeof e.data==="string"?e.data:"";if(line.trim()===waitFor||line.indexOf(waitFor)===0){this.worker.removeEventListener("message",onMsg);resolve()}};
+      this.worker.addEventListener("message",onMsg);
+      this.worker.postMessage(cmd);
+    });
+  }
+  // Runs one FEN analysis at a time (queued), returns {bestMoveUci, evalCp, mate}
+  analyze(fen,depth){
+    const task=async()=>{
+      await this.readyPromise;
+      const sideToMove=fen.split(" ")[1]==="b"?"black":"white";
+      return new Promise((resolve)=>{
+        let lastCp=null,lastMate=null;
+        const onMsg=(e)=>{
+          const line=typeof e.data==="string"?e.data:"";
+          if(line.indexOf("score cp")!==-1){const m=/score cp (-?\d+)/.exec(line);if(m)lastCp=parseInt(m[1],10);lastMate=null}
+          else if(line.indexOf("score mate")!==-1){const m=/score mate (-?\d+)/.exec(line);if(m)lastMate=parseInt(m[1],10);lastCp=null}
+          if(line.indexOf("bestmove")===0){
+            this.worker.removeEventListener("message",onMsg);
+            const bm=/bestmove\s+(\S+)/.exec(line);
+            const bestMoveUci=bm&&bm[1]!=="(none)"?bm[1]:null;
+            // UCI scores are relative to the side to move; convert to a white-positive convention
+            let evalCp=lastCp,mate=lastMate;
+            if(sideToMove==="black"){if(evalCp!==null)evalCp=-evalCp;if(mate!==null)mate=-mate}
+            resolve({bestMoveUci,evalCp,mate});
+          }
+        };
+        this.worker.addEventListener("message",onMsg);
+        this.worker.postMessage(`position fen ${fen}`);
+        this.worker.postMessage(`go depth ${depth}`);
+      });
+    };
+    const result=this._queue.then(task,task);
+    this._queue=result.catch(()=>{});
+    return result;
+  }
+}
+
+const localEngine=new LocalStockfish();
+let ENGINE_DEPTH=12; // 5-15, higher = stronger but slower
+const STRENGTH_LABELS={5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
 let engineThinking=!1;
 let suppressEngineAutoMove=!1;
 
-function pieceNameToFenChar(piece_name){const map={PAWN:"p",KNIGHT:"n",BISHOP:"b",ROOK:"r",QUEEN:"q",KING:"k"};const[color,type]=piece_name.split("_");const c=map[type];if(!c)return"";return color==="WHITE"?c.toUpperCase():c}
+function buildFENUpTo(index){const game=new Chess();for(let i=0;i<=index;i++){const mv=moveHistory[i];if(!mv)break;const moveObj={from:mv.from,to:mv.to};if(mv.promotion)moveObj.promotion=mv.promotion;const result=game.move(moveObj);if(!result){console.error("chess.js failed to replay move at index",i,mv);break}}
+return game.fen()}
+function buildFEN(){return buildFENUpTo(viewingIndex)}
 
-function buildFEN(){const rows=[];for(let r=0;r<8;r++){let rowStr="",empty=0;for(let c=0;c<8;c++){const sq=globalState[r][c];if(sq&&sq.piece){if(empty>0){rowStr+=empty;empty=0}
-rowStr+=pieceNameToFenChar(sq.piece.piece_name)}else{empty++}}
-if(empty>0)rowStr+=empty;rows.push(rowStr)}
-const boardStr=rows.join("/");const active=inTurn==="white"?"w":"b";const wk=globalPiece.white_king,bk=globalPiece.black_king;const wr1=globalPiece.white_rook_1,wr2=globalPiece.white_rook_2,br1=globalPiece.black_rook_1,br2=globalPiece.black_rook_2;let castling="";if(wk&&!wk.move){if(wr2&&!wr2.move&&wr2.current_position==="h1")castling+="K";if(wr1&&!wr1.move&&wr1.current_position==="a1")castling+="Q"}
-if(bk&&!bk.move){if(br2&&!br2.move&&br2.current_position==="h8")castling+="k";if(br1&&!br1.move&&br1.current_position==="a8")castling+="q"}
-if(!castling)castling="-";const ep=enPassant?enPassant.square:"-";const fullmove=Math.floor(moveHistory.length/2)+1;return`${boardStr} ${active} ${castling} ${ep} 0 ${fullmove}`}
-
-function showEngineThinking(active){const el=document.getElementById("topBarName");if(!el)return;const pColor=playerColor||"white";const label=`${engineName} (${pColor === "white" ? "Black" : "White"})`;el.textContent=active?`${label} — thinking…`:label}
+function showEngineThinking(active){const bottomColor=getBottomColor();const bottomIsPlayer=bottomColor===(playerColor||"white");const el=document.getElementById(bottomIsPlayer?"topBarName":"bottomBarName");if(!el)return;const engineColor=(playerColor||"white")==="white"?"black":"white";const label=`${engineName} (${engineColor === "white" ? "White" : "Black"})`;el.textContent=active?`${label} — thinking…`:label}
 
 function applyEngineMove(uci){const from=uci.slice(0,2),to=uci.slice(2,4);const promoLetter=uci.length>4?uci[4].toUpperCase():null;const square=keySquareMapper[from];if(!square||!square.piece)return;const piece=square.piece;moveElement(piece,to);if(promoLetter){const color=piece.piece_name.includes("WHITE")?"white":"black";const targetEl=document.getElementById(to);const box=targetEl&&targetEl.querySelector(".promotionBox");const fnMap={Q:color==="white"?whiteQueen:blackQueen,R:color==="white"?whiteRook:blackRook,B:color==="white"?whiteBishop:blackBishop,N:color==="white"?whiteKnight:blackKnight};const fn=fnMap[promoLetter]||fnMap.Q;callbackPawnPromotion(fn,to);if(box)box.remove()}
 updateGrabCursors()}
 
-async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();const url=`${STOCKFISH_API_URL}?fen=${encodeURIComponent(fen)}&depth=${ENGINE_DEPTH}`;const res=await fetch(url);const data=await res.json();if(!data||!data.success)throw new Error((data&&data.data)||"Stockfish API error");const match=/bestmove\s+(\S+)/.exec(data.bestmove||"");const uciMove=match?match[1]:null;if(!uciMove)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(uciMove)}catch(err){console.error("Stockfish move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
+async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();const{bestMoveUci}=await localEngine.analyze(fen,ENGINE_DEPTH);if(!bestMoveUci)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(bestMoveUci)}catch(err){console.error("Stockfish move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
 
 function maybeTriggerEngineMove(){if(suppressEngineAutoMove)return;if(gameOver)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn===engineColor)setTimeout(requestEngineMove,300)}
 
@@ -300,5 +349,54 @@ renderPlayerBars=function(){_origRenderPlayerBarsForEngine();maybeTriggerEngineM
 const _origUndoMoveForEngine=undoMove;
 undoMove=function(){suppressEngineAutoMove=!0;_origUndoMoveForEngine();if(playerColor&&inTurn!==playerColor&&moveHistory.length>0&&!gameOver){_origUndoMoveForEngine()}
 suppressEngineAutoMove=!1;maybeTriggerEngineMove()};
+
+/* ===================== Game Review (local Stockfish engine) ===================== */
+const REVIEW_DEPTH=12;
+
+/* FEN generation now handled by buildFENUpTo() via chess.js replay, defined above with buildFEN() */
+
+async function evaluatePosition(fen){
+  try{
+    const{bestMoveUci,evalCp,mate}=await localEngine.analyze(fen,REVIEW_DEPTH);
+    return{eval:evalCp!==null?evalCp/100:null,mate:mate!==null?mate:0,move:bestMoveUci||""};
+  }catch(err){console.error("Local Stockfish evaluation failed:",err);return null}
+}
+
+function formatEval(data){if(!data)return"N/A";if(typeof data.mate==="number"&&data.mate!==0)return`M${data.mate}`;if(typeof data.eval==="number")return(data.eval>0?"+":"")+data.eval.toFixed(2);return"—"}
+
+function formatBestMove(data){if(!data)return"";return data.san||data.text||data.move||(data.from&&data.to?`${data.from}${data.to}`:"")}
+
+let reviewActive=!1;let reviewRowEls=null;
+
+function syncReviewPanelSelection(){if(!reviewActive||!reviewRowEls)return;const idx=viewingIndex+1;renderReviewSelection(reviewRowEls,idx)}
+
+function openGameReview(){stopPlayback();const panel=document.getElementById("reviewPanel");const listEl=document.getElementById("reviewMoveList");if(!panel||!listEl)return;reviewActive=!0;const evalWrap=document.getElementById("evalBarWrap");if(evalWrap)evalWrap.classList.add("evalBarVisible");panel.classList.add("reviewPanelOpen");listEl.innerHTML="";
+const positions=[{label:"Start",index:-1,state:startFullState}];moveHistory.forEach((m,i)=>positions.push({label:m.san,index:i,state:m.fullState,moveNumber:m.moveNumber,color:m.color}));
+const rowEls=[];positions.forEach((pos,i)=>{const item=document.createElement("div");item.classList.add("reviewMoveItem");const labelSpan=document.createElement("span");labelSpan.textContent=pos.index===-1?"Start position":`${pos.color === "white" ? `${pos.moveNumber}.` : `${pos.moveNumber}...`} ${pos.label}`;const evalSpan=document.createElement("span");evalSpan.classList.add("reviewMoveEval");evalSpan.textContent="…";item.append(labelSpan,evalSpan);item.onclick=()=>{goToMove(pos.index)};listEl.appendChild(item);rowEls.push({el:item,evalSpan,pos})});
+reviewRowEls=rowEls;
+goToMove(-1);
+(async()=>{for(let i=0;i<rowEls.length;i++){if(!reviewActive)return;const{pos,evalSpan}=rowEls[i];const data=await evaluatePosition(buildFENUpTo(pos.index));if(!reviewActive)return;pos.evalData=data;evalSpan.textContent=formatEval(data)}})()}
+
+function closeGameReview(){reviewActive=!1;reviewRowEls=null;const panel=document.getElementById("reviewPanel");if(panel)panel.classList.remove("reviewPanelOpen");const evalWrap=document.getElementById("evalBarWrap");if(evalWrap)evalWrap.classList.remove("evalBarVisible")}
+
+function renderReviewSelection(rowEls,activeIdx){rowEls.forEach((r,i)=>r.el.classList.toggle("reviewMoveActive",i===activeIdx));const active=rowEls[activeIdx];if(!active)return;const container=active.el.parentElement;if(!container)return;const rTop=active.el.offsetTop,rBottom=rTop+active.el.offsetHeight;if(rTop<container.scrollTop)container.scrollTop=rTop;else if(rBottom>container.scrollTop+container.clientHeight)container.scrollTop=rBottom-container.clientHeight}
+
+/* ===================== Live Evaluation Bar ===================== */
+let evalRequestToken=0;let evalDebounceTimer=null;
+
+function evalToWhitePercent(data){if(!data)return 50;if(typeof data.mate==="number"&&data.mate!==0)return data.mate>0?97:3;if(typeof data.eval==="number"){const e=Math.max(-10,Math.min(10,data.eval));const pct=50+50*(2/(1+Math.exp(-0.55*e))-1);return Math.max(3,Math.min(97,pct))}
+return 50}
+
+function renderEvalBar(data){const fill=document.getElementById("evalBarFill");const label=document.getElementById("evalBarScore");if(!fill)return;let pct=evalToWhitePercent(data);if(typeof boardFlipped!=="undefined"&&boardFlipped)pct=100-pct;fill.style.height=pct+"%";if(label){label.textContent=formatEval(data);label.classList.toggle("evalBarScoreDark",pct<50)}}
+
+async function updateEvalBar(){const token=++evalRequestToken;const fen=buildFEN();const data=await evaluatePosition(fen);if(token!==evalRequestToken)return;renderEvalBar(data)}
+
+function scheduleEvalUpdate(){if(!reviewActive)return;if(evalDebounceTimer)clearTimeout(evalDebounceTimer);evalDebounceTimer=setTimeout(updateEvalBar,150)}
+
+const _origRenderPlayerBarsForEval=renderPlayerBars;
+renderPlayerBars=function(){_origRenderPlayerBarsForEval();scheduleEvalUpdate()};
+
+const _origFlipBoardForEval=flipBoard;
+flipBoard=function(){_origFlipBoardForEval();scheduleEvalUpdate()};
 
 wrapBoardWithNav();initGameRender(globalState);rebuildPieceRegistry();GlobalEvent();buildBottomNav();updateCoordLabels();showColorPicker();updateGrabCursors();renderPlayerBars();
