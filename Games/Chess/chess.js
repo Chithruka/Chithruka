@@ -337,7 +337,9 @@ Object.keys(BOARD_THEMES).forEach((key)=>{const theme=BOARD_THEMES[key];const sw
 const label=document.createElement("span");label.textContent=theme.label;swatch.append(preview,label);swatch.onclick=()=>{currentBoardTheme=key;try{localStorage.setItem("chessBoardTheme",key)}catch(e){}boardGrid.querySelectorAll(".themeSwatch").forEach((s)=>s.classList.remove("themeSwatchActive"));swatch.classList.add("themeSwatchActive");applyBoardTheme()};boardGrid.appendChild(swatch)});
 box.append(closeBtn,title,pieceLabel,pieceGrid,boardLabel,boardGrid);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","optionsModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();modal.show()}
 
-function buildBottomNav(){if(typeof reviewActive!=="undefined")reviewActive=!1;if(typeof reviewRowEls!=="undefined")reviewRowEls=null;const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.add("evalBarVisible");startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button><button class="navBtn" id="reviewGameBtn"><span class="navIcon">&#128269;</span><span>Review</span></button></div><div class="reviewPanel" id="reviewPanel"><div class="reviewPanelHeader"><span>Game Review</span><button class="reviewCloseBtn" id="reviewCloseBtn" aria-label="Close review">&times;</button></div><div class="reviewMoveList" id="reviewMoveList"></div></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();document.getElementById("reviewGameBtn").onclick=()=>openGameReview();document.getElementById("reviewCloseBtn").onclick=()=>closeGameReview();renderMoveList();updateUndoButtonState()}
+function buildBottomNav(){if(typeof reviewActive!=="undefined")reviewActive=!1;if(typeof reviewRowEls!=="undefined")reviewRowEls=null;const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.add("evalBarVisible");startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button><button class="navBtn" id="reviewGameBtn"><span class="navIcon">&#128269;</span><span>Review</span></button></div><div class="reviewPanel" id="reviewPanel"><div class="reviewPanelHeader"><span>Game Review</span><button class="reviewCloseBtn" id="reviewCloseBtn" aria-label="Close review">&times;</button></div><div class="reviewMoveList" id="reviewMoveList"></div></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{if(gameOver)return;stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();document.getElementById("reviewGameBtn").onclick=()=>openGameReview();document.getElementById("reviewCloseBtn").onclick=()=>closeGameReview();renderMoveList();updateUndoButtonState();updateResignButtonState()}
+
+function updateResignButtonState(){const btn=document.getElementById("resignBtn");if(!btn)return;btn.disabled=gameOver;btn.classList.toggle("navBtnDisabled",gameOver)}
 function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="0";slider.max=String(ENGINE_LEVELS.length-1);slider.step="1";slider.value=String(ENGINE_LEVELS.indexOf(ENGINE_DEPTH));slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=ENGINE_LEVELS[Number(slider.value)];document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();SoundFX.playStart();renderPlayerBars()}
 whiteBtn.onclick=()=>choose("white");blackBtn.onclick=()=>choose("black")}
 
@@ -740,21 +742,80 @@ function tryClassifyAround(index){
   [index,index+1].forEach((i)=>{if(i>=0&&i<moveHistory.length&&!moveHistory[i].quality){try{if(computeMoveQuality(i))refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}}})}
 
 /* ===================== On-board move-quality badges (review mode) ===================== */
-// Places the quality badge on the square of the piece that just moved, like chess.com does during
-// review — not just on kings after checkmate. Only ever shown while reviewActive.
+// Places the quality badge + a colored tint on the square of the piece that just moved, like
+// chess.com does during review — not just on kings after checkmate. Also draws a green arrow to
+// the engine's preferred move when the player didn't play it. Only ever shown while reviewActive.
 function clearBoardQualityBadges(){document.querySelectorAll(".boardQualityBadge").forEach((el)=>el.remove())}
+function clearQualitySquareTint(){document.querySelectorAll(".qualitySquareTint").forEach((el)=>el.remove())}
+function clearReviewArrow(){const svg=document.getElementById("reviewArrowOverlay");if(svg)svg.remove()}
+
+function hexToRgba(hex,alpha){const h=(hex||"").replace("#","");if(h.length<6)return`rgba(0,0,0,${alpha})`;const r=parseInt(h.substring(0,2),16),g=parseInt(h.substring(2,4),16),b=parseInt(h.substring(4,6),16);return`rgba(${r},${g},${b},${alpha})`}
+
+// Draws a chess.com-style arrow from square `fromId` to square `toId` on top of the board. Knight
+// moves get a two-segment elbow; everything else is a single straight segment. The arrowhead is a
+// hand-built polygon (not an SVG marker) so its size stays proportional to the board at any zoom.
+function drawReviewArrow(fromId,toId){
+  const fromSq=document.getElementById(fromId),toSq=document.getElementById(toId);
+  if(!fromSq||!toSq)return;
+  const rootRect=ROOT_DIV.getBoundingClientRect();
+  const fromRect=fromSq.getBoundingClientRect(),toRect=toSq.getBoundingClientRect();
+  const x1=fromRect.left-rootRect.left+fromRect.width/2,y1=fromRect.top-rootRect.top+fromRect.height/2;
+  const x2=toRect.left-rootRect.left+toRect.width/2,y2=toRect.top-rootRect.top+toRect.height/2;
+  const sqSize=fromRect.width;
+  const fileFrom=fromId.charCodeAt(0),rankFrom=parseInt(fromId[1],10);
+  const fileTo=toId.charCodeAt(0),rankTo=parseInt(toId[1],10);
+  const fileDiff=Math.abs(fileTo-fileFrom),rankDiff=Math.abs(rankTo-rankFrom);
+  const isStraightOrDiagonal=fileDiff===0||rankDiff===0||fileDiff===rankDiff;
+  let pts;
+  if(isStraightOrDiagonal){
+    pts=[{x:x1,y:y1},{x:x2,y:y2}]}
+  else{
+    // Elbow bend: travel along whichever axis has the larger delta first, like a knight's path.
+    const bx=fileDiff>rankDiff?x2:x1,by=fileDiff>rankDiff?y1:y2;
+    pts=[{x:x1,y:y1},{x:bx,y:by},{x:x2,y:y2}]}
+  const strokeW=Math.max(8,sqSize*0.2);
+  const headLen=Math.max(16,sqSize*0.38);
+  const headWidth=Math.max(20,sqSize*0.55);
+  // Small gap so the line doesn't start dead-center under the piece.
+  const startGap=sqSize*0.06;
+  const d0x=pts[1].x-pts[0].x,d0y=pts[1].y-pts[0].y;const d0=Math.hypot(d0x,d0y)||1;
+  pts[0]={x:pts[0].x+d0x/d0*startGap,y:pts[0].y+d0y/d0*startGap};
+  // Trim the final segment back by the arrowhead length, then build the arrowhead as its own triangle.
+  const tip={x:pts[pts.length-1].x,y:pts[pts.length-1].y};
+  const prev=pts[pts.length-2];
+  const dLx=tip.x-prev.x,dLy=tip.y-prev.y;const dL=Math.hypot(dLx,dLy)||1;
+  const ux=dLx/dL,uy=dLy/dL;
+  const baseX=tip.x-ux*headLen,baseY=tip.y-uy*headLen;
+  pts[pts.length-1]={x:baseX,y:baseY};
+  const perpX=-uy,perpY=ux;
+  const leftX=baseX+perpX*headWidth/2,leftY=baseY+perpY*headWidth/2;
+  const rightX=baseX-perpX*headWidth/2,rightY=baseY-perpY*headWidth/2;
+  const pathD=pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+  const arrowColor="#a3c94f";
+  const svgNS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(svgNS,"svg");svg.id="reviewArrowOverlay";
+  svg.setAttribute("width",ROOT_DIV.clientWidth);svg.setAttribute("height",ROOT_DIV.clientHeight);
+  svg.innerHTML=`<path d="${pathD}" fill="none" stroke="${arrowColor}" stroke-width="${strokeW}" stroke-linecap="butt" stroke-linejoin="round" opacity="0.85"></path><polygon points="${tip.x},${tip.y} ${leftX},${leftY} ${rightX},${rightY}" fill="${arrowColor}" opacity="0.85"></polygon>`;
+  ROOT_DIV.appendChild(svg)}
 
 function renderBoardQualityBadge(index){
-  clearBoardQualityBadges();
+  clearBoardQualityBadges();clearQualitySquareTint();clearReviewArrow();
   if(!reviewActive)return;
   if(index==null||index<0)return;
   const mv=moveHistory[index];if(!mv||!mv.quality)return;
-  if(mv.checkmate)return; // checkmate already gets its own win/loss badge on the king
-  const sq=document.getElementById(mv.to);if(!sq)return;
-  const badge=document.createElement("div");
-  badge.classList.add("boardQualityBadge");
-  badge.innerHTML=moveQualityBadgeSvg(mv.quality.key);
-  sq.appendChild(badge)}
+  const q=MOVE_QUALITY[mv.quality.key];
+  const sq=document.getElementById(mv.to);
+  if(sq){
+    const tint=document.createElement("div");tint.classList.add("qualitySquareTint");tint.style.backgroundColor=hexToRgba(q.color,0.55);sq.appendChild(tint)}
+  if(!mv.checkmate&&sq){
+    const badge=document.createElement("div");
+    badge.classList.add("boardQualityBadge");
+    badge.innerHTML=moveQualityBadgeSvg(mv.quality.key);
+    sq.appendChild(badge)}
+  // If the player didn't play the engine's top choice, point an arrow at what it preferred.
+  if(!mv.quality.wasBestMove){
+    const before=evalCache[index-1];
+    if(before&&before.move&&before.move.length>=4)drawReviewArrow(before.move.slice(0,2),before.move.slice(2,4))}}
 
 /* ===================== Review Callout (chess.com-style "X is a great move" card) ===================== */
 function renderReviewCallout(index){
@@ -792,7 +853,7 @@ const _origGoToMoveForQuality=goToMove;
 goToMove=function(index,silent){_origGoToMoveForQuality(index,silent);if(reviewActive){try{renderReviewCallout(index);renderBoardQualityBadge(index)}catch(err){console.error("Review callout render failed:",err)}}};
 
 const _origCloseGameReviewForQuality=closeGameReview;
-closeGameReview=function(){_origCloseGameReviewForQuality();const box=document.getElementById("reviewCallout");if(box)box.style.display="none";clearBoardQualityBadges()};
+closeGameReview=function(){_origCloseGameReviewForQuality();const box=document.getElementById("reviewCallout");if(box)box.style.display="none";clearBoardQualityBadges();clearQualitySquareTint();clearReviewArrow()};
 
 const _origBuildBottomNavForReview=buildBottomNav;
 buildBottomNav=function(){_origBuildBottomNavForReview();
@@ -803,3 +864,9 @@ buildBottomNav=function(){_origBuildBottomNavForReview();
 
 applyBoardTheme();wrapBoardWithNav();initGameRender(globalState);rebuildPieceRegistry();GlobalEvent();buildBottomNav();updateCoordLabels();showColorPicker();updateGrabCursors();renderPlayerBars();
 resetEvalCache();
+
+const _origShowEndModalForResign=showEndModal;
+showEndModal=function(message){_origShowEndModalForResign(message);updateResignButtonState()};
+
+const _origResetGameForResign=resetGame;
+resetGame=function(){_origResetGameForResign();updateResignButtonState()};

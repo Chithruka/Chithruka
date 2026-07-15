@@ -3,7 +3,7 @@
 html,body{height:100%}
 body{background-color:#302e2b;margin:0;overflow-y:auto;overflow-x:hidden;display:flex;align-items:center;justify-content:center}
 #gameWrap{display:flex;flex-direction:column;align-items:center;margin:auto;max-width:100vw}
-#root{display:flex;flex-direction:column;width:fit-content}#bottomNav{width:calc(var(--square-size)*8);display:flex;flex-direction:column;margin-top:10px;font-family:sans-serif;user-select:none}
+#root{display:flex;flex-direction:column;width:fit-content;position:relative}#bottomNav{width:calc(var(--square-size)*8);display:flex;flex-direction:column;margin-top:10px;font-family:sans-serif;user-select:none}
 @media (min-width:900px) and (min-aspect-ratio:1/1){
   :root{--square-size:min(9vw, calc((100vh - 110px) / 8), 75px)}
   #gameWrap{flex-direction:row;align-items:flex-start;justify-content:center;gap:24px}
@@ -53,3 +53,5 @@ body.grabbing, body.grabbing * {cursor: -webkit-grabbing !important; cursor: gra
 .calloutBestMove{color:#b7b5b2;font-size:13px}
 .calloutBestMove strong{color:#e6e5e2}
 .boardQualityBadge{position:absolute;top:-6px;right:-6px;width:22px;height:22px;z-index:10;filter:drop-shadow(0 2px 4px rgb(0 0 0 / .5));pointer-events:none}
+.qualitySquareTint{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+#reviewArrowOverlay{position:absolute;top:0;left:0;pointer-events:none;z-index:15}
