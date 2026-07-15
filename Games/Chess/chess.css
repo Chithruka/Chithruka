@@ -50,3 +50,6 @@ body.grabbing, body.grabbing * {cursor: -webkit-grabbing !important; cursor: gra
 .calloutShowMovesBtn{align-self:flex-start;display:flex;align-items:center;gap:6px;background-color:#3a3835;color:#e6e5e2;border:none;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
 .calloutShowMovesBtn:hover{background-color:#4a4845}
 .calloutBoardIcon{font-size:15px;line-height:1}
+.calloutBestMove{color:#b7b5b2;font-size:13px}
+.calloutBestMove strong{color:#e6e5e2}
+.boardQualityBadge{position:absolute;top:-6px;right:-6px;width:22px;height:22px;z-index:10;filter:drop-shadow(0 2px 4px rgb(0 0 0 / .5));pointer-events:none}

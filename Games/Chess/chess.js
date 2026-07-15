@@ -309,7 +309,9 @@ function startPlayback(){if(moveHistory.length===0)return;if(viewingIndex>=moveH
 
 function togglePlayback(){if(isPlaying)stopPlayback();else startPlayback()}
 
-function renderMoveList(){const scrollEl=document.getElementById("moveListScroll");if(!scrollEl)return;scrollEl.innerHTML="";for(let i=0;i<moveHistory.length;i+=2){const pairEl=document.createElement("span");pairEl.classList.add("movePair");const num=document.createElement("span");num.classList.add("moveNum");num.textContent=`${moveHistory[i].moveNumber}.`;pairEl.appendChild(num);const whiteSpan=document.createElement("span");whiteSpan.classList.add("moveSan");whiteSpan.textContent=moveHistory[i].san;if(i===viewingIndex)whiteSpan.classList.add("activeMove");whiteSpan.onclick=()=>{stopPlayback();goToMove(i)};pairEl.appendChild(whiteSpan);if(moveHistory[i+1]){const blackSpan=document.createElement("span");blackSpan.classList.add("moveSan");blackSpan.textContent=moveHistory[i+1].san;if(i+1===viewingIndex)blackSpan.classList.add("activeMove");blackSpan.onclick=()=>{stopPlayback();goToMove(i+1)};pairEl.appendChild(blackSpan)}
+function renderMoveList(){const scrollEl=document.getElementById("moveListScroll");if(!scrollEl)return;scrollEl.innerHTML="";for(let i=0;i<moveHistory.length;i+=2){const pairEl=document.createElement("span");pairEl.classList.add("movePair");const num=document.createElement("span");num.classList.add("moveNum");num.textContent=`${moveHistory[i].moveNumber}.`;pairEl.appendChild(num);const whiteSpan=document.createElement("span");whiteSpan.classList.add("moveSan");whiteSpan.dataset.moveIndex=i;if(moveHistory[i].quality){const b=makeQualityBadgeEl(moveHistory[i].quality.key,14);if(b)whiteSpan.appendChild(b)}
+whiteSpan.appendChild(document.createTextNode(moveHistory[i].san));if(i===viewingIndex)whiteSpan.classList.add("activeMove");whiteSpan.onclick=()=>{stopPlayback();goToMove(i)};pairEl.appendChild(whiteSpan);if(moveHistory[i+1]){const blackSpan=document.createElement("span");blackSpan.classList.add("moveSan");blackSpan.dataset.moveIndex=i+1;if(moveHistory[i+1].quality){const b=makeQualityBadgeEl(moveHistory[i+1].quality.key,14);if(b)blackSpan.appendChild(b)}
+blackSpan.appendChild(document.createTextNode(moveHistory[i+1].san));if(i+1===viewingIndex)blackSpan.classList.add("activeMove");blackSpan.onclick=()=>{stopPlayback();goToMove(i+1)};pairEl.appendChild(blackSpan)}
 scrollEl.appendChild(pairEl)}
 requestAnimationFrame(()=>{const active=scrollEl.querySelector(".activeMove");if(active){const target=active.offsetLeft-scrollEl.clientWidth/2+active.offsetWidth/2;scrollEl.scrollLeft=Math.max(0,target)}});updateUndoButtonState()}
 
@@ -637,16 +639,16 @@ miss:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox
 };
 
 const MOVE_QUALITY={
-  brilliant:{label:"Brilliant",color:"#26c2a3"},
-  great:{label:"Great Find",color:"#749bbf"},
-  book:{label:"Book",color:"#d5a47d"},
-  best:{label:"Best Move",color:"#81b64c"},
-  excellent:{label:"Excellent",color:"#81b64c"},
-  good:{label:"Good Move",color:"#95b776"},
-  inaccuracy:{label:"Inaccuracy",color:"#f7c631"},
-  mistake:{label:"Mistake",color:"#ffa459"},
-  blunder:{label:"Blunder",color:"#fa412d"},
-  miss:{label:"Miss",color:"#ff7769"}
+  brilliant:{label:"Brilliant",color:"#26c2a3",phrase:"a brilliant move"},
+  great:{label:"Great Find",color:"#749bbf",phrase:"a great find"},
+  book:{label:"Book",color:"#d5a47d",phrase:"a book move"},
+  best:{label:"Best Move",color:"#81b64c",phrase:"the best move"},
+  excellent:{label:"Excellent",color:"#81b64c",phrase:"an excellent move"},
+  good:{label:"Good Move",color:"#95b776",phrase:"a good move"},
+  inaccuracy:{label:"Inaccuracy",color:"#f7c631",phrase:"an inaccuracy"},
+  mistake:{label:"Mistake",color:"#ffa459",phrase:"a mistake"},
+  blunder:{label:"Blunder",color:"#fa412d",phrase:"a blunder"},
+  miss:{label:"Miss",color:"#ff7769",phrase:"a miss"}
 };
 
 function moveQualityBadgeSvg(key){return QUALITY_SVGS[key]||""}
@@ -708,23 +710,53 @@ function computeMoveQuality(index){
   mv.quality=quality;
   return quality}
 
+// Converts a UCI move (e.g. "e2e4") into SAN (e.g. "e4") as played from the position right
+// before moveHistory[index]. Used to show what the engine actually preferred, in readable form.
+function uciToSanAt(index,uci){
+  if(!uci||uci.length<4)return null;
+  try{
+    const fen=buildFENUpTo(index-1);
+    const game=new Chess(fen);
+    const moveObj={from:uci.slice(0,2),to:uci.slice(2,4)};
+    if(uci.length>4)moveObj.promotion=uci.slice(4).toLowerCase();
+    const result=game.move(moveObj);
+    return result?result.san:null;
+  }catch(e){return null}
+}
+
 function refreshMoveQualityUI(index){
   const mv=moveHistory[index];if(!mv||!mv.quality)return;
-  document.querySelectorAll(`.moveSan[data-move-index="${index}"] .qualityBadge`).forEach((el)=>el.remove());
-  document.querySelectorAll(`.moveSan[data-move-index="${index}"]`).forEach((el)=>{const badge=makeQualityBadgeEl(mv.quality.key,14);if(badge)el.prepend(badge)});
+  renderMoveList();
   if(reviewRowEls&&reviewRowEls[index+1]){
     const row=reviewRowEls[index+1];
     row.el.querySelectorAll(".qualityBadge").forEach((el)=>el.remove());
     const badge=makeQualityBadgeEl(mv.quality.key,18);
     if(badge)row.labelSpan.prepend(badge)}
-  if(reviewActive&&viewingIndex===index)renderReviewCallout(index)}
+  if(reviewActive&&viewingIndex===index){renderReviewCallout(index);renderBoardQualityBadge(index)}}
 
 // Tries to classify moves `index` and `index+1` (the two moves whose quality depends on the eval that
 // was just cached) — called every time a new position finishes being analyzed.
 function tryClassifyAround(index){
-  [index,index+1].forEach((i)=>{if(i>=0&&i<moveHistory.length&&!moveHistory[i].quality){if(computeMoveQuality(i))refreshMoveQualityUI(i)}})}
+  [index,index+1].forEach((i)=>{if(i>=0&&i<moveHistory.length&&!moveHistory[i].quality){try{if(computeMoveQuality(i))refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}}})}
 
-/* ===================== Review Callout (chess.com-style "X is Brilliant" card) ===================== */
+/* ===================== On-board move-quality badges (review mode) ===================== */
+// Places the quality badge on the square of the piece that just moved, like chess.com does during
+// review — not just on kings after checkmate. Only ever shown while reviewActive.
+function clearBoardQualityBadges(){document.querySelectorAll(".boardQualityBadge").forEach((el)=>el.remove())}
+
+function renderBoardQualityBadge(index){
+  clearBoardQualityBadges();
+  if(!reviewActive)return;
+  if(index==null||index<0)return;
+  const mv=moveHistory[index];if(!mv||!mv.quality)return;
+  if(mv.checkmate)return; // checkmate already gets its own win/loss badge on the king
+  const sq=document.getElementById(mv.to);if(!sq)return;
+  const badge=document.createElement("div");
+  badge.classList.add("boardQualityBadge");
+  badge.innerHTML=moveQualityBadgeSvg(mv.quality.key);
+  sq.appendChild(badge)}
+
+/* ===================== Review Callout (chess.com-style "X is a great move" card) ===================== */
 function renderReviewCallout(index){
   const box=document.getElementById("reviewCallout");if(!box)return;
   if(index<0||!moveHistory[index]){box.style.display="none";return}
@@ -734,36 +766,33 @@ function renderReviewCallout(index){
   box.style.display="flex";
   const avatarUrl=mv.color==="white"?(playerColor==="white"?PLAYER_AVATAR_URL:ENGINE_LOGO_URL):(playerColor==="black"?PLAYER_AVATAR_URL:ENGINE_LOGO_URL);
   const evalData=evalCache[index];
+  // Only worth surfacing the engine's preferred move when the player didn't already play it.
+  let bestLine="";
+  if(!mv.quality.wasBestMove){
+    const before=evalCache[index-1];
+    const bestSan=before?uciToSanAt(index,before.move):null;
+    if(bestSan&&bestSan!==mv.san)bestLine=`<div class="calloutBestMove">Best was <strong>${bestSan}</strong></div>`}
   box.innerHTML=`<img class="calloutAvatar" src="${avatarUrl}" alt="">
   <div class="calloutBody">
-    <div class="calloutTitleRow"><span class="calloutBadge">${moveQualityBadgeSvg(mv.quality.key)}</span><span class="calloutTitle" style="color:${q.color}">${mv.san} is ${q.label.toLowerCase()}</span><span class="calloutEval">${formatEval(evalData)}</span></div>
-    <button class="calloutShowMovesBtn" id="calloutShowMovesBtn"><span class="calloutBoardIcon">&#9823;</span> Show Best Move</button>
-  </div>`;
-  const showBtn=document.getElementById("calloutShowMovesBtn");
-  if(showBtn){const before=evalCache[index-1];const bestSan=before&&before.move?before.move:null;
-    if(!bestSan)showBtn.style.display="none";
-    showBtn.onclick=()=>{showBtn.textContent=before&&before.move?`Engine liked: ${before.move}`:"No suggestion available"}}}
+    <div class="calloutTitleRow"><span class="calloutBadge">${moveQualityBadgeSvg(mv.quality.key)}</span><span class="calloutTitle" style="color:${q.color}">${mv.san} is ${q.phrase}</span><span class="calloutEval">${formatEval(evalData)}</span></div>
+    ${bestLine}
+  </div>`}
 
 /* ===================== Wiring: hook classification into the eval pipeline & review panel ===================== */
 const _origPrecomputeEvalForIndex=precomputeEvalForIndex;
 precomputeEvalForIndex=function(idx){
   return _origPrecomputeEvalForIndex(idx).then((data)=>{tryClassifyAround(idx);return data})};
 
-const _origRenderMoveListForQuality=renderMoveList;
-renderMoveList=function(){_origRenderMoveListForQuality();
-  document.querySelectorAll("#moveListScroll .moveSan").forEach((el,i)=>{el.dataset.moveIndex=i});
-  moveHistory.forEach((mv,i)=>{if(mv.quality)refreshMoveQualityUI(i)})};
-
 const _origOpenGameReview=openGameReview;
 openGameReview=function(){_origOpenGameReview();
-  moveHistory.forEach((mv,i)=>{if(!mv.quality)computeMoveQuality(i);if(mv.quality)refreshMoveQualityUI(i)});
-  renderReviewCallout(viewingIndex)};
+  moveHistory.forEach((mv,i)=>{try{if(!mv.quality)computeMoveQuality(i);if(mv.quality)refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}});
+  renderReviewCallout(viewingIndex);renderBoardQualityBadge(viewingIndex)};
 
 const _origGoToMoveForQuality=goToMove;
-goToMove=function(index,silent){_origGoToMoveForQuality(index,silent);if(reviewActive)renderReviewCallout(index)};
+goToMove=function(index,silent){_origGoToMoveForQuality(index,silent);if(reviewActive){try{renderReviewCallout(index);renderBoardQualityBadge(index)}catch(err){console.error("Review callout render failed:",err)}}};
 
 const _origCloseGameReviewForQuality=closeGameReview;
-closeGameReview=function(){_origCloseGameReviewForQuality();const box=document.getElementById("reviewCallout");if(box)box.style.display="none"};
+closeGameReview=function(){_origCloseGameReviewForQuality();const box=document.getElementById("reviewCallout");if(box)box.style.display="none";clearBoardQualityBadges()};
 
 const _origBuildBottomNavForReview=buildBottomNav;
 buildBottomNav=function(){_origBuildBottomNavForReview();
