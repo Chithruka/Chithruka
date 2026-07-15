@@ -171,8 +171,11 @@ function captureInTurn(square){const piece=square.piece;if(piece==selfHighlightS
 if(square.captureHighlight&&selfHighlightState){moveElement(selfHighlightState,piece.current_position);clearPreviousSelfHighlight(selfHighlightState);clearHighlightLocal()}}
 function checkForPawnPromotion(piece,id){if(!piece?.piece_name?.toLowerCase()?.includes("pawn"))return!1;return inTurn==="white"?id?.includes("8"):id?.includes("1")}
 function callbackPawnPromotion(pieceFn,id){const realPiece=pieceFn(id);const oldPawn=keySquareMapper[id].piece;keySquareMapper[id].piece=realPiece;realPiece.current_position=id;const[colorPart,typePart]=realPiece.piece_name.toLowerCase().split("_");const pawns=globalPiece[`${colorPart}_pawns`];if(pawns&&oldPawn){const idx=pawns.indexOf(oldPawn);if(idx!==-1)pawns.splice(idx,1);}
-let slot=`${colorPart}_${typePart}`;if(globalPiece[slot])slot=`${colorPart}_${typePart}_promoted_${Date.now()}`;globalPiece[slot]=realPiece;const img=document.createElement("img");img.src=realPiece.img;img.dataset.pieceName=realPiece.piece_name;img.dataset.pieceUid=realPiece.uid;img.classList.add("piece");const el=document.getElementById(id);const oldImg=el.querySelector("img.piece");if(oldImg)el.removeChild(oldImg);el.append(img)}
-function moveElement(piece,id,castle){const pawnIsPromoted=checkForPawnPromotion(piece,id);const fromPos=piece.current_position;const isPawn=piece.piece_name.toLowerCase().includes("pawn");let enPassantCaptureSquare=null;if(isPawn&&enPassant&&id===enPassant.square&&!piece.piece_name.includes(enPassant.pawn.piece_name.split("_")[0])){enPassantCaptureSquare=enPassant.pawn.current_position}
+let slot=`${colorPart}_${typePart}`;if(globalPiece[slot])slot=`${colorPart}_${typePart}_promoted_${Date.now()}`;globalPiece[slot]=realPiece;if(typeof registerPiece==="function")registerPiece(realPiece);const img=document.createElement("img");img.src=realPiece.img;img.dataset.pieceName=realPiece.piece_name;img.dataset.pieceUid=realPiece.uid;img.classList.add("piece");const el=document.getElementById(id);const oldImg=el.querySelector("img.piece");if(oldImg)el.removeChild(oldImg);el.append(img)}
+let pendingPromotionResolvers=null;
+function finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture){checkForCheck();if(!castle){const isCastleMove=piece.piece_name.includes("KING")&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;changeTurn();if(isCheckmate(inTurn)){gameOver=!0;SoundFX.playCheckmate();showCheckmateAnimation(inTurn);showEndModal(`Checkmate! ${inTurn === "white" ? "Black" : "White"} wins`)}else if(isStalemate(inTurn)){gameOver=!0;SoundFX.playStalemate();showEndModal("Stalemate! It's a draw")}else if(whoInCheck){SoundFX.playCheck()}else if(isCastleMove){SoundFX.playCastle()}else if(wasCapture){SoundFX.playCapture()}else{SoundFX.playMove()}}}
+function autoPromotionFn(color,letter){const fnMap={Q:color==="white"?whiteQueen:blackQueen,R:color==="white"?whiteRook:blackRook,B:color==="white"?whiteBishop:blackBishop,N:color==="white"?whiteKnight:blackKnight};return fnMap[letter]||fnMap.Q}
+function moveElement(piece,id,castle,autoPromoteLetter){const pawnIsPromoted=checkForPawnPromotion(piece,id);const fromPos=piece.current_position;const isPawn=piece.piece_name.toLowerCase().includes("pawn");let enPassantCaptureSquare=null;if(isPawn&&enPassant&&id===enPassant.square&&!piece.piece_name.includes(enPassant.pawn.piece_name.split("_")[0])){enPassantCaptureSquare=enPassant.pawn.current_position}
 let wasCapture=!!enPassantCaptureSquare;
 if(piece.piece_name.includes("KING")||piece.piece_name.includes("ROOK")){piece.move=!0;if(piece.piece_name.includes("KING")&&piece.piece_name.includes("BLACK")&&fromPos==="e8"){if(id==="c8"||id==="g8"){const rook=keySquareMapper[id==="c8"?"a8":"h8"];if(rook&&rook.piece)moveElement(rook.piece,id==="c8"?"d8":"f8",!0)}}
 if(piece.piece_name.includes("KING")&&piece.piece_name.includes("WHITE")&&fromPos==="e1"){if(id==="c1"||id==="g1"){const rook=keySquareMapper[id==="c1"?"a1":"h1"];if(rook&&rook.piece)moveElement(rook.piece,id==="c1"?"d1":"f1",!0)}}}
@@ -180,7 +183,22 @@ globalState.flat().forEach((el)=>{if(el.id==piece.current_position)delete el.pie
 clearHightlight();const previousEl=document.getElementById(piece.current_position);piece.current_position=null;previousEl?.classList?.remove("highlightYellow");const currentEl=document.getElementById(id);const existingImg=currentEl.querySelector("img.piece");if(existingImg)wasCapture=!0;const movingImg=previousEl?previousEl.querySelector("img.piece"):null;if(movingImg){const oldRect=movingImg.getBoundingClientRect();if(existingImg){existingImg.classList.add("captureFade");const capImgToRemove=existingImg;setTimeout(()=>{capImgToRemove.remove()},220)}
 currentEl.appendChild(movingImg);const newRect=movingImg.getBoundingClientRect();const dx=oldRect.left-newRect.left;const dy=oldRect.top-newRect.top;movingImg.style.transition="none";movingImg.style.transform=`translate(${dx}px, ${dy}px)`;movingImg.style.zIndex="20";requestAnimationFrame(()=>{requestAnimationFrame(()=>{movingImg.style.transition="transform 0.22s cubic-bezier(.2,.7,.3,1)";movingImg.style.transform="translate(0px, 0px)"})});movingImg.addEventListener("transitionend",function handler(){movingImg.style.transition="";movingImg.style.zIndex="";movingImg.removeEventListener("transitionend",handler)})}else if(existingImg){existingImg.classList.add("captureFade");setTimeout(()=>{existingImg.remove()},220)}
 piece.current_position=id;if(isPawn&&fromPos&&Math.abs(Number(id[1])-Number(fromPos[1]))===2){const midRow=(Number(id[1])+Number(fromPos[1]))/2;enPassant={square:`${fromPos[0]}${midRow}`,pawn:piece}}else{enPassant=null}
-if(pawnIsPromoted)pawnPromotion(inTurn,callbackPawnPromotion,id);checkForCheck();if(!castle){const isCastleMove=piece.piece_name.includes("KING")&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;changeTurn();if(isCheckmate(inTurn)){gameOver=!0;SoundFX.playCheckmate();showCheckmateAnimation(inTurn);showEndModal(`Checkmate! ${inTurn === "white" ? "Black" : "White"} wins`)}else if(isStalemate(inTurn)){gameOver=!0;SoundFX.playStalemate();showEndModal("Stalemate! It's a draw")}else if(whoInCheck){SoundFX.playCheck()}else if(isCastleMove){SoundFX.playCastle()}else if(wasCapture){SoundFX.playCapture()}else{SoundFX.playMove()}}}
+if(pawnIsPromoted){
+  if(autoPromoteLetter){
+    const color=piece.piece_name.includes("WHITE")?"white":"black";
+    callbackPawnPromotion(autoPromotionFn(color,autoPromoteLetter),id);
+    finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture);
+  }else{
+    pendingPromotionResolvers=[()=>finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture)];
+    pawnPromotion(inTurn,function(fn,sqId){
+      callbackPawnPromotion(fn,sqId);
+      const resolvers=pendingPromotionResolvers;pendingPromotionResolvers=null;
+      if(resolvers)resolvers.forEach((r)=>r());
+    },id);
+  }
+}else{
+  finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture);
+}}
 function clearPreviousSelfHighlight(piece){if(piece){document.getElementById(piece.current_position).classList.remove("highlightYellow");selfHighlightState=null}}
 function clearHighlightLocal(){clearHightlight();hightlight_state=!1}
 function makePieceClick(color,getHighlightFn,isDirectional){return function(square){const piece=square.piece;if(piece==selfHighlightState){clearPreviousSelfHighlight(selfHighlightState);clearHighlightLocal();return}
@@ -197,7 +215,7 @@ function makeKingClick(color,rookKey1,rookKey2,emptySquares1,emptySquares2,castl
 if(square.captureHighlight&&selfHighlightState){moveElement(selfHighlightState,piece.current_position);clearPreviousSelfHighlight(selfHighlightState);clearHighlightLocal();return}
 clearPreviousSelfHighlight(selfHighlightState);clearHighlightLocal();selfHighlight(piece);hightlight_state=!0;selfHighlightState=piece;moveState=piece;const current_pos=piece.current_position;const rawIds=giveKingHighlightIds(current_pos);const dirs=Object.values(rawIds);let result=[];if(!piece.move&&!isKingInCheck(color)){const opponent=color==="white"?"black":"white";const attacked=attackedSquaresByColor(opponent);const rook1=globalPiece[rookKey1],rook2=globalPiece[rookKey2];if(!rook1.move&&emptySquares1.every(id=>!keySquareMapper[id].piece)&&!attacked.has(current_pos)&&emptySquares1.slice(-2).every(id=>!attacked.has(id)))result.push(castleTarget1);if(!rook2.move&&emptySquares2.every(id=>!keySquareMapper[id].piece)&&!attacked.has(current_pos)&&emptySquares2.every(id=>!attacked.has(id)))result.push(castleTarget2);}
 result.push(...dirs.map(arr=>checkSquareCaptureId(arr)).flat());result=result.filter(h=>!moveLeavesKingInCheck(piece,h));result.forEach(h=>{if(keySquareMapper[h])keySquareMapper[h].highlight=!0});dirs.forEach(arr=>{for(const element of arr){const pr=checkWeatherPieceExistsOrNot(element);if(pr&&pr.piece&&pr.piece.piece_name.toLowerCase().includes(color))break;if(checkPieceOfOpponentOnElementNoDom(element,color)){if(!moveLeavesKingInCheck(piece,element))checkPieceOfOpponentOnElement(element,color);break}}});globalStateRender()}}
-const whiteBishopClick=makePieceClick("white",giveBishopHighlightIds,!0);const blackBishopClick=makePieceClick("black",giveBishopHighlightIds,!0);const whiteRookClick=makePieceClick("white",giveRookHighlightIds,!0);const blackRookClick=makePieceClick("black",giveRookHighlightIds,!0);const whiteQueenClick=makePieceClick("white",giveQueenHighlightIds,!0);const blackQueenClick=makePieceClick("black",giveQueenHighlightIds,!0);const whiteKnightClick=makePieceClick("white",giveKnightHighlightIds,!1);const blackKnightClick=makePieceClick("black",giveKnightHighlightIds,!1);const whiteKingClick=makeKingClick("white","white_rook_1","white_rook_2",["b1","c1","d1"],["f1","g1"],"c1","g1");const blackKingClick=makeKingClick("black","black_rook_1","black_rook_2",["b8","c8","d8"],["f8","g8"],"c8","g8");function GlobalEvent(){ROOT_DIV.addEventListener("click",function(event){if(gameOver)return;if(typeof colorChosen!=="undefined"&&!colorChosen)return;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return;if(typeof playerColor!=="undefined"&&playerColor&&inTurn!==playerColor)return;if(typeof engineThinking!=="undefined"&&engineThinking)return;if(event.target.localName==="img"&&event.target.classList.contains("piece")){const clickId=event.target.parentNode.id;const square=keySquareMapper[clickId];if(!square||!square.piece)return;if((square.piece.piece_name.includes("WHITE")&&inTurn==="black")||(square.piece.piece_name.includes("BLACK")&&inTurn==="white")){captureInTurn(square);return}
+const whiteBishopClick=makePieceClick("white",giveBishopHighlightIds,!0);const blackBishopClick=makePieceClick("black",giveBishopHighlightIds,!0);const whiteRookClick=makePieceClick("white",giveRookHighlightIds,!0);const blackRookClick=makePieceClick("black",giveRookHighlightIds,!0);const whiteQueenClick=makePieceClick("white",giveQueenHighlightIds,!0);const blackQueenClick=makePieceClick("black",giveQueenHighlightIds,!0);const whiteKnightClick=makePieceClick("white",giveKnightHighlightIds,!1);const blackKnightClick=makePieceClick("black",giveKnightHighlightIds,!1);const whiteKingClick=makeKingClick("white","white_rook_1","white_rook_2",["b1","c1","d1"],["f1","g1"],"c1","g1");const blackKingClick=makeKingClick("black","black_rook_1","black_rook_2",["b8","c8","d8"],["f8","g8"],"c8","g8");function GlobalEvent(){ROOT_DIV.addEventListener("click",function(event){if(gameOver)return;if(typeof colorChosen!=="undefined"&&!colorChosen)return;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return;if(typeof playerColor!=="undefined"&&playerColor&&inTurn!==playerColor)return;if(typeof engineThinking!=="undefined"&&engineThinking)return;if(typeof pendingPromotionResolvers!=="undefined"&&pendingPromotionResolvers)return;if(event.target.localName==="img"&&event.target.classList.contains("piece")){const clickId=event.target.parentNode.id;const square=keySquareMapper[clickId];if(!square||!square.piece)return;if((square.piece.piece_name.includes("WHITE")&&inTurn==="black")||(square.piece.piece_name.includes("BLACK")&&inTurn==="white")){captureInTurn(square);return}
 const name=square.piece.piece_name;if(name==="WHITE_PAWN"&&inTurn==="white")whitePawnClick(square);else if(name==="BLACK_PAWN"&&inTurn==="black")blackPawnClick(square);else if(name==="WHITE_BISHOP"&&inTurn==="white")whiteBishopClick(square);else if(name==="BLACK_BISHOP"&&inTurn==="black")blackBishopClick(square);else if(name==="WHITE_ROOK"&&inTurn==="white")whiteRookClick(square);else if(name==="BLACK_ROOK"&&inTurn==="black")blackRookClick(square);else if(name==="WHITE_KNIGHT"&&inTurn==="white")whiteKnightClick(square);else if(name==="BLACK_KNIGHT"&&inTurn==="black")blackKnightClick(square);else if(name==="WHITE_QUEEN"&&inTurn==="white")whiteQueenClick(square);else if(name==="BLACK_QUEEN"&&inTurn==="black")blackQueenClick(square);else if(name==="WHITE_KING"&&inTurn==="white")whiteKingClick(square);else if(name==="BLACK_KING"&&inTurn==="black")blackKingClick(square);}else{const target=event.target;const isHighlightSpan=target.classList&&target.classList.contains("highlight");const squareDiv=target.classList&&target.classList.contains("square")?target:target.closest(".square");const hasHighlightChild=squareDiv?squareDiv.querySelector(":scope > span.highlight"):null;const isEmptyCaptureTarget=squareDiv&&squareDiv.classList.contains("captureColor")&&!squareDiv.querySelector("img.piece");if(isHighlightSpan||hasHighlightChild||isEmptyCaptureTarget){const id=isHighlightSpan?target.parentNode.id:squareDiv.id;clearPreviousSelfHighlight(selfHighlightState);moveElement(moveState,id);moveState=null}else{clearHighlightLocal();clearPreviousSelfHighlight(selfHighlightState)}}})}
 /* ===================== Bottom Nav / Move History ===================== */
 let moveHistory=[];let viewingIndex=-1;let boardFlipped=!1;let startSnapshot=[];let startFullState=null;let playerColor=null;let colorChosen=!1;let pieceByUid={};
@@ -234,17 +252,25 @@ img.style.transition="none";img.style.transform="none";img.style.opacity="1";img
 function restoreSnapshot(snapshot){finalizeInFlightPieceAnimations();const currentSnapshot=readDisplayedSnapshot();const currentByUid={};currentSnapshot.forEach((e)=>{currentByUid[e.uid]=e});const targetByUid={};snapshot.forEach((e)=>{targetByUid[String(e.uid)]=e});const allUids=new Set([...Object.keys(currentByUid),...Object.keys(targetByUid)]);const movePairs=[],toRemove=[],toAdd=[];allUids.forEach((uid)=>{const cur=currentByUid[uid];const tgt=targetByUid[uid];if(cur&&tgt){if(cur.id!==tgt.id)movePairs.push({from:cur.id,to:tgt.id})}else if(cur&&!tgt){toRemove.push({id:cur.id})}else if(!cur&&tgt){toAdd.push({name:tgt.piece_name,uid:tgt.uid,id:tgt.id})}});
 toRemove.forEach(({id})=>{const el=document.getElementById(id);const img=el&&el.querySelector("img.piece:not(.captureFade)");if(!img)return;img.classList.add("captureFade");setTimeout(()=>{if(img.isConnected&&img.classList.contains("captureFade"))img.remove()},220)});
 movePairs.forEach(({from,to})=>{const fromEl=document.getElementById(from);const img=fromEl&&fromEl.querySelector("img.piece:not(.captureFade)");if(!img)return;const oldRect=img.getBoundingClientRect();const toEl=document.getElementById(to);if(!toEl)return;toEl.querySelectorAll("img.piece").forEach((el)=>{if(el!==img&&!el.classList.contains("captureFade"))el.remove()});toEl.appendChild(img);const newRect=img.getBoundingClientRect();const dx=oldRect.left-newRect.left,dy=oldRect.top-newRect.top;img.style.transition="none";img.style.transform=`translate(${dx}px, ${dy}px)`;img.style.zIndex="20";requestAnimationFrame(()=>{requestAnimationFrame(()=>{img.style.transition="transform 0.22s cubic-bezier(.2,.7,.3,1)";img.style.transform="translate(0px, 0px)"})});img.addEventListener("transitionend",function handler(){img.style.transition="";img.style.zIndex="";img.removeEventListener("transitionend",handler)},{once:!0})});
-toAdd.forEach(({name,uid,id})=>{const el=document.getElementById(id);if(!el)return;el.querySelectorAll("img.piece").forEach((oldImg)=>{if(!oldImg.classList.contains("captureFade"))oldImg.remove()});const img=document.createElement("img");img.src=pieceImgSrc(name);img.dataset.pieceName=name;img.dataset.pieceUid=uid;img.classList.add("piece");img.style.opacity="0";el.appendChild(img);requestAnimationFrame(()=>{requestAnimationFrame(()=>{img.style.transition="opacity 0.22s ease";img.style.opacity="1"})});img.addEventListener("transitionend",function handler(){img.style.transition="";img.style.opacity="";img.removeEventListener("transitionend",handler)},{once:!0})})}
+toAdd.forEach(({name,uid,id})=>{const el=document.getElementById(id);if(!el)return;el.querySelectorAll("img.piece").forEach((oldImg)=>{if(!oldImg.classList.contains("captureFade"))oldImg.remove()});const img=document.createElement("img");img.src=pieceImgSrc(name);img.dataset.pieceName=name;img.dataset.pieceUid=uid;img.classList.add("piece");img.style.opacity="0";el.appendChild(img);requestAnimationFrame(()=>{requestAnimationFrame(()=>{img.style.transition="opacity 0.22s ease";img.style.opacity="1"})});img.addEventListener("transitionend",function handler(){img.style.transition="";img.style.opacity="";img.removeEventListener("transitionend",handler)},{once:!0})});
+correctBoardAgainstSnapshot(snapshot)}
+
+function correctBoardAgainstSnapshot(snapshot){const nonEmptyIds=new Set();snapshot.forEach((e)=>nonEmptyIds.add(e.id));
+snapshot.forEach(({id,uid,piece_name})=>{const el=document.getElementById(id);if(!el)return;const imgs=Array.from(el.querySelectorAll("img.piece:not(.captureFade)"));const match=imgs.find((im)=>String(im.dataset.pieceUid)===String(uid));if(match){imgs.forEach((im)=>{if(im!==match)im.remove()});return}
+imgs.forEach((im)=>im.remove());const img=document.createElement("img");img.src=pieceImgSrc(piece_name);img.dataset.pieceName=piece_name;img.dataset.pieceUid=uid;img.classList.add("piece");el.appendChild(img)});
+globalState.flat().forEach((sq)=>{if(nonEmptyIds.has(sq.id))return;const el=document.getElementById(sq.id);if(!el)return;el.querySelectorAll("img.piece:not(.captureFade)").forEach((im)=>im.remove())})}
 
 const _origMoveElement=moveElement;
-moveElement=function(piece,id,castle){const fromPos=piece.current_position;const pieceName=piece.piece_name;const isKing=pieceName.includes("KING");const isPawn=pieceName.includes("PAWN");const color=pieceName.includes("WHITE")?"white":"black";const targetHadPiece=!!(keySquareMapper[id]&&keySquareMapper[id].piece);const isEnPassant=isPawn&&enPassant&&id===enPassant.square&&!targetHadPiece;const capture=targetHadPiece||isEnPassant;const isCastleMove=!castle&&isKing&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;
-_origMoveElement(piece,id,castle);
+moveElement=function(piece,id,castle,autoPromoteLetter){const fromPos=piece.current_position;const pieceName=piece.piece_name;const isKing=pieceName.includes("KING");const isPawn=pieceName.includes("PAWN");const color=pieceName.includes("WHITE")?"white":"black";const targetHadPiece=!!(keySquareMapper[id]&&keySquareMapper[id].piece);const isEnPassant=isPawn&&enPassant&&id===enPassant.square&&!targetHadPiece;const capture=targetHadPiece||isEnPassant;const isCastleMove=!castle&&isKing&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;
+const tail=()=>{
 if(castle)return;
 let san;
 if(isCastleMove){san=id[0]==="g"?"O-O":"O-O-O"}else{const letter=pieceLetter(pieceName);let promo="";const postPiece=keySquareMapper[id]&&keySquareMapper[id].piece;if(isPawn&&postPiece&&!postPiece.piece_name.includes("PAWN"))promo="="+pieceLetter(postPiece.piece_name);if(letter===""){san=(capture?fromPos[0]+"x":"")+id+promo}else{san=letter+(capture?"x":"")+id}}
 const opponent=color==="white"?"black":"white";if(whoInCheck===opponent)san+=gameOver?"#":"+";
 const promoLetter=isPawn?(()=>{const p=keySquareMapper[id]&&keySquareMapper[id].piece;return p&&!p.piece_name.includes("PAWN")?pieceLetter(p.piece_name).toLowerCase():null})():null;
 const moveNumber=Math.floor(moveHistory.length/2)+1;moveHistory.push({san,color,moveNumber,from:fromPos,to:id,promotion:promoLetter,snapshot:takeSnapshot(),fullState:captureGameState(),checkColor:whoInCheck,checkmate:gameOver&&!!whoInCheck});viewingIndex=moveHistory.length-1;renderMoveList();renderPlayerBars()};
+_origMoveElement(piece,id,castle,autoPromoteLetter);
+if(pendingPromotionResolvers){pendingPromotionResolvers.push(tail)}else{tail()}};
 
 const _origResetGame=resetGame;
 resetGame=function(){stopPlayback();_origResetGame();rebuildPieceRegistry();moveHistory=[];viewingIndex=-1;boardFlipped=!1;startSnapshot=takeSnapshot();startFullState=captureGameState();renderMoveList();renderPlayerBars();playerColor=null;colorChosen=!1;showColorPicker()};
@@ -262,7 +288,7 @@ if(san.indexOf("O-O")===0){SoundFX.playCastle();return}
 if(san.indexOf("x")!==-1){SoundFX.playCapture();return}
 SoundFX.playMove()}
 
-function goToMove(index,silent){const changed=index!==viewingIndex;viewingIndex=index;const snap=index===-1?startSnapshot:moveHistory[index].snapshot;restoreSnapshot(snap);applyMoveVisuals(index===-1?null:moveHistory[index]);renderMoveList();renderPlayerBars();syncReviewPanelSelection();if(!silent&&changed)playSoundForEntry(index===-1?null:moveHistory[index])}
+function goToMove(index,silent){const changed=index!==viewingIndex;viewingIndex=index;const entry=index===-1?null:moveHistory[index];const snap=index===-1?startSnapshot:entry.snapshot;const fullState=index===-1?startFullState:entry.fullState;restoreGameState(fullState);restoreSnapshot(snap);renderCheckState();applyMoveVisuals(entry);renderMoveList();renderPlayerBars();syncReviewPanelSelection();if(!silent&&changed)playSoundForEntry(entry)}
 
 let isPlaying=!1;let playbackTimer=null;const PLAYBACK_STEP_MS=650;
 
@@ -304,11 +330,7 @@ const label=document.createElement("span");label.textContent=theme.label;swatch.
 box.append(closeBtn,title,pieceLabel,pieceGrid,boardLabel,boardGrid);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","optionsModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();modal.show()}
 
 function buildBottomNav(){if(typeof reviewActive!=="undefined")reviewActive=!1;if(typeof reviewRowEls!=="undefined")reviewRowEls=null;const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.remove("evalBarVisible");startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button><button class="navBtn" id="reviewGameBtn"><span class="navIcon">&#128269;</span><span>Review</span></button></div><div class="reviewPanel" id="reviewPanel"><div class="reviewPanelHeader"><span>Game Review</span><button class="reviewCloseBtn" id="reviewCloseBtn" aria-label="Close review">&times;</button></div><div class="reviewMoveList" id="reviewMoveList"></div></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();document.getElementById("reviewGameBtn").onclick=()=>openGameReview();document.getElementById("reviewCloseBtn").onclick=()=>closeGameReview();renderMoveList();updateUndoButtonState()}
-const _origCallbackPawnPromotion=callbackPawnPromotion;
-callbackPawnPromotion=function(pieceFn,id){_origCallbackPawnPromotion(pieceFn,id);if(moveHistory.length===0)return;const last=moveHistory[moveHistory.length-1];const promotedPiece=keySquareMapper[id]&&keySquareMapper[id].piece;if(promotedPiece&&!last.san.includes("=")){const letter=pieceLetter(promotedPiece.piece_name);const base=last.san.replace(/[+#]$/,"");const suffix=last.san.slice(base.length);last.san=base+"="+letter+suffix;last.promotion=letter.toLowerCase()}
-registerPiece(promotedPiece);last.snapshot=takeSnapshot();last.fullState=captureGameState();renderMoveList()};
-
-function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="5";slider.max="15";slider.step="1";slider.value=String(ENGINE_DEPTH);slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=Number(slider.value);document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();SoundFX.playStart();renderPlayerBars()}
+function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="0";slider.max=String(ENGINE_LEVELS.length-1);slider.step="1";slider.value=String(ENGINE_LEVELS.indexOf(ENGINE_DEPTH));slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=ENGINE_LEVELS[Number(slider.value)];document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();SoundFX.playStart();renderPlayerBars()}
 whiteBtn.onclick=()=>choose("white");blackBtn.onclick=()=>choose("black")}
 
 /* ===================== Drag and Drop ===================== */
@@ -318,7 +340,7 @@ function dispatchPieceSelect(square){const name=square.piece.piece_name;if(name=
 
 let dragState=null;let justDragged=false;
 
-function canInteract(){if(gameOver)return!1;if(typeof colorChosen!=="undefined"&&!colorChosen)return!1;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return!1;return!0}
+function canInteract(){if(gameOver)return!1;if(typeof colorChosen!=="undefined"&&!colorChosen)return!1;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return!1;if(typeof pendingPromotionResolvers!=="undefined"&&pendingPromotionResolvers)return!1;return!0}
 
 function cleanupDrag(){if(dragState){if(dragState.clone)dragState.clone.remove();if(dragState.pieceImg)dragState.pieceImg.style.visibility="";document.body.classList.remove("grabbing")}
 dragState=null}
@@ -391,13 +413,87 @@ class LocalStockfish{
     this._queue=result.catch(()=>{});
     return result;
   }
+  async _setMultiPV(n){
+    this.worker.postMessage(`setoption name MultiPV value ${n}`);
+    await this._sendAndWait("isready","readyok");
+  }
+  // Scores every legal move in the position (via MultiPV), used only by the weak/beginner bot to
+  // deliberately pick a bad-but-not-random move instead of Stockfish's actual best move.
+  // Returned scores are from the MOVER's perspective (positive = good for whoever is to move),
+  // unlike analyze() which converts to a white-positive convention.
+  analyzeAllMoves(fen,depth){
+    const task=async()=>{
+      await this.readyPromise;
+      let legalCount=1;
+      try{legalCount=Math.max(1,new Chess(fen).moves().length)}catch(err){legalCount=1}
+      await this._setMultiPV(legalCount);
+      return new Promise((resolve)=>{
+        const scoresByRank={};
+        const onMsg=(e)=>{
+          const line=typeof e.data==="string"?e.data:"";
+          if(line.indexOf("multipv")!==-1&&line.indexOf(" pv ")!==-1){
+            const pvRankMatch=/multipv (\d+)/.exec(line);
+            const moveMatch=/ pv (\S+)/.exec(line);
+            if(pvRankMatch&&moveMatch){
+              let moverCp=null,moverMate=null;
+              const cpMatch=/score cp (-?\d+)/.exec(line);
+              const mateMatch=/score mate (-?\d+)/.exec(line);
+              if(cpMatch)moverCp=parseInt(cpMatch[1],10);
+              if(mateMatch)moverMate=parseInt(mateMatch[1],10);
+              scoresByRank[pvRankMatch[1]]={uci:moveMatch[1],moverCp,moverMate};
+            }
+          }
+          if(line.indexOf("bestmove")===0){
+            this.worker.removeEventListener("message",onMsg);
+            const results=Object.keys(scoresByRank).sort((a,b)=>Number(a)-Number(b)).map((k)=>scoresByRank[k]);
+            this._setMultiPV(1).catch(()=>{}).finally(()=>resolve(results));
+          }
+        };
+        this.worker.addEventListener("message",onMsg);
+        this.worker.postMessage(`position fen ${fen}`);
+        this.worker.postMessage(`go depth ${depth}`);
+      });
+    };
+    const result=this._queue.then(task,task);
+    this._queue=result.catch(()=>{});
+    return result;
+  }
 }
 
 const localEngine=new LocalStockfish();
-let ENGINE_DEPTH=12; // 5-15, higher = stronger but slower
-const STRENGTH_LABELS={5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
+let ENGINE_DEPTH=12; // one of ENGINE_LEVELS below; higher (real depth) = stronger but slower
+const WEAK_ENGINE_LEVEL=100; // sentinel: "~100 Elo" beginner mode, not a real search depth
+const WEAK_ENGINE_ANALYSIS_DEPTH=8; // shallow depth used only to score every legal move for the beginner bot
+const ENGINE_LEVELS=[WEAK_ENGINE_LEVEL,5,6,7,8,9,10,11,12,13,14,15];
+const STRENGTH_LABELS={100:"~100 Elo (Beginner)",5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
 let engineThinking=!1;
 let suppressEngineAutoMove=!1;
+
+// Beginner bot: scores every legal move shallowly, then picks one weighted toward the WORST
+// options (bigger blunders are far more likely, but it's not guaranteed to always play the single
+// worst move, so it doesn't feel mechanically identical every game). Falls back to null if scoring fails.
+async function pickWeakMove(fen){
+  let moves;
+  try{moves=await localEngine.analyzeAllMoves(fen,WEAK_ENGINE_ANALYSIS_DEPTH)}catch(err){console.error("Weak engine scoring failed:",err);return null}
+  if(!moves||moves.length===0)return null;
+  const scored=moves.map((m)=>{
+    let val;
+    if(m.moverMate!=null){
+      // mate FOR the mover (good) gets a large positive value; mate AGAINST the mover (bad) a large
+      // negative value, with a sooner loss ranked worse than a later one.
+      val=m.moverMate>0?(100000-m.moverMate):(-100000-m.moverMate);
+    }else{
+      val=m.moverCp!=null?m.moverCp:0;
+    }
+    return{uci:m.uci,val};
+  });
+  scored.sort((a,b)=>a.val-b.val); // worst move for the mover first
+  const weights=scored.map((_,i)=>Math.pow(0.6,i));
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total;
+  for(let i=0;i<scored.length;i++){r-=weights[i];if(r<=0)return scored[i].uci}
+  return scored[scored.length-1].uci;
+}
 
 function buildFENUpTo(index){const game=new Chess();for(let i=0;i<=index;i++){const mv=moveHistory[i];if(!mv)break;const moveObj={from:mv.from,to:mv.to};if(mv.promotion)moveObj.promotion=mv.promotion;const result=game.move(moveObj);if(!result){console.error("chess.js failed to replay move at index",i,mv);break}}
 return game.fen()}
@@ -405,10 +501,10 @@ function buildFEN(){return buildFENUpTo(viewingIndex)}
 
 function showEngineThinking(active){const bottomColor=getBottomColor();const bottomIsPlayer=bottomColor===(playerColor||"white");const el=document.getElementById(bottomIsPlayer?"topBarName":"bottomBarName");if(!el)return;const engineColor=(playerColor||"white")==="white"?"black":"white";const label=`${engineName} (${engineColor === "white" ? "White" : "Black"})`;el.textContent=active?`${label} — thinking…`:label}
 
-function applyEngineMove(uci){const from=uci.slice(0,2),to=uci.slice(2,4);const promoLetter=uci.length>4?uci[4].toUpperCase():null;const square=keySquareMapper[from];if(!square||!square.piece)return;const piece=square.piece;moveElement(piece,to);if(promoLetter){const color=piece.piece_name.includes("WHITE")?"white":"black";const targetEl=document.getElementById(to);const box=targetEl&&targetEl.querySelector(".promotionBox");const fnMap={Q:color==="white"?whiteQueen:blackQueen,R:color==="white"?whiteRook:blackRook,B:color==="white"?whiteBishop:blackBishop,N:color==="white"?whiteKnight:blackKnight};const fn=fnMap[promoLetter]||fnMap.Q;callbackPawnPromotion(fn,to);if(box)box.remove()}
+function applyEngineMove(uci){const from=uci.slice(0,2),to=uci.slice(2,4);const promoLetter=uci.length>4?uci[4].toUpperCase():null;const square=keySquareMapper[from];if(!square||!square.piece)return;const piece=square.piece;moveElement(piece,to,!1,promoLetter);
 updateGrabCursors()}
 
-async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();const{bestMoveUci}=await localEngine.analyze(fen,ENGINE_DEPTH);if(!bestMoveUci)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(bestMoveUci)}catch(err){console.error("Stockfish move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
+async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();let bestMoveUci;if(ENGINE_DEPTH===WEAK_ENGINE_LEVEL){bestMoveUci=await pickWeakMove(fen);if(!bestMoveUci){const fallback=await localEngine.analyze(fen,6);bestMoveUci=fallback.bestMoveUci}}else{const res=await localEngine.analyze(fen,ENGINE_DEPTH);bestMoveUci=res.bestMoveUci}if(!bestMoveUci)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(bestMoveUci)}catch(err){console.error("Stockfish move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
 
 function maybeTriggerEngineMove(){if(suppressEngineAutoMove)return;if(gameOver)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn===engineColor)setTimeout(requestEngineMove,300)}
 
