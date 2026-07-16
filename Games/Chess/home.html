@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess - New Game</title>
+    <style>
+        /* Shared CSS Variables based on your provided design */
+        :root {
+            --bg-color: #262522;
+            --bg-panel: #312e2b;
+            --bg-panel-hover: #3c3a38;
+            --bg-panel-shadow: #21201d;
+            --text-main: #ffffff;
+            --text-muted: #99958f;
+            --green-accent: #81b64c;
+            --green-shadow: #649137;
+            --glass-bg-dark: rgba(50, 48, 45, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --avatar-bg: rgba(60, 58, 55, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+        }
+
+        /* --- View Visibility Classes --- */
+        .view-section {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =========================================
+           VIEW 1: NEW GAME UI (Based on Screenshot)
+           ========================================= */
+        
+        /* Top Header */
+        .ng-top-bar {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 16px;
+            flex-shrink: 0;
+        }
+
+        .ng-back-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ng-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            gap: 8px;
+            margin-right: 24px; /* offset for centering */
+        }
+
+        .ng-title-container img {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Main Scrollable Area */
+        .ng-content {
+            flex-grow: 1;
+            padding: 0 16px;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .ng-content::-webkit-scrollbar { display: none; }
+
+        /* Generic chunky button style */
+        .chunky-btn {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: none;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .chunky-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--bg-panel-shadow);
+        }
+
+        /* Specific Buttons */
+        .ng-time-btn {
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ng-time-btn .clock-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--green-accent);
+        }
+
+        .ng-time-btn .chevron {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+            margin-left: -4px;
+        }
+
+        .ng-start-btn {
+            background-color: var(--green-accent);
+            box-shadow: 0 6px 0 var(--green-shadow);
+            font-size: 20px;
+            padding: 18px;
+            justify-content: center;
+            border-radius: 10px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .ng-start-btn:active {
+            box-shadow: 0 0 0 var(--green-shadow);
+            transform: translateY(6px);
+        }
+
+        .ng-menu-btn {
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .ng-menu-btn:hover {
+            background-color: var(--bg-panel-hover);
+        }
+
+        .ng-icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Divider */
+        .ng-divider {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 0;
+            color: var(--text-muted);
+        }
+
+        /* Android Bottom Nav */
+        .ng-bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 16px;
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .ng-bottom-nav svg { width: 20px; height: 20px; }
+
+        /* =========================================
+           VIEW 2: BOT SELECTION (Your provided code)
+           ========================================= */
+        .bot-selection-container {
+            background-image: radial-gradient(circle at 50% 0%, #3a3835 0%, #262522 60%);
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 16px;
+            padding-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            color: var(--text-muted);
+            margin-right: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        
+        .back-btn:hover { color: var(--text-main); }
+        
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+            transform: translateX(-16px);
+        }
+        .title-container svg { color: var(--green-accent); }
+
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scroll-area::-webkit-scrollbar { display: none; }
+
+        .chat-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 8px;
+        }
+
+        .active-avatar-large {
+            width: 80px;
+            height: 80px;
+            background: var(--avatar-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            color: var(--text-main);
+        }
+        .active-avatar-large svg { width: 50%; height: 50%; }
+
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            color: #262522;
+            border-radius: 12px;
+            padding: 16px;
+            margin-left: 20px;
+            font-weight: 600;
+            position: relative;
+            flex-grow: 1;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 12px 10px 0;
+            border-style: solid;
+            border-color: transparent rgba(255, 255, 255, 0.95) transparent transparent;
+        }
+
+        .bot-details {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .bot-details h1 { font-size: 24px; font-weight: 800; }
+        .bot-details .elo { color: var(--text-muted); font-size: 16px; font-weight: 600; }
+        .bot-details .flag { font-size: 18px; }
+
+        .category-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+        .category-title span { color: var(--text-main); }
+
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .bot-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bot-avatar {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--avatar-bg);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            position: relative;
+            color: var(--text-main);
+        }
+        .bot-avatar svg { width: 50%; height: 50%; }
+        .bot-avatar img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
+
+        .bot-avatar:hover { transform: translateY(-2px); background: rgba(80, 78, 75, 0.7); }
+        .bot-avatar.selected {
+            border: 3px solid var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(129, 182, 76, 0.2);
+            color: var(--green-accent);
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            height: 16px;
+        }
+        .status-icon { width: 12px; height: 12px; }
+        .crown { color: #f2a900; filter: drop-shadow(0 0 4px rgba(242, 169, 0, 0.5)); }
+        .lock { color: var(--text-muted); }
+
+        .bottom-area {
+            padding: 16px;
+            background: linear-gradient(to top, var(--bg-color) 80%, transparent);
+            flex-shrink: 0;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .options-btn {
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        .options-btn:hover { background: rgba(60, 58, 55, 0.8); }
+        .options-btn .left { display: flex; align-items: center; gap: 8px; }
+
+        .color-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 2px;
+        }
+
+        .color-btn {
+            background-color: transparent;
+            border: 2px solid transparent;
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .color-btn svg { width: 20px; height: 20px; }
+        .color-btn.active {
+            border-color: var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            box-shadow: 0 0 8px rgba(129, 182, 76, 0.2);
+        }
+
+        .play-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 24px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+
+        /* =========================================
+           LICHESS-POWERED: Options Modal
+           ========================================= */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-sheet {
+            width: 100%;
+            max-width: 400px;
+            max-height: 82vh;
+            background: var(--bg-panel);
+            border-radius: 16px 16px 0 0;
+            padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transform: translateY(100%);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+        }
+        .modal-overlay.active .modal-sheet {
+            transform: translateY(0);
+        }
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--text-muted);
+            opacity: 0.4;
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .modal-close {
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .modal-close:hover { background: var(--bg-panel-hover); }
+
+        .option-group-title {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 8px;
+        }
+
+        .chip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .chip-btn {
+            background: var(--bg-panel-hover);
+            color: var(--text-main);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px 6px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+        .chip-btn:hover { background: #46433f; }
+        .chip-btn.active {
+            border-color: var(--green-accent);
+            background: rgba(129, 182, 76, 0.15);
+            color: var(--green-accent);
+        }
+
+        .custom-time-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .custom-time-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .custom-time-field label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .custom-time-field input {
+            background: var(--bg-panel-shadow);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .modal-done-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 5px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .modal-done-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+
+        /* Spinner for in-flight requests */
+        .btn-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: -3px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .chunky-btn[disabled], .play-btn[disabled] {
+            opacity: 0.75;
+            cursor: default;
+        }
+
+        /* Share link banner after a game is created */
+        .share-banner {
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%) translateY(120%);
+            width: calc(100% - 32px);
+            max-width: 368px;
+            background: var(--bg-panel);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            z-index: 200;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .share-banner.active {
+            transform: translateX(-50%) translateY(0);
+        }
+        .share-banner-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .share-banner-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green-accent);
+            box-shadow: 0 0 8px var(--green-accent);
+        }
+        .share-banner-row {
+            display: flex;
+            gap: 8px;
+        }
+        .share-banner-link {
+            flex: 1;
+            background: var(--bg-panel-shadow);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .share-banner-copy {
+            background: var(--green-accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0 14px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .share-banner-close {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-banner {
+            background: rgba(220, 80, 70, 0.15);
+            border: 1px solid rgba(220, 80, 70, 0.4);
+            color: #ff8a80;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* =========================================
+           VIEW 0: HOME (Lichess widgets + Play CTA)
+           ========================================= */
+        .home-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 20px;
+            font-weight: 800;
+            padding: 18px 16px 10px;
+            flex-shrink: 0;
+        }
+        .home-top-bar .beat {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green-accent);
+            box-shadow: 0 0 8px var(--green-accent);
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        .home-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .home-content::-webkit-scrollbar { display: none; }
+
+        .widget-card {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+        }
+        .widget-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .widget-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .widget-card-link {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .widget-card-link:hover { color: var(--text-main); }
+
+        .widget-frame-wrap {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-panel-shadow);
+        }
+        .widget-iframe {
+            width: 100%;
+            border: none;
+            display: block;
+            background: var(--bg-panel-shadow);
+        }
+        .widget-frame-wrap.wf-tv .widget-iframe { aspect-ratio: 1 / 1; height: auto; }
+        .widget-frame-wrap.wf-puzzle .widget-iframe { height: 360px; }
+        .widget-frame-wrap.wf-analysis .widget-iframe { height: 430px; }
+        .widget-frame-wrap.wf-broadcast .widget-iframe { height: 380px; }
+
+        .widget-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-panel-shadow);
+            transition: opacity 0.25s ease;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .widget-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .widget-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--green-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .widget-empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .widget-empty a {
+            color: var(--green-accent);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .home-play-area {
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top, var(--bg-color) 75%, transparent);
+            flex-shrink: 0;
+        }
+        .home-play-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .home-play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+        .home-play-btn svg { width: 22px; height: 22px; fill: #ffffff; }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+
+    <!-- ==========================================
+         VIEW 0: HOME (Lichess widgets + Play CTA)
+         ========================================== -->
+    <div id="view-home" class="view-section active">
+
+        <div class="home-top-bar">
+            <span class="beat"></span> Chess
+        </div>
+
+        <div class="home-content">
+
+            <!-- Lichess TV -->
+            <div class="widget-card">
+                <div class="widget-card-header">
+                    <div class="widget-card-title">📺 Live on Lichess TV</div>
+                    <a class="widget-card-link" href="https://lichess.org/tv" target="_blank" rel="noopener">Open ↗</a>
+                </div>
+                <div class="widget-frame-wrap wf-tv">
+                    <div class="widget-loading" id="loading-tv"><span class="widget-spinner"></span>Loading…</div>
+                    <iframe class="widget-iframe" id="frame-tv" src="https://lichess.org/tv/frame?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                </div>
+            </div>
+
+            <!-- Daily Puzzle -->
+            <div class="widget-card">
+                <div class="widget-card-header">
+                    <div class="widget-card-title">🧩 Puzzle of the Day</div>
+                    <a class="widget-card-link" href="https://lichess.org/training" target="_blank" rel="noopener">Open ↗</a>
+                </div>
+                <div class="widget-frame-wrap wf-puzzle">
+                    <div class="widget-loading" id="loading-puzzle"><span class="widget-spinner"></span>Loading…</div>
+                    <iframe class="widget-iframe" id="frame-puzzle" src="https://lichess.org/training/frame?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                </div>
+            </div>
+
+            <!-- Live Broadcast (dynamic) -->
+            <div class="widget-card">
+                <div class="widget-card-header">
+                    <div class="widget-card-title">🏆 Live Tournament</div>
+                    <a class="widget-card-link" href="https://lichess.org/broadcast" target="_blank" rel="noopener">All broadcasts ↗</a>
+                </div>
+                <div class="widget-frame-wrap wf-broadcast" id="broadcast-wrap">
+                    <div class="widget-loading" id="loading-broadcast"><span class="widget-spinner"></span>Finding a live event…</div>
+                </div>
+            </div>
+
+            <!-- Analysis Board -->
+            <div class="widget-card">
+                <div class="widget-card-header">
+                    <div class="widget-card-title">🔍 Analysis Board</div>
+                    <a class="widget-card-link" href="https://lichess.org/analysis" target="_blank" rel="noopener">Open ↗</a>
+                </div>
+                <div class="widget-frame-wrap wf-analysis">
+                    <div class="widget-loading" id="loading-analysis"><span class="widget-spinner"></span>Loading…</div>
+                    <iframe class="widget-iframe" id="frame-analysis" src="https://lichess.org/embed/analysis?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Iconic Play CTA -->
+        <div class="home-play-area">
+            <button class="home-play-btn" id="fab-play-btn">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Play
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 1: NEW GAME MENU 
+         ========================================== -->
+    <div id="view-new-game" class="view-section">
+        
+        <!-- Top Bar -->
+        <div class="ng-top-bar">
+            <div class="ng-back-btn" id="nav-home-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="ng-title-container">
+                <span style="font-size: 24px;">♟️</span>
+                New Game
+            </div>
+        </div>
+
+        <!-- Content -->
+
+        <div class="ng-content">
+            <!-- Time Control -->
+            <button class="chunky-btn ng-time-btn" id="time-control-btn">
+                <svg class="clock-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                <span id="time-control-label">10 min</span>
+                <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            
+            <button class="chunky-btn ng-start-btn" id="start-game-btn">Start Game</button>
+            
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon">🏅</span> Tournaments
+            </button>
+            <button class="chunky-btn ng-menu-btn" id="trigger-play-friend">
+                <span class="ng-icon">🤝</span> Play a Friend
+            </button>
+            
+            <!-- TRIGGERS BOT VIEW -->
+            <button class="chunky-btn ng-menu-btn" id="trigger-play-bots">
+                <span class="ng-icon">🤖</span> Play Bots
+            </button>
+            
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon">🧔🏻‍♂️</span> Play Coach
+            </button>
+            
+            <div class="ng-divider">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+            </div>
+            
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon">⚙️</span> Custom Game
+            </button>
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon">📱</span> Play in Person
+            </button>
+        </div>
+
+        <!-- Fake Android Nav -->
+        <div class="ng-bottom-nav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 2: BOT SELECTION (character.html code)
+         ========================================== -->
+    <div id="view-bots" class="view-section bot-selection-container">
+        
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="back-btn" id="trigger-back-bots">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="title-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v4"/><path d="M8 12h0"/><path d="M16 12h0"/><path d="M9 16h6"/></svg>
+                Bots
+            </div>
+        </div>
+
+        <!-- Scrollable content area -->
+        <div class="scroll-area">
+            
+            <div class="chat-section">
+                <div class="active-avatar-large" id="active-avatar"></div>
+                <div class="speech-bubble" id="active-speech">Loading...</div>
+            </div>
+
+            <div class="bot-details">
+                <h1 id="active-name">Bot Name</h1>
+                <span class="elo" id="active-elo">---</span>
+                <span class="flag" id="active-flag">🏳️</span>
+            </div>
+
+            <!-- Tier 1: Beginner -->
+            <div class="category-title">Beginner <span>5</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="1"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar selected" data-id="2"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="3"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="4"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="5"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 2: Advanced -->
+            <div class="category-title">Advanced <span>5</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="6"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="7"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="8"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="9"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="10"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 3: Engine -->
+            <div class="category-title">Engine <span>1</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="11"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bottom-area">
+            <div class="options-row">
+                <button class="options-btn" id="options-btn-bots">
+                    <div class="left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span id="options-btn-bots-label">Options</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="color-selector">
+                    <button class="color-btn active">
+                        <svg viewBox="0 0 24 24" fill="#ffffff" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                    </button>
+                    <button class="color-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </button>
+                    <button class="color-btn">
+                        <svg viewBox="0 0 24 24" fill="#262522" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                    </button>
+                </div>
+            </div>
+            <button class="play-btn">Play</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ==========================================
+     LICHESS-POWERED: Options Modal (time control + variant)
+     ========================================== -->
+<div class="modal-overlay" id="options-modal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h2>Game Options</h2>
+            <div class="modal-close" id="options-modal-close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </div>
+        </div>
+
+        <div>
+            <div class="option-group-title">Time Control</div>
+            <div class="chip-grid" id="time-chip-grid">
+                <!-- populated by JS -->
+            </div>
+            <div class="custom-time-row">
+                <div class="custom-time-field">
+                    <label for="custom-minutes">Minutes</label>
+                    <input type="number" id="custom-minutes" min="0" max="60" step="1" placeholder="10">
+                </div>
+                <div class="custom-time-field">
+                    <label for="custom-increment">Increment (s)</label>
+                    <input type="number" id="custom-increment" min="0" max="60" step="1" placeholder="0">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="option-group-title">Variant</div>
+            <div class="chip-grid" id="variant-chip-grid">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
+        <button class="modal-done-btn" id="options-modal-done">Done</button>
+    </div>
+</div>
+
+<!-- Share link banner (shown after a Lichess game is created) -->
+<div class="share-banner" id="share-banner">
+    <div class="share-banner-close" id="share-banner-close">✕</div>
+    <div class="share-banner-title"><span class="dot"></span> <span id="share-banner-heading">Game created — invite a friend</span></div>
+    <div class="share-banner-row">
+        <div class="share-banner-link" id="share-banner-link">https://lichess.org/...</div>
+        <button class="share-banner-copy" id="share-banner-copy">Copy</button>
+    </div>
+</div>
+
+<!-- Polyfill script: Ensures UI works perfectly even without external players.js script imported -->
+<script>
+    if (typeof window.PLAYERS === 'undefined') {
+        window.PLAYERS = {
+            "1": { id: "1", name: "Beginner Bot", elo: "250", flag: "🇺🇸", speech: "I just learned how the horsey moves!" },
+            "2": { id: "2", name: "Clueless Colin", elo: "400", flag: "🇬🇧", speech: "I don't know what I'm doing." },
+            "3": { id: "3", name: "Novice Ned", elo: "600", flag: "🇨🇦", speech: "Let's have a good game." }
+        };
+        window.renderBotContent = function() {
+            return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+        }
+    }
+</script>
+
+<!-- Shared bot/player database -->
+<script src="players.js"></script>
+
+<!-- Navigation Logic -->
+<script>
+    const viewHome = document.getElementById('view-home');
+    const viewNewGame = document.getElementById('view-new-game');
+    const viewBots = document.getElementById('view-bots');
+
+    // Iconic Play button: Home -> New Game menu
+    document.getElementById('fab-play-btn').addEventListener('click', () => {
+        viewHome.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+
+    // Back arrow on New Game menu -> Home
+    document.getElementById('nav-home-btn').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewHome.classList.add('active');
+    });
+
+    // Switch to Bots view
+    document.getElementById('trigger-play-bots').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewBots.classList.add('active');
+    });
+
+    // Switch back to New Game view
+    document.getElementById('trigger-back-bots').addEventListener('click', () => {
+        viewBots.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+</script>
+
+<!-- ==========================================
+     HOME WIDGETS: loading states + live broadcast lookup
+     ========================================== -->
+<script>
+(() => {
+    // Fade out each widget's loading spinner once its iframe finishes loading
+    ['tv', 'puzzle', 'analysis'].forEach(key => {
+        const frame = document.getElementById(`frame-${key}`);
+        const loader = document.getElementById(`loading-${key}`);
+        if (!frame || !loader) return;
+        frame.addEventListener('load', () => loader.classList.add('hidden'));
+    });
+
+    function slugify(str) {
+        return (str || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    // Find a currently-active official broadcast and embed its latest round.
+    // https://lichess.org/api#tag/Broadcasts/operation/broadcastTop
+    async function loadLiveBroadcast() {
+        const wrap = document.getElementById('broadcast-wrap');
+        const loader = document.getElementById('loading-broadcast');
+
+        const showEmpty = () => {
+            wrap.innerHTML = `<div class="widget-empty">No live tournaments right now.<br><a href="https://lichess.org/broadcast" target="_blank" rel="noopener">Browse broadcasts on Lichess ↗</a></div>`;
+        };
+
+        try {
+            const res = await fetch('https://lichess.org/api/broadcast/top?nb=1');
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const data = await res.json();
+            const item = (data.active && data.active[0]) || null;
+
+            if (!item || !item.round || !item.round.id) {
+                showEmpty();
+                return;
+            }
+
+            const tourSlug = item.tour?.slug || slugify(item.tour?.name);
+            const roundSlug = item.round?.slug || slugify(item.round?.name);
+            const embedPath = `${tourSlug}--${roundSlug}`;
+            const src = `https://lichess.org/embed/broadcast/${embedPath}/${item.round.id}?theme=brown&bg=dark`;
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'widget-iframe';
+            iframe.loading = 'lazy';
+            iframe.src = src;
+            iframe.addEventListener('load', () => loader.classList.add('hidden'));
+            wrap.appendChild(iframe);
+        } catch (err) {
+            showEmpty();
+        }
+    }
+
+    loadLiveBroadcast();
+})();
+</script>
+
+<!-- Your Original JavaScript for Interactivity -->
+<script>
+    const botDatabase = PLAYERS;
+    const avatars = document.querySelectorAll('.bot-avatar');
+    const activeAvatar = document.getElementById('active-avatar');
+    const activeName = document.getElementById('active-name');
+    const activeElo = document.getElementById('active-elo');
+    const activeSpeech = document.getElementById('active-speech');
+    const activeFlag = document.getElementById('active-flag');
+
+    avatars.forEach(avatar => {
+        const botId = avatar.getAttribute('data-id');
+        if (botDatabase[botId]) {
+            avatar.innerHTML = renderBotContent(botDatabase[botId]);
+        }
+    });
+
+    let selectedBotId = "2";
+
+    const initDefaultBot = () => {
+        const defaultBot = botDatabase["2"] || botDatabase["1"];
+        if (!defaultBot) return;
+        activeAvatar.innerHTML = renderBotContent(defaultBot);
+        activeName.textContent = defaultBot.name;
+        activeElo.textContent = defaultBot.elo;
+        activeFlag.textContent = defaultBot.flag;
+        activeSpeech.textContent = defaultBot.speech;
+    };
+    initDefaultBot();
+
+    avatars.forEach(avatar => {
+        avatar.addEventListener('click', () => {
+            avatars.forEach(a => a.classList.remove('selected'));
+            avatar.classList.add('selected');
+
+            const botId = avatar.getAttribute('data-id');
+            const botData = botDatabase[botId];
+            if (!botData) return;
+            selectedBotId = botId;
+
+            activeAvatar.style.transform = 'scale(0.8)';
+            activeSpeech.style.opacity = '0';
+            
+            setTimeout(() => {
+                activeAvatar.innerHTML = renderBotContent(botData);
+                activeName.textContent = botData.name;
+                activeElo.textContent = botData.elo;
+                activeFlag.textContent = botData.flag;
+                activeSpeech.textContent = botData.speech;
+                
+                activeAvatar.style.transform = 'scale(1)';
+                activeSpeech.style.opacity = '1';
+            }, 150);
+        });
+    });
+
+    let selectedColor = 'white';
+
+    document.querySelector('.play-btn').addEventListener('click', () => {
+        const botData = botDatabase[selectedBotId];
+        if (!botData) return;
+
+        const color = selectedColor === 'random'
+            ? (Math.random() < 0.5 ? 'white' : 'black')
+            : selectedColor;
+
+        const params = new URLSearchParams({ id: botData.id, color: color });
+        window.location.href = `chess.html?${params.toString()}`;
+    });
+
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const colorValues = ['white', 'random', 'black'];
+    colorBtns.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            colorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedColor = colorValues[i];
+        });
+    });
+</script>
+
+<!-- ==========================================
+     LICHESS API INTEGRATION
+     Powers "Start Game" / "Play a Friend" with real
+     lichess.org games via the public, key-free
+     Open Challenge endpoint.
+     Docs: https://lichess.org/api#tag/Challenges/operation/challengeOpen
+     ========================================== -->
+<script>
+(() => {
+    const LICHESS_OPEN_CHALLENGE_URL = 'https://lichess.org/api/challenge/open';
+
+    // --- Time control presets: [label, limitSeconds, incrementSeconds] ---
+    const TIME_PRESETS = [
+        { label: '1 min',  limit: 60,   increment: 0 },
+        { label: '1 | 1',  limit: 60,   increment: 1 },
+        { label: '2 | 1',  limit: 120,  increment: 1 },
+        { label: '3 min',  limit: 180,  increment: 0 },
+        { label: '3 | 2',  limit: 180,  increment: 2 },
+        { label: '5 min',  limit: 300,  increment: 0 },
+        { label: '5 | 3',  limit: 300,  increment: 3 },
+        { label: '10 min', limit: 600,  increment: 0 },
+        { label: '10 | 5', limit: 600,  increment: 5 },
+        { label: '15 | 10',limit: 900,  increment: 10 },
+        { label: '30 min', limit: 1800, increment: 0 },
+        { label: '30 | 20',limit: 1800, increment: 20 },
+    ];
+
+    const VARIANTS = [
+        { key: 'standard',    label: 'Standard' },
+        { key: 'chess960',    label: 'Chess960' },
+        { key: 'crazyhouse',  label: 'Crazyhouse' },
+        { key: 'atomic',      label: 'Atomic' },
+        { key: 'kingOfTheHill', label: 'King of the Hill' },
+        { key: 'threeCheck',  label: '3-Check' },
+    ];
+
+    // Current selection, defaults match the original static markup (10 min, Standard)
+    const settings = {
+        limit: 600,
+        increment: 0,
+        label: '10 min',
+        variant: 'standard',
+        variantLabel: 'Standard',
+    };
+
+    const timeLabelEl = document.getElementById('time-control-label');
+    const timeChipGrid = document.getElementById('time-chip-grid');
+    const variantChipGrid = document.getElementById('variant-chip-grid');
+    const customMinutesInput = document.getElementById('custom-minutes');
+    const customIncrementInput = document.getElementById('custom-increment');
+    const optionsModal = document.getElementById('options-modal');
+    const optionsBotsLabel = document.getElementById('options-btn-bots-label');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const playFriendBtn = document.getElementById('trigger-play-friend');
+    const shareBanner = document.getElementById('share-banner');
+    const shareBannerLink = document.getElementById('share-banner-link');
+    const shareBannerHeading = document.getElementById('share-banner-heading');
+
+    function renderTimeChips() {
+        timeChipGrid.innerHTML = '';
+        TIME_PRESETS.forEach(preset => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-btn';
+            chip.textContent = preset.label;
+            if (preset.limit === settings.limit && preset.increment === settings.increment) {
+                chip.classList.add('active');
+            }
+            chip.addEventListener('click', () => {
+                settings.limit = preset.limit;
+                settings.increment = preset.increment;
+                settings.label = preset.label;
+                customMinutesInput.value = '';
+                customIncrementInput.value = '';
+                syncTimeLabel();
+                renderTimeChips();
+            });
+            timeChipGrid.appendChild(chip);
+        });
+    }
+
+    function renderVariantChips() {
+        variantChipGrid.innerHTML = '';
+        VARIANTS.forEach(v => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-btn';
+            chip.textContent = v.label;
+            if (v.key === settings.variant) chip.classList.add('active');
+            chip.addEventListener('click', () => {
+                settings.variant = v.key;
+                settings.variantLabel = v.label;
+                renderVariantChips();
+            });
+            variantChipGrid.appendChild(chip);
+        });
+    }
+
+    function syncTimeLabel() {
+        timeLabelEl.textContent = settings.label;
+        if (optionsBotsLabel) {
+            optionsBotsLabel.textContent = `Options · ${settings.label}`;
+        }
+    }
+
+    function applyCustomTime() {
+        const mins = parseFloat(customMinutesInput.value);
+        const inc = parseFloat(customIncrementInput.value);
+        if (!isNaN(mins) && mins >= 0) {
+            settings.limit = Math.round(mins * 60);
+            settings.increment = !isNaN(inc) && inc >= 0 ? Math.round(inc) : 0;
+            settings.label = `${mins} | ${settings.increment}`;
+            syncTimeLabel();
+        }
+    }
+
+    // --- Modal open/close ---
+    function openOptionsModal() {
+        renderTimeChips();
+        renderVariantChips();
+        optionsModal.classList.add('active');
+    }
+    function closeOptionsModal() {
+        applyCustomTime();
+        optionsModal.classList.remove('active');
+    }
+
+    document.getElementById('time-control-btn').addEventListener('click', openOptionsModal);
+    document.getElementById('options-btn-bots').addEventListener('click', openOptionsModal);
+    document.getElementById('options-modal-close').addEventListener('click', closeOptionsModal);
+    document.getElementById('options-modal-done').addEventListener('click', closeOptionsModal);
+    optionsModal.addEventListener('click', (e) => {
+        if (e.target === optionsModal) closeOptionsModal();
+    });
+
+    syncTimeLabel();
+
+    // --- Share banner ---
+    let shareBannerTimeout;
+    function showShareBanner(url, heading) {
+        shareBannerHeading.textContent = heading;
+        shareBannerLink.textContent = url;
+        shareBannerLink.dataset.url = url;
+        shareBanner.classList.add('active');
+        clearTimeout(shareBannerTimeout);
+        shareBannerTimeout = setTimeout(() => shareBanner.classList.remove('active'), 15000);
+    }
+    document.getElementById('share-banner-close').addEventListener('click', () => {
+        shareBanner.classList.remove('active');
+        clearTimeout(shareBannerTimeout);
+    });
+    document.getElementById('share-banner-copy').addEventListener('click', () => {
+        const url = shareBannerLink.dataset.url || '';
+        if (!url) return;
+        navigator.clipboard?.writeText(url).then(() => {
+            const btn = document.getElementById('share-banner-copy');
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }).catch(() => {});
+    });
+
+    // --- Button loading state helper ---
+    function setLoading(btn, isLoading, loadingText, originalText) {
+        if (isLoading) {
+            btn.dataset.originalText = originalText ?? btn.textContent;
+            btn.innerHTML = `<span class="btn-spinner"></span>${loadingText}`;
+            btn.disabled = true;
+        } else {
+            btn.textContent = btn.dataset.originalText || originalText || btn.textContent;
+            btn.disabled = false;
+        }
+    }
+
+    function showInlineError(message) {
+        // Lightweight inline error using the share banner surface so we don't need extra markup
+        shareBannerHeading.textContent = 'Could not reach Lichess';
+        shareBannerLink.textContent = message;
+        shareBannerLink.removeAttribute('data-url');
+        shareBanner.classList.add('active');
+        clearTimeout(shareBannerTimeout);
+        shareBannerTimeout = setTimeout(() => shareBanner.classList.remove('active'), 6000);
+    }
+
+    // --- Core: create a real Lichess game via the Open Challenge API ---
+    // https://lichess.org/api#tag/Challenges/operation/challengeOpen
+    // No auth required. Returns two join links (urlWhite / urlBlack); whoever
+    // opens a link takes that color. That's how we let a chosen color "reserve"
+    // a side for the person tapping Start Game, while the other link is free
+    // to share with a friend or left open for any Lichess player to join.
+    async function createLichessGame({ colorPref, openInNewTab, shareHeading }) {
+        const body = new URLSearchParams({
+            rated: 'false',
+            'clock.limit': String(settings.limit),
+            'clock.increment': String(settings.increment),
+            variant: settings.variant,
+        });
+
+        const response = await fetch(LICHESS_OPEN_CHALLENGE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+
+        if (!response.ok) {
+            let detail = '';
+            try { detail = (await response.json()).error || ''; } catch (_) {}
+            throw new Error(detail || `Lichess responded with ${response.status}`);
+        }
+
+        const data = await response.json();
+        const urlWhite = data.urlWhite || data.challenge?.urlWhite;
+        const urlBlack = data.urlBlack || data.challenge?.urlBlack;
+        const fallbackUrl = data.url || data.challenge?.url ||
+            (data.id ? `https://lichess.org/${data.id}` : null);
+
+        let myUrl, friendUrl;
+        if (colorPref === 'white') {
+            myUrl = urlWhite || fallbackUrl;
+            friendUrl = urlBlack || fallbackUrl;
+        } else if (colorPref === 'black') {
+            myUrl = urlBlack || fallbackUrl;
+            friendUrl = urlWhite || fallbackUrl;
+        } else {
+            const whiteFirst = Math.random() < 0.5;
+            myUrl = (whiteFirst ? urlWhite : urlBlack) || fallbackUrl;
+            friendUrl = (whiteFirst ? urlBlack : urlWhite) || fallbackUrl;
+        }
+
+        if (openInNewTab && myUrl) {
+            window.open(myUrl, '_blank');
+        }
+        showShareBanner(friendUrl || myUrl, shareHeading);
+        return { myUrl, friendUrl };
+    }
+
+    startGameBtn.addEventListener('click', async () => {
+        setLoading(startGameBtn, true, 'Creating game…', 'Start Game');
+        try {
+            await createLichessGame({
+                colorPref: selectedColor,
+                openInNewTab: true,
+                shareHeading: 'Game created — send this to your opponent',
+            });
+        } catch (err) {
+            showInlineError(err.message || 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(startGameBtn, false, '', 'Start Game');
+        }
+    });
+
+    playFriendBtn.addEventListener('click', async () => {
+        setLoading(playFriendBtn, true, 'Creating link…', playFriendBtn.textContent);
+        try {
+            await createLichessGame({
+                colorPref: selectedColor,
+                openInNewTab: false,
+                shareHeading: 'Share this link with your friend',
+            });
+        } catch (err) {
+            showInlineError(err.message || 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(playFriendBtn, false, '', '🤝 Play a Friend');
+        }
+    });
+})();
+</script>
+
+</body>
+</html>
