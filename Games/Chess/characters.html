@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Bot Selection</title>
+    <style>
+        :root {
+            --bg-color: #262522;
+            --text-main: #ffffff;
+            --text-muted: #99958f;
+            --green-accent: #81b64c;
+            --green-shadow: #649137;
+            --glass-bg-dark: rgba(50, 48, 45, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --avatar-bg: rgba(60, 58, 55, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #3a3835 0%, #262522 60%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top Header - Fixed */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 16px;
+            padding-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            color: var(--text-muted);
+            margin-right: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        
+        .back-btn:hover {
+            color: var(--text-main);
+        }
+        
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+            transform: translateX(-16px);
+        }
+
+        .title-container svg {
+            color: var(--green-accent);
+        }
+
+        /* Scrollable Middle Area */
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .scroll-area::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Active Bot Chat Area */
+        .chat-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 8px;
+        }
+
+        .active-avatar-large {
+            width: 80px;
+            height: 80px;
+            background: var(--avatar-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        .active-avatar-large svg {
+            width: 50%;
+            height: 50%;
+        }
+
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #262522;
+            border-radius: 12px;
+            padding: 16px;
+            margin-left: 20px;
+            font-weight: 600;
+            position: relative;
+            flex-grow: 1;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 12px 10px 0;
+            border-style: solid;
+            border-color: transparent rgba(255, 255, 255, 0.95) transparent transparent;
+        }
+
+        /* Active Bot Details */
+        .bot-details {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .bot-details h1 {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .bot-details .elo {
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .bot-details .flag {
+            font-size: 18px;
+        }
+
+        /* Grid Categories */
+        .category-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+
+        .category-title span {
+            color: var(--text-main);
+        }
+
+        /* Bot Grid */
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .bot-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bot-avatar {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--avatar-bg);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            position: relative;
+            color: var(--text-main);
+        }
+
+        .bot-avatar svg {
+            width: 50%;
+            height: 50%;
+        }
+        
+        .bot-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .bot-avatar:hover {
+            transform: translateY(-2px);
+            background: rgba(80, 78, 75, 0.7);
+        }
+
+        .bot-avatar.selected {
+            border: 3px solid var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(129, 182, 76, 0.2);
+            color: var(--green-accent);
+        }
+
+        /* Status Icons */
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            height: 16px;
+        }
+        
+        .status-icon {
+            width: 12px;
+            height: 12px;
+        }
+        
+        .crown { color: #f2a900; filter: drop-shadow(0 0 4px rgba(242, 169, 0, 0.5)); }
+        .lock { color: var(--text-muted); }
+
+        /* Bottom Controls Fixed Area */
+        .bottom-area {
+            padding: 16px;
+            background: linear-gradient(to top, var(--bg-color) 80%, transparent);
+            flex-shrink: 0;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        /* Glassmorphism Options Button */
+        .options-btn {
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+
+        .options-btn:hover {
+            background: rgba(60, 58, 55, 0.8);
+        }
+
+        .options-btn .left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 2px;
+        }
+
+        .color-btn {
+            background-color: transparent;
+            border: 2px solid transparent;
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .color-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .color-btn.active {
+            border-color: var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            box-shadow: 0 0 8px rgba(129, 182, 76, 0.2);
+        }
+
+        .play-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 24px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        
+        .play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+    
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="back-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </div>
+        <div class="title-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v4"/><path d="M8 12h0"/><path d="M16 12h0"/><path d="M9 16h6"/></svg>
+            Bots
+        </div>
+    </div>
+
+    <!-- Scrollable content area -->
+    <div class="scroll-area">
+        
+        <!-- Active Bot Chat -->
+        <div class="chat-section">
+            <div class="active-avatar-large" id="active-avatar">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="speech-bubble" id="active-speech">Loading...</div>
+        </div>
+
+        <!-- Active Bot Info -->
+        <div class="bot-details">
+            <h1 id="active-name">Bot Name</h1>
+            <span class="elo" id="active-elo">---</span>
+            <span class="flag" id="active-flag">🏳️</span>
+        </div>
+
+        <!-- Tier 1: Beginner -->
+        <div class="category-title">Beginner <span>5</span></div>
+        <div class="bot-grid">
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="1"></div>
+                <div class="status-container">
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar selected" data-id="2"></div>
+                <div class="status-container">
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="3"></div>
+                <div class="status-container">
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="4"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="5"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier 2: Advanced -->
+        <div class="category-title">Advanced <span>5</span></div>
+        <div class="bot-grid">
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="6"></div>
+                <div class="status-container">
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="7"></div>
+                <div class="status-container">
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="8"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="9"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="10"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier 3: Engine -->
+        <div class="category-title">Engine <span>1</span></div>
+        <div class="bot-grid">
+            <div class="bot-card">
+                <div class="bot-avatar" data-id="11"></div>
+                <div class="status-container">
+                    <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+        </div>
+        
+    </div> <!-- End Scroll Area -->
+
+    <!-- Bottom Controls -->
+    <div class="bottom-area">
+        <div class="options-row">
+            <button class="options-btn">
+                <div class="left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Options</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="color-selector">
+                <!-- White Color Selection -->
+                <button class="color-btn active">
+                    <svg viewBox="0 0 24 24" fill="#ffffff" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                </button>
+                <!-- Random Color Selection -->
+                <button class="color-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                </button>
+                <!-- Black Color Selection -->
+                <button class="color-btn">
+                    <svg viewBox="0 0 24 24" fill="#262522" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                </button>
+            </div>
+        </div>
+        <button class="play-btn">Play</button>
+    </div>
+
+</div>
+
+<!-- Shared bot/player database (also used by chess.html) -->
+<script src="players.js"></script>
+
+<!-- JavaScript for Interactivity -->
+<script>
+    // botDatabase comes from players.js (the shared PLAYERS object), so this
+    // page and chess.html always agree on names, elo, avatars, and speech.
+    const botDatabase = PLAYERS;
+
+    // DOM Elements
+    const avatars = document.querySelectorAll('.bot-avatar');
+    const activeAvatar = document.getElementById('active-avatar');
+    const activeName = document.getElementById('active-name');
+    const activeElo = document.getElementById('active-elo');
+    const activeSpeech = document.getElementById('active-speech');
+    const activeFlag = document.getElementById('active-flag');
+
+    // renderBotContent() and botAvatarUrl() come from players.js too.
+
+    // Initialize all grid avatars with their respective SVGs/Images
+    avatars.forEach(avatar => {
+        const botId = avatar.getAttribute('data-id');
+        if (botDatabase[botId]) {
+            avatar.innerHTML = renderBotContent(botDatabase[botId]);
+        }
+    });
+
+    // Tracks whichever bot is currently shown in the active/speech-bubble area
+    let selectedBotId = "2";
+
+    // Initialize the default active bot (Bot 2 - Clueless Colin)
+    const initDefaultBot = () => {
+        const defaultBot = botDatabase["2"];
+        activeAvatar.innerHTML = renderBotContent(defaultBot);
+        activeName.textContent = defaultBot.name;
+        activeElo.textContent = defaultBot.elo;
+        activeFlag.textContent = defaultBot.flag;
+        activeSpeech.textContent = defaultBot.speech;
+    };
+    initDefaultBot();
+
+    // Click Event Listener for Avatar Grid
+    avatars.forEach(avatar => {
+        avatar.addEventListener('click', () => {
+            // Remove 'selected' styling from all avatars
+            avatars.forEach(a => a.classList.remove('selected'));
+            
+            // Add 'selected' styling to clicked avatar
+            avatar.classList.add('selected');
+
+            // Fetch bot data based on ID
+            const botId = avatar.getAttribute('data-id');
+            const botData = botDatabase[botId];
+            selectedBotId = botId;
+
+            // Animate transition
+            activeAvatar.style.transform = 'scale(0.8)';
+            activeSpeech.style.opacity = '0';
+            
+            setTimeout(() => {
+                // Determine if avatar is SVG or image URL and render accordingly
+                activeAvatar.innerHTML = renderBotContent(botData);
+
+                // Update UI text data
+                activeName.textContent = botData.name;
+                activeElo.textContent = botData.elo;
+                activeFlag.textContent = botData.flag;
+                activeSpeech.textContent = botData.speech;
+                
+                // Animate back in
+                activeAvatar.style.transform = 'scale(1)';
+                activeSpeech.style.opacity = '1';
+            }, 150);
+        });
+    });
+
+    // Tracks which color option (white/random/black) is currently active.
+    // Defaults to "white" since that button starts with the "active" class.
+    let selectedColor = 'white';
+
+    // Play button: send the currently selected bot's id, plus the chosen
+    // color, over to the chess game. chess.html looks the bot up in the same
+    // shared PLAYERS database, so we don't need to pass every field through
+    // the URL, and chess.html no longer needs to ask for a color again.
+    document.querySelector('.play-btn').addEventListener('click', () => {
+        const botData = botDatabase[selectedBotId];
+        if (!botData) return;
+
+        // Resolve "random" here so chess.html always gets a concrete color.
+        const color = selectedColor === 'random'
+            ? (Math.random() < 0.5 ? 'white' : 'black')
+            : selectedColor;
+
+        const params = new URLSearchParams({
+            id: botData.id,
+            color: color
+        });
+
+        window.location.href = `chess.html?${params.toString()}`;
+    });
+
+    // Simple interaction for the color selector
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const colorValues = ['white', 'random', 'black']; // matches button order in the markup
+    colorBtns.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            colorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedColor = colorValues[i];
+        });
+    });
+</script>
+
+</body>
+</html>

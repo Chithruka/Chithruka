@@ -4,8 +4,10 @@ const files={move:"move.mp3",capture:"capturing.mp3",castle:"castling.mp3",check
 const cache={};
 function getAudio(key){if(!cache[key]){cache[key]=new Audio(BASE+files[key]);cache[key].preload="auto"}
 return cache[key]}
+function preloadAll(){Object.keys(files).forEach((key)=>getAudio(key).load())}
 function play(key){if(!enabled)return;try{const base=getAudio(key);const node=base.readyState>0?base.cloneNode():base;node.currentTime=0;const p=node.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
 return{
+preloadAll,
 playMove(){play("move")},
 playCapture(){play("capture")},
 playCastle(){play("castle")},
@@ -184,12 +186,24 @@ if(el.highlight)el.highlight=null;globalStateRender()})}
 class ModalCreator{constructor(body,useBlur=!0){if(!body)throw new Error("Please pass the body");this.open=!1;this.body=body;this.useBlur=useBlur}
 show(){this.open=!0;document.body.appendChild(this.body);if(this.useBlur)document.getElementById("root").classList.add("blur");}
 hide(){this.open=!1;document.body.removeChild(this.body);if(this.useBlur)document.getElementById("root").classList.remove("blur");}}
-function pawnPromotion(color,callback,id){const squareEl=document.getElementById(id);const box=document.createElement("div");box.classList.add("promotionBox");if(color==="black")box.classList.add("promotionBoxUp");const options=[{fn:color==="white"?whiteQueen:blackQueen,src:pieceUrl(color,"queen")},{fn:color==="white"?whiteKnight:blackKnight,src:pieceUrl(color,"knight")},{fn:color==="white"?whiteRook:blackRook,src:pieceUrl(color,"rook")},{fn:color==="white"?whiteBishop:blackBishop,src:pieceUrl(color,"bishop")},];options.forEach(({fn,src})=>{const img=document.createElement("img");img.src=src;withPieceImgFallback(img);img.onclick=(event)=>{event.stopPropagation();callback(fn,id);box.remove()};box.appendChild(img)});squareEl.appendChild(box)}
+function pawnPromotion(color,callback,id){const squareEl=document.getElementById(id);const box=document.createElement("div");box.classList.add("promotionBox");
+// White always promotes on rank 8, Black on rank 1 - but which edge of the
+// SCREEN that is depends on whether the board is flipped (i.e. which color
+// the human is playing). Compare the piece's color against the flip state
+// so the dropdown always grows into the board, right-side up.
+const _promoFlipped=typeof boardFlipped!=="undefined"&&boardFlipped;
+if((color==="black")!==_promoFlipped)box.classList.add("promotionBoxUp");
+const options=[{fn:color==="white"?whiteQueen:blackQueen,src:pieceUrl(color,"queen")},{fn:color==="white"?whiteKnight:blackKnight,src:pieceUrl(color,"knight")},{fn:color==="white"?whiteRook:blackRook,src:pieceUrl(color,"rook")},{fn:color==="white"?whiteBishop:blackBishop,src:pieceUrl(color,"bishop")},];options.forEach(({fn,src})=>{const img=document.createElement("img");img.src=src;withPieceImgFallback(img);img.onclick=(event)=>{event.stopPropagation();callback(fn,id);box.remove()};box.appendChild(img)});squareEl.appendChild(box)}
 function showCheckmateAnimation(losingColor){const winningColor=losingColor==="white"?"black":"white";const loserKing=globalPiece[`${losingColor}_king`];const winnerKing=globalPiece[`${winningColor}_king`];if(loserKing?.current_position){const loserBadge=document.createElement("div");loserBadge.classList.add("checkmateBadge","checkmateBadgeRed");loserBadge.innerHTML=LOST_KING_SVG;document.getElementById(loserKing.current_position)?.appendChild(loserBadge)}
 if(winnerKing?.current_position){const winnerBadge=document.createElement("div");winnerBadge.classList.add("checkmateBadge");winnerBadge.innerHTML=WINNER_BADGE_SVG;document.getElementById(winnerKing.current_position)?.appendChild(winnerBadge)}}
-function resetGame(){ROOT_DIV.innerHTML="";const freshBoard=initGame();globalState.length=0;freshBoard.forEach((row)=>globalState.push(row));Object.keys(keySquareMapper).forEach((k)=>delete keySquareMapper[k]);globalState.flat().forEach((square)=>{keySquareMapper[square.id]=square});Object.keys(globalPiece).forEach((k)=>delete globalPiece[k]);inTurn="white";whoInCheck=null;selfHighlightState=null;moveState=null;enPassant=null;gameOver=!1;hightlight_state=!1;initGameRender(globalState)}
+function resetGame(){ROOT_DIV.innerHTML="";const freshBoard=initGame();globalState.length=0;freshBoard.forEach((row)=>globalState.push(row));Object.keys(keySquareMapper).forEach((k)=>delete keySquareMapper[k]);globalState.flat().forEach((square)=>{keySquareMapper[square.id]=square});Object.keys(globalPiece).forEach((k)=>delete globalPiece[k]);inTurn="white";whoInCheck=null;selfHighlightState=null;moveState=null;enPassant=null;gameOver=!1;gameResultWinner=null;hightlight_state=!1;initGameRender(globalState)}
 function showEndModal(message){const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent=message;const btnRow=document.createElement("div");btnRow.classList.add("endModalBtnRow");const rematchBtn=document.createElement("button");rematchBtn.textContent="Rematch";rematchBtn.classList.add("rematchBtn");const reviewBtn=document.createElement("button");reviewBtn.textContent="Review Game";reviewBtn.classList.add("rematchBtn","reviewBtn");btnRow.append(rematchBtn,reviewBtn);box.appendChild(closeBtn);box.appendChild(msg);box.appendChild(btnRow);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();rematchBtn.onclick=()=>{modal.hide();resetGame()};reviewBtn.onclick=()=>{modal.hide();openGameReview()};modal.show()}
-let hightlight_state=!1;let inTurn="white";let whoInCheck=null;let selfHighlightState=null;let moveState=null;let enPassant=null;let gameOver=!1;function changeTurn(){inTurn=inTurn==="white"?"black":"white"}
+let hightlight_state=!1;let inTurn="white";let whoInCheck=null;let selfHighlightState=null;let moveState=null;let enPassant=null;let gameOver=!1;
+// Tracks how the game actually ended: "white", "black" (that color won), "draw", or null while the
+// game is still in progress. Used by applyMissedWinDetection() to know whether a side that once had
+// a forced mate on the board ultimately failed to win the game.
+let gameResultWinner=null;
+function changeTurn(){inTurn=inTurn==="white"?"black":"white"}
 function getPiecesByColor(color){const singles=Object.keys(globalPiece).filter((k)=>k.startsWith(color)&&k!==`${color}_pawns`).map((k)=>globalPiece[k]);const pawns=globalPiece[`${color}_pawns`]||[];return singles.concat(pawns).filter((p)=>p&&p.current_position)}
 function sliderAttackSquares(dirArray){const result=[];for(const sq of dirArray){result.push(sq);if(keySquareMapper[sq].piece)break}
 return result}
@@ -222,7 +236,7 @@ function checkForPawnPromotion(piece,id){if(!piece?.piece_name?.toLowerCase()?.i
 function callbackPawnPromotion(pieceFn,id){const realPiece=pieceFn(id);const oldPawn=keySquareMapper[id].piece;keySquareMapper[id].piece=realPiece;realPiece.current_position=id;const[colorPart,typePart]=realPiece.piece_name.toLowerCase().split("_");const pawns=globalPiece[`${colorPart}_pawns`];if(pawns&&oldPawn){const idx=pawns.indexOf(oldPawn);if(idx!==-1)pawns.splice(idx,1);}
 let slot=`${colorPart}_${typePart}`;if(globalPiece[slot])slot=`${colorPart}_${typePart}_promoted_${Date.now()}`;globalPiece[slot]=realPiece;if(typeof registerPiece==="function")registerPiece(realPiece);const img=document.createElement("img");img.src=realPiece.img;img.dataset.pieceName=realPiece.piece_name;img.dataset.pieceUid=realPiece.uid;img.classList.add("piece");const el=document.getElementById(id);const oldImg=el.querySelector("img.piece");if(oldImg)el.removeChild(oldImg);el.append(img)}
 let pendingPromotionResolvers=null;
-function finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture){checkForCheck();if(!castle){const isCastleMove=piece.piece_name.includes("KING")&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;changeTurn();if(isCheckmate(inTurn)){gameOver=!0;SoundFX.playCheckmate();showCheckmateAnimation(inTurn);showEndModal(`Checkmate! ${inTurn === "white" ? "Black" : "White"} wins`)}else if(isStalemate(inTurn)){gameOver=!0;SoundFX.playStalemate();showDrawAnimation();showEndModal("Stalemate! It's a draw")}else if(whoInCheck){SoundFX.playCheck()}else if(isCastleMove){SoundFX.playCastle()}else if(wasCapture){SoundFX.playCapture()}else{SoundFX.playMove()}}}
+function finalizeMoveOutcome(piece,id,castle,fromPos,wasCapture){checkForCheck();if(!castle){const isCastleMove=piece.piece_name.includes("KING")&&fromPos&&Math.abs(id.charCodeAt(0)-fromPos.charCodeAt(0))===2;changeTurn();if(isCheckmate(inTurn)){gameOver=!0;gameResultWinner=inTurn==="white"?"black":"white";SoundFX.playCheckmate();showCheckmateAnimation(inTurn);showEndModal(`Checkmate! ${inTurn === "white" ? "Black" : "White"} wins`)}else if(isStalemate(inTurn)){gameOver=!0;gameResultWinner="draw";SoundFX.playStalemate();showDrawAnimation();showEndModal("Stalemate! It's a draw")}else if(whoInCheck){SoundFX.playCheck()}else if(isCastleMove){SoundFX.playCastle()}else if(wasCapture){SoundFX.playCapture()}else{SoundFX.playMove()}}}
 function autoPromotionFn(color,letter){const fnMap={Q:color==="white"?whiteQueen:blackQueen,R:color==="white"?whiteRook:blackRook,B:color==="white"?whiteBishop:blackBishop,N:color==="white"?whiteKnight:blackKnight};return fnMap[letter]||fnMap.Q}
 function moveElement(piece,id,castle,autoPromoteLetter){const pawnIsPromoted=checkForPawnPromotion(piece,id);const fromPos=piece.current_position;const isPawn=piece.piece_name.toLowerCase().includes("pawn");let enPassantCaptureSquare=null;if(isPawn&&enPassant&&id===enPassant.square&&!piece.piece_name.includes(enPassant.pawn.piece_name.split("_")[0])){enPassantCaptureSquare=enPassant.pawn.current_position}
 let wasCapture=!!enPassantCaptureSquare;
@@ -275,7 +289,7 @@ function restoreGameState(state){if(!state)return;globalState.flat().forEach((sq
 function updateUndoButtonState(){const btn=document.getElementById("undoBtn");if(!btn)return;btn.disabled=moveHistory.length===0;btn.classList.toggle("navBtnDisabled",moveHistory.length===0)}
 function undoMove(){stopPlayback();if(moveHistory.length===0)return;moveHistory.pop();const targetIndex=moveHistory.length-1;const targetState=targetIndex===-1?startFullState:moveHistory[targetIndex].fullState;const targetSnapshot=targetIndex===-1?startSnapshot:moveHistory[targetIndex].snapshot;selfHighlightState=null;moveState=null;clearHightlight();document.querySelectorAll(".highlightYellow").forEach((el)=>el.classList.remove("highlightYellow"));document.querySelectorAll(".captureColor").forEach((el)=>el.classList.remove("captureColor"));restoreGameState(targetState);restoreSnapshot(targetSnapshot);viewingIndex=targetIndex;clearCheckVisuals();applyMoveVisuals(targetIndex===-1?null:moveHistory[targetIndex]);renderMoveList();renderPlayerBars();updateGrabCursors()}
 
-const ENGINE_LOGO_URL="https://images.chesscomfiles.com/uploads/v1/bot_personality/4c07340e-8a5d-11ea-9abb-79b3443058a1.6bfb2f43.384x384o.9fad36f33baf.png";const PLAYER_AVATAR_URL="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#689f38"/><circle cx="16" cy="12" r="6" fill="#fff"/><path d="M4 30c0-7 5-11 12-11s12 4 12 11" fill="#fff"/></svg>');let playerName="You";let engineName="Stockfish";
+let ENGINE_LOGO_URL="https://images.chesscomfiles.com/uploads/v1/bot_personality/4c07340e-8a5d-11ea-9abb-79b3443058a1.6bfb2f43.384x384o.9fad36f33baf.png";const PLAYER_AVATAR_URL="data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#689f38"/><circle cx="16" cy="12" r="6" fill="#fff"/><path d="M4 30c0-7 5-11 12-11s12 4 12 11" fill="#fff"/></svg>');let playerName="You";let engineName="Stockfish";
 function createPlayerBar(id){const bar=document.createElement("div");bar.classList.add("playerBar");bar.id=id;bar.innerHTML=`<img class="playerAvatar" id="${id}Avatar" alt=""><div class="playerNameWrap"><span class="playerName" id="${id}Name"></span></div><div class="playerCaptured" id="${id}Captured"></div><span class="materialAdv" id="${id}Adv"></span>`;return bar}
 function wrapBoardWithNav(){const wrapper=document.createElement("div");wrapper.id="gameWrap";document.body.insertBefore(wrapper,ROOT_DIV);const boardColumn=document.createElement("div");boardColumn.id="boardColumn";wrapper.appendChild(boardColumn);const topBar=createPlayerBar("topBar");const bottomBar=createPlayerBar("bottomBar");const boardRow=document.createElement("div");boardRow.id="boardRow";const evalBarWrap=document.createElement("div");evalBarWrap.id="evalBarWrap";evalBarWrap.innerHTML=`<span class="evalBarScore" id="evalBarScore">0.0</span><div class="evalBarFill" id="evalBarFill"></div>`;boardRow.appendChild(evalBarWrap);boardRow.appendChild(ROOT_DIV);boardColumn.appendChild(topBar);boardColumn.appendChild(boardRow);boardColumn.appendChild(bottomBar);const nav=document.createElement("div");nav.id="bottomNav";wrapper.appendChild(nav);window._bottomNavEl=nav;document.getElementById("topBarAvatar").src=ENGINE_LOGO_URL;document.getElementById("bottomBarAvatar").src=PLAYER_AVATAR_URL;renderPlayerNames()}
 function getBottomColor(){return boardFlipped?"black":"white"}
@@ -288,6 +302,17 @@ container.appendChild(group)})}
 function renderPlayerBars(){if(!document.getElementById("topBar"))return;const bottomColor=getBottomColor();const topColor=bottomColor==="white"?"black":"white";const{capturedWhite,capturedBlack}=computeCapturedNames();const bottomCaptured=bottomColor==="white"?capturedBlack:capturedWhite;const topCaptured=topColor==="white"?capturedBlack:capturedWhite;renderCapturedRow("bottomBarCaptured",bottomCaptured,topColor);renderCapturedRow("topBarCaptured",topCaptured,bottomColor);const bottomVal=sumValue(bottomCaptured),topVal=sumValue(topCaptured);const diff=bottomVal-topVal;document.getElementById("bottomBarAdv").textContent=diff>0?`+${diff}`:"";document.getElementById("topBarAdv").textContent=diff<0?`+${-diff}`:"";renderPlayerNames()}
 
 function pieceLetter(name){if(name.includes("KNIGHT"))return"N";if(name.includes("KING"))return"K";if(name.includes("QUEEN"))return"Q";if(name.includes("ROOK"))return"R";if(name.includes("BISHOP"))return"B";return""}
+
+// Unicode chess glyphs, keyed by color then piece letter — used only for the compact history
+// slider (the Game Review columns keep the plain letter/text SAN).
+const PIECE_UNICODE={white:{K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘"},black:{K:"♚",Q:"♛",R:"♜",B:"♝",N:"♞"}};
+function sanToUnicodeDisplay(san,color){
+  if(!san)return san;
+  const m=/^([KQRBN])/.exec(san);
+  if(!m)return san; // pawn move, castle (O-O/O-O-O), etc. — no piece letter to swap
+  const symbol=(PIECE_UNICODE[color]||{})[m[1]];
+  return symbol?symbol+san.slice(1):san;
+}
 
 function takeSnapshot(){return globalState.flat().filter((sq)=>sq.piece).map((sq)=>({id:sq.id,piece_name:sq.piece.piece_name,uid:sq.piece.uid}))}
 
@@ -327,7 +352,11 @@ resetGame=function(){stopPlayback();_origResetGame();rebuildPieceRegistry();move
 function clearCheckVisuals(){document.querySelectorAll(".checkmateBadge").forEach((el)=>el.remove());document.querySelectorAll(".inCheck").forEach((el)=>el.classList.remove("inCheck"))}
 
 function applyMoveVisuals(entry){clearCheckVisuals();if(!entry)return;if(entry.checkColor){const kingEntry=entry.snapshot.find((p)=>p.piece_name===`${entry.checkColor.toUpperCase()}_KING`);if(kingEntry)document.getElementById(kingEntry.id)?.classList.add("inCheck")}
-if(entry.checkmate&&entry===moveHistory[moveHistory.length-1]&&gameOver)showCheckmateAnimation(entry.checkColor)}
+const isFinalMove=entry===moveHistory[moveHistory.length-1]&&entry.fullState&&entry.fullState.gameOver;
+if(isFinalMove){
+  if(entry.checkmate)showCheckmateAnimation(entry.checkColor);
+  else showDrawAnimation(); // stalemate (or other non-checkmate game-over states) reached on the final move
+}}
 
 function playSoundForEntry(entry){if(!entry)return;const san=entry.san||"";const isMate=san.indexOf("#")!==-1||!!entry.checkmate;const isGameOver=isMate||(entry.fullState&&entry.fullState.gameOver);
 if(isMate){SoundFX.playCheckmate();return}
@@ -352,9 +381,9 @@ function startPlayback(){if(moveHistory.length===0)return;if(viewingIndex>=moveH
 
 function togglePlayback(){if(isPlaying)stopPlayback();else startPlayback()}
 
-function renderMoveList(){const scrollEl=document.getElementById("moveListScroll");if(!scrollEl)return;scrollEl.innerHTML="";for(let i=0;i<moveHistory.length;i+=2){const pairEl=document.createElement("span");pairEl.classList.add("movePair");const num=document.createElement("span");num.classList.add("moveNum");num.textContent=`${moveHistory[i].moveNumber}.`;pairEl.appendChild(num);const whiteSpan=document.createElement("span");whiteSpan.classList.add("moveSan");whiteSpan.dataset.moveIndex=i;if(typeof reviewActive!=="undefined"&&reviewActive&&moveHistory[i].quality){const b=makeQualityBadgeEl(moveHistory[i].quality.key,14);if(b)whiteSpan.appendChild(b)}
-whiteSpan.appendChild(document.createTextNode(moveHistory[i].san));if(i===viewingIndex)whiteSpan.classList.add("activeMove");whiteSpan.onclick=()=>{stopPlayback();goToMove(i)};pairEl.appendChild(whiteSpan);if(moveHistory[i+1]){const blackSpan=document.createElement("span");blackSpan.classList.add("moveSan");blackSpan.dataset.moveIndex=i+1;if(typeof reviewActive!=="undefined"&&reviewActive&&moveHistory[i+1].quality){const b=makeQualityBadgeEl(moveHistory[i+1].quality.key,14);if(b)blackSpan.appendChild(b)}
-blackSpan.appendChild(document.createTextNode(moveHistory[i+1].san));if(i+1===viewingIndex)blackSpan.classList.add("activeMove");blackSpan.onclick=()=>{stopPlayback();goToMove(i+1)};pairEl.appendChild(blackSpan)}
+function renderMoveList(){const scrollEl=document.getElementById("moveListScroll");if(!scrollEl)return;scrollEl.innerHTML="";for(let i=0;i<moveHistory.length;i+=2){const pairEl=document.createElement("span");pairEl.classList.add("movePair");const num=document.createElement("span");num.classList.add("moveNum");num.textContent=`${moveHistory[i].moveNumber}.`;pairEl.appendChild(num);const whiteSpan=document.createElement("span");whiteSpan.classList.add("moveSan");whiteSpan.dataset.moveIndex=i;
+whiteSpan.appendChild(document.createTextNode(sanToUnicodeDisplay(moveHistory[i].san,"white")));if(i===viewingIndex)whiteSpan.classList.add("activeMove");whiteSpan.onclick=()=>{stopPlayback();goToMove(i)};pairEl.appendChild(whiteSpan);if(moveHistory[i+1]){const blackSpan=document.createElement("span");blackSpan.classList.add("moveSan");blackSpan.dataset.moveIndex=i+1;
+blackSpan.appendChild(document.createTextNode(sanToUnicodeDisplay(moveHistory[i+1].san,"black")));if(i+1===viewingIndex)blackSpan.classList.add("activeMove");blackSpan.onclick=()=>{stopPlayback();goToMove(i+1)};pairEl.appendChild(blackSpan)}
 scrollEl.appendChild(pairEl)}
 requestAnimationFrame(()=>{const active=scrollEl.querySelector(".activeMove");if(active){const target=active.offsetLeft-scrollEl.clientWidth/2+active.offsetWidth/2;scrollEl.scrollLeft=Math.max(0,target)}});updateUndoButtonState()}
 
@@ -363,7 +392,7 @@ if(rowIdx===rows.length-1){const fileLabel=document.createElement("span");fileLa
 
 function flipBoard(){boardFlipped=!boardFlipped;const rows=Array.from(ROOT_DIV.children).reverse();rows.forEach((rowEl)=>{ROOT_DIV.appendChild(rowEl);const squares=Array.from(rowEl.children).reverse();squares.forEach((sq)=>rowEl.appendChild(sq))});updateCoordLabels()}
 
-function resignGame(){if(gameOver)return;const resigningColor=playerColor||inTurn;const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent="Resign this game?";const yesBtn=document.createElement("button");yesBtn.textContent="Resign";yesBtn.classList.add("rematchBtn");box.append(closeBtn,msg,yesBtn);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();yesBtn.onclick=()=>{modal.hide();gameOver=!0;SoundFX.playResign();showResignAnimation(resigningColor);const winner=resigningColor==="white"?"Black":"White";showEndModal(`${resigningColor==="white"?"White":"Black"} resigned. ${winner} wins`)};modal.show()}
+function resignGame(){if(gameOver)return;const resigningColor=playerColor||inTurn;const box=document.createElement("div");box.classList.add("endModalBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const msg=document.createElement("p");msg.textContent="Resign this game?";const yesBtn=document.createElement("button");yesBtn.textContent="Resign";yesBtn.classList.add("rematchBtn");box.append(closeBtn,msg,yesBtn);const container=document.createElement("div");container.appendChild(box);container.classList.add("modal","endModal");const modal=new ModalCreator(container,!1);closeBtn.onclick=()=>modal.hide();yesBtn.onclick=()=>{modal.hide();gameOver=!0;gameResultWinner=resigningColor==="white"?"black":"white";SoundFX.playResign();showResignAnimation(resigningColor);const winner=resigningColor==="white"?"Black":"White";showEndModal(`${resigningColor==="white"?"White":"Black"} resigned. ${winner} wins`)};modal.show()}
 
 function openOptionsMenu(){const box=document.createElement("div");box.classList.add("optionsBox");const closeBtn=document.createElement("button");closeBtn.textContent="×";closeBtn.classList.add("modalClose");closeBtn.setAttribute("aria-label","Close");const title=document.createElement("h3");title.classList.add("optionsTitle");title.textContent="Options";const list=document.createElement("div");list.classList.add("optionsList");const switchBtn=document.createElement("button");switchBtn.classList.add("optionItem");switchBtn.textContent="Switch Sides";const flipBtn=document.createElement("button");flipBtn.classList.add("optionItem");flipBtn.textContent="Flip Board";const newBtn=document.createElement("button");newBtn.classList.add("optionItem");newBtn.textContent="New Game";if(moveHistory.length>0){switchBtn.disabled=!0;switchBtn.classList.add("optionItemDisabled");switchBtn.title="Only available before the first move"}
 const soundBtn=document.createElement("button");soundBtn.classList.add("optionItem");soundBtn.textContent=SoundFX.isEnabled()?"Sound: On":"Sound: Off";soundBtn.onclick=()=>{SoundFX.setEnabled(!SoundFX.isEnabled());soundBtn.textContent=SoundFX.isEnabled()?"Sound: On":"Sound: Off";if(SoundFX.isEnabled())SoundFX.playMove()};
@@ -383,7 +412,25 @@ box.append(closeBtn,title,pieceLabel,pieceGrid,boardLabel,boardGrid);const conta
 function buildBottomNav(){if(typeof reviewActive!=="undefined")reviewActive=!1;if(typeof reviewRowEls!=="undefined")reviewRowEls=null;const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.remove("evalBarVisible");startSnapshot=takeSnapshot();startFullState=captureGameState();const nav=window._bottomNavEl;nav.innerHTML=`<div class="moveListBar"><button class="navArrow" id="navPrev" aria-label="Previous move">&#8249;</button><div class="moveListScroll" id="moveListScroll"></div><button class="navArrow" id="navNext" aria-label="Next move">&#8250;</button></div><div class="navButtons"><button class="navBtn" id="playBtn"><span class="navIcon" id="playIcon">&#9654;</span><span id="playLabel">Play</span></button><button class="navBtn" id="undoBtn"><span class="navIcon">&#8630;</span><span>Undo</span></button><button class="navBtn" id="optionsBtn"><span class="navIcon">&#9776;</span><span>Options</span></button><button class="navBtn" id="resignBtn"><span class="navIcon">&#9873;</span><span>Resign</span></button><button class="navBtn" id="reviewGameBtn"><span class="navIcon">&#128269;</span><span>Review</span></button></div><div class="reviewPanel" id="reviewPanel"><div class="reviewPanelHeader"><span>Game Review</span><button class="reviewCloseBtn" id="reviewCloseBtn" aria-label="Close review">&times;</button></div><div class="reviewMoveList" id="reviewMoveList"></div></div>`;document.getElementById("navPrev").onclick=()=>{stopPlayback();if(viewingIndex>-1)goToMove(viewingIndex-1)};document.getElementById("navNext").onclick=()=>{stopPlayback();if(viewingIndex<moveHistory.length-1)goToMove(viewingIndex+1)};document.getElementById("playBtn").onclick=togglePlayback;document.getElementById("resignBtn").onclick=()=>{if(gameOver)return;stopPlayback();resignGame()};document.getElementById("optionsBtn").onclick=()=>{stopPlayback();openOptionsMenu()};document.getElementById("undoBtn").onclick=()=>undoMove();document.getElementById("reviewGameBtn").onclick=()=>openGameReview();document.getElementById("reviewCloseBtn").onclick=()=>closeGameReview();renderMoveList();updateUndoButtonState();updateResignButtonState()}
 
 function updateResignButtonState(){const btn=document.getElementById("resignBtn");if(!btn)return;btn.disabled=gameOver;btn.classList.toggle("navBtnDisabled",gameOver)}
-function showColorPicker(){colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent="Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="0";slider.max=String(ENGINE_LEVELS.length-1);slider.step="1";slider.value=String(ENGINE_LEVELS.indexOf(ENGINE_DEPTH));slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=ENGINE_LEVELS[Number(slider.value)];document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();SoundFX.playStart();renderPlayerBars()}
+function showColorPicker(){
+  // If the color was already chosen on characters.html, apply it directly
+  // instead of asking again. This only applies once, on initial load - if
+  // the player later uses "Switch Sides" or "New Game", PRESET_COLOR is
+  // already cleared so the normal picker shows up.
+  if(PRESET_COLOR){
+    const color=PRESET_COLOR;
+    PRESET_COLOR=null;
+    playerColor=color;
+    colorChosen=!0;
+    engineName=PRESET_BOT_NAME||ENGINE_NAMES[ENGINE_DEPTH]||"Stockfish";
+    if(color==="black"&&!boardFlipped)flipBoard();
+    else if(color==="white"&&boardFlipped)flipBoard();
+    SoundFX.playStart();
+    SoundFX.preloadAll();
+    renderPlayerBars();
+    return;
+  }
+  colorChosen=!1;const overlay=document.createElement("div");overlay.classList.add("colorPickerOverlay");const box=document.createElement("div");box.classList.add("colorPickerBox");const logo=document.createElement("img");logo.src="Assets/images/ui/favicon.svg";logo.alt="";logo.classList.add("colorPickerLogo");const title=document.createElement("h3");title.classList.add("colorPickerTitle");title.textContent=PRESET_BOT_NAME?`Play vs ${PRESET_BOT_NAME}`:"Choose Your Side";const strengthWrap=document.createElement("div");strengthWrap.classList.add("strengthPicker");const strengthLabel=document.createElement("div");strengthLabel.classList.add("strengthLabel");strengthLabel.innerHTML=`<span>Engine Strength</span><span class="strengthValue" id="strengthValue">${STRENGTH_LABELS[ENGINE_DEPTH]}</span>`;const slider=document.createElement("input");slider.type="range";slider.min="0";slider.max=String(ENGINE_LEVELS.length-1);slider.step="1";slider.value=String(ENGINE_LEVELS.indexOf(ENGINE_DEPTH));slider.classList.add("strengthSlider");slider.id="strengthSlider";const strengthTicks=document.createElement("div");strengthTicks.classList.add("strengthTicks");strengthTicks.innerHTML=`<span>Easier</span><span>Stronger</span>`;slider.oninput=()=>{ENGINE_DEPTH=ENGINE_LEVELS[Number(slider.value)];document.getElementById("strengthValue").textContent=STRENGTH_LABELS[ENGINE_DEPTH]};strengthWrap.append(strengthLabel,slider,strengthTicks);const row=document.createElement("div");row.classList.add("colorChoiceRow");const whiteBtn=document.createElement("button");whiteBtn.classList.add("colorChoiceBtn","whiteChoice");whiteBtn.innerHTML=`<span class="colorSwatch"></span><span>White</span>`;const blackBtn=document.createElement("button");blackBtn.classList.add("colorChoiceBtn","blackChoice");blackBtn.innerHTML=`<span class="colorSwatch"></span><span>Black</span>`;row.append(whiteBtn,blackBtn);box.append(logo,title,strengthWrap,row);overlay.appendChild(box);document.body.appendChild(overlay);function choose(color){playerColor=color;colorChosen=!0;engineName=PRESET_BOT_NAME||ENGINE_NAMES[ENGINE_DEPTH]||"Stockfish";overlay.remove();if(color==="black"&&!boardFlipped)flipBoard();else if(color==="white"&&boardFlipped)flipBoard();SoundFX.playStart();SoundFX.preloadAll();renderPlayerBars()}
 whiteBtn.onclick=()=>choose("white");blackBtn.onclick=()=>choose("black")}
 
 /* ===================== Drag and Drop ===================== */
@@ -420,11 +467,22 @@ const STOCKFISH_WORKER_URL="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/
 
 class LocalStockfish{
   constructor(){this.worker=null;this.readyPromise=this._init();this._queue=Promise.resolve()}
+  // Fetching + parsing the engine script is the expensive part; cache it so that creating a
+  // second LocalStockfish instance (e.g. the eval engine) reuses the already-downloaded script
+  // instead of fetching and re-parsing a ~1MB file a second time.
+  static _scriptPromise=null;
+  static _getScriptBlobUrl(){
+    if(!LocalStockfish._scriptPromise){
+      LocalStockfish._scriptPromise=fetch(STOCKFISH_WORKER_URL).then(async(res)=>{
+        if(!res.ok)throw new Error("Failed to fetch Stockfish engine script");
+        const scriptText=await res.text();
+        return URL.createObjectURL(new Blob([scriptText],{type:"application/javascript"}));
+      });
+    }
+    return LocalStockfish._scriptPromise;
+  }
   async _init(){
-    const res=await fetch(STOCKFISH_WORKER_URL);
-    if(!res.ok)throw new Error("Failed to fetch Stockfish engine script");
-    const scriptText=await res.text();
-    const blobUrl=URL.createObjectURL(new Blob([scriptText],{type:"application/javascript"}));
+    const blobUrl=await LocalStockfish._getScriptBlobUrl();
     this.worker=new Worker(blobUrl);
     await this._sendAndWait("uci","uciok");
     await this._sendAndWait("isready","readyok");
@@ -515,12 +573,76 @@ class LocalStockfish{
 
 const localEngine=new LocalStockfish();
 let ENGINE_DEPTH=12; // one of ENGINE_LEVELS below; higher (real depth) = stronger but slower
+const BRAINDEAD_LEVEL=0; // sentinel: no engine at all, pure random legal move, no commentary
 const WEAK_ENGINE_LEVEL=100; // sentinel: "~100 Elo" beginner mode, not a real search depth
 const WEAK_ENGINE_ANALYSIS_DEPTH=8; // shallow depth used only to score every legal move for the beginner bot
-const ENGINE_LEVELS=[WEAK_ENGINE_LEVEL,5,6,7,8,9,10,11,12,13,14,15];
-const STRENGTH_LABELS={100:"~100 Elo (Beginner)",5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
+const ENGINE_LEVELS=[BRAINDEAD_LEVEL,WEAK_ENGINE_LEVEL,5,6,7,8,9,10,11,12,13,14,15];
+const STRENGTH_LABELS={0:"Braindead (Random)",100:"~100 Elo (Beginner)",5:"~1200 Elo",6:"~1350 Elo",7:"~1500 Elo",8:"~1650 Elo",9:"~1800 Elo",10:"~1950 Elo",11:"~2100 Elo",12:"~2250 Elo",13:"~2450 Elo",14:"~2650 Elo",15:"~2850 Elo"};
+const ENGINE_NAMES={0:"Braindead Bot",100:"Beginner Bot"};
+
+// --- Character selection support (values passed in from characters.html) ---
+const ENGINE_ELO_APPROX={0:1,100:100,5:1200,6:1350,7:1500,8:1650,9:1800,10:1950,11:2100,12:2250,13:2450,14:2650,15:2850};
+let PRESET_BOT_NAME=null;
+// If characters.html already collected a color choice, we store it here so
+// the color picker can be skipped entirely instead of asking again.
+let PRESET_COLOR=null;
+(function applyPresetBot(){
+  try{
+    const p=new URLSearchParams(window.location.search);
+    // Preferred path: a bot "id" from the shared PLAYERS database
+    // (players.js), which both characters.html and this page include.
+    const pId=p.get("id");
+    const botData=(pId!==null&&typeof PLAYERS!=="undefined")?PLAYERS[pId]:null;
+
+    if(botData){
+      ENGINE_DEPTH=botData.engineDepth!==undefined?botData.engineDepth:ENGINE_DEPTH;
+      PRESET_BOT_NAME=botData.name;
+      engineName=botData.name;
+      ENGINE_LOGO_URL=botAvatarUrl(botData);
+    }else{
+      // Legacy fallback: individual name/elo/avatar params (older links).
+      const pElo=p.get("elo");
+      const pName=p.get("name");
+      const pAvatar=p.get("avatar");
+      if(pElo!==null){
+        const target=parseInt(pElo,10);
+        if(!isNaN(target)){
+          let bestDepth=ENGINE_LEVELS[0],bestDiff=Infinity;
+          ENGINE_LEVELS.forEach((d)=>{
+            const diff=Math.abs((ENGINE_ELO_APPROX[d]!==undefined?ENGINE_ELO_APPROX[d]:d)-target);
+            if(diff<bestDiff){bestDiff=diff;bestDepth=d}
+          });
+          ENGINE_DEPTH=bestDepth;
+        }
+      }
+      if(pName){PRESET_BOT_NAME=pName;engineName=pName}
+      if(pAvatar){ENGINE_LOGO_URL=decodeURIComponent(pAvatar)}
+    }
+
+    // Color chosen already on characters.html - skip asking again.
+    const pColor=p.get("color");
+    if(pColor==="white"||pColor==="black"){
+      PRESET_COLOR=pColor;
+    }
+  }catch(e){console.error("Failed to apply preset bot from URL",e)}
+})();
 let engineThinking=!1;
 let suppressEngineAutoMove=!1;
+
+// Braindead bot: picks a uniformly random legal move. Never touches Stockfish at all — the
+// "clock" (current timestamp) is folded into the random draw purely as extra entropy, not
+// because it's needed for correctness (Math.random already suffices per move).
+function pickBraindeadMove(fen){
+  let game;
+  try{game=new Chess(fen)}catch(err){console.error("Braindead bot: failed to load position",err);return null}
+  const moves=game.moves({verbose:!0});
+  if(!moves||moves.length===0)return null;
+  const clockSeed=Date.now()%moves.length; // rotates the starting point using the current time
+  const idx=Math.floor(Math.random()*moves.length);
+  const chosen=moves[(idx+clockSeed)%moves.length];
+  const promo=chosen.promotion?chosen.promotion:"";
+  return `${chosen.from}${chosen.to}${promo}`;
+}
 
 // Beginner bot: scores every legal move shallowly, then picks one weighted toward the WORST
 // options (bigger blunders are far more likely, but it's not guaranteed to always play the single
@@ -552,12 +674,26 @@ function buildFENUpTo(index){const game=new Chess();for(let i=0;i<=index;i++){co
 return game.fen()}
 function buildFEN(){return buildFENUpTo(viewingIndex)}
 
-function showEngineThinking(active){const bottomColor=getBottomColor();const bottomIsPlayer=bottomColor===(playerColor||"white");const el=document.getElementById(bottomIsPlayer?"topBarName":"bottomBarName");if(!el)return;const engineColor=(playerColor||"white")==="white"?"black":"white";const label=`${engineName} (${engineColor === "white" ? "White" : "Black"})`;el.textContent=active?`${label} — thinking…`:label}
+function showEngineThinking(active){const bottomColor=getBottomColor();const bottomIsPlayer=bottomColor===(playerColor||"white");const el=document.getElementById(bottomIsPlayer?"topBarName":"bottomBarName");if(!el)return;const engineColor=(playerColor||"white")==="white"?"black":"white";const label=`${engineName} (${engineColor === "white" ? "White" : "Black"})`;
+// The braindead bot never says anything — no "thinking…" label, it just plays instantly.
+if(ENGINE_DEPTH===BRAINDEAD_LEVEL){el.textContent=label;return}
+el.textContent=active?`${label} — thinking…`:label}
 
-function applyEngineMove(uci){const from=uci.slice(0,2),to=uci.slice(2,4);const promoLetter=uci.length>4?uci[4].toUpperCase():null;const square=keySquareMapper[from];if(!square||!square.piece)return;const piece=square.piece;moveElement(piece,to,!1,promoLetter);
+function applyEngineMove(uci){const from=uci.slice(0,2),to=uci.slice(2,4);const square=keySquareMapper[from];if(!square||!square.piece)return;const piece=square.piece;
+// Bots should never be interrupted with the human promotion picker: if the UCI move includes a
+// promotion letter use it, otherwise (defensively) fall back to auto-queening.
+const promoLetter=uci.length>4?uci[4].toUpperCase():(checkForPawnPromotion(piece,to)?"Q":null);
+moveElement(piece,to,!1,promoLetter);
 updateGrabCursors()}
 
-async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();let bestMoveUci;if(ENGINE_DEPTH===WEAK_ENGINE_LEVEL){bestMoveUci=await pickWeakMove(fen);if(!bestMoveUci){const fallback=await localEngine.analyze(fen,6);bestMoveUci=fallback.bestMoveUci}}else{const res=await localEngine.analyze(fen,ENGINE_DEPTH);bestMoveUci=res.bestMoveUci}if(!bestMoveUci)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(bestMoveUci)}catch(err){console.error("Stockfish move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
+async function requestEngineMove(){if(gameOver||engineThinking)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn!==engineColor)return;engineThinking=!0;showEngineThinking(!0);try{const fen=buildFEN();let bestMoveUci;
+if(ENGINE_DEPTH===BRAINDEAD_LEVEL){
+  // Pure random legal move. Deliberately never touches localEngine/Stockfish in any way.
+  bestMoveUci=pickBraindeadMove(fen);
+  // Add a random human-like delay (1-4s) so the move doesn't play instantly.
+  const braindeadDelay=1000+Math.random()*3000;
+  await new Promise(resolve=>setTimeout(resolve,braindeadDelay));
+}else if(ENGINE_DEPTH===WEAK_ENGINE_LEVEL){bestMoveUci=await pickWeakMove(fen);if(!bestMoveUci){const fallback=await localEngine.analyze(fen,6);bestMoveUci=fallback.bestMoveUci}}else{const res=await localEngine.analyze(fen,ENGINE_DEPTH);bestMoveUci=res.bestMoveUci}if(!bestMoveUci)throw new Error("No move returned by engine");if(gameOver||inTurn!==engineColor)return;applyEngineMove(bestMoveUci)}catch(err){console.error("Bot move failed:",err)}finally{engineThinking=!1;showEngineThinking(!1)}}
 
 function maybeTriggerEngineMove(){if(suppressEngineAutoMove)return;if(gameOver)return;if(!colorChosen||!playerColor)return;if(typeof viewingIndex!=="undefined"&&typeof moveHistory!=="undefined"&&viewingIndex!==moveHistory.length-1)return;const engineColor=playerColor==="white"?"black":"white";if(inTurn===engineColor)setTimeout(requestEngineMove,300)}
 
@@ -582,11 +718,20 @@ const REVIEW_DEPTH=12;
 // the eval bar. The two workers run independently and in parallel.
 const evalEngine=new LocalStockfish();
 
-async function evaluatePosition(fen){
+const LIVE_EVAL_DEPTH=8; // shallower depth for the always-running eval bar; full REVIEW_DEPTH is reserved for the explicit Game Review pass
+
+async function evaluatePosition(fen,depth,_isRetry){
   try{
-    const{bestMoveUci,evalCp,mate}=await evalEngine.analyze(fen,REVIEW_DEPTH);
+    const{bestMoveUci,evalCp,mate}=await evalEngine.analyze(fen,depth||LIVE_EVAL_DEPTH);
     return{eval:evalCp!==null?evalCp/100:null,mate:mate!==null?mate:0,move:bestMoveUci||""};
-  }catch(err){console.error("Local Stockfish evaluation failed:",err);return null}
+  }catch(err){
+    console.error("Local Stockfish evaluation failed:",err);
+    // One automatic retry — a dropped/failed worker response shouldn't permanently blank out a
+    // move's review grade (quality grading needs the eval both before AND after the move, so a
+    // single silent failure was blanking out two moves' worth of review).
+    if(!_isRetry)return evaluatePosition(fen,depth,!0);
+    return null;
+  }
 }
 
 function formatEval(data){if(!data)return"N/A";if(typeof data.mate==="number"&&data.mate!==0)return`M${data.mate}`;if(typeof data.eval==="number")return(data.eval>0?"+":"")+data.eval.toFixed(2);return"—"}
@@ -600,11 +745,14 @@ function formatBestMove(data){if(!data)return"";return data.san||data.text||data
 let evalCache={};
 let precomputeChain=Promise.resolve();
 
-function precomputeEvalForIndex(idx){
-  if(evalCache[idx])return Promise.resolve(evalCache[idx]);
+function precomputeEvalForIndex(idx,depth){
+  // A cached shallow (live) eval is fine to show immediately; only force a re-run when the
+  // caller explicitly wants the deeper Game Review depth and all we have so far is the shallow one.
+  if(evalCache[idx]&&!(depth&&depth>LIVE_EVAL_DEPTH&&!evalCache[idx].fullDepth))return Promise.resolve(evalCache[idx]);
   const p=precomputeChain.then(async()=>{
-    if(evalCache[idx])return evalCache[idx];
-    const data=await evaluatePosition(buildFENUpTo(idx));
+    if(evalCache[idx]&&!(depth&&depth>LIVE_EVAL_DEPTH&&!evalCache[idx].fullDepth))return evalCache[idx];
+    const data=await evaluatePosition(buildFENUpTo(idx),depth);
+    if(data)data.fullDepth=!!(depth&&depth>LIVE_EVAL_DEPTH);
     evalCache[idx]=data;
     if(reviewActive&&reviewRowEls){const row=reviewRowEls[idx+1];if(row){row.pos.evalData=data;row.evalSpan.textContent=formatEval(data)}}
     if(typeof viewingIndex!=="undefined"&&idx===viewingIndex)renderEvalBar(data);
@@ -622,16 +770,107 @@ function syncReviewPanelSelection(){if(!reviewActive||!reviewRowEls)return;const
 
 function openGameReview(){stopPlayback();const panel=document.getElementById("reviewPanel");const listEl=document.getElementById("reviewMoveList");if(!panel||!listEl)return;reviewActive=!0;panel.classList.add("reviewPanelOpen");const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.add("evalBarVisible");listEl.innerHTML="";
 const positions=[{label:"Start",index:-1,state:startFullState}];moveHistory.forEach((m,i)=>positions.push({label:m.san,index:i,state:m.fullState,moveNumber:m.moveNumber,color:m.color}));
-const rowEls=[];positions.forEach((pos,i)=>{const item=document.createElement("div");item.classList.add("reviewMoveItem");const labelSpan=document.createElement("span");labelSpan.textContent=pos.index===-1?"Start position":`${pos.color === "white" ? `${pos.moveNumber}.` : `${pos.moveNumber}...`} ${pos.label}`;const evalSpan=document.createElement("span");evalSpan.classList.add("reviewMoveEval");const cached=evalCache[pos.index];if(cached){pos.evalData=cached;evalSpan.textContent=formatEval(cached)}else{evalSpan.textContent="…"}item.append(labelSpan,evalSpan);item.onclick=()=>{goToMove(pos.index)};listEl.appendChild(item);rowEls.push({el:item,evalSpan,labelSpan,pos})});
+// Builds one reviewMoveItem cell (shared between the old single-column layout and the new
+// two-column White/Black layout below) and registers it in rowEls, keeping rowEls in the same
+// linear order as `positions` so all the index math elsewhere (reviewRowEls[idx+1], etc.) still works.
+const rowEls=[];
+function makeItem(pos){
+  const item=document.createElement("div");item.classList.add("reviewMoveItem");
+  const labelSpan=document.createElement("span");labelSpan.textContent=pos.index===-1?"Start position":pos.label;
+  const evalSpan=document.createElement("span");evalSpan.classList.add("reviewMoveEval");
+  const cached=evalCache[pos.index];if(cached){pos.evalData=cached;evalSpan.textContent=formatEval(cached)}else{evalSpan.textContent="…"}
+  item.append(labelSpan,evalSpan);item.onclick=()=>{goToMove(pos.index)};
+  rowEls.push({el:item,evalSpan,labelSpan,pos});
+  return item;
+}
+// Start position gets its own full-width row.
+const startRow=document.createElement("div");startRow.classList.add("reviewMoveRow");
+const startNum=document.createElement("span");startNum.classList.add("reviewMoveNum");
+const startItem=makeItem(positions[0]);startItem.classList.add("reviewMoveFullWidth");
+startRow.append(startNum,startItem);listEl.appendChild(startRow);
+// Then one row per move-number, White in its own column and Black in its own column — never both
+// plies in the same column.
+for(let i=1;i<positions.length;i+=2){
+  const whitePos=positions[i],blackPos=positions[i+1];
+  const row=document.createElement("div");row.classList.add("reviewMoveRow");
+  const num=document.createElement("span");num.classList.add("reviewMoveNum");num.textContent=`${whitePos.moveNumber}.`;
+  const whiteItem=makeItem(whitePos);
+  row.append(num,whiteItem);
+  if(blackPos){row.appendChild(makeItem(blackPos))}else{const empty=document.createElement("div");empty.classList.add("reviewMoveItem","reviewMoveEmpty");row.appendChild(empty)}
+  listEl.appendChild(row);
+}
 reviewRowEls=rowEls;
 goToMove(-1);
 // Almost everything should already be cached from background precompute during play; only
 // positions that aren't (e.g. the game just ended a moment ago) get analyzed now, on demand.
-positions.forEach((pos,i)=>{if(evalCache[pos.index])return;precomputeEvalForIndex(pos.index).then((data)=>{if(!reviewActive||!reviewRowEls)return;const row=reviewRowEls[i];if(!row)return;row.pos.evalData=data;row.evalSpan.textContent=formatEval(data)})})}
+const _reviewAnalysisPromises=positions.map((pos,i)=>precomputeEvalForIndex(pos.index,REVIEW_DEPTH).then((data)=>{if(!reviewActive||!reviewRowEls)return;const row=reviewRowEls[i];if(!row)return;row.pos.evalData=data;row.evalSpan.textContent=formatEval(data)}));
+// Sweep pass: once everything has settled, retry any position whose eval is still missing (e.g.
+// a worker hiccup that even the built-in per-call retry didn't recover from), then re-classify
+// every move so no move is left permanently ungraded because of one bad evaluation.
+Promise.all(_reviewAnalysisPromises).then(async()=>{
+  if(!reviewActive)return;
+  const missing=positions.filter((pos)=>!evalCache[pos.index]);
+  for(const pos of missing){
+    if(!reviewActive)return;
+    const data=await evaluatePosition(buildFENUpTo(pos.index),REVIEW_DEPTH);
+    if(data)data.fullDepth=!0;
+    evalCache[pos.index]=data;
+    if(reviewActive&&reviewRowEls){const idx=positions.indexOf(pos);const row=reviewRowEls[idx];if(row){row.pos.evalData=data;row.evalSpan.textContent=formatEval(data)}}
+  }
+  if(!reviewActive)return;
+  moveHistory.forEach((mv,i)=>{try{if(!mv.quality)computeMoveQuality(i);if(mv.quality)refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}});
+  applyMissDetection();applyMissedWinDetection();
+  renderReviewCallout(viewingIndex);renderBoardQualityBadge(viewingIndex);
+});
+}
+
+// Miss: the opponent just blundered (handed away material/advantage), but the player's reply didn't
+// capitalize on it — a much stronger continuation was available. This is a relationship between two
+// consecutive plies, so it has to run as its own pass *after* every move already has a quality grade,
+// rather than inline in computeMoveQuality (which only ever sees its own before/after evals).
+function applyMissDetection(){
+  const punishable={inaccuracy:1,mistake:1,blunder:1};
+  moveHistory.forEach((mv,i)=>{
+    if(i===0||!mv.quality)return;
+    const prev=moveHistory[i-1];
+    if(!prev||!prev.quality||prev.quality.key!=="blunder")return;
+    if(!punishable[mv.quality.key])return;
+    mv.quality.key="miss";
+    refreshMoveQualityUI(i);
+  });
+}
+
+// Missed Win: at some point this side had a forced mate sitting on the board (mate-in-N in their
+// favor, straight from the engine) and didn't take it — and the game, as a whole, did NOT end in a
+// win for them (drawn or lost instead). Like applyMissDetection this can only be decided once the
+// final result is known, so it runs as its own pass rather than inline in computeMoveQuality.
+// Overrides whatever grade the move already had, since chess.com treats this as more important
+// than the underlying centipawn/EPL classification.
+function applyMissedWinDetection(){
+  if(!gameOver||!gameResultWinner)return; // only meaningful once the game has actually concluded
+  moveHistory.forEach((mv,i)=>{
+    if(!mv.quality)return;
+    if(gameResultWinner===mv.color)return; // this side did end up winning — nothing was missed
+    if(mv.checkmate)return; // this move delivered mate itself, so there's nothing missed here
+    const before=evalCache[i-1];
+    if(!before||typeof before.mate!=="number"||before.mate===0)return;
+    const mateForMover=mv.color==="white"?before.mate>0:before.mate<0;
+    if(!mateForMover)return; // the mate on the board belonged to the opponent, not this side
+    mv.quality.key="missedwin";
+    refreshMoveQualityUI(i);
+  });
+}
 
 function closeGameReview(){reviewActive=!1;reviewRowEls=null;const panel=document.getElementById("reviewPanel");if(panel)panel.classList.remove("reviewPanelOpen");const _evalWrap=document.getElementById("evalBarWrap");if(_evalWrap)_evalWrap.classList.remove("evalBarVisible")}
 
-function renderReviewSelection(rowEls,activeIdx){rowEls.forEach((r,i)=>r.el.classList.toggle("reviewMoveActive",i===activeIdx));const active=rowEls[activeIdx];if(!active)return;const container=active.el.parentElement;if(!container)return;const rTop=active.el.offsetTop,rBottom=rTop+active.el.offsetHeight;if(rTop<container.scrollTop)container.scrollTop=rTop;else if(rBottom>container.scrollTop+container.clientHeight)container.scrollTop=rBottom-container.clientHeight}
+const _origResetGameForReview=resetGame;
+resetGame=function(){
+  closeGameReview();
+  const listEl=document.getElementById("reviewMoveList");if(listEl)listEl.innerHTML="";
+  _origResetGameForReview();
+};
+
+function renderReviewSelection(rowEls,activeIdx){rowEls.forEach((r,i)=>r.el.classList.toggle("reviewMoveActive",i===activeIdx));const active=rowEls[activeIdx];if(!active)return;const container=document.getElementById("reviewMoveList");if(!container)return;const targetEl=active.el.closest(".reviewMoveRow")||active.el;const cRect=container.getBoundingClientRect(),tRect=targetEl.getBoundingClientRect();const rTop=tRect.top-cRect.top+container.scrollTop,rBottom=rTop+tRect.height;if(rTop<container.scrollTop)container.scrollTop=rTop;else if(rBottom>container.scrollTop+container.clientHeight)container.scrollTop=rBottom-container.clientHeight}
 
 /* ===================== Live Evaluation Bar ===================== */
 // Always visible (not just during review) and backed by the same cache used for Game Review, so
@@ -642,7 +881,50 @@ let evalDebounceTimer=null;
 function evalToWhitePercent(data){if(!data)return 50;if(typeof data.mate==="number"&&data.mate!==0)return data.mate>0?97:3;if(typeof data.eval==="number"){const e=Math.max(-10,Math.min(10,data.eval));const pct=50+50*(2/(1+Math.exp(-0.55*e))-1);return Math.max(3,Math.min(97,pct))}
 return 50}
 
-function renderEvalBar(data){const fill=document.getElementById("evalBarFill");const label=document.getElementById("evalBarScore");if(!fill)return;let pct=evalToWhitePercent(data);if(typeof boardFlipped!=="undefined"&&boardFlipped)pct=100-pct;fill.style.height=pct+"%";if(label){label.textContent=formatEval(data);label.classList.toggle("evalBarScoreDark",pct<50)}}
+// ===== Expected Points model (chess.com-style "win probability") used for move classification =====
+// Deliberately separate from evalToWhitePercent() above: that function clamps to 3-97% purely so the
+// eval bar never looks fully empty/full. Classification needs the real, uncapped probability so a
+// move that goes from "totally winning" to "still totally winning" isn't penalized, while a move
+// that actually flips the result gets caught. A forced mate is treated as a sure win/loss (1.00/0.00).
+// Returns White's Expected Points on a 0.00-1.00 scale.
+function expectedPointsWhite(data){
+  if(!data)return 0.5;
+  if(typeof data.mate==="number"&&data.mate!==0)return data.mate>0?1:0;
+  if(typeof data.eval==="number"){
+    const cp=data.eval*100; // data.eval is stored in pawns; the standard formula wants centipawns
+    return 1/(1+Math.pow(10,-cp/400));
+  }
+  return 0.5;
+}
+
+// Same conversion, but for a raw {cp, mate} pair as returned by analyzeAllMoves() (already from the mover's perspective).
+function expectedPointsFromMoverScore(cp,mate){
+  if(typeof mate==="number"&&mate!==0)return mate>0?1:0;
+  if(typeof cp==="number")return 1/(1+Math.pow(10,-cp/400));
+  return 0.5;
+}
+
+function renderEvalBar(data){
+  const fill=document.getElementById("evalBarFill");
+  const label=document.getElementById("evalBarScore");
+  if(!fill)return;
+  const pct=evalToWhitePercent(data); // White's true share of the bar, 0-100
+  const flipped=typeof boardFlipped!=="undefined"&&boardFlipped;
+  // The light-colored fill always represents White, so it must be anchored
+  // to wherever White actually sits on screen: bottom normally, top when
+  // the board is flipped for a black-side player.
+  fill.classList.toggle("evalBarFillTop",flipped);
+  fill.style.height=pct+"%";
+  if(label){
+    label.textContent=formatEval(data);
+    const majorityLight=pct>=50;
+    // Put the label on the edge that belongs to the bigger (majority)
+    // colored region, so it always has room and sits on a readable background.
+    const labelAtBottom=(majorityLight!==flipped);
+    label.classList.toggle("evalBarScoreTop",!labelAtBottom);
+    label.classList.toggle("evalBarScoreLight",!majorityLight);
+  }
+}
 
 function updateEvalBar(){const idx=viewingIndex;const cached=evalCache[idx];if(cached){renderEvalBar(cached);return}
 // Not cached yet — render neutral right away so the bar never appears frozen, then swap in the
@@ -680,7 +962,9 @@ good:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox
 inaccuracy:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><g id="inaccuracy"><path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path><path class="icon-background" fill="#F7C631" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path><g class="icon-component-shadow" opacity="0.2"><path d="M13.66,14.8a.28.28,0,0,1,0,.13.23.23,0,0,1-.08.11.28.28,0,0,1-.11.08l-.12,0h-2l-.13,0a.27.27,0,0,1-.1-.08A.36.36,0,0,1,11,14.8V12.9a.59.59,0,0,1,0-.13.36.36,0,0,1,.07-.1l.1-.08.13,0h2a.33.33,0,0,1,.23.1.39.39,0,0,1,.08.1.28.28,0,0,1,0,.13Zm-.12-3.93a.31.31,0,0,1,0,.13.3.3,0,0,1-.07.1.3.3,0,0,1-.23.08H11.43a.31.31,0,0,1-.34-.31L10.94,4.1A.5.5,0,0,1,11,3.86l.11-.08.13,0h2.11a.35.35,0,0,1,.26.1.41.41,0,0,1,.08.24Z"></path><path d="M7.65,14.82a.27.27,0,0,1,0,.12.26.26,0,0,1-.07.11l-.1.07-.13,0H5.43a.25.25,0,0,1-.12,0,.27.27,0,0,1-.1-.08.31.31,0,0,1-.09-.22V13a.36.36,0,0,1,.09-.23l.1-.07.12,0H7.32a.32.32,0,0,1,.23.09.3.3,0,0,1,.07.1.28.28,0,0,1,0,.13Zm2.2-7.17a3.1,3.1,0,0,1-.36.73A5.58,5.58,0,0,1,9,9a4.85,4.85,0,0,1-.52.49,8,8,0,0,0-.65.63,1,1,0,0,0-.27.7V11a.21.21,0,0,1,0,.12.17.17,0,0,1-.06.1.23.23,0,0,1-.1.07l-.12,0H5.53a.21.21,0,0,1-.12,0,.18.18,0,0,1-.1-.07.2.2,0,0,1-.08-.1.37.37,0,0,1,0-.12v-.35a2.68,2.68,0,0,1,.13-.84,2.91,2.91,0,0,1,.33-.66,3.38,3.38,0,0,1,.45-.55c.16-.15.33-.29.49-.42a7.84,7.84,0,0,0,.65-.64,1,1,0,0,0,.25-.67.77.77,0,0,0-.07-.34.67.67,0,0,0-.23-.27A1.16,1.16,0,0,0,6.49,6,1.61,1.61,0,0,0,6,6.11a3,3,0,0,0-.41.18,1.75,1.75,0,0,0-.29.18l-.11.09A.5.5,0,0,1,5,6.62a.31.31,0,0,1-.21-.13l-1-1.21a.3.3,0,0,1,0-.4A1.36,1.36,0,0,1,4,4.68a3.07,3.07,0,0,1,.56-.38,5.49,5.49,0,0,1,.9-.37,3.69,3.69,0,0,1,1.19-.17,3.92,3.92,0,0,1,2.3.75,2.85,2.85,0,0,1,.77.92A2.82,2.82,0,0,1,10,6.71,3,3,0,0,1,9.85,7.65Z"></path></g><g><path class="icon-component" fill="#fff" d="M13.66,14.3a.28.28,0,0,1,0,.13.23.23,0,0,1-.08.11.28.28,0,0,1-.11.08l-.12,0h-2l-.13,0a.27.27,0,0,1-.1-.08A.36.36,0,0,1,11,14.3V12.4a.59.59,0,0,1,0-.13.36.36,0,0,1,.07-.1l.1-.08.13,0h2a.33.33,0,0,1,.23.1.39.39,0,0,1,.08.1.28.28,0,0,1,0,.13Zm-.12-3.93a.31.31,0,0,1,0,.13.3.3,0,0,1-.07.1.3.3,0,0,1-.23.08H11.43a.31.31,0,0,1-.34-.31L10.94,3.6A.5.5,0,0,1,11,3.36l.11-.08.13,0h2.11a.35.35,0,0,1,.26.1.41.41,0,0,1,.08.24Z"></path><path class="icon-component" fill="#fff" d="M7.65,14.32a.27.27,0,0,1,0,.12.26.26,0,0,1-.07.11l-.1.07-.13,0H5.43a.25.25,0,0,1-.12,0,.27.27,0,0,1-.1-.08.31.31,0,0,1-.09-.22V12.49a.36.36,0,0,1,.09-.23l.1-.07.12,0H7.32a.32.32,0,0,1,.23.09.3.3,0,0,1,.07.1.28.28,0,0,1,0,.13Zm2.2-7.17a3.1,3.1,0,0,1-.36.73,5.58,5.58,0,0,1-.49.6A4.85,4.85,0,0,1,8.48,9a8,8,0,0,0-.65.63,1,1,0,0,0-.27.7v.22a.21.21,0,0,1,0,.12.17.17,0,0,1-.06.1.23.23,0,0,1-.1.07l-.12,0H5.53a.21.21,0,0,1-.12,0,.18.18,0,0,1-.1-.07.2.2,0,0,1-.08-.1.37.37,0,0,1,0-.12v-.35a2.68,2.68,0,0,1,.13-.84,2.91,2.91,0,0,1,.33-.66,3.38,3.38,0,0,1,.45-.55c.16-.15.33-.29.49-.42a7.84,7.84,0,0,0,.65-.64,1,1,0,0,0,.25-.67.77.77,0,0,0-.07-.34.67.67,0,0,0-.23-.27,1.16,1.16,0,0,0-.72-.24A1.61,1.61,0,0,0,6,5.61a3,3,0,0,0-.41.18A1.75,1.75,0,0,0,5.3,6l-.11.09A.5.5,0,0,1,5,6.12.31.31,0,0,1,4.74,6l-1-1.21a.3.3,0,0,1,0-.4A1.36,1.36,0,0,1,4,4.18a3.07,3.07,0,0,1,.56-.38,5.49,5.49,0,0,1,.9-.37,3.69,3.69,0,0,1,1.19-.17A3.92,3.92,0,0,1,8.93,4a2.85,2.85,0,0,1,.77.92A2.82,2.82,0,0,1,10,6.21,3,3,0,0,1,9.85,7.15Z"></path></g></g></svg>`,
 mistake:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><g id="mistake"><g><path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path><path class="icon-background" fill="#FFA459" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path></g><g><g class="icon-component-shadow" opacity="0.2"><path d="M9.92,15a.27.27,0,0,1,0,.12.41.41,0,0,1-.07.11.32.32,0,0,1-.23.09H7.7a.25.25,0,0,1-.12,0,.27.27,0,0,1-.1-.08A.31.31,0,0,1,7.39,15V13.19A.32.32,0,0,1,7.48,13l.1-.07.12,0H9.59a.32.32,0,0,1,.23.09.61.61,0,0,1,.07.1.28.28,0,0,1,0,.13Zm2.2-7.17a3.1,3.1,0,0,1-.36.73,5.58,5.58,0,0,1-.49.6,6,6,0,0,1-.52.49,8,8,0,0,0-.65.63,1,1,0,0,0-.27.7v.22a.24.24,0,0,1,0,.12.17.17,0,0,1-.06.1.3.3,0,0,1-.1.07l-.12,0H7.79l-.12,0a.3.3,0,0,1-.1-.07.26.26,0,0,1-.07-.1.37.37,0,0,1,0-.12v-.35A2.42,2.42,0,0,1,7.61,10a2.55,2.55,0,0,1,.33-.66,3.38,3.38,0,0,1,.45-.55c.16-.15.33-.29.49-.42a7.73,7.73,0,0,0,.64-.64,1,1,0,0,0,.26-.67.77.77,0,0,0-.07-.34.75.75,0,0,0-.23-.27,1.16,1.16,0,0,0-.72-.24,1.61,1.61,0,0,0-.49.07,3,3,0,0,0-.41.18,1.41,1.41,0,0,0-.29.18l-.11.09a.5.5,0,0,1-.24.06A.31.31,0,0,1,7,6.69L6,5.48a.29.29,0,0,1,0-.4,1.36,1.36,0,0,1,.21-.2,3.07,3.07,0,0,1,.56-.38,5.38,5.38,0,0,1,.89-.37A3.75,3.75,0,0,1,8.9,4a4.07,4.07,0,0,1,1.2.19,4,4,0,0,1,1.09.56,2.76,2.76,0,0,1,.78.92,2.82,2.82,0,0,1,.28,1.28A3,3,0,0,1,12.12,7.85Z"></path></g><path class="icon-component" fill="#fff" d="M9.92,14.52a.27.27,0,0,1,0,.12.41.41,0,0,1-.07.11.32.32,0,0,1-.23.09H7.7a.25.25,0,0,1-.12,0,.27.27,0,0,1-.1-.08.31.31,0,0,1-.09-.22V12.69a.32.32,0,0,1,.09-.23l.1-.07.12,0H9.59a.32.32,0,0,1,.23.09.61.61,0,0,1,.07.1.28.28,0,0,1,0,.13Zm2.2-7.17a3.1,3.1,0,0,1-.36.73,5.58,5.58,0,0,1-.49.6,6,6,0,0,1-.52.49,8,8,0,0,0-.65.63,1,1,0,0,0-.27.7v.22a.24.24,0,0,1,0,.12.17.17,0,0,1-.06.1.3.3,0,0,1-.1.07l-.12,0H7.79l-.12,0a.3.3,0,0,1-.1-.07.26.26,0,0,1-.07-.1.37.37,0,0,1,0-.12v-.35a2.42,2.42,0,0,1,.13-.84,2.55,2.55,0,0,1,.33-.66,3.38,3.38,0,0,1,.45-.55c.16-.15.33-.29.49-.42a7.73,7.73,0,0,0,.64-.64,1,1,0,0,0,.26-.67.77.77,0,0,0-.07-.34A.75.75,0,0,0,9.48,6a1.16,1.16,0,0,0-.72-.24,1.61,1.61,0,0,0-.49.07A3,3,0,0,0,7.86,6a1.41,1.41,0,0,0-.29.18l-.11.09a.5.5,0,0,1-.24.06A.31.31,0,0,1,7,6.19L6,5a.29.29,0,0,1,0-.4,1.36,1.36,0,0,1,.21-.2A3.07,3.07,0,0,1,6.81,4a5.38,5.38,0,0,1,.89-.37,3.75,3.75,0,0,1,1.2-.17,4.07,4.07,0,0,1,1.2.19,4,4,0,0,1,1.09.56,2.76,2.76,0,0,1,.78.92,2.82,2.82,0,0,1,.28,1.28A3,3,0,0,1,12.12,7.35Z"></path></g></g></svg>`,
 blunder:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><g id="blunder"><path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path><path class="icon-background" fill="#FA412D" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path><g class="icon-component-shadow" opacity="0.2"><path d="M14.74,5.45A2.58,2.58,0,0,0,14,4.54,3.76,3.76,0,0,0,12.89,4a4.07,4.07,0,0,0-1.2-.19A3.92,3.92,0,0,0,10.51,4a5.87,5.87,0,0,0-.9.37,3,3,0,0,0-.32.2,3.46,3.46,0,0,1,.42.63,3.29,3.29,0,0,1,.36,1.47.31.31,0,0,0,.19-.06l.11-.08a2.9,2.9,0,0,1,.29-.19,3.89,3.89,0,0,1,.41-.17,1.55,1.55,0,0,1,.48-.07,1.1,1.1,0,0,1,.72.24.72.72,0,0,1,.23.26.8.8,0,0,1,.07.34,1,1,0,0,1-.25.67,7.71,7.71,0,0,1-.65.63,6.2,6.2,0,0,0-.48.43,2.93,2.93,0,0,0-.45.54,2.55,2.55,0,0,0-.33.66,2.62,2.62,0,0,0-.13.83V11a.24.24,0,0,0,0,.12.35.35,0,0,0,.17.17l.12,0h1.71l.12,0a.23.23,0,0,0,.1-.07.21.21,0,0,0,.06-.1.27.27,0,0,0,0-.12V10.8a1,1,0,0,1,.26-.7q.27-.28.66-.63A5.79,5.79,0,0,0,14.05,9a4.51,4.51,0,0,0,.48-.6,2.56,2.56,0,0,0,.36-.72,2.81,2.81,0,0,0,.14-1A2.66,2.66,0,0,0,14.74,5.45Z"></path><path d="M12.38,12.65H10.5l-.12,0a.34.34,0,0,0-.18.29v1.82a.36.36,0,0,0,.08.23.23.23,0,0,0,.1.07l.12,0h1.88a.24.24,0,0,0,.12,0,.26.26,0,0,0,.11-.07.36.36,0,0,0,.07-.1.28.28,0,0,0,0-.13V13a.27.27,0,0,0,0-.12.61.61,0,0,0-.07-.1A.32.32,0,0,0,12.38,12.65Z"></path><path d="M6.79,12.65H4.91l-.12,0a.34.34,0,0,0-.18.29v1.82a.36.36,0,0,0,.08.23.23.23,0,0,0,.1.07l.12,0H6.79a.24.24,0,0,0,.12,0A.26.26,0,0,0,7,15a.36.36,0,0,0,.07-.1.28.28,0,0,0,0-.13V13a.27.27,0,0,0,0-.12.61.61,0,0,0-.07-.1A.32.32,0,0,0,6.79,12.65Z"></path><path d="M8.39,4.54A3.76,3.76,0,0,0,7.3,4a4.07,4.07,0,0,0-1.2-.19A3.92,3.92,0,0,0,4.92,4a5.87,5.87,0,0,0-.9.37,3.37,3.37,0,0,0-.55.38l-.21.19a.32.32,0,0,0,0,.41l1,1.2a.26.26,0,0,0,.2.12.48.48,0,0,0,.24-.06l.11-.08a2.9,2.9,0,0,1,.29-.19l.4-.17A1.66,1.66,0,0,1,6,6.06a1.1,1.1,0,0,1,.72.24.72.72,0,0,1,.23.26A.77.77,0,0,1,7,6.9a1,1,0,0,1-.26.67,7.6,7.6,0,0,1-.64.63,6.28,6.28,0,0,0-.49.43,2.93,2.93,0,0,0-.45.54,2.72,2.72,0,0,0-.33.66,2.62,2.62,0,0,0-.13.83V11a.43.43,0,0,0,0,.12.39.39,0,0,0,.08.1.18.18,0,0,0,.1.07.21.21,0,0,0,.12,0H6.72l.12,0a.23.23,0,0,0,.1-.07.36.36,0,0,0,.07-.1A.5.5,0,0,0,7,11V10.8a1,1,0,0,1,.27-.7A8,8,0,0,1,8,9.47c.18-.15.35-.31.52-.48A7,7,0,0,0,9,8.39a3.23,3.23,0,0,0,.36-.72,3.07,3.07,0,0,0,.13-1,2.66,2.66,0,0,0-.29-1.27A2.58,2.58,0,0,0,8.39,4.54Z"></path></g><g><path class="icon-component" fill="#fff" d="M14.74,5A2.58,2.58,0,0,0,14,4a3.76,3.76,0,0,0-1.09-.56,4.07,4.07,0,0,0-1.2-.19,3.92,3.92,0,0,0-1.18.17,5.87,5.87,0,0,0-.9.37,3,3,0,0,0-.32.2,3.46,3.46,0,0,1,.42.63,3.29,3.29,0,0,1,.36,1.47.31.31,0,0,0,.19-.06L10.37,6a2.9,2.9,0,0,1,.29-.19,3.89,3.89,0,0,1,.41-.17,1.55,1.55,0,0,1,.48-.07,1.1,1.1,0,0,1,.72.24.72.72,0,0,1,.23.26.8.8,0,0,1,.07.34,1,1,0,0,1-.25.67,7.71,7.71,0,0,1-.65.63,6.2,6.2,0,0,0-.48.43,2.93,2.93,0,0,0-.45.54,2.55,2.55,0,0,0-.33.66,2.62,2.62,0,0,0-.13.83v.35a.24.24,0,0,0,0,.12.35.35,0,0,0,.17.17l.12,0h1.71l.12,0a.23.23,0,0,0,.1-.07.21.21,0,0,0,.06-.1.27.27,0,0,0,0-.12V10.3a1,1,0,0,1,.26-.7q.27-.28.66-.63a5.79,5.79,0,0,0,.51-.48,4.51,4.51,0,0,0,.48-.6,2.56,2.56,0,0,0,.36-.72,2.81,2.81,0,0,0,.14-1A2.66,2.66,0,0,0,14.74,5Z"></path><path class="icon-component" fill="#fff" d="M12.38,12.15H10.5l-.12,0a.34.34,0,0,0-.18.29v1.82a.36.36,0,0,0,.08.23.23.23,0,0,0,.1.07l.12,0h1.88a.24.24,0,0,0,.12,0,.26.26,0,0,0,.11-.07.36.36,0,0,0,.07-.1.28.28,0,0,0,0-.13V12.46a.27.27,0,0,0,0-.12.61.61,0,0,0-.07-.1A.32.32,0,0,0,12.38,12.15Z"></path><path class="icon-component" fill="#fff" d="M6.79,12.15H4.91l-.12,0a.34.34,0,0,0-.18.29v1.82a.36.36,0,0,0,.08.23.23.23,0,0,0,.1.07l.12,0H6.79a.24.24,0,0,0,.12,0A.26.26,0,0,0,7,14.51a.36.36,0,0,0,.07-.1.28.28,0,0,0,0-.13V12.46a.27.27,0,0,0,0-.12.61.61,0,0,0-.07-.1A.32.32,0,0,0,6.79,12.15Z"></path><path class="icon-component" fill="#fff" d="M8.39,4A3.76,3.76,0,0,0,7.3,3.48a4.07,4.07,0,0,0-1.2-.19,3.92,3.92,0,0,0-1.18.17,5.87,5.87,0,0,0-.9.37,3.37,3.37,0,0,0-.55.38l-.21.19a.32.32,0,0,0,0,.41l1,1.2a.26.26,0,0,0,.2.12.48.48,0,0,0,.24-.06L4.78,6a2.9,2.9,0,0,1,.29-.19l.4-.17A1.66,1.66,0,0,1,6,5.56a1.1,1.1,0,0,1,.72.24.72.72,0,0,1,.23.26A.77.77,0,0,1,7,6.4a1,1,0,0,1-.26.67,7.6,7.6,0,0,1-.64.63,6.28,6.28,0,0,0-.49.43,2.93,2.93,0,0,0-.45.54,2.72,2.72,0,0,0-.33.66,2.62,2.62,0,0,0-.13.83v.35a.43.43,0,0,0,0,.12.39.39,0,0,0,.08.1.18.18,0,0,0,.1.07.21.21,0,0,0,.12,0H6.72l.12,0a.23.23,0,0,0,.1-.07.36.36,0,0,0,.07-.1.5.5,0,0,0,0-.12V10.3a1,1,0,0,1,.27-.7A8,8,0,0,1,8,9c.18-.15.35-.31.52-.48A7,7,0,0,0,9,7.89a3.23,3.23,0,0,0,.36-.72,3.07,3.07,0,0,0,.13-1A2.66,2.66,0,0,0,9.15,5,2.58,2.58,0,0,0,8.39,4Z"></path></g></g></svg>`,
-miss:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><defs><style>.cls-1{fill:#f1f2f2;}.cls-2{fill:#FF7769;}.cls-3{opacity:.2;}.cls-4{opacity:.3;}</style></defs><g id="incorrect"><path class="cls-4" d="M9,.5C4.03,.5,0,4.53,0,9.5s4.03,9,9,9,9-4.03,9-9S13.97,.5,9,.5Z"></path><path class="cls-2" d="M9,0C4.03,0,0,4.03,0,9s4.03,9,9,9,9-4.03,9-9S13.97,0,9,0Z"></path><g class="cls-3"><path d="M13.99,12.51s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-1.37,1.37s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-3.06-3.06-3.06,3.06s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-1.37-1.37c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l3.06-3.06-3.06-3.06c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l1.37-1.37c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l3.06,3.06,3.06-3.06c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l1.37,1.37s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-3.06,3.06,3.06,3.06Z"></path></g><path class="cls-1" d="M13.99,12.01s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-1.37,1.37s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-3.06-3.06-3.06,3.06s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-1.37-1.37c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l3.06-3.06-3.06-3.06c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l1.37-1.37c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l3.06,3.06,3.06-3.06c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l1.37,1.37s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-3.06,3.06,3.06,3.06Z"></path></g></svg>`
+miss:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><defs><style>.cls-1{fill:#f1f2f2;}.cls-2{fill:#FF7769;}.cls-3{opacity:.2;}.cls-4{opacity:.3;}</style></defs><g id="incorrect"><path class="cls-4" d="M9,.5C4.03,.5,0,4.53,0,9.5s4.03,9,9,9,9-4.03,9-9S13.97,.5,9,.5Z"></path><path class="cls-2" d="M9,0C4.03,0,0,4.03,0,9s4.03,9,9,9,9-4.03,9-9S13.97,0,9,0Z"></path><g class="cls-3"><path d="M13.99,12.51s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-1.37,1.37s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-3.06-3.06-3.06,3.06s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-1.37-1.37c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l3.06-3.06-3.06-3.06c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l1.37-1.37c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l3.06,3.06,3.06-3.06c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l1.37,1.37s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-3.06,3.06,3.06,3.06Z"></path></g><path class="cls-1" d="M13.99,12.01s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-1.37,1.37s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-3.06-3.06-3.06,3.06s-.08,.06-.13,.08c-.05,.02-.1,.03-.15,.03s-.1-.01-.15-.03c-.05-.02-.09-.05-.13-.08l-1.37-1.37c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l3.06-3.06-3.06-3.06c-.07-.07-.11-.17-.11-.28s.04-.2,.11-.28l1.37-1.37c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l3.06,3.06,3.06-3.06c.07-.07,.17-.11,.28-.11s.2,.04,.28,.11l1.37,1.37s.06,.08,.08,.13c.02,.05,.03,.1,.03,.15s-.01,.1-.03,.15c-.02,.05-.05,.09-.08,.13l-3.06,3.06,3.06,3.06Z"></path></g></svg>`,
+forced:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><g id="forced"><g><path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path><path class="icon-background" fill="#96af8b" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path></g><g class="icon-component-shadow" opacity="0.2"><path d="M14.39,9.07,9,4.31a.31.31,0,0,0-.3,0,.32.32,0,0,0-.13.1.29.29,0,0,0,0,.16V7.42H3.9a.58.58,0,0,0-.19,0,.5.5,0,0,0-.17.11.91.91,0,0,0-.11.16.63.63,0,0,0,0,.19v3.41a.58.58,0,0,0,0,.19.64.64,0,0,0,.11.16.39.39,0,0,0,.17.11.41.41,0,0,0,.19,0H8.5v2.74a.26.26,0,0,0,.16.26.3.3,0,0,0,.16,0A.34.34,0,0,0,9,14.79L14.39,10a.69.69,0,0,0,.16-.22.7.7,0,0,0,0-.52A.69.69,0,0,0,14.39,9.07Z"></path></g><path class="icon-component" fill="#fff" d="M14.39,8.57,9,3.81a.31.31,0,0,0-.3,0,.32.32,0,0,0-.13.1A.29.29,0,0,0,8.5,4V6.92H3.9a.58.58,0,0,0-.19,0,.5.5,0,0,0-.17.11.91.91,0,0,0-.11.16.63.63,0,0,0,0,.19v3.41a.58.58,0,0,0,0,.19.64.64,0,0,0,.11.16.39.39,0,0,0,.17.11.41.41,0,0,0,.19,0H8.5v2.74a.26.26,0,0,0,.16.26.3.3,0,0,0,.16,0A.34.34,0,0,0,9,14.29l5.42-4.76a.69.69,0,0,0,.16-.22.7.7,0,0,0,0-.52A.69.69,0,0,0,14.39,8.57Z"></path></g></svg>`,
+missedwin:`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 18 19"><g id="missed_win"><g><path class="icon-shadow" opacity="0.3" d="M9,.5a9,9,0,1,0,9,9A9,9,0,0,0,9,.5Z"></path><path class="icon-background" fill="#dbac16" d="M9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"></path></g><g><g class="icon-component-shadow" opacity="0.2"><rect x="2.74" y="8.1" width="12.51" height="3.11" rx="0.36"></rect></g><rect class="icon-component" fill="#fff" x="2.74" y="7.6" width="12.51" height="3.11" rx="0.36"></rect></g></g></svg>`
 };
 
 const MOVE_QUALITY={
@@ -693,7 +977,9 @@ const MOVE_QUALITY={
   inaccuracy:{label:"Inaccuracy",color:"#f7c631",phrase:"an inaccuracy"},
   mistake:{label:"Mistake",color:"#ffa459",phrase:"a mistake"},
   blunder:{label:"Blunder",color:"#fa412d",phrase:"a blunder"},
-  miss:{label:"Miss",color:"#ff7769",phrase:"a miss"}
+  miss:{label:"Miss",color:"#ff7769",phrase:"a miss"},
+  forced:{label:"Forced",color:"#96af8b",phrase:"a forced move"},
+  missedwin:{label:"Missed Win",color:"#dbac16",phrase:"a missed win"}
 };
 
 function moveQualityBadgeSvg(key){return QUALITY_SVGS[key]||""}
@@ -727,33 +1013,83 @@ function isSacrificeMove(index){
 }
 
 // Classifies moveHistory[index] using the (already computed) engine evals immediately before and
-// after it. Returns null if either evaluation isn't cached yet.
+// after it. Follows the chess.com-style Expected Points model: convert both evaluations to a
+// 0.00-1.00 win probability for the side who just moved, then grade on Expected Points Loss (EPL) —
+// how much win probability was given up compared to the engine's best continuation from that same
+// position. Returns null if either evaluation isn't cached yet.
 function computeMoveQuality(index){
   const mv=moveHistory[index];if(!mv)return null;
   const before=evalCache[index-1],after=evalCache[index];
   if(!before||!after)return null;
-  const pctBeforeWhite=evalToWhitePercent(before),pctAfterWhite=evalToWhitePercent(after);
-  const moverBefore=mv.color==="white"?pctBeforeWhite:100-pctBeforeWhite;
-  const moverAfter=mv.color==="white"?pctAfterWhite:100-pctAfterWhite;
-  const loss=moverBefore-moverAfter; // win% given up by the played move vs. the engine's best continuation
+  const epBeforeWhite=expectedPointsWhite(before),epAfterWhite=expectedPointsWhite(after);
+  // `before` is the eval of the position the mover was FACING (i.e. the best achievable outcome for
+  // them, since it's the result of the engine's own search from that spot). `after` is the eval of
+  // the position that resulted from the move actually played. Both converted to the mover's own
+  // perspective so EPL = expectedBefore - expectedAfter is never negative for a strictly worse move.
+  const moverBefore=mv.color==="white"?epBeforeWhite:1-epBeforeWhite;
+  const moverAfter=mv.color==="white"?epAfterWhite:1-epAfterWhite;
+  const epl=Math.max(0,moverBefore-moverAfter); // Expected Points Loss, 0.00-1.00
   const playedUci=mv.from+mv.to+(mv.promotion?mv.promotion.toLowerCase():"");
   const wasBestMove=!!before.move&&before.move.slice(0,4)===playedUci.slice(0,4)&&(before.move.length<5||before.move.slice(4)===playedUci.slice(4));
+  // Standard thresholds (EPL, 0.00-1.00 scale):
+  //   Best 0.00 (matches engine) · Excellent 0-0.02 · Good 0.02-0.05 ·
+  //   Inaccuracy 0.05-0.10 · Mistake 0.10-0.20 · Blunder >0.20
   let key;
-  if(loss<=0.5)key=wasBestMove?"best":"excellent";
-  else if(loss<=2)key="excellent";
-  else if(loss<=5)key="good";
-  else if(loss<=10)key="inaccuracy";
-  else if(loss<=20)key="mistake";
+  if(wasBestMove)key="best";
+  else if(epl<=0.02)key="excellent";
+  else if(epl<=0.05)key="good";
+  else if(epl<=0.10)key="inaccuracy";
+  else if(epl<=0.20)key="mistake";
   else key="blunder";
   // First few ply of common, low-loss moves read as "book" (opening theory) rather than "best"/"excellent".
-  if(index<8&&loss<=2&&(key==="best"||key==="excellent"))key="book";
-  // A move that gives up a lot of win% but doesn't actually flip the result reads as a "miss" (a much
-  // stronger continuation was available) rather than a game-losing "blunder".
-  if(key==="blunder"&&moverAfter>=50)key="miss";
-  if((key==="best"||key==="excellent")&&moverAfter>=55&&isSacrificeMove(index))key="brilliant";
-  const quality={key,loss,wasBestMove};
+  if(index<8&&epl<=0.02&&(key==="best"||key==="excellent"))key="book";
+  // Brilliant (!!): a good piece sacrifice — the mover hangs real material but the engine confirms
+  // the sac is (near-)best, AND the player wasn't already completely crushing beforehand (a "sac"
+  // when you're already winning by a mile isn't brilliant, it's just tidying up).
+  if((key==="best"||key==="excellent")&&moverBefore<0.90&&moverAfter>=0.55&&isSacrificeMove(index))key="brilliant";
+  // Great Find (!), flip scenario: the position was lost or worse for the mover, and this single
+  // move (at/near the engine's top choice) swings it back to equal or better. The "only good move
+  // in the position" scenario is checked separately and asynchronously (see checkOnlyGoodMove), since
+  // it needs to score every legal move rather than just before/after.
+  if((key==="best"||key==="excellent")&&moverBefore<0.45&&moverAfter>=0.50)key="great";
+  // Forced moves (no real choice) always read as "Forced", overriding everything else above.
+  if(isForcedMove(index))key="forced";
+  const quality={key,epl,wasBestMove};
   mv.quality=quality;
+  // Great Find, "only good move" scenario: only worth the extra engine work for moves that already
+  // look like the best move, and only during an active Game Review (never during live play, where
+  // it would compete with the engine for CPU). Resolves asynchronously and upgrades the badge in place.
+  if(key==="best"&&reviewActive){
+    checkOnlyGoodMove(index).then((isOnlyGoodMove)=>{
+      if(isOnlyGoodMove&&mv.quality&&mv.quality.key==="best"){mv.quality.key="great";refreshMoveQualityUI(index)}
+    }).catch(()=>{});
+  }
   return quality}
+
+// Great Find, "only good move" scenario: scores every legal move in the position via MultiPV and
+// checks whether every alternative to the move actually played would have lost significant win
+// probability (EPL > 0.10, i.e. at least a Mistake) — meaning the played move was the only real
+// option in the position, not just technically "best" among comparable choices.
+const GREAT_FIND_DEPTH=10; // shallower than REVIEW_DEPTH: only the relative ranking of moves matters here
+async function checkOnlyGoodMove(index){
+  const mv=moveHistory[index];if(!mv)return!1;
+  let all;
+  try{all=await evalEngine.analyzeAllMoves(buildFENUpTo(index-1),GREAT_FIND_DEPTH)}catch(e){return!1}
+  if(!all||all.length<2)return!1; // need at least one alternative to compare against
+  const scored=all.map((m)=>({uci:m.uci,points:expectedPointsFromMoverScore(m.moverCp,m.moverMate)}));
+  const bestPoints=Math.max(...scored.map((s)=>s.points));
+  const playedUci=mv.from+mv.to+(mv.promotion?mv.promotion.toLowerCase():"");
+  const others=scored.filter((s)=>s.uci.slice(0,4)!==playedUci.slice(0,4));
+  if(others.length===0)return!1;
+  return others.every((s)=>(bestPoints-s.points)>0.10);
+}
+
+// A move is "forced" when the player had exactly one legal move available in that position —
+// there was no real choice to grade.
+function isForcedMove(index){
+  let game;try{game=new Chess(buildFENUpTo(index-1))}catch(e){return!1}
+  return game.moves().length===1;
+}
 
 // Converts a UCI move (e.g. "e2e4") into SAN (e.g. "e4") as played from the position right
 // before moveHistory[index]. Used to show what the engine actually preferred, in readable form.
@@ -782,7 +1118,7 @@ function refreshMoveQualityUI(index){
 // Tries to classify moves `index` and `index+1` (the two moves whose quality depends on the eval that
 // was just cached) — called every time a new position finishes being analyzed.
 function tryClassifyAround(index){
-  [index,index+1].forEach((i)=>{if(i>=0&&i<moveHistory.length&&!moveHistory[i].quality){try{if(computeMoveQuality(i))refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}}})}
+  [index,index+1].forEach((i)=>{if(i>=0&&i<moveHistory.length&&!moveHistory[i].quality){try{if(computeMoveQuality(i)){refreshMoveQualityUI(i);applyMissDetection();applyMissedWinDetection()}}catch(err){console.error("Move quality classification failed:",err)}}})}
 
 /* ===================== On-board move-quality badges (review mode) ===================== */
 // Places the quality badge + a colored tint on the square of the piece that just moved, like
@@ -890,6 +1226,7 @@ precomputeEvalForIndex=function(idx){
 const _origOpenGameReview=openGameReview;
 openGameReview=function(){_origOpenGameReview();
   moveHistory.forEach((mv,i)=>{try{if(!mv.quality)computeMoveQuality(i);if(mv.quality)refreshMoveQualityUI(i)}catch(err){console.error("Move quality classification failed:",err)}});
+  applyMissDetection();applyMissedWinDetection();
   renderReviewCallout(viewingIndex);renderBoardQualityBadge(viewingIndex)};
 
 const _origGoToMoveForQuality=goToMove;
