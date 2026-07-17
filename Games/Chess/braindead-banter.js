@@ -45,6 +45,9 @@
             "Oh, was that piece important? It looked pointy.",
             "You fool, you've activated my trap! (I have no trap).",
             "That's fine. The less pieces I have, the less choices I have to make."
+        ],
+        queen: [
+            "Take her, I didn't like her anyway."
         ]
     };
 
@@ -54,6 +57,9 @@
             "I literally did not see your piece there, but I'll take it.",
             "Yum. Wood is my favorite flavor.",
             "Just as I calculated 14 moves ago. Obviously."
+        ],
+        queen: [
+            "That piece tastes different."
         ]
     };
 

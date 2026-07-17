@@ -1,6 +1,6 @@
 /*
  * Clueless Colin bot banter.
- * Makes "Clueless Colin" (id "2", ENGINE_DEPTH === WEAK_ENGINE_LEVEL) react
+ * Makes "Clueless Colin" (id "2", ENGINE_DEPTH === 100) react
  * to the board by showing lines in the existing speech bubble
  * (showBotSpeechBubble). No other bot is affected.
  *
@@ -55,6 +55,9 @@
         ],
         rook: [
             "Yes! Take my rook! It was ruining the aesthetic of my back rank anyway."
+        ],
+        queen: [
+            "She was my only queen!!"
         ]
     };
 
@@ -103,8 +106,7 @@
     // color/game has actually started.
     function isColinActive() {
         return typeof ENGINE_DEPTH !== "undefined" &&
-            typeof WEAK_ENGINE_LEVEL !== "undefined" &&
-            ENGINE_DEPTH === WEAK_ENGINE_LEVEL &&
+            ENGINE_DEPTH === 100 &&
             typeof colorChosen !== "undefined" && colorChosen;
     }
 
@@ -124,8 +126,8 @@
     if (typeof showBotSpeechBubble === "function") {
         const _origShowBotSpeechBubble = showBotSpeechBubble;
         showBotSpeechBubble = function (text) {
-            if (typeof ENGINE_DEPTH !== "undefined" && typeof WEAK_ENGINE_LEVEL !== "undefined" &&
-                ENGINE_DEPTH === WEAK_ENGINE_LEVEL && text === engineSpeech) {
+            if (typeof ENGINE_DEPTH !== "undefined" &&
+                ENGINE_DEPTH === 100 && text === engineSpeech) {
                 text = pick(PREGAME_GREETINGS);
             }
             _origShowBotSpeechBubble(text);
