@@ -32,16 +32,16 @@ const BOT_ICONS = {
 //   engineDepth - which engine strength setting (chess.js ENGINE_LEVELS) this bot plays at
 const PLAYERS = {
     "1":  { id: "1",  name: "Braindead",           elo: 1,    type: "image", content: "https://chithruka.github.io/Chithruka/Games/Chess/Assets/images/characters/braindead.webp", flag: "🏳️", speech: "King to the center on move 3. It is the only way.", engineDepth: 0 },
-    "2":  { id: "2",  name: "Clueless Colin",       elo: 100,  type: "svg",   content: BOT_ICONS.help,    flag: "🇺🇸", speech: "Hi, I'm Clueless Colin! Let's play!", engineDepth: 100 },
-    "3":  { id: "3",  name: "Blunderbuss Barry",    elo: 250,  type: "svg",   content: BOT_ICONS.target,  flag: "🇬🇧", speech: "Defense is for cowards! All out attack!", engineDepth: 5 },
-    "4":  { id: "4",  name: "One-Move Max",         elo: 600,  type: "svg",   content: BOT_ICONS.eye,     flag: "🇨🇦", speech: "Is that a free piece? Don't mind if I do.", engineDepth: 6 },
-    "5":  { id: "5",  name: "Scholar Steve",        elo: 900,  type: "svg",   content: BOT_ICONS.book,    flag: "🇦🇺", speech: "Prepare to fall for my legendary opening trap!", engineDepth: 7 },
-    "6":  { id: "6",  name: "Tactical Tina",        elo: 1200, type: "svg",   content: BOT_ICONS.zap,     flag: "🇩🇪", speech: "Keep your pieces protected, or I'll find a fork.", engineDepth: 8 },
-    "7":  { id: "7",  name: "Positional Pete",      elo: 1600, type: "svg",   content: BOT_ICONS.shield,  flag: "🇳🇱", speech: "I am in no rush. I will slowly squeeze your position.", engineDepth: 9 },
-    "8":  { id: "8",  name: "Expert Evan",          elo: 2000, type: "svg",   content: BOT_ICONS.cpu,     flag: "🇫🇷", speech: "I hope you know your opening theory 15 moves deep.", engineDepth: 10 },
-    "9":  { id: "9",  name: "Grandmaster Gary",     elo: 2400, type: "svg",   content: BOT_ICONS.star,    flag: "🇷🇺", speech: "Your inaccuracies will be punished severely.", engineDepth: 11 },
-    "10": { id: "10", name: "The Oracle",           elo: 2850, type: "svg",   content: BOT_ICONS.sparkle, flag: "🇮🇳", speech: "Resistance is futile. I play the objectively best move.", engineDepth: 15 },
-    "11": { id: "11", name: "Stockfish",            elo: 3200, type: "image", content: "https://images.chesscomfiles.com/uploads/v1/bot_personality/4c07340e-8a5d-11ea-9abb-79b3443058a1.6bfb2f43.384x384o.9fad36f33baf.png", flag: "🇳🇴", speech: "Evaluation: +M12. You blundered on move 4.", engineDepth: 15 }
+    "2":  { id: "2",  name: "Clueless Colin",       elo: 100,  type: "image", content: "https://robohash.org/CluelessColin.png?set=set1&size=200x200", flag: "🇺🇸", speech: "Hi, I'm Clueless Colin! Let's play!", engineDepth: 100 },
+    "3":  { id: "3",  name: "Blunderbuss Barry",    elo: 250,  type: "image", content: "https://robohash.org/BlunderbussBarry.png?set=set1&size=200x200", flag: "🇬🇧", speech: "Defense is for cowards! All out attack!", engineDepth: 5 },
+    "4":  { id: "4",  name: "One-Move Max",         elo: 600,  type: "image", content: "https://robohash.org/OneMoveMax.png?set=set1&size=200x200", flag: "🇨🇦", speech: "Is that a free piece? Don't mind if I do.", engineDepth: 6 },
+    "5":  { id: "5",  name: "Scholar Steve",        elo: 900,  type: "image", content: "https://robohash.org/ScholarSteve.png?set=set1&size=200x200", flag: "🇦🇺", speech: "Prepare to fall for my legendary opening trap!", engineDepth: 7 },
+    "6":  { id: "6",  name: "Tactical Tina",        elo: 1200, type: "image", content: "https://robohash.org/TacticalTina.png?set=set1&size=200x200", flag: "🇩🇪", speech: "Keep your pieces protected, or I'll find a fork.", engineDepth: 8 },
+    "7":  { id: "7",  name: "Positional Pete",      elo: 1600, type: "image", content: "https://robohash.org/PositionalPete.png?set=set1&size=200x200", flag: "🇳🇱", speech: "I am in no rush. I will slowly squeeze your position.", engineDepth: 9 },
+    "8":  { id: "8",  name: "Expert Evan",          elo: 2000, type: "image", content: "https://robohash.org/ExpertEvan.png?set=set1&size=200x200", flag: "🇫🇷", speech: "I hope you know your opening theory 15 moves deep.", engineDepth: 10 },
+    "9":  { id: "9",  name: "Grandmaster Gary",     elo: 2400, type: "image", content: "https://robohash.org/GrandmasterGary.png?set=set1&size=200x200", flag: "🇷🇺", speech: "Your inaccuracies will be punished severely.", engineDepth: 11 },
+    "10": { id: "10", name: "Leela",           elo: 2850, type: "image", content: "https://robohash.org/Leela.png?set=set1&size=200x200", flag: "🇮🇳", speech: "Resistance is futile. I play the objectively best move.", engineDepth: 15 },
+    "11": { id: "11", name: "Stockfish",            elo: 3200, type: "image", content: "https://stockfishchess.org/images/logo/icon_512x512@2x.webp", flag: "🇳🇴", speech: "Evaluation: +M12. You blundered on move 4.", engineDepth: 15 }
 };
 
 // Render a bot's avatar as an <img> or raw inline SVG.
