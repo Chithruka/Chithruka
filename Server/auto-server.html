@@ -74,15 +74,15 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
     max-width: 160px;
 }
 
-/* Bottom row: provider buttons (embed mode only) */
+/* Bottom row: provider buttons (embed / links modes only) */
 #provider-row,
-#agg-provider-row {
+#links-provider-row {
     display: none;
     gap: 6px;
     flex-wrap: wrap;
 }
 #provider-row.visible,
-#agg-provider-row.visible { display: flex; }
+#links-provider-row.visible { display: flex; }
 
 #bar-close {
     background: transparent;
@@ -238,7 +238,7 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
         <!-- Row 1: mode tabs + label -->
         <div id="bar-top">
             <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">⬤ Direct</button>
-            <button id="tab-agg"    class="mode-tab"        onclick="switchMode('agg')">⚡ Aggregated</button>
+            <button id="tab-links"  class="mode-tab"        onclick="switchMode('links')">🔗 Links</button>
             <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">⊞ Embed</button>
             <span id="source-label"></span>
             <button id="bar-close" onclick="hideBar()" title="Close">✕</button>
@@ -247,8 +247,8 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
         <div id="provider-row">
             <!-- populated by JS -->
         </div>
-        <!-- Row 3: aggregated provider buttons (agg mode only) -->
-        <div id="agg-provider-row">
+        <!-- Row 3: generated-link format buttons (links mode only) -->
+        <div id="links-provider-row">
             <!-- populated by JS -->
         </div>
     </div>
@@ -271,174 +271,35 @@ const EMBED_PROVIDERS = [
     { name: '2Embed',      movie: 'https://www.2embed.cc/embed/[ID]',               tv: 'https://www.2embed.cc/embedtv/[ID]&s=[S]&e=[E]' },
 ];
 
-// ── Aggregated providers ─────────────────────────────────────────────────────
-// Strategy: load the provider page in a hidden off-screen iframe, wait for it
-// to post video source URLs via window.postMessage (most embed players do this),
-// AND simultaneously scrape the iframe's DOM for <video src>, <source src>, and
-// any <a> links ending in .mp4/.m3u8/.mkv (used by download pages like 1embed).
-//
-// Each entry needs only:
-//   name       — display label
-//   embedUrl() — returns the URL to load
-//   timeout    — ms to wait before giving up (default 18000)
-// ─────────────────────────────────────────────────────────────────────────────
-const AGGREGATED_PROVIDERS = [
-    {
-        name: '1Embed Download',
-        embedUrl: (id, type, s, e) => type === 'movie'
-            ? `https://1embed.cc/download/movie/${id}`
-            : `https://1embed.cc/download/tv/${id}/${s}/${e}`,
-        timeout: 15000,
-    },
-    {
-        name: 'CineSrc Download',
-        embedUrl: (id, type, s, e) => type === 'movie'
-            ? `https://cinesrc.st/download/movie/${id}`
-            : `https://cinesrc.st/download/tv/${id}?s=${s}&e=${e}`,
-        timeout: 15000,
-    },
-    {
-        name: 'VidSrc Pro',
-        embedUrl: (id, type, s, e) => type === 'movie'
-            ? `https://vidsrc.pro/embed/movie/${id}`
-            : `https://vidsrc.pro/embed/tv/${id}/${s}/${e}`,
-        timeout: 20000,
-    },
-    {
-        name: 'VidLink',
-        embedUrl: (id, type, s, e) => type === 'movie'
-            ? `https://vidlink.pro/movie/${id}?autoplay=false`
-            : `https://vidlink.pro/tv/${id}/${s}/${e}?autoplay=false`,
-        timeout: 20000,
-    },
+// ── Generated Links (Baiscope) ───────────────────────────────────────────────
+// Mirrors link.html: fetches the movie's title/year from TMDB, then builds two
+// candidate direct-file URLs (dots-format and underscores-format filenames).
+// Each is probed in a hidden <video> element; the first that loads wins.
+// Movies only — link.html has no season/episode support, so TV falls straight
+// through to Embed.
+const TMDB_API_KEY      = '92850a79e50917b8cc19623455ae2240'; // set your TMDB v3 API key here to enable this step
+const BAISCOPE_BASE_URL = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/movies/';
+
+function baiscopeDotsName(title) {
+    return title
+        .replace(/[^a-zA-Z0-9]/g, '.')
+        .replace(/\.+/g, '.')
+        .replace(/(^\.|\.$)/g, '');
+}
+function baiscopeUnderscoresName(title) {
+    return title
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/(^_|_$)/g, '');
+}
+
+const GENERATED_LINK_FORMATS = [
+    { name: 'Format 1 (Dots)',        build: (title, year) => `${BAISCOPE_BASE_URL}${baiscopeDotsName(title)}.${year}.mp4` },
+    { name: 'Format 2 (Underscores)', build: (title, year) => `${BAISCOPE_BASE_URL}${baiscopeUnderscoresName(title)}_${year}.mp4` },
 ];
 
-// ── Hidden-iframe source extractor ───────────────────────────────────────────
-// Loads a provider URL in a sandboxed off-screen iframe, then:
-//   1. Listens for postMessage events containing video URLs.
-//   2. After iframe loads, scrapes its DOM for <video>, <source>, and <a> tags
-//      pointing to .m3u8/.mp4/.mkv URLs.
-// Returns a Promise<Array<{src, label, type}>> or null on timeout/failure.
-// ─────────────────────────────────────────────────────────────────────────────
-function extractSourcesFromIframe(providerUrl, timeoutMs = 18000) {
-    return new Promise((resolve) => {
-        let settled = false;
-        const collected = [];
-        const seenUrls  = new Set();
-        let domTimer    = null;
-        let giveUpTimer = null;
-
-        function finish() {
-            if (settled) return;
-            settled = true;
-            clearTimeout(domTimer);
-            clearTimeout(giveUpTimer);
-            window.removeEventListener('message', onMessage);
-            // Remove the hidden iframe after a tiny delay so it finishes any cleanup
-            setTimeout(() => { try { iframe.remove(); } catch {} }, 200);
-            resolve(collected.length ? collected : null);
-        }
-
-        // ── Video URL detection ────────────────────────────────────────────
-        const VIDEO_EXT_RE = /\.(m3u8|mp4|mkv|webm|ts)(\?|$)/i;
-
-        function addUrl(url, label) {
-            if (!url || typeof url !== 'string') return;
-            // Filter out obvious non-video URLs
-            if (!VIDEO_EXT_RE.test(url) && !url.includes('manifest')) return;
-            if (seenUrls.has(url)) return;
-            seenUrls.add(url);
-            const type = url.includes('.m3u8') || url.includes('manifest') ? 'hls' : 'mp4';
-            collected.push({ src: url, label: label || '', type });
-        }
-
-        // ── postMessage listener ───────────────────────────────────────────
-        // Most embed players (vidlink, vidsrc, etc.) broadcast their sources
-        // as a postMessage before or right after playback starts.
-        function onMessage(evt) {
-            if (!evt.data) return;
-            const d = evt.data;
-            // Handle raw string URLs
-            if (typeof d === 'string' && VIDEO_EXT_RE.test(d)) {
-                addUrl(d, ''); return;
-            }
-            if (typeof d !== 'object') return;
-            // Common shapes seen in the wild:
-            // { url, quality } / { src, label } / { stream } / { file } / { sources: [...] }
-            // { type:'SOURCE', data: { file, label } } / { type:'STREAM', url }
-            const tryFields = (obj) => {
-                if (!obj || typeof obj !== 'object') return;
-                ['url','src','file','stream','link','source','hls','m3u8'].forEach(k => {
-                    if (obj[k] && typeof obj[k] === 'string') addUrl(obj[k], obj.quality || obj.label || obj.resolution || '');
-                });
-                // sources / tracks arrays
-                ['sources','tracks','streams','links','files'].forEach(k => {
-                    if (Array.isArray(obj[k])) obj[k].forEach(item => tryFields(item));
-                });
-            };
-            tryFields(d);
-            if (d.data) tryFields(d.data);
-        }
-        window.addEventListener('message', onMessage);
-
-        // ── DOM scrape (runs after iframe fires onload) ────────────────────
-        function scrapeDom() {
-            try {
-                const doc = iframe.contentDocument || iframe.contentWindow?.document;
-                if (!doc) return;
-
-                // <video src="..."> and <source src="...">
-                doc.querySelectorAll('video[src], source[src]').forEach(el => {
-                    addUrl(el.getAttribute('src'), el.getAttribute('label') || '');
-                });
-
-                // <a href="...mp4"> style download links
-                doc.querySelectorAll('a[href]').forEach(el => {
-                    const href = el.getAttribute('href');
-                    if (href && VIDEO_EXT_RE.test(href)) {
-                        // Use the link text as a quality label (e.g. "1080p", "720p")
-                        addUrl(href, el.textContent.trim().slice(0, 20));
-                    }
-                });
-
-                // Inline scripts may contain URLs in JSON blobs
-                const scriptText = Array.from(doc.querySelectorAll('script'))
-                    .map(s => s.textContent).join(' ');
-                const urlMatches = scriptText.matchAll(/["']([^"']*\.(?:m3u8|mp4)(?:\?[^"']*)?)['"]/gi);
-                for (const m of urlMatches) addUrl(m[1], '');
-
-            } catch (e) {
-                // cross-origin DOM access will throw — that's fine, we rely on postMessage then
-                console.info('[agg] DOM scrape blocked (cross-origin), relying on postMessage');
-            }
-        }
-
-        // ── Build and inject hidden iframe ────────────────────────────────
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;';
-        iframe.setAttribute('allow', 'autoplay *; encrypted-media *');
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
-
-        iframe.onload = () => {
-            // Scrape DOM straight away for download-page style providers
-            scrapeDom();
-            // Also schedule a second scrape 2s later to catch dynamically rendered content
-            domTimer = setTimeout(() => {
-                scrapeDom();
-                // If we already have sources from the DOM scrape, we're done
-                if (collected.length) finish();
-            }, 2000);
-        };
-
-        iframe.onerror = () => finish();
-
-        iframe.src = providerUrl;
-        document.body.appendChild(iframe);
-
-        // Hard timeout — give up and resolve with whatever we have
-        giveUpTimer = setTimeout(finish, timeoutMs);
-    });
-}
+// How long to wait for each candidate link to prove it's playable
+const LINK_PROBE_MS = 10000;
 
 // If an iframe hasn't fired onload after this many ms, mark it as "slow"
 const SLOW_MS   = 8000;
@@ -462,10 +323,11 @@ const EP   = _p.get('e')    || '1';
 //  STATE
 // ═══════════════════════════════════════════════════════════════════════════
 
-let mode          = 'direct';  // 'direct' | 'agg' | 'embed'
+let mode          = 'direct';  // 'direct' | 'links' | 'embed'
 let directSources = null;      // array from videos.json, or null
-let aggSources    = null;      // sources fetched from aggregated providers, or null
-let aggIdx        = 0;         // current AGGREGATED_PROVIDERS index being tried
+let workingLink   = null;      // { name, url } of the generated link that proved playable, or null
+let lastLookup    = null;      // { title, year } from the last successful TMDB lookup, or null
+let linkIdx       = 0;         // current GENERATED_LINK_FORMATS index being tried
 let provIdx       = 0;         // current EMBED_PROVIDERS index
 let slowTimer     = null;
 let autoTimer     = null;
@@ -494,12 +356,10 @@ function hideBar()  { document.getElementById('control-bar').classList.remove('v
 // ── Mode tabs ───────────────────────────────────────────────────────────────
 function setActiveTab(m) {
     document.getElementById('tab-direct').classList.toggle('active', m === 'direct');
-    document.getElementById('tab-agg').classList.toggle('active',    m === 'agg');
+    document.getElementById('tab-links').classList.toggle('active',  m === 'links');
     document.getElementById('tab-embed').classList.toggle('active',  m === 'embed');
     document.getElementById('provider-row').classList.toggle('visible', m === 'embed');
-    // Show agg-provider row only in agg mode
-    const aggRow = document.getElementById('agg-provider-row');
-    if (aggRow) aggRow.classList.toggle('visible', m === 'agg');
+    document.getElementById('links-provider-row').classList.toggle('visible', m === 'links');
 }
 
 // ── Provider buttons ────────────────────────────────────────────────────────
@@ -528,9 +388,9 @@ async function startDirect() {
 
     const db = await fetchDB();
     if (!db) {
-        // Can't even reach the DB — go straight to embed
+        // Can't even reach the DB — try generated links next
         unspin();
-        autoFallbackToEmbed('Library unavailable');
+        autoFallbackToLinks('Library unavailable');
         return;
     }
 
@@ -540,7 +400,7 @@ async function startDirect() {
 
     if (!sources || sources.length === 0) {
         unspin();
-        autoFallbackToEmbed('Not in local library');
+        autoFallbackToLinks('Not in local library');
         return;
     }
 
@@ -628,11 +488,10 @@ function playDirectVideoJS(sources, srcType) {
         console.warn('[auto-server] VideoJS: all sources failed (mode=' + mode + ')');
         disposeVJS();
         el.style.display = 'none';
-        if (mode === 'agg') {
-            // Will be overridden per-provider in startAggregated, but as a safety net:
-            autoFallbackFromAgg('VideoJS error in agg mode');
+        if (mode === 'direct') {
+            autoFallbackToLinks('Direct sources failed');
         } else {
-            autoFallbackToEmbed('Direct sources failed');
+            autoFallbackToEmbed('Playback failed');
         }
     });
 
@@ -642,7 +501,7 @@ function playDirectVideoJS(sources, srcType) {
 
 function playDirectIframe(sources, srcType) {
     const url = buildDirectIframeUrl(sources[0], srcType);
-    if (!url) { autoFallbackToEmbed('Invalid source URL'); return; }
+    if (!url) { autoFallbackToLinks('Invalid source URL'); return; }
 
     const container = document.getElementById('iframe-container');
     container.style.display = 'block';
@@ -659,7 +518,7 @@ function playDirectIframe(sources, srcType) {
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
     iframe.onload  = unspin;
-    iframe.onerror = () => autoFallbackToEmbed('Source failed to load');
+    iframe.onerror = () => autoFallbackToLinks('Source failed to load');
 
     wrapper.appendChild(iframe);
     container.appendChild(wrapper);
@@ -699,15 +558,15 @@ function buildDirectIframeUrl(s, srcType) {
     }
 }
 
-// Silent auto-fallback: tries aggregated first, then embed
-function autoFallbackToEmbed(reason) {
-    console.info(`[auto-server] Direct failed (${reason}) — trying aggregated`);
-    startAggregated();
+// Silent auto-fallback: direct sources failed/unavailable, try generated links next
+function autoFallbackToLinks(reason) {
+    console.info(`[auto-server] Direct failed (${reason}) — trying generated links`);
+    startGeneratedLinks();
 }
 
-// Final fallback: all aggregated sources exhausted, go to embed
-function autoFallbackFromAgg(reason) {
-    console.info(`[auto-server] Aggregated failed (${reason}) — falling back to embed`);
+// Silent auto-fallback: generated links exhausted/unsupported, go straight to embed
+function autoFallbackToEmbed(reason) {
+    console.info(`[auto-server] Falling back to embed (${reason})`);
     mode = 'embed';
     setActiveTab('embed');
     provIdx = 0;
@@ -717,70 +576,144 @@ function autoFallbackFromAgg(reason) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  AGGREGATED MODE  (non-embed: real m3u8/mp4 from aggregators)
+//  GENERATED LINKS MODE  (direct-file URLs built from TMDB title/year)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Try each AGGREGATED_PROVIDER in order using the hidden-iframe engine.
-// The first provider that yields at least one video URL wins; if none do, fall to embed.
-async function startAggregated(startIdx = 0) {
-    mode = 'agg';
-    setActiveTab('agg');
-    showBar();
+// Probe a candidate URL with a real HTTP request. The file host responds with
+// a normal 200/206 for a valid file, but returns HTTP 404 with a JSON body like
+// { "code": "not_found", "message": "File with such name does not exist.", "status": 404 }
+// when the filename guess is wrong — a <video> element doesn't reliably catch
+// that, so we check the response directly instead.
+// Resolves true if the file exists and is playable, false otherwise.
+async function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    for (let i = startIdx; i < AGGREGATED_PROVIDERS.length; i++) {
-        aggIdx = i;
-        const prov = AGGREGATED_PROVIDERS[i];
-        renderAggProviderButtons(i, true);
-        spin(`Extracting sources via ${prov.name}…`);
+    try {
+        // Range request: only pull a few bytes, we just need to confirm it exists
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: { 'Range': 'bytes=0-1' },
+            signal: controller.signal
+        });
 
-        const embedUrl = prov.embedUrl(TMDB, TYPE, SN, EP);
-        let sources = null;
-        try {
-            sources = await extractSourcesFromIframe(embedUrl, prov.timeout || 18000);
-        } catch (err) {
-            console.warn(`[auto-server] Agg iframe error (${prov.name}):`, err);
+        if (!res.ok) {
+            let reason = `HTTP ${res.status}`;
+            try {
+                const body = await res.clone().json();
+                if (body && body.message) reason = body.message;
+            } catch { /* not JSON — ignore, status code is enough */ }
+            console.info(`[auto-server] Link unavailable: ${reason}`);
+            return false;
         }
 
-        if (sources && sources.length > 0) {
-            aggSources = sources;
+        // Some hosts return 200 with a JSON error body instead of a proper 404 —
+        // guard against that by checking the content-type isn't JSON/text.
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let reason = 'unexpected JSON response';
+            try {
+                const body = await res.clone().json();
+                if (body && body.message) reason = body.message;
+            } catch { /* ignore */ }
+            console.info(`[auto-server] Link unavailable: ${reason}`);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.info(`[auto-server] Link check failed: ${err.message}`);
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function startGeneratedLinks() {
+    mode = 'links';
+    setActiveTab('links');
+    renderLinkProviderButtons(-1, false);
+    showBar();
+
+    if (TYPE !== 'movie') {
+        autoFallbackToEmbed('Generated links only support movies');
+        return;
+    }
+    if (!TMDB_API_KEY) {
+        autoFallbackToEmbed('No TMDB API key configured');
+        return;
+    }
+
+    spin('Looking up movie info…');
+    let title, year;
+    try {
+        const res = await fetch(`https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) throw new Error('TMDB lookup failed');
+        const data = await res.json();
+        title = data.title;
+        year  = data.release_date ? data.release_date.split('-')[0] : '';
+        if (!title) throw new Error('No title returned');
+        lastLookup = { title, year };
+    } catch (err) {
+        console.warn('[auto-server] Generated links: TMDB lookup failed', err);
+        autoFallbackToEmbed('TMDB lookup failed');
+        return;
+    }
+
+    for (let i = 0; i < GENERATED_LINK_FORMATS.length; i++) {
+        linkIdx = i;
+        const fmt = GENERATED_LINK_FORMATS[i];
+        const url = fmt.build(title, year);
+        renderLinkProviderButtons(i, true);
+        spin(`Checking ${fmt.name}…`);
+
+        const ok = await testVideoUrl(url);
+        if (ok) {
+            workingLink = { name: fmt.name, url };
             unspin();
-            renderAggProviderButtons(i, false);
-            setLabel(`Aggregated · ${prov.name} (${sources.length} source${sources.length > 1 ? 's' : ''})`);
-
-            // Play the extracted URLs directly in VideoJS
-            playDirectVideoJS(sources, sources[0].type || detectType(sources[0].src));
-
-            // If VideoJS errors on this batch, try the next aggregated provider
-            if (vjsPlayer) {
-                vjsPlayer.off('error');
-                vjsPlayer.on('error', () => {
-                    console.warn(`[auto-server] Agg VideoJS error on ${prov.name}, trying next`);
-                    disposeVJS();
-                    document.getElementById('vjs-player').style.display = 'none';
-                    startAggregated(i + 1);
-                });
-            }
+            renderLinkProviderButtons(i, false);
+            setLabel(`Links · ${fmt.name}`);
+            playDirectVideoJS([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
             return;
         }
 
-        console.info(`[auto-server] Agg provider ${prov.name} returned no sources — trying next`);
+        console.info(`[auto-server] Generated link failed: ${fmt.name}`);
     }
 
     unspin();
-    autoFallbackFromAgg('All aggregated providers returned no sources');
+    autoFallbackToEmbed('All generated links failed');
 }
 
-function renderAggProviderButtons(activeIdx, isTrying) {
-    const row = document.getElementById('agg-provider-row');
+function renderLinkProviderButtons(activeIdx, isTrying) {
+    const row = document.getElementById('links-provider-row');
     if (!row) return;
     row.innerHTML = '';
-    AGGREGATED_PROVIDERS.forEach((p, i) => {
+    GENERATED_LINK_FORMATS.forEach((f, i) => {
         const btn = document.createElement('button');
         btn.className = 'prov-btn' +
             (i === activeIdx && !isTrying ? ' active' : '') +
             (i === activeIdx &&  isTrying ? ' trying' : '');
-        btn.textContent = p.name;
-        btn.onclick = () => startAggregated(i);
+        btn.textContent = f.name;
+        btn.onclick = () => {
+            if (!lastLookup) return;
+            linkIdx = i;
+            renderLinkProviderButtons(i, true);
+            spin(`Checking ${f.name}…`);
+            const url = f.build(lastLookup.title, lastLookup.year);
+            testVideoUrl(url).then(ok => {
+                if (ok) {
+                    workingLink = { name: f.name, url };
+                    unspin();
+                    renderLinkProviderButtons(i, false);
+                    setLabel(`Links · ${f.name}`);
+                    playDirectVideoJS([{ src: url, type: 'mp4', label: f.name }], 'mp4');
+                } else {
+                    unspin();
+                    renderLinkProviderButtons(i, false);
+                    setLabel(`Links · ${f.name} (unavailable)`);
+                }
+            });
+        };
         row.appendChild(btn);
     });
 }
@@ -801,19 +734,19 @@ function switchMode(m) {
         } else {
             flashTab('tab-direct');
         }
-    } else if (m === 'agg') {
+    } else if (m === 'links') {
         disposeVJS();
         document.getElementById('vjs-player').style.display = 'none';
         clearEmbed();
-        if (aggSources) {
-            // Already fetched — replay immediately
-            mode = 'agg';
-            setActiveTab('agg');
-            renderAggProviderButtons(aggIdx, false);
+        if (workingLink) {
+            mode = 'links';
+            setActiveTab('links');
+            renderLinkProviderButtons(linkIdx, false);
             showBar();
-            playDirect(aggSources); // aggSources are direct m3u8/mp4 arrays
+            setLabel(`Links · ${workingLink.name}`);
+            playDirectVideoJS([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
         } else {
-            startAggregated();
+            startGeneratedLinks();
         }
     } else {
         mode = 'embed';
