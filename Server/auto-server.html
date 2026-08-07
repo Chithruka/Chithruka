@@ -579,54 +579,46 @@ function autoFallbackToEmbed(reason) {
 //  GENERATED LINKS MODE  (direct-file URLs built from TMDB title/year)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Probe a candidate URL with a real HTTP request. The file host responds with
-// a normal 200/206 for a valid file, but returns HTTP 404 with a JSON body like
-// { "code": "not_found", "message": "File with such name does not exist.", "status": 404 }
-// when the filename guess is wrong — a <video> element doesn't reliably catch
-// that, so we check the response directly instead.
+// Probe a candidate URL using a hidden <video> element rather than fetch().
+// media.baiscopewatch.com sends no Access-Control-Allow-Origin header, so a
+// fetch() from the browser is blocked by CORS entirely (even for files that
+// exist) — the browser refuses to let JS read the response. Loading media via
+// a <video> element isn't subject to that restriction (CORS only gates JS
+// reading response bytes, not playback), so we listen for its native
+// loadedmetadata/error events instead.
 // Resolves true if the file exists and is playable, false otherwise.
-async function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
+    return new Promise(resolve => {
+        const probe = document.createElement('video');
+        probe.preload = 'metadata';
+        probe.muted = true;
+        probe.style.display = 'none';
 
-    try {
-        // Range request: only pull a few bytes, we just need to confirm it exists
-        const res = await fetch(url, {
-            method: 'GET',
-            headers: { 'Range': 'bytes=0-1' },
-            signal: controller.signal
-        });
+        let settled = false;
+        const finish = (ok, reason) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            probe.removeAttribute('src');
+            probe.load();
+            probe.remove();
+            if (!ok) console.info(`[auto-server] Link unavailable: ${reason}`);
+            resolve(ok);
+        };
 
-        if (!res.ok) {
-            let reason = `HTTP ${res.status}`;
-            try {
-                const body = await res.clone().json();
-                if (body && body.message) reason = body.message;
-            } catch { /* not JSON — ignore, status code is enough */ }
-            console.info(`[auto-server] Link unavailable: ${reason}`);
-            return false;
-        }
+        const timer = setTimeout(() => finish(false, 'timed out'), timeoutMs);
 
-        // Some hosts return 200 with a JSON error body instead of a proper 404 —
-        // guard against that by checking the content-type isn't JSON/text.
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-            let reason = 'unexpected JSON response';
-            try {
-                const body = await res.clone().json();
-                if (body && body.message) reason = body.message;
-            } catch { /* ignore */ }
-            console.info(`[auto-server] Link unavailable: ${reason}`);
-            return false;
-        }
+        probe.addEventListener('loadedmetadata', () => finish(true), { once: true });
+        probe.addEventListener('error', () => {
+            // MediaError codes: 1=ABORTED 2=NETWORK 3=DECODE 4=SRC_NOT_SUPPORTED
+            const code = probe.error ? probe.error.code : 0;
+            finish(false, `media error ${code}`);
+        }, { once: true });
 
-        return true;
-    } catch (err) {
-        console.info(`[auto-server] Link check failed: ${err.message}`);
-        return false;
-    } finally {
-        clearTimeout(timer);
-    }
+        document.body.appendChild(probe);
+        probe.src = url;
+        probe.load();
+    });
 }
 
 async function startGeneratedLinks() {
