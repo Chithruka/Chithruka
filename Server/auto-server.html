@@ -272,13 +272,13 @@ const EMBED_PROVIDERS = [
 ];
 
 // ── Generated Links (Baiscope) ───────────────────────────────────────────────
-// Mirrors link.html: fetches the movie's title/year from TMDB, then builds two
-// candidate direct-file URLs (dots-format and underscores-format filenames).
-// Each is probed in a hidden <video> element; the first that loads wins.
-// Movies only — link.html has no season/episode support, so TV falls straight
-// through to Embed.
-const TMDB_API_KEY      = '92850a79e50917b8cc19623455ae2240'; // set your TMDB v3 API key here to enable this step
-const BAISCOPE_BASE_URL = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/movies/';
+// Mirrors link.html: fetches the title/year (movies) or name (TV) from TMDB,
+// then builds two candidate direct-file URLs (dots-format and
+// underscores-format filenames). Each is probed in a hidden <video> element;
+// the first that loads wins. Supports both movies and TV episodes.
+const TMDB_API_KEY            = '92850a79e50917b8cc19623455ae2240'; // set your TMDB v3 API key here to enable this step
+const BAISCOPE_MOVIE_BASE_URL = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/movies/';
+const BAISCOPE_TV_BASE_URL    = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/';
 
 function baiscopeDotsName(title) {
     return title
@@ -292,11 +292,22 @@ function baiscopeUnderscoresName(title) {
         .replace(/_+/g, '_')
         .replace(/(^_|_$)/g, '');
 }
+function pad2(n) {
+    return String(n).padStart(2, '0');
+}
 
-const GENERATED_LINK_FORMATS = [
-    { name: 'Format 1 (Dots)',        build: (title, year) => `${BAISCOPE_BASE_URL}${baiscopeDotsName(title)}.${year}.mp4` },
-    { name: 'Format 2 (Underscores)', build: (title, year) => `${BAISCOPE_BASE_URL}${baiscopeUnderscoresName(title)}_${year}.mp4` },
-];
+// build(ctx) receives { title, year, sn, ep } — movie formats use title/year,
+// tv formats use title/sn/ep.
+const GENERATED_LINK_FORMATS = {
+    movie: [
+        { name: 'Format 1 (Dots)',        build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeDotsName(title)}.${year}.mp4` },
+        { name: 'Format 2 (Underscores)', build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeUnderscoresName(title)}_${year}.mp4` },
+    ],
+    tv: [
+        { name: 'Format 1 (Dots)',        build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeDotsName(title)}.S${pad2(sn)}E${pad2(ep)}.mp4` },
+        { name: 'Format 2 (Underscores)', build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeUnderscoresName(title)}_S${pad2(sn)}E${pad2(ep)}.mp4` },
+    ],
+};
 
 // How long to wait for each candidate link to prove it's playable
 const LINK_PROBE_MS = 10000;
@@ -627,35 +638,39 @@ async function startGeneratedLinks() {
     renderLinkProviderButtons(-1, false);
     showBar();
 
-    if (TYPE !== 'movie') {
-        autoFallbackToEmbed('Generated links only support movies');
-        return;
-    }
     if (!TMDB_API_KEY) {
         autoFallbackToEmbed('No TMDB API key configured');
         return;
     }
 
-    spin('Looking up movie info…');
+    const isMovie = TYPE === 'movie';
+    const formats = GENERATED_LINK_FORMATS[isMovie ? 'movie' : 'tv'];
+
+    spin(isMovie ? 'Looking up movie info…' : 'Looking up show info…');
     let title, year;
     try {
-        const res = await fetch(`https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`);
+        const endpoint = isMovie
+            ? `https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`
+            : `https://api.themoviedb.org/3/tv/${TMDB}?api_key=${TMDB_API_KEY}`;
+        const res = await fetch(endpoint);
         if (!res.ok) throw new Error('TMDB lookup failed');
         const data = await res.json();
-        title = data.title;
-        year  = data.release_date ? data.release_date.split('-')[0] : '';
+        title = isMovie ? data.title : data.name;
+        year  = isMovie
+            ? (data.release_date ? data.release_date.split('-')[0] : '')
+            : (data.first_air_date ? data.first_air_date.split('-')[0] : '');
         if (!title) throw new Error('No title returned');
-        lastLookup = { title, year };
+        lastLookup = { title, year, sn: SN, ep: EP };
     } catch (err) {
         console.warn('[auto-server] Generated links: TMDB lookup failed', err);
         autoFallbackToEmbed('TMDB lookup failed');
         return;
     }
 
-    for (let i = 0; i < GENERATED_LINK_FORMATS.length; i++) {
+    for (let i = 0; i < formats.length; i++) {
         linkIdx = i;
-        const fmt = GENERATED_LINK_FORMATS[i];
-        const url = fmt.build(title, year);
+        const fmt = formats[i];
+        const url = fmt.build(lastLookup);
         renderLinkProviderButtons(i, true);
         spin(`Checking ${fmt.name}…`);
 
@@ -680,7 +695,8 @@ function renderLinkProviderButtons(activeIdx, isTrying) {
     const row = document.getElementById('links-provider-row');
     if (!row) return;
     row.innerHTML = '';
-    GENERATED_LINK_FORMATS.forEach((f, i) => {
+    const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
+    formats.forEach((f, i) => {
         const btn = document.createElement('button');
         btn.className = 'prov-btn' +
             (i === activeIdx && !isTrying ? ' active' : '') +
@@ -691,7 +707,7 @@ function renderLinkProviderButtons(activeIdx, isTrying) {
             linkIdx = i;
             renderLinkProviderButtons(i, true);
             spin(`Checking ${f.name}…`);
-            const url = f.build(lastLookup.title, lastLookup.year);
+            const url = f.build(lastLookup);
             testVideoUrl(url).then(ok => {
                 if (ok) {
                     workingLink = { name: f.name, url };
