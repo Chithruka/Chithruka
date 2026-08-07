@@ -774,3 +774,131 @@ applyFilter();window.scrollTo({top:0,behavior:'smooth'})}
 document.addEventListener('DOMContentLoaded',()=>{const mobileItems=document.querySelectorAll('.mobile-item');const currentPath=window.location.pathname;mobileItems.forEach(item=>{const linkObj=item.querySelector('a');if(linkObj){const link=linkObj.getAttribute('href');if(link!=='#'&&currentPath.includes(link.replace('./',''))){item.classList.add('active')}}});updateTraktUI()});document.addEventListener('click',function(e){const drawer=document.getElementById('mobile-more-drawer');const moreBtn=document.getElementById('more-menu-btn');if(drawer&&drawer.classList.contains('open')){if(!drawer.contains(e.target)&&!moreBtn.contains(e.target)){drawer.classList.remove('open');moreBtn.classList.remove('active')}}});window.toggleMoreMenu=function(){const drawer=document.getElementById('mobile-more-drawer');const moreBtn=document.getElementById('more-menu-btn');drawer.classList.toggle('open');moreBtn.classList.toggle('active')};window.toggleMobileNav=function(hide){const nav=document.querySelector('.mobile-nav');if(nav){if(hide)nav.classList.add('nav-hidden-down');else nav.classList.remove('nav-hidden-down')}}
 window.toggleMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(!content||!btn)return;const isOpen=content.classList.contains('hidden');if(isOpen){content.classList.remove('hidden');requestAnimationFrame(()=>requestAnimationFrame(()=>content.classList.add('visible')));btn.classList.add('is-open');btn.setAttribute('aria-expanded','true');if(btnText)btnText.textContent='Less Info';updateScrollButtons(document.getElementById('logos-list'));updateScrollButtons(document.getElementById('gallery-list'))}else{content.classList.remove('visible');content.classList.add('hidden');btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false');if(btnText)btnText.textContent='More Info';document.getElementById('more-info-toggle-wrap').scrollIntoView({behavior:'smooth',block:'center'})}}
 window.resetMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(content){content.classList.add('hidden');content.classList.remove('visible')}if(btn){btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false')}if(btnText)btnText.textContent='More Info'}
+
+/* ── Grid View + Pagination for Trending Now ─────────────────── */
+let isGridView=false;let gridPage=1;let gridTotalPages=1;let gridFilter='all';let isGridLoading=false;
+const trendingScrollWrapper=document.getElementById('trending-scroll-wrapper');
+const trendingGridWrapper=document.getElementById('trending-grid-wrapper');
+const trendingGridContainer=document.getElementById('trending-grid-container');
+const trendingPaginationEl=document.getElementById('trending-pagination');
+const gridViewToggleBtn=document.getElementById('grid-view-toggle-btn');
+const gridViewToggleText=document.getElementById('grid-view-toggle-text');
+
+window.toggleGridView=function(){
+    isGridView=!isGridView;
+    if(gridViewToggleBtn)gridViewToggleBtn.classList.toggle('active',isGridView);
+    if(gridViewToggleText)gridViewToggleText.textContent=isGridView?'Scroll View':'Grid View';
+    if(isGridView){
+        if(trendingScrollWrapper)trendingScrollWrapper.classList.add('hidden');
+        if(trendingGridWrapper)trendingGridWrapper.classList.remove('hidden');
+        gridFilter=currentTrendingFilter||'all';
+        loadGridPage(1);
+    }else{
+        if(trendingScrollWrapper)trendingScrollWrapper.classList.remove('hidden');
+        if(trendingGridWrapper)trendingGridWrapper.classList.add('hidden');
+    }
+};
+
+function gridEndpointFor(type){
+    if(type==='movie')return `${BASE_TMDB_URL}/trending/movie/day?api_key=${TMDB_API_KEY}`;
+    if(type==='tv')return `${BASE_TMDB_URL}/trending/tv/day?api_key=${TMDB_API_KEY}`;
+    return `${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}`;
+}
+
+function renderGridSkeletons(){
+    let html='';
+    for(let n=0;n<12;n++){
+        html+='<div class="grid-card"><div class="poster-wrapper skeleton"></div><div class="card-body"><div class="skeleton skeleton-text"></div></div></div>';
+    }
+    trendingGridContainer.innerHTML=html;
+}
+
+function buildGridCard(item){
+    const title=item.title||item.name;
+    if(!title)return null;
+    const fallbackImage='https://placehold.co/150x225/222/999?text=No+Image';
+    const poster=item.poster_path?`${TMDB_POSTER_MD}${item.poster_path}`:fallbackImage;
+    const rating=item.vote_average?item.vote_average.toFixed(1):'NR';
+    const year=(item.release_date||item.first_air_date||'N/A').substring(0,4);
+    let badgeHtml='';
+    if(item.media_type==='tv')badgeHtml='<div class="media-badge tv">TV</div>';
+    else if(item.media_type==='movie')badgeHtml='<div class="media-badge movie">MOVIE</div>';
+    const card=document.createElement('div');
+    card.className='grid-card';
+    card.dataset.mediaType=item.media_type;
+    card.innerHTML=`
+        <div class="poster-wrapper">
+            ${badgeHtml}
+            <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}"
+                 onload="this.classList.remove('skeleton')"
+                 onerror="this.onerror=null; this.src='${fallbackImage}'">
+            <div class="play-overlay"><div class="play-icon-circle"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"/></svg></div></div>
+        </div>
+        <div class="card-body">
+            <div class="card-title" title="${title}">${title}</div>
+            <div class="card-meta"><span>${year}</span><span class="rating-badge">★ ${rating}</span></div>
+        </div>`;
+    card.onclick=()=>selectContent(item.id,title,item.media_type);
+    return card;
+}
+
+async function loadGridPage(page){
+    if(isGridLoading)return;
+    isGridLoading=true;
+    gridPage=page;
+    renderGridSkeletons();
+    try{
+        const url=`${gridEndpointFor(gridFilter)}&page=${page}`;
+        const data=await fetchCached(url);
+        let items=(data.results||[]).filter(i=>i.media_type!=='person');
+        items=items.map(i=>({...i,media_type:i.media_type||gridFilter}));
+        gridTotalPages=Math.min(data.total_pages||1,500);
+        trendingGridContainer.innerHTML='';
+        if(items.length===0){
+            trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">No results found.</p>';
+        }else{
+            items.forEach(item=>{const card=buildGridCard(item);if(card)trendingGridContainer.appendChild(card)});
+        }
+        renderPagination();
+    }catch(error){
+        console.error('Grid View Error:',error);
+        trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">Failed to load content. Try again later.</p>';
+    }finally{
+        isGridLoading=false;
+    }
+}
+
+function renderPagination(){
+    if(!trendingPaginationEl)return;
+    trendingPaginationEl.innerHTML='';
+    if(gridTotalPages<=1)return;
+    const makeBtn=(label,page,opts={})=>{
+        const btn=document.createElement('button');
+        btn.className='pagination-btn'+(opts.active?' active':'');
+        btn.textContent=label;
+        if(opts.disabled)btn.disabled=true;else btn.onclick=async()=>{await loadGridPage(page);trendingGridWrapper.scrollIntoView({behavior:'smooth',block:'start'})};
+        return btn;
+    };
+    const makeEllipsis=()=>{const span=document.createElement('span');span.className='pagination-ellipsis';span.textContent='…';return span};
+    trendingPaginationEl.appendChild(makeBtn('‹ Prev',gridPage-1,{disabled:gridPage<=1}));
+    const total=gridTotalPages;const current=gridPage;
+    const pages=new Set([1,total,current,current-1,current+1]);
+    const sorted=[...pages].filter(p=>p>=1&&p<=total).sort((a,b)=>a-b);
+    let prevPage=0;
+    sorted.forEach(p=>{
+        if(prevPage&&p-prevPage>1)trendingPaginationEl.appendChild(makeEllipsis());
+        trendingPaginationEl.appendChild(makeBtn(String(p),p,{active:p===current}));
+        prevPage=p;
+    });
+    trendingPaginationEl.appendChild(makeBtn('Next ›',gridPage+1,{disabled:gridPage>=total}));
+}
+
+/* Patch setSliderFilter so the grid view stays in sync with the All/Movies/TV Shows filter */
+const _originalSetSliderFilter=window.setSliderFilter;
+window.setSliderFilter=function(containerId,type,btn){
+    _originalSetSliderFilter(containerId,type,btn);
+    if(containerId==='trending-container'){
+        gridFilter=type;
+        if(isGridView)loadGridPage(1);
+    }
+};
