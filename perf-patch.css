@@ -20,6 +20,8 @@
 .grid-card:hover .poster-img{transform:scale(1.08)}
 
 .pagination-bar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:32px;padding-bottom:8px}
+.load-more-btn{padding:10px 32px;font-size:.9rem;border-radius:9999px}
+.load-more-btn:disabled{opacity:.6;cursor:default}
 .pagination-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:#ccc;font-size:.85rem;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s ease;min-width:40px;text-align:center}
 .pagination-btn:hover:not(:disabled){background:rgba(229,9,20,.2);border-color:#e50914;color:#fff}
 .pagination-btn.active{background:#e50914;border-color:#e50914;color:#fff}

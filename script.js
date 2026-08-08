@@ -101,7 +101,7 @@ async function displayAIResults(resultsList,aiMessage){searchInput.value=`AI Sea
     `;trendingContainer.innerHTML='';renderSkeletons(trendingContainer,10);loadedIds.clear();trendingPage=1;currentFetchUrl="STOP";const searchPromises=resultsList.map(async(item)=>{const cleanName=item.name;try{let url="";if(item.type==='company'){url=`${BASE_TMDB_URL}/search/company?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}`}else{url=`${BASE_TMDB_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanName)}&include_adult=true`}
 const data=await fetchCached(url);if(!data.results||data.results.length===0)return null;const bestMatch=data.results[0];if(bestMatch){if(item.type==='company')bestMatch.media_type='company';return bestMatch}
 return null}catch(e){console.error(`Search failed for ${cleanName}`,e);return null}});try{const resultsArray=await Promise.all(searchPromises);const validResults=resultsArray.filter(i=>i!==null);const uniqueResults=Array.from(new Map(validResults.map(item=>[item.id,item])).values());trendingContainer.innerHTML='';if(uniqueResults.length>0){renderCards(uniqueResults,trendingContainer,!0)}else{trendingContainer.innerHTML='<div class="text-gray-400 p-4">No matches found.</div>'}
-updateScrollButtons(trendingContainer);requestAnimationFrame(()=>{requestAnimationFrame(()=>{header.scrollIntoView({behavior:'smooth',block:'start'})})})}catch(e){console.error("AI Result Display Error",e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Error loading AI results.</div>'}}
+currentGridSourceItems=uniqueResults;if(isGridView)loadGridPage(1);updateScrollButtons(trendingContainer);requestAnimationFrame(()=>{requestAnimationFrame(()=>{header.scrollIntoView({behavior:'smooth',block:'start'})})})}catch(e){console.error("AI Result Display Error",e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Error loading AI results.</div>'}}
 async function authenticateTMDB(){const btn=document.getElementById('tmdb-login-btn');if(btn)btn.style.pointerEvents='none';try{const res=await fetch(`${BASE_TMDB_URL}/authentication/token/new?api_key=${TMDB_API_KEY}`,{cache:"no-store"});const data=await res.json();if(data.success){const redirectUrl=window.location.origin+window.location.pathname;window.location.href=`https://www.themoviedb.org/authenticate/${data.request_token}?redirect_to=${encodeURIComponent(redirectUrl)}`}}catch(e){showMessage("Auth failed",!0);if(btn)btn.style.pointerEvents='auto'}}
 async function createSession(requestToken){if(sessionId)return;try{const res=await fetch(`${BASE_TMDB_URL}/authentication/session/new?api_key=${TMDB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_token:requestToken})});const data=await res.json();if(data.success){sessionId=data.session_id;localStorage.setItem('tmdb_session_id',sessionId);await fetchAccountDetails();showMessage("Login Successful!");setTimeout(()=>{window.location.href=window.location.pathname},1000)}else{window.history.replaceState({},document.title,window.location.pathname);showMessage("Login session expired. Please try again.",!0)}}catch(e){showMessage("Session creation failed",!0)}}
 async function fetchAccountDetails(){if(!sessionId)return;try{const data=await fetchCached(`${BASE_TMDB_URL}/account?api_key=${TMDB_API_KEY}&session_id=${sessionId}`);accountId=data.id;localStorage.setItem('tmdb_account_id',accountId);updateAuthUI(data)}catch(e){console.error("Account fetch error",e)}}
@@ -119,8 +119,9 @@ if(!sessionId){showMessage("Please login first",!0);return}
 const isWatch=btnEl.classList.contains('active');btnEl.classList.toggle('active');btnEl.innerHTML=isWatch?WL_ICON_OUTLINE:WL_ICON_SOLID;try{await fetch(`${BASE_TMDB_URL}/account/${accountId}/watchlist?api_key=${TMDB_API_KEY}&session_id=${sessionId}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({media_type:type,media_id:id,watchlist:!isWatch})});showMessage(isWatch?"Removed from Watchlist":"Added to Watchlist ✓")}catch(e){btnEl.classList.toggle('active');btnEl.innerHTML=isWatch?WL_ICON_SOLID:WL_ICON_OUTLINE;showMessage("Failed to update Watchlist",!0)}}
 window.quickToggleWatchlist=quickToggleWatchlist;function toggleRatingSlider(){if(!sessionId)return showMessage("Please login first",!0);document.getElementById('rating-slider').classList.toggle('show')}
 async function submitRating(){const val=document.getElementById('rating-input').value;try{await fetch(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/rating?api_key=${TMDB_API_KEY}&session_id=${sessionId}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:val})});showMessage(`Rated ${val}/10`);document.getElementById('rating-slider').classList.remove('show');const rateBtn=document.getElementById('btn-rate');if(rateBtn){rateBtn.classList.add('is-rated');rateBtn.classList.remove('rated-pop');void rateBtn.offsetWidth;rateBtn.classList.add('rated-pop');setTimeout(()=>rateBtn.classList.remove('rated-pop'),700)}}catch(e){showMessage("Rating failed",!0)}}
-async function loadMyLibrary(type){if(!sessionId)return;currentFetchUrl="STOP";trendingPage=1;const dropdown=document.getElementById('user-menu');if(dropdown)dropdown.classList.remove('show');heroSection.style.display='none';document.getElementById('top10-section').style.display='none';detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');collectionSection.classList.add('hidden');document.getElementById('continue-watching-section').classList.add('hidden');const header=document.getElementById('trending-header');if(type==='favorite')header.innerHTML='My Favorites';else header.innerHTML='My Watchlist';trendingContainer.innerHTML='';renderSkeletons(trendingContainer,10);requestAnimationFrame(()=>{requestAnimationFrame(()=>{header.scrollIntoView({behavior:'smooth',block:'start'})})});try{const[resMovies,resTV]=await Promise.all([fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`),fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`)]);const dataMovies=await resMovies.json();const dataTV=await resTV.json();const movies=(dataMovies.results||[]).map(i=>({...i,media_type:'movie'}));const tv=(dataTV.results||[]).map(i=>({...i,media_type:'tv'}));const combined=[...movies,...tv];trendingContainer.innerHTML='';if(combined.length===0){trendingContainer.innerHTML='<div class="text-gray-400 p-4">Your list is empty.</div>'}else{renderCards(combined,trendingContainer,!1)}}catch(e){console.error(e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Failed to load library.</div>'}}
-function loadHome(){destroyHeroTrailer();currentFetchUrl="";trendingPage=1;currentTrendingFilter='all';top10Page=1;top10Pool=[];top10Filter='all';searchInput.value='';searchResults.innerHTML='';const _searchIcon=document.getElementById('search-icon');const _clearIcon=document.getElementById('clear-icon');const _submitBtn=document.getElementById('search-submit-btn');if(_submitBtn&&_searchIcon&&_clearIcon){_searchIcon.style.display='block';_clearIcon.style.display='none';_submitBtn.title='Search';_submitBtn.onclick=()=>commitSearch(document.getElementById('search-input').value)}
+async function loadMyLibrary(type){if(!sessionId)return;currentFetchUrl="STOP";trendingPage=1;const dropdown=document.getElementById('user-menu');if(dropdown)dropdown.classList.remove('show');heroSection.style.display='none';document.getElementById('top10-section').style.display='none';detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');collectionSection.classList.add('hidden');document.getElementById('continue-watching-section').classList.add('hidden');const header=document.getElementById('trending-header');if(type==='favorite')header.innerHTML='My Favorites';else header.innerHTML='My Watchlist';trendingContainer.innerHTML='';renderSkeletons(trendingContainer,10);requestAnimationFrame(()=>{requestAnimationFrame(()=>{header.scrollIntoView({behavior:'smooth',block:'start'})})});try{const[resMovies,resTV]=await Promise.all([fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/movies?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`),fetch(`${BASE_TMDB_URL}/account/${accountId}/${type}/tv?api_key=${TMDB_API_KEY}&session_id=${sessionId}&sort_by=created_at.desc`)]);const dataMovies=await resMovies.json();const dataTV=await resTV.json();const movies=(dataMovies.results||[]).map(i=>({...i,media_type:'movie'}));const tv=(dataTV.results||[]).map(i=>({...i,media_type:'tv'}));const combined=[...movies,...tv];trendingContainer.innerHTML='';if(combined.length===0){trendingContainer.innerHTML='<div class="text-gray-400 p-4">Your list is empty.</div>'}else{renderCards(combined,trendingContainer,!1)}
+currentGridSourceItems=combined;if(isGridView)loadGridPage(1)}catch(e){console.error(e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Failed to load library.</div>'}}
+function loadHome(){destroyHeroTrailer();currentFetchUrl="";trendingPage=1;currentTrendingFilter='all';currentGridSourceItems=null;if(isGridView)loadGridPage(1);top10Page=1;top10Pool=[];top10Filter='all';searchInput.value='';searchResults.innerHTML='';const _searchIcon=document.getElementById('search-icon');const _clearIcon=document.getElementById('clear-icon');const _submitBtn=document.getElementById('search-submit-btn');if(_submitBtn&&_searchIcon&&_clearIcon){_searchIcon.style.display='block';_clearIcon.style.display='none';_submitBtn.title='Search';_submitBtn.onclick=()=>commitSearch(document.getElementById('search-input').value)}
 heroSection.style.display='block';document.getElementById('top10-section').style.display='block';const trailerSection=document.getElementById('trailers-section');if(trailerSection)trailerSection.style.display='block';detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');collectionSection.classList.add('hidden');const history=JSON.parse(localStorage.getItem('watch_history')||'[]');if(history.length>0){document.getElementById('continue-watching-section').classList.remove('hidden')}else{document.getElementById('continue-watching-section').classList.add('hidden')}
 document.getElementById('trending-header').innerHTML='<svg class="svg-icon text-red-500 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M160.5-26.4c9.3-7.8 23-7.5 31.9 .9 12.3 11.6 23.3 24.4 33.9 37.4 13.5 16.5 29.7 38.3 45.3 64.2 5.2-6.8 10-12.8 14.2-17.9 1.1-1.3 2.2-2.7 3.3-4.1 7.9-9.8 17.7-22.1 30.8-22.1 13.4 0 22.8 11.9 30.8 22.1 1.3 1.7 2.6 3.3 3.9 4.8 10.3 12.4 24 30.3 37.7 52.4 27.2 43.9 55.6 106.4 55.6 176.6 0 123.7-100.3 224-224 224S0 411.7 0 288c0-91.1 41.1-170 80.5-225 19.9-27.7 39.7-49.9 54.6-65.1 8.2-8.4 16.5-16.7 25.5-24.2zM225.7 416c25.3 0 47.7-7 68.8-21 42.1-29.4 53.4-88.2 28.1-134.4-4.5-9-16-9.6-22.5-2l-25.2 29.3c-6.6 7.6-18.5 7.4-24.7-.5-17.3-22.1-49.1-62.4-65.3-83-5.4-6.9-15.2-8-21.5-1.9-18.3 17.8-51.5 56.8-51.5 104.3 0 68.6 50.6 109.2 113.7 109.2z"/></svg></i> Trending Now';document.querySelectorAll('.slider-filter-btn').forEach(b=>{b.classList.toggle('active',b.textContent.trim()==='All')});window.scrollTo({top:0,behavior:'smooth'});trendingContainer.innerHTML='';loadTrending();loadLatestTrailers()}
 function getActiveServers(){const servers=[...BASE_SERVER_URLS];let hasLocalServer=!1;if(localVideosLoaded){if(mediaType==='movie'){hasLocalServer=!!(LOCAL_VIDEOS.movies&&LOCAL_VIDEOS.movies[TMDB_ID])}else if(mediaType==='tv'){hasLocalServer=!!LOCAL_VIDEOS.tv?.[TMDB_ID]?.[currentSeason]?.[currentEpisode]}}
@@ -131,7 +132,23 @@ const isMobile=window.innerWidth<768;box.style.bottom=isMobile?'calc(70px + 12px
 window.scrollContainer=function(id,amount){document.getElementById(id).scrollBy({left:amount,behavior:'smooth'})}
 window.setSliderFilter=function(containerId,type,btn){const container=document.getElementById(containerId);if(!container)return;const wrapper=btn.closest('.slider-filter');if(wrapper){wrapper.querySelectorAll('.slider-filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
 if(containerId==='top10-container'){renderTop10ForFilter(type);return}
-currentTrendingFilter=type;container.querySelectorAll(':scope > .scroll-card, :scope > .top-10-card').forEach(card=>{const cardType=card.dataset.mediaType;if(type==='all'||cardType===type){card.style.display=''}else{card.style.display='none'}});if(typeof updateScrollButtons==='function'){updateScrollButtons(container)}}
+currentTrendingFilter=type;
+if(containerId==='trending-container'){
+    /* Re-fetch from the API instead of only hiding whatever happened to already be loaded
+       in the lazy-loaded scroller (which may only be 10-20 items). This keeps the scroll
+       view AND the grid view fully populated and in sync for the selected type. */
+    gridFilter=type;
+    currentFetchUrl=gridEndpointFor(type);
+    currentGridSourceItems=null;
+    loadedIds.clear();
+    trendingPage=1;
+    container.innerHTML='';
+    renderSkeletons(container,10);
+    loadTrending();
+    if(isGridView)loadGridPage(1,!1);
+    return;
+}
+container.querySelectorAll(':scope > .scroll-card, :scope > .top-10-card').forEach(card=>{const cardType=card.dataset.mediaType;if(type==='all'||cardType===type){card.style.display=''}else{card.style.display='none'}});if(typeof updateScrollButtons==='function'){updateScrollButtons(container)}}
 trendingContainer.addEventListener('scroll',()=>{updateScrollButtons(trendingContainer)});let trendingObserver=null;function attachTrendingObserver(){if(trendingObserver){trendingObserver.disconnect();trendingObserver=null}
 const old=document.getElementById('trending-sentinel');if(old)old.remove();const sentinel=document.createElement('div');sentinel.id='trending-sentinel';sentinel.style.cssText='width:4px;height:100%;flex-shrink:0;pointer-events:none;';trendingContainer.appendChild(sentinel);trendingObserver=new IntersectionObserver((entries)=>{if(entries[0].isIntersecting){loadTrending()}},{root:trendingContainer,rootMargin:'0px 300px 0px 0px',threshold:0});trendingObserver.observe(sentinel)}
 async function loadTrending(){if(isTrendingLoading)return;const activeUrl=currentFetchUrl;if(activeUrl==="STOP")return;isTrendingLoading=!0;if(trendingPage===1){renderSkeletons(trendingContainer,10)}
@@ -295,6 +312,7 @@ async function loadActorCredits(personId,personName,profilePath,gender){document
 renderSkeletons(trendingContainer,10);const imgHtml=getPersonFace(profilePath,gender,"w-8 h-8 rounded-full mr-3 border border-gray-600 inline-flex","text-sm");document.getElementById('trending-header').innerHTML=`<div class="flex items-center">${imgHtml} <span class="ml-2">Featuring ${personName}</span></div>`;requestAnimationFrame(()=>{requestAnimationFrame(()=>{document.getElementById('trending-header').scrollIntoView({behavior:'smooth',block:'start'})})});try{const[personData,combinedCredits]=await Promise.all([fetchCached(`${BASE_TMDB_URL}/person/${personId}?api_key=${TMDB_API_KEY}&append_to_response=external_ids,images`),fetchCached(`${BASE_TMDB_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`)]);const uniqueItems=new Map();if(combinedCredits.cast){combinedCredits.cast.forEach(item=>{if(item.poster_path){item.date=new Date(item.release_date||item.first_air_date||'1900-01-01');uniqueItems.set(item.id,item)}})}
 if(combinedCredits.crew){combinedCredits.crew.forEach(item=>{if(item.poster_path&&!uniqueItems.has(item.id)){item.character=item.job;item.date=new Date(item.release_date||item.first_air_date||'1900-01-01');uniqueItems.set(item.id,item)}})}
 const results=Array.from(uniqueItems.values());results.sort((a,b)=>b.popularity-a.popularity);trendingContainer.innerHTML='';if(results.length===0){trendingContainer.innerHTML='<div class="text-gray-400 p-4">No credits found.</div>'}else{renderCards(results,trendingContainer,!0);trendingContainer.scrollLeft=0}
+currentGridSourceItems=results;if(isGridView)loadGridPage(1);
 const totalCount=results.length;renderPersonProfile(personData,totalCount)}catch(e){console.error("Actor Load Error",e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Failed to load person details.</div>'}}
 function renderPersonProfile(data,totalCredits){const container=document.getElementById('person-details-container');if(!container||!data)return;const bio=data.biography;const knownFor=data.known_for_department;const birthday=data.birthday?new Date(data.birthday).toLocaleDateString(undefined,{dateStyle:'long'}):null;const place=data.place_of_birth;const deathday=data.deathday?new Date(data.deathday).toLocaleDateString(undefined,{dateStyle:'long'}):null;let genderStr=null;if(data.gender===1)genderStr="Female";else if(data.gender===2)genderStr="Male";else if(data.gender===3)genderStr="Non-binary";let aliasesHtml='';if(data.also_known_as&&data.also_known_as.length>0){const aliases=data.also_known_as.slice(0,3).join('<br>');aliasesHtml=aliases}
 let ageStr="";if(data.birthday&&!data.deathday){const birthDate=new Date(data.birthday);const ageDifMs=Date.now()-birthDate.getTime();const ageDate=new Date(ageDifMs);ageStr=` (${Math.abs(ageDate.getUTCFullYear() - 1970)} years old)`}else if(data.deathday&&data.birthday){const birthDate=new Date(data.birthday);const deathDate=new Date(data.deathday);let age=deathDate.getFullYear()-birthDate.getFullYear();const m=deathDate.getMonth()-birthDate.getMonth();if(m<0||(m===0&&deathDate.getDate()<birthDate.getDate())){age--}
@@ -356,6 +374,10 @@ async function fetchFilterPage(urlSpecOrSpecs,page){let specs;if(typeof urlSpecO
 const responses=await Promise.all(specs.map(spec=>fetchCached(`${spec.url}&page=${page}`).catch(()=>({results:[]}))));let merged=[];responses.forEach((data,idx)=>{const items=(data.results||[]).map(i=>({...i,media_type:i.media_type||specs[idx].mediaType}));merged=merged.concat(items)});if(specs.length>1){merged=mergeSortResults(merged,currentFilterState?currentFilterState.sort:'popularity.desc')}
 if(currentFilterState&&currentFilterState.year){merged=merged.filter(item=>{const date=item.release_date||item.first_air_date;return date&&date.substring(0,4)===String(currentFilterState.year)})}
 return merged}
+async function fetchFilterPageWithTotal(urlSpecOrSpecs,page){let specs;if(typeof urlSpecOrSpecs==='string'){specs=[{url:urlSpecOrSpecs,mediaType:/\/(tv)[/?]/.test(urlSpecOrSpecs)?'tv':'movie'}]}else if(Array.isArray(urlSpecOrSpecs)){specs=urlSpecOrSpecs}else{specs=[urlSpecOrSpecs]}
+const responses=await Promise.all(specs.map(spec=>fetchCached(`${spec.url}&page=${page}`).catch(()=>({results:[],total_pages:1}))));let merged=[];let maxTotalPages=1;responses.forEach((data,idx)=>{const items=(data.results||[]).map(i=>({...i,media_type:i.media_type||specs[idx].mediaType}));merged=merged.concat(items);maxTotalPages=Math.max(maxTotalPages,Math.min(data.total_pages||1,500))});if(specs.length>1){merged=mergeSortResults(merged,currentFilterState?currentFilterState.sort:'popularity.desc')}
+if(currentFilterState&&currentFilterState.year){merged=merged.filter(item=>{const date=item.release_date||item.first_air_date;return date&&date.substring(0,4)===String(currentFilterState.year)})}
+return{items:merged,totalPages:maxTotalPages}}
 function stateToOverrides(state){return{type:state.type,genre:state.genre,genreLabel:state.genreLabel,country:state.country,countryLabel:state.countryLabel,language:state.language,year:state.year,rating:state.rating,company:state.company,network:state.network,keyword:state.keyword}}
 function buildHeaderSelect(value,options,onChange){const sel=document.createElement('select');sel.className='header-inline-select';options.forEach(opt=>{const o=document.createElement('option');o.value=opt.value;o.textContent=opt.text;if(String(opt.value)===String(value||''))o.selected=!0;sel.appendChild(o)});sel.addEventListener('change',(e)=>onChange(e.target.value));return sel}
 function buildHeaderNumberInput(value,placeholder,step,onChange){const input=document.createElement('input');input.type='number';if(step)input.step=step;input.className='header-inline-input';input.value=value||'';input.placeholder=placeholder||'';input.addEventListener('change',(e)=>onChange(e.target.value));input.addEventListener('keydown',(e)=>{if(e.key==='Enter')e.target.blur();});return input}
@@ -369,8 +391,8 @@ const textSearch=currentSearchQuery;if(network){type='tv'}
 if(document.getElementById('filter-type'))document.getElementById('filter-type').value=type;const adultToggle=document.getElementById('filter-adult');const includeAdult=adultToggle?adultToggle.checked:!1;localStorage.setItem('include_adult',includeAdult);closeFilterModal();searchResults.innerHTML='';if(!textSearch)searchInput.value='';heroSection.style.display='none';document.getElementById('top10-section').style.display='none';document.getElementById('continue-watching-section').classList.add('hidden');const sliderWrap=document.getElementById('trending-slider-filter');if(sliderWrap)sliderWrap.style.display='none';let finalSort=document.getElementById('filter-sort')?document.getElementById('filter-sort').value:'popularity.desc';if(textSearch){let headerStr=`Results for "${textSearch}"`;if(year)headerStr+=` (${year})`;document.getElementById('trending-header').innerHTML=headerStr;currentFilterState=null}else if(overrides.company||overrides.network){document.getElementById('trending-header').innerHTML=activeFilterLabel?`Titles from ${activeFilterLabel}`:"Production Search";currentFilterState=null}else if(overrides.keyword){document.getElementById('trending-header').innerHTML=`Keyword: ${activeFilterLabel}`;currentFilterState=null}else{const genreLabel=(overrides.genre&&typeof overrides.genreLabel!=='undefined')?overrides.genreLabel:(overrides.genre&&activeFilterLabel)?activeFilterLabel:null;const countryLabel=(overrides.country&&typeof overrides.countryLabel!=='undefined')?overrides.countryLabel:(overrides.country&&activeFilterLabel)?activeFilterLabel:null;currentFilterState={type,genre,genreLabel,country,countryLabel,language,year,rating,sort:finalSort,company,network,keyword};await renderInteractiveHeader(currentFilterState)}
 let urlSpec;if(textSearch){const searchType=type==='all'?'multi':type;urlSpec=`${BASE_TMDB_URL}/search/${searchType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(textSearch)}&include_adult=${includeAdult}`;if(year){if(type==='movie')urlSpec+=`&primary_release_year=${year}`;else if(type==='tv')urlSpec+=`&first_air_date_year=${year}`}
 if(language)urlSpec+=`&language=${language}`}else if(overrides.company||overrides.network||overrides.keyword){const concreteType=type==='all'?'movie':type;urlSpec=buildDiscoverUrlForType(concreteType,{genre,country,language,year,rating,sort:finalSort,company,network,keyword,includeAdult})}else{const concreteTypes=type==='all'?['movie','tv']:[type];urlSpec=concreteTypes.map(ct=>({url:buildDiscoverUrlForType(ct,{genre,country,language,year,rating,sort:finalSort,company,network,keyword,includeAdult}),mediaType:ct}))}
-currentFetchUrl=urlSpec;trendingContainer.innerHTML='';renderSkeletons(trendingContainer,10);loadedIds.clear();trendingPage=1;try{const results=await fetchFilterPage(currentFetchUrl,1);trendingContainer.innerHTML='';if(results.length===0){trendingContainer.innerHTML='<div class="text-gray-400 p-4">No results found matching your criteria.</div>';currentFetchUrl="STOP"}else{renderCards(results,trendingContainer,!0);trendingPage=2;attachTrendingObserver()}
-requestAnimationFrame(()=>{requestAnimationFrame(()=>{document.getElementById('trending-header').scrollIntoView({behavior:'smooth'})})})}catch(e){console.error("Filter Error:",e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Error loading results.</div>'}}
+currentFetchUrl=urlSpec;currentGridSourceItems=null;trendingContainer.innerHTML='';renderSkeletons(trendingContainer,10);loadedIds.clear();trendingPage=1;try{const results=await fetchFilterPage(currentFetchUrl,1);trendingContainer.innerHTML='';if(results.length===0){trendingContainer.innerHTML='<div class="text-gray-400 p-4">No results found matching your criteria.</div>';currentFetchUrl="STOP";currentGridSourceItems=[]}else{renderCards(results,trendingContainer,!0);trendingPage=2;attachTrendingObserver()}
+if(isGridView)loadGridPage(1);requestAnimationFrame(()=>{requestAnimationFrame(()=>{document.getElementById('trending-header').scrollIntoView({behavior:'smooth'})})})}catch(e){console.error("Filter Error:",e);trendingContainer.innerHTML='<div class="text-red-500 p-4">Error loading results.</div>'}}
 const PWA_OS_ICON_PATHS={apple:"M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z",android:"M17.523 15.3414C17.062 15.3414 16.688 14.9674 16.688 14.5064C16.688 14.0454 17.062 13.6714 17.523 13.6714C17.984 13.6714 18.358 14.0454 18.358 14.5064C18.358 14.9674 17.984 15.3414 17.523 15.3414ZM6.477 15.3414C6.016 15.3414 5.642 14.9674 5.642 14.5064C5.642 14.0454 6.016 13.6714 6.477 13.6714C6.938 13.6714 7.312 14.0454 7.312 14.5064C7.312 14.9674 6.938 15.3414 6.477 15.3414ZM17.885 10.3954L19.492 7.6114C19.605 7.4154 19.538 7.1644 19.342 7.0514C19.146 6.9384 18.895 7.0054 18.782 7.2014L17.143 10.0414C15.617 9.3454 13.882 8.9514 12 8.9514C10.118 8.9514 8.383 9.3454 6.857 10.0414L5.218 7.2014C5.105 7.0054 4.854 6.9384 4.658 7.0514C4.462 7.1644 4.395 7.4154 4.508 7.6114L6.115 10.3954C2.585 12.3164 0.17 15.9314 0 20.1814H24C23.83 15.9314 21.415 12.3164 17.885 10.3954Z",windows:"M0 3.449L9.75 2.1v9.451H0zm0 11.802l9.75 1.35v9.449H0zm10.55-13.315L24 0v11.551H10.55zm0 13.25L24 24v-11.55H10.55z",linux:"M12.38 2.003c-2.88 0-4.22 2.063-4.22 4.137 0 .863.26 2.02.66 3.123-.97.74-2.29 2.227-2.29 4.382 0 1.25.43 2.502 1.28 3.323-.11.458-.45 1.574-1.25 2.148-.22.158-.17.51.09.585 1.48.423 2.76-.086 3.48-.488.72.33 1.51.5 2.25.5s1.53-.17 2.25-.5c.72.402 2 .911 3.48.488.26-.075.31-.427.09-.585-.8-.574-1.14-1.69-1.25-2.148.85-.82 1.28-2.072 1.28-3.323 0-2.155-1.32-3.642-2.29-4.382.4-1.103.66-2.26.66-3.123 0-2.074-1.34-4.137-4.22-4.137z"};
 const PWA_INSTALL_INSTRUCTIONS={ios:{subtitle:"Add to Home Screen",steps:["Tap the Share icon in your browser's toolbar.","Scroll down and tap 'Add to Home Screen'.","Tap 'Add' in the top-right corner to confirm."]},"macos-safari":{subtitle:"Add to Dock",steps:["Click the Share icon in the Safari toolbar.","Select 'Add to Dock'.","Click 'Add' to confirm."]},"android-firefox":{subtitle:"Install from Firefox",steps:["Tap the \u22ee menu in the top-right corner.","Tap 'Install' (or 'Add app to Home Screen' on older versions).","Confirm to add the app to your device."]},"desktop-firefox":{subtitle:"Firefox can't install apps yet",steps:["Firefox for desktop has no built-in way to install this as an app.","Press Ctrl/Cmd + D to bookmark this page instead, or","Open this site in Chrome or Edge to install it as an app."]}};
 let pwaInstallMethod='native';
@@ -394,7 +416,6 @@ const heroPosterPin=document.querySelector('.detail-hero-poster-pin');if(heroPos
 const posterImg=document.getElementById('detail-poster');posterImg.src='';posterImg.style.display='block';posterImg.classList.add('skeleton');posterImg.onload=null;posterImg.onerror=null;checkAccountStates(id,type);traktCheckWatchlistStatus();if(mediaType==='tv')await fetchShowDetails(id,title);else await fetchMovieDetails(id,title);setupDeferredSections(id,currentTitle);requestAnimationFrame(()=>{if(window.scrollY>0)window.scrollTo({top:0,behavior:'smooth'})})}
 let deferredSectionObserver=null;function setupDeferredSections(id,title){if(deferredSectionObserver){deferredSectionObserver.disconnect();deferredSectionObserver=null}
 loadReviews(id,mediaType,!0);const recsSection=document.getElementById('recommendations-section');const reviewsSection=document.getElementById('reviews-section');const pending=new Set(['recs','reviews']);deferredSectionObserver=new IntersectionObserver((entries)=>{entries.forEach(entry=>{if(!entry.isIntersecting)return;const key=entry.target.dataset.deferred;if(!pending.has(key))return;pending.delete(key);if(key==='recs')loadRecommendations(mediaType,id);else if(key==='reviews')loadReviews(id,mediaType);deferredSectionObserver.unobserve(entry.target)})},{rootMargin:'400px 0px'});if(recsSection){recsSection.dataset.deferred='recs';deferredSectionObserver.observe(recsSection)}
-if(soundSection){soundSection.dataset.deferred='sound';deferredSectionObserver.observe(soundSection)}
 if(reviewsSection){reviewsSection.dataset.deferred='reviews';deferredSectionObserver.observe(reviewsSection)}}
 async function fetchMovieDetails(id,title){tvControls.classList.add('hidden');try{const detailData=await fetchCached(`${BASE_TMDB_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=images,external_ids,credits,release_dates,alternative_titles,keywords,videos,similar,translations&include_video_language=en,null`);if(detailData.external_ids)IMDB_ID=detailData.external_ids.imdb_id;if(detailData.title){currentTitle=detailData.title;document.title=`${currentTitle} - Chithruka`}
 renderDetails(detailData,currentTitle);renderGallery(detailData);if(detailData.belongs_to_collection){await loadCollection(detailData.belongs_to_collection.id,detailData.belongs_to_collection.name,!1)}
@@ -684,7 +705,7 @@ if(urlParams.has('request_token')&&urlParams.get('approved')==='true'){const tok
 if(!urlParams.has('id')&&!urlParams.has('filter')){loadProgress()}
 const deepType=urlParams.get('type');const deepFilter=urlParams.get('filter');if(urlParams.has('id')&&deepType==='person'){heroSection.style.display='none';const trailerSection=document.getElementById('trailers-section');if(trailerSection)trailerSection.style.display='none';const deepId=Number(urlParams.get('id'));const deepName=urlParams.get('name')||'Person';document.title=`${deepName} - Chithruka`;await loadActorCredits(deepId,deepName,null,null)}else if(urlParams.has('id')&&deepType==='collection'){heroSection.style.display='none';const trailerSection=document.getElementById('trailers-section');if(trailerSection)trailerSection.style.display='none';const deepId=Number(urlParams.get('id'));const deepName=urlParams.get('name')||'Collection';document.title=`${deepName} - Chithruka`;detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');await loadCollection(deepId,deepName)}else if(deepFilter&&urlParams.has('id')){heroSection.style.display='none';const trailerSection=document.getElementById('trailers-section');if(trailerSection)trailerSection.style.display='none';const deepId=urlParams.get('id');const deepName=urlParams.get('name')||deepId;const deepLogo=urlParams.get('logo')||'';document.title=`${deepName} - Chithruka`;quickFilter(deepFilter,isNaN(Number(deepId))?deepId:Number(deepId),deepName,deepLogo)}else if(urlParams.has('id')&&urlParams.has('type')){heroSection.style.display='none';const trailerSection=document.getElementById('trailers-section');if(trailerSection)trailerSection.style.display='none';const deepId=Number(urlParams.get('id'));await ensureLocalVideos();selectContent(deepId,"Loading Content...",deepType)}else{loadLatestTrailers()}
 loadTrending();loadGenres();initQuotes();const scrollContainers=document.querySelectorAll('.overflow-x-auto');scrollContainers.forEach(container=>{updateScrollButtons(container);container.addEventListener('scroll',()=>{updateScrollButtons(container)})});const yearSpan=document.getElementById('footer-year');if(yearSpan)yearSpan.textContent=new Date().getFullYear();const countryEl=document.getElementById('user-country');const updateLocationUI=(name,code)=>{if(countryEl&&name&&code){countryEl.innerHTML=`${flagImgHtml(code, name, 'inline-block rounded-sm mr-1 align-middle')} ${name}`;countryEl.classList.add('cursor-pointer','hover:border-red-500','hover:text-white','group');countryEl.title=`Browse content from ${name}`;countryEl.onclick=()=>{window.scrollTo({top:0,behavior:'smooth'});quickFilter('country',code,name)}}};fetch('https://ipapi.co/json/').then(res=>{if(!res.ok)throw new Error('Blocked/Error');return res.json()}).then(data=>{if(data.country_name&&data.country_code){updateLocationUI(data.country_name,data.country_code)}else{throw new Error('Invalid Data')}}).catch(()=>{console.warn("Primary location API failed, trying fallback...");fetch('https://get.geojs.io/v1/ip/country/full.json').then(res=>{if(!res.ok)throw new Error('Fallback Blocked');return res.json()}).then(data=>{if(data.name&&data.alpha2){updateLocationUI(data.name,data.alpha2)}else{if(countryEl)countryEl.style.display='none'}}).catch(()=>{if(countryEl)countryEl.style.display='none'})})});window.addEventListener('popstate',async(event)=>{const state=event.state;if(!state){document.title='Chithruka';heroSection.style.display='block';document.getElementById('top10-section').style.display='block';detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');collectionSection.classList.add('hidden');const personContainer=document.getElementById('person-details-container');if(personContainer){personContainer.classList.add('hidden');personContainer.innerHTML=''}
-trendingContainer.innerHTML='';loadedIds.clear();trendingPage=1;currentFetchUrl='';loadTrending();return}
+trendingContainer.innerHTML='';loadedIds.clear();trendingPage=1;currentFetchUrl='';currentGridSourceItems=null;if(isGridView)loadGridPage(1);loadTrending();return}
 if(state.type==='person'){await loadActorCredits(state.id,state.name,state.profilePath,state.gender)}else if(state.type==='collection'){detailsSection.classList.add('hidden');playerInterface.classList.add('hidden');heroSection.style.display='none';await loadCollection(state.id,state.name)}else if(state.filter){heroSection.style.display='none';quickFilter(state.filter,state.id,state.name,state.logo||'')}else if(state.type==='movie'||state.type==='tv'){heroSection.style.display='none';await selectContent(state.id,state.title||'Loading...',state.type)}});function renderLogos(data){const container=document.getElementById('logos-container');const list=document.getElementById('logos-list');if(!container||!list)return;list.innerHTML='';const logos=data.images?.logos||[];if(logos.length===0){container.classList.add('hidden');return}
 const logosByLang={};logos.forEach(logo=>{const iso=logo.iso_639_1||'xx';if(!logosByLang[iso])logosByLang[iso]=[];logosByLang[iso].push(logo)});const uniqueLogos=Object.values(logosByLang).map(group=>group.find(l=>!isSvgLogo(l))||group[0]);const langNames=new Intl.DisplayNames(['en'],{type:'language'});if(uniqueLogos.length>0){container.classList.remove('hidden');uniqueLogos.forEach(logo=>{const imgUrl=logoUrlFor(logo,TMDB_POSTER_MD);const fullUrl=logoUrlFor(logo,TMDB_POSTER_XL);let langLabel="Universal";if(logo.iso_639_1){try{langLabel=langNames.of(logo.iso_639_1)}catch(e){langLabel=logo.iso_639_1.toUpperCase()}}
 const div=document.createElement('div');div.className="flex-shrink-0 cursor-pointer w-56 aspect-video bg-white/5 border border-white/10 rounded-xl relative group flex items-center justify-center p-4 hover:border-white/30 transition-all";div.innerHTML=`
@@ -775,8 +796,13 @@ document.addEventListener('DOMContentLoaded',()=>{const mobileItems=document.que
 window.toggleMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(!content||!btn)return;const isOpen=content.classList.contains('hidden');if(isOpen){content.classList.remove('hidden');requestAnimationFrame(()=>requestAnimationFrame(()=>content.classList.add('visible')));btn.classList.add('is-open');btn.setAttribute('aria-expanded','true');if(btnText)btnText.textContent='Less Info';updateScrollButtons(document.getElementById('logos-list'));updateScrollButtons(document.getElementById('gallery-list'))}else{content.classList.remove('visible');content.classList.add('hidden');btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false');if(btnText)btnText.textContent='More Info';document.getElementById('more-info-toggle-wrap').scrollIntoView({behavior:'smooth',block:'center'})}}
 window.resetMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(content){content.classList.add('hidden');content.classList.remove('visible')}if(btn){btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false')}if(btnText)btnText.textContent='More Info'}
 
-/* ── Grid View + Pagination for Trending Now ─────────────────── */
-let isGridView=false;let gridPage=1;let gridTotalPages=1;let gridFilter='all';let isGridLoading=false;
+/* ── Grid View + "Load More" pagination for whatever section is currently active ── */
+/* Grid view always mirrors the exact same data source as the scroller
+   (currentGridSourceItems for locally-held lists, else currentFetchUrl for
+   API-backed sections). There is no separate "trending-only" fallback path,
+   so the grid can never silently diverge from what the user is actually
+   looking at (a filter, a search, a person's credits, a library list, etc). */
+let isGridView=false;let gridPage=1;let gridTotalPages=1;let gridFilter='all';let isGridLoading=false;let currentGridSourceItems=null;
 const trendingScrollWrapper=document.getElementById('trending-scroll-wrapper');
 const trendingGridWrapper=document.getElementById('trending-grid-wrapper');
 const trendingGridContainer=document.getElementById('trending-grid-container');
@@ -791,8 +817,7 @@ window.toggleGridView=function(){
     if(isGridView){
         if(trendingScrollWrapper)trendingScrollWrapper.classList.add('hidden');
         if(trendingGridWrapper)trendingGridWrapper.classList.remove('hidden');
-        gridFilter=currentTrendingFilter||'all';
-        loadGridPage(1);
+        loadGridPage(1,!1);
     }else{
         if(trendingScrollWrapper)trendingScrollWrapper.classList.remove('hidden');
         if(trendingGridWrapper)trendingGridWrapper.classList.add('hidden');
@@ -805,13 +830,18 @@ function gridEndpointFor(type){
     return `${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}`;
 }
 
-function renderGridSkeletons(){
+function renderGridSkeletons(append){
     let html='';
     for(let n=0;n<12;n++){
-        html+='<div class="grid-card"><div class="poster-wrapper skeleton"></div><div class="card-body"><div class="skeleton skeleton-text"></div></div></div>';
+        html+='<div class="grid-card grid-skel"><div class="poster-wrapper skeleton"></div><div class="card-body"><div class="skeleton skeleton-text"></div></div></div>';
     }
-    trendingGridContainer.innerHTML=html;
+    if(append){
+        trendingGridContainer.insertAdjacentHTML('beforeend',html)
+    }else{
+        trendingGridContainer.innerHTML=html
+    }
 }
+function clearGridSkeletons(){trendingGridContainer.querySelectorAll('.grid-skel').forEach(el=>el.remove())}
 
 function buildGridCard(item){
     const title=item.title||item.name;
@@ -842,63 +872,65 @@ function buildGridCard(item){
     return card;
 }
 
-async function loadGridPage(page){
+async function loadGridPage(page,append){
     if(isGridLoading)return;
     isGridLoading=true;
     gridPage=page;
-    renderGridSkeletons();
+    if(!append)trendingGridContainer.innerHTML='';
+    renderGridSkeletons(!!append);
+    if(trendingPaginationEl)trendingPaginationEl.innerHTML='';
     try{
-        const url=`${gridEndpointFor(gridFilter)}&page=${page}`;
-        const data=await fetchCached(url);
-        let items=(data.results||[]).filter(i=>i.media_type!=='person');
-        items=items.map(i=>({...i,media_type:i.media_type||gridFilter}));
-        gridTotalPages=Math.min(data.total_pages||1,500);
-        trendingGridContainer.innerHTML='';
-        if(items.length===0){
+        let items,totalPages;
+        if(currentGridSourceItems){
+            /* Locally-held list (search/AI results, an actor's credits, a library list, etc.) */
+            const perPage=20;
+            totalPages=Math.max(1,Math.ceil(currentGridSourceItems.length/perPage));
+            const start=(page-1)*perPage;
+            items=currentGridSourceItems.slice(start,start+perPage);
+        }else if(currentFetchUrl&&currentFetchUrl!==''&&currentFetchUrl!=='STOP'){
+            /* Whatever API-backed section is currently on screen: trending (optionally
+               type-filtered), a Discover filter, or a search - exactly the same source
+               the scroller itself is paginating through. */
+            const result=await fetchFilterPageWithTotal(currentFetchUrl,page);
+            items=result.items.filter(i=>i.media_type!=='person');
+            totalPages=result.totalPages;
+        }else{
+            /* Nothing selected (e.g. grid opened before any content has loaded yet) -
+               show the default trending catalog rather than erroring out. */
+            const url=`${gridEndpointFor(gridFilter)}&page=${page}`;
+            const data=await fetchCached(url);
+            items=(data.results||[]).filter(i=>i.media_type!=='person');
+            items=items.map(i=>({...i,media_type:i.media_type||gridFilter}));
+            totalPages=Math.min(data.total_pages||1,500);
+        }
+        gridTotalPages=totalPages;
+        clearGridSkeletons();
+        if(!append&&items.length===0){
             trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">No results found.</p>';
         }else{
             items.forEach(item=>{const card=buildGridCard(item);if(card)trendingGridContainer.appendChild(card)});
         }
-        renderPagination();
+        renderLoadMoreButton();
     }catch(error){
         console.error('Grid View Error:',error);
-        trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">Failed to load content. Try again later.</p>';
+        clearGridSkeletons();
+        if(!append)trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">Failed to load content. Try again later.</p>';
+        else if(trendingPaginationEl){const retryBtn=document.createElement('button');retryBtn.className='pagination-btn load-more-btn';retryBtn.textContent='Failed to load more - Retry';retryBtn.onclick=()=>loadGridPage(gridPage+1,!0);trendingPaginationEl.appendChild(retryBtn)}
     }finally{
         isGridLoading=false;
     }
 }
 
-function renderPagination(){
+function renderLoadMoreButton(){
     if(!trendingPaginationEl)return;
     trendingPaginationEl.innerHTML='';
-    if(gridTotalPages<=1)return;
-    const makeBtn=(label,page,opts={})=>{
-        const btn=document.createElement('button');
-        btn.className='pagination-btn'+(opts.active?' active':'');
-        btn.textContent=label;
-        if(opts.disabled)btn.disabled=true;else btn.onclick=async()=>{await loadGridPage(page);trendingGridWrapper.scrollIntoView({behavior:'smooth',block:'start'})};
-        return btn;
+    if(gridPage>=gridTotalPages)return;
+    const btn=document.createElement('button');
+    btn.className='pagination-btn load-more-btn';
+    btn.textContent='Load More';
+    btn.onclick=async()=>{
+        btn.disabled=true;btn.textContent='Loading…';
+        await loadGridPage(gridPage+1,!0);
     };
-    const makeEllipsis=()=>{const span=document.createElement('span');span.className='pagination-ellipsis';span.textContent='…';return span};
-    trendingPaginationEl.appendChild(makeBtn('‹ Prev',gridPage-1,{disabled:gridPage<=1}));
-    const total=gridTotalPages;const current=gridPage;
-    const pages=new Set([1,total,current,current-1,current+1]);
-    const sorted=[...pages].filter(p=>p>=1&&p<=total).sort((a,b)=>a-b);
-    let prevPage=0;
-    sorted.forEach(p=>{
-        if(prevPage&&p-prevPage>1)trendingPaginationEl.appendChild(makeEllipsis());
-        trendingPaginationEl.appendChild(makeBtn(String(p),p,{active:p===current}));
-        prevPage=p;
-    });
-    trendingPaginationEl.appendChild(makeBtn('Next ›',gridPage+1,{disabled:gridPage>=total}));
+    trendingPaginationEl.appendChild(btn);
 }
-
-/* Patch setSliderFilter so the grid view stays in sync with the All/Movies/TV Shows filter */
-const _originalSetSliderFilter=window.setSliderFilter;
-window.setSliderFilter=function(containerId,type,btn){
-    _originalSetSliderFilter(containerId,type,btn);
-    if(containerId==='trending-container'){
-        gridFilter=type;
-        if(isGridView)loadGridPage(1);
-    }
-};
