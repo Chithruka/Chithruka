@@ -796,31 +796,50 @@ document.addEventListener('DOMContentLoaded',()=>{const mobileItems=document.que
 window.toggleMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(!content||!btn)return;const isOpen=content.classList.contains('hidden');if(isOpen){content.classList.remove('hidden');requestAnimationFrame(()=>requestAnimationFrame(()=>content.classList.add('visible')));btn.classList.add('is-open');btn.setAttribute('aria-expanded','true');if(btnText)btnText.textContent='Less Info';updateScrollButtons(document.getElementById('logos-list'));updateScrollButtons(document.getElementById('gallery-list'))}else{content.classList.remove('visible');content.classList.add('hidden');btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false');if(btnText)btnText.textContent='More Info';document.getElementById('more-info-toggle-wrap').scrollIntoView({behavior:'smooth',block:'center'})}}
 window.resetMoreInfo=function(){const content=document.getElementById('more-info-content');const btn=document.getElementById('more-info-btn');const btnText=document.getElementById('more-info-btn-text');if(content){content.classList.add('hidden');content.classList.remove('visible')}if(btn){btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false')}if(btnText)btnText.textContent='More Info'}
 
-/* ── Grid View + "Load More" pagination for whatever section is currently active ── */
-/* Grid view always mirrors the exact same data source as the scroller
+/* ── Grid/List View + "Load More" pagination for whatever section is currently active ── */
+/* Card views (grid or list) always mirror the exact same data source as the scroller
    (currentGridSourceItems for locally-held lists, else currentFetchUrl for
    API-backed sections). There is no separate "trending-only" fallback path,
-   so the grid can never silently diverge from what the user is actually
+   so the card views can never silently diverge from what the user is actually
    looking at (a filter, a search, a person's credits, a library list, etc). */
-let isGridView=false;let gridPage=1;let gridTotalPages=1;let gridFilter='all';let isGridLoading=false;let currentGridSourceItems=null;
+let viewMode='scroll';let isGridView=false;let gridPage=1;let gridTotalPages=1;let gridFilter='all';let isGridLoading=false;let currentGridSourceItems=null;
 const trendingScrollWrapper=document.getElementById('trending-scroll-wrapper');
 const trendingGridWrapper=document.getElementById('trending-grid-wrapper');
 const trendingGridContainer=document.getElementById('trending-grid-container');
+const trendingListWrapper=document.getElementById('trending-list-wrapper');
+const trendingListContainer=document.getElementById('trending-list-container');
 const trendingPaginationEl=document.getElementById('trending-pagination');
 const gridViewToggleBtn=document.getElementById('grid-view-toggle-btn');
-const gridViewToggleText=document.getElementById('grid-view-toggle-text');
+const viewIconGrid=document.getElementById('view-icon-grid');
+const viewIconList=document.getElementById('view-icon-list');
+
+/* Button always shows the icon for the CURRENT mode (highlighted red once you're
+   past the default scroller), so tapping it cycles: Scroller -> Grid -> List -> Scroller. */
+const VIEW_NEXT_LABEL={scroll:'Switch to Grid View',grid:'Switch to List View',list:'Switch to Scroller'};
+
+function applyViewModeUI(){
+    isGridView=(viewMode!=='scroll');
+    if(gridViewToggleBtn){
+        gridViewToggleBtn.classList.toggle('active',isGridView);
+        gridViewToggleBtn.title=VIEW_NEXT_LABEL[viewMode];
+        gridViewToggleBtn.setAttribute('aria-label',VIEW_NEXT_LABEL[viewMode]);
+    }
+    if(viewIconGrid)viewIconGrid.style.display=(viewMode==='list')?'none':'block';
+    if(viewIconList)viewIconList.style.display=(viewMode==='list')?'block':'none';
+    if(trendingScrollWrapper)trendingScrollWrapper.classList.toggle('hidden',viewMode!=='scroll');
+    if(trendingGridWrapper)trendingGridWrapper.classList.toggle('hidden',viewMode!=='grid');
+    if(trendingListWrapper)trendingListWrapper.classList.toggle('hidden',viewMode!=='list');
+    if(trendingPaginationEl){
+        trendingPaginationEl.classList.toggle('hidden',viewMode==='scroll');
+        if(viewMode==='scroll')trendingPaginationEl.innerHTML='';
+    }
+}
 
 window.toggleGridView=function(){
-    isGridView=!isGridView;
-    if(gridViewToggleBtn)gridViewToggleBtn.classList.toggle('active',isGridView);
-    if(gridViewToggleText)gridViewToggleText.textContent=isGridView?'Scroll View':'Grid View';
-    if(isGridView){
-        if(trendingScrollWrapper)trendingScrollWrapper.classList.add('hidden');
-        if(trendingGridWrapper)trendingGridWrapper.classList.remove('hidden');
+    viewMode=(viewMode==='scroll')?'grid':(viewMode==='grid'?'list':'scroll');
+    applyViewModeUI();
+    if(viewMode!=='scroll'){
         loadGridPage(1,!1);
-    }else{
-        if(trendingScrollWrapper)trendingScrollWrapper.classList.remove('hidden');
-        if(trendingGridWrapper)trendingGridWrapper.classList.add('hidden');
     }
 };
 
@@ -830,18 +849,32 @@ function gridEndpointFor(type){
     return `${BASE_TMDB_URL}/trending/all/day?api_key=${TMDB_API_KEY}`;
 }
 
+function activeCardContainer(){return viewMode==='list'?trendingListContainer:trendingGridContainer}
+
 function renderGridSkeletons(append){
+    const container=activeCardContainer();
+    if(!container)return;
     let html='';
-    for(let n=0;n<12;n++){
-        html+='<div class="grid-card grid-skel"><div class="poster-wrapper skeleton"></div><div class="card-body"><div class="skeleton skeleton-text"></div></div></div>';
+    if(viewMode==='list'){
+        for(let n=0;n<8;n++){
+            html+='<li class="list-view-item list-skel"><div class="result-poster skeleton"></div><div class="list-item-info"><div class="skeleton skeleton-text"></div></div></li>';
+        }
+    }else{
+        for(let n=0;n<12;n++){
+            html+='<div class="grid-card grid-skel"><div class="poster-wrapper skeleton"></div><div class="card-body"><div class="skeleton skeleton-text"></div></div></div>';
+        }
     }
     if(append){
-        trendingGridContainer.insertAdjacentHTML('beforeend',html)
+        container.insertAdjacentHTML('beforeend',html)
     }else{
-        trendingGridContainer.innerHTML=html
+        container.innerHTML=html
     }
 }
-function clearGridSkeletons(){trendingGridContainer.querySelectorAll('.grid-skel').forEach(el=>el.remove())}
+function clearGridSkeletons(){
+    const container=activeCardContainer();
+    if(!container)return;
+    container.querySelectorAll('.grid-skel,.list-skel').forEach(el=>el.remove())
+}
 
 function buildGridCard(item){
     const title=item.title||item.name;
@@ -872,11 +905,36 @@ function buildGridCard(item){
     return card;
 }
 
+function buildListItem(item){
+    const title=item.title||item.name;
+    if(!title)return null;
+    const fallbackImage='https://placehold.co/40x60/333/999?text=N/A';
+    const poster=item.poster_path?`${TMDB_POSTER_MD}${item.poster_path}`:fallbackImage;
+    const rating=item.vote_average?item.vote_average.toFixed(1):'NR';
+    const year=(item.release_date||item.first_air_date||'').substring(0,4)||'N/A';
+    const typeLabel=item.media_type==='tv'?'TV Show':'Movie';
+    const li=document.createElement('li');
+    li.className='list-view-item';
+    li.dataset.mediaType=item.media_type;
+    li.innerHTML=`
+        <img src="${poster}" class="result-poster" loading="lazy" alt="${title}"
+             onerror="this.onerror=null; this.src='${fallbackImage}'">
+        <div class="list-item-info">
+            <div class="list-item-title" title="${title}">${title}</div>
+            <div class="list-item-meta">${typeLabel} • ${year}</div>
+        </div>
+        <div class="list-item-rating">★ ${rating}</div>`;
+    li.onclick=()=>selectContent(item.id,title,item.media_type);
+    return li;
+}
+
 async function loadGridPage(page,append){
     if(isGridLoading)return;
     isGridLoading=true;
     gridPage=page;
-    if(!append)trendingGridContainer.innerHTML='';
+    const container=activeCardContainer();
+    if(!container){isGridLoading=false;return}
+    if(!append)container.innerHTML='';
     renderGridSkeletons(!!append);
     if(trendingPaginationEl)trendingPaginationEl.innerHTML='';
     try{
@@ -906,15 +964,15 @@ async function loadGridPage(page,append){
         gridTotalPages=totalPages;
         clearGridSkeletons();
         if(!append&&items.length===0){
-            trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">No results found.</p>';
+            container.innerHTML='<p class="text-gray-400 p-4 col-span-full">No results found.</p>';
         }else{
-            items.forEach(item=>{const card=buildGridCard(item);if(card)trendingGridContainer.appendChild(card)});
+            items.forEach(item=>{const el=viewMode==='list'?buildListItem(item):buildGridCard(item);if(el)container.appendChild(el)});
         }
         renderLoadMoreButton();
     }catch(error){
-        console.error('Grid View Error:',error);
+        console.error('Card View Error:',error);
         clearGridSkeletons();
-        if(!append)trendingGridContainer.innerHTML='<p class="text-gray-400 p-4 col-span-full">Failed to load content. Try again later.</p>';
+        if(!append)container.innerHTML='<p class="text-gray-400 p-4 col-span-full">Failed to load content. Try again later.</p>';
         else if(trendingPaginationEl){const retryBtn=document.createElement('button');retryBtn.className='pagination-btn load-more-btn';retryBtn.textContent='Failed to load more - Retry';retryBtn.onclick=()=>loadGridPage(gridPage+1,!0);trendingPaginationEl.appendChild(retryBtn)}
     }finally{
         isGridLoading=false;
