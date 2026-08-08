@@ -432,9 +432,28 @@
     }
 
     function getEmbedUrl(url) {
+        // Already an embeddable URL
+        if (/youtube(-nocookie)?\.com\/embed\//i.test(url)) return url;
+
+        // Standard video links: watch?v=, youtu.be/, /v/, /e/, /embed/
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1`;
-        return url; 
+
+        // Channel "live" links, e.g. youtube.com/channel/UCxxxx, /UCxxxx/, /UCxxxx/live
+        // These are NOT framable directly (YouTube blocks framing of its own m./www. pages),
+        // so they must be converted to the live_stream embed endpoint.
+        const channelMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]{10,})/i);
+        if (channelMatch && channelMatch[1]) {
+            return `https://www.youtube.com/embed/live_stream?channel=${channelMatch[1]}&autoplay=1&modestbranding=1`;
+        }
+
+        // NOTE: handle-based links (youtube.com/@name or youtube.com/@name/live) and bare
+        // channel homepages CANNOT be resolved to an embeddable URL client-side — YouTube's
+        // live_stream embed endpoint only accepts the internal UC... channel ID, and turning
+        // a handle into that ID requires a server-side call to the YouTube Data API with an
+        // API key. Those get returned unchanged here and are caught by the fallback UI in
+        // playStream() instead of silently breaking with an X-Frame-Options error.
+        return url;
     }
 
     // Rendering Cards
@@ -553,9 +572,23 @@
 
         if (channel.type === 'embed') {
             player.pause();
+            const embedUrl = getEmbedUrl(channel.url);
+
+            // If we couldn't convert it to a real /embed/ URL, don't try to frame it —
+            // YouTube blocks framing of its own non-embed pages (X-Frame-Options), so
+            // setting iframe.src to a raw youtube.com/m.youtube.com link just breaks silently.
+            if (!/youtube(-nocookie)?\.com\/embed\//i.test(embedUrl)) {
+                console.warn('Cannot embed this channel (no video/channel ID resolvable):', channel.url);
+                videoElement.classList.add('hidden');
+                iframePlayer.classList.add('hidden');
+                iframePlayer.src = "";
+                channelDisplay.innerHTML = `Tuned: ${channel.name} — <span class="text-red-400">can't embed this channel directly.</span> <a href="${channel.url}" target="_blank" rel="noopener" class="underline text-blue-400">Open on YouTube</a>`;
+                return;
+            }
+
             videoElement.classList.add('hidden');
             iframePlayer.classList.remove('hidden');
-            iframePlayer.src = getEmbedUrl(channel.url);
+            iframePlayer.src = embedUrl;
         } else {
             iframePlayer.src = "";
             iframePlayer.classList.add('hidden');
