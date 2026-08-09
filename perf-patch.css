@@ -41,3 +41,34 @@
 @media (max-width:768px){.pagination-btn{font-size:.75rem;padding:6px 10px;min-width:34px}}
 
 #trending-grid-container:empty{min-height:calc(var(--card-height) + 40px)}
+
+/* ── Hover-to-preview trailers (YouTube-style autoplay on hover) ────────── */
+.hover-preview-frame{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1;opacity:0;pointer-events:none;background:#000;transition:opacity .35s ease}
+.hover-preview-frame.active{opacity:1}
+.trailer-content,.trailer-play-icon{z-index:2}
+.video-thumbnail{position:relative}
+.video-thumbnail>img,.video-thumbnail>.absolute{position:relative;z-index:2}
+@media (hover:none){.hover-preview-frame{display:none}}
+
+/* ── Release Countdown Overlay (unreleased movies/episodes) ───── */
+.release-countdown-overlay{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:16px}
+.release-countdown-overlay.hidden{display:none}
+#player-controls-panel.hidden{display:none}
+.rco-panel{width:100%;max-width:480px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.rco-msg{color:#e5e7eb;font-size:.95rem;line-height:1.5;margin:0}
+@media (min-width:768px){.rco-msg{font-size:1.05rem}}
+.rco-clock{display:flex;align-items:flex-start;justify-content:center;gap:6px}
+@media (min-width:480px){.rco-clock{gap:10px}}
+.rco-unit{display:flex;flex-direction:column;align-items:center;gap:6px}
+.rco-label{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;font-weight:600}
+.rco-colon{color:#4b5563;font-weight:700;font-size:1.4rem;line-height:1;padding-top:.35em}
+.rco-digit-flip{position:relative;width:2.4em;height:1.6em;perspective:400px}
+@media (min-width:480px){.rco-digit-flip{width:2.6em;height:1.8em}}
+.rco-digit-flip .rco-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#232323,#141414);border:1px solid rgba(255,255,255,.1);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.05);color:#fff;font-weight:700;font-size:1.3rem;font-variant-numeric:tabular-nums;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1),background .5s linear}
+@media (min-width:480px){.rco-digit-flip .rco-face{font-size:1.5rem}}
+.rco-digit-flip .rco-face-current{transform:rotateX(0deg)}
+.rco-digit-flip .rco-face-next{transform:rotateX(90deg);background:linear-gradient(180deg,#2c1113,#1a0a0b);border-color:rgba(229,9,20,.35)}
+.rco-digit-flip.flipping .rco-face-current{transform:rotateX(-90deg)}
+.rco-digit-flip.flipping .rco-face-next{transform:rotateX(0deg);background:linear-gradient(180deg,#232323,#141414);border-color:rgba(255,255,255,.1)}
+.rco-btn{padding:11px 22px;border-radius:9999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e5e7eb;font-weight:600;font-size:.85rem;cursor:pointer;transition:background .2s ease,border-color .2s ease,color .2s ease}
+.rco-btn:hover{background:rgba(229,9,20,.85);border-color:#e50914;color:#fff}
