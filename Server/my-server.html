@@ -71,7 +71,7 @@ function setupPlayer(sources, type) {
         case 'dailymotion': {
             const builtSources = sources.map(s => {
                 let url = s.src.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
-                url = appendParam(url, 'autoplay', '1');
+                url = appendParam(url, 'autoplay', '0');
                 return { src: url };
             });
             showIframe(builtSources);
@@ -100,7 +100,7 @@ function setupPlayer(sources, type) {
         case 'vimeo': {
             const builtSources = sources.map(s => {
                 const vid = extractVimeoId(s.src);
-                return { src: vid ? `https://player.vimeo.com/video/${vid}?autoplay=1&dnt=1` : s.src };
+                return { src: vid ? `https://player.vimeo.com/video/${vid}?autoplay=0&dnt=1` : s.src };
             });
             showIframe(builtSources);
             break;
@@ -108,7 +108,7 @@ function setupPlayer(sources, type) {
 
         // 7. VK
         case 'vk': {
-            const builtSources = sources.map(s => ({ src: appendParam(s.src, 'autoplay', '1') }));
+            const builtSources = sources.map(s => ({ src: appendParam(s.src, 'autoplay', '0') }));
             showIframe(builtSources);
             break;
         }
@@ -117,7 +117,7 @@ function setupPlayer(sources, type) {
         case 'telegram': {
             const builtSources = sources.map(s => {
                 let url = appendParam(s.src, 'embed', '1');
-                url = appendParam(url, 'autoplay', '1');
+                url = appendParam(url, 'autoplay', '0');
                 return { src: url };
             });
             showIframe(builtSources);
@@ -130,7 +130,7 @@ function setupPlayer(sources, type) {
                 let url = s.src.includes('plugins/video.php')
                     ? s.src
                     : `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(s.src)}&show_text=false`;
-                url = appendParam(url, 'autoplay', '1');
+                url = appendParam(url, 'autoplay', '0');
                 return { src: url };
             });
             showIframe(builtSources);
@@ -335,7 +335,7 @@ function _createYTPlayer(videoId, type) {
     _ytPlayer = new YT.Player('yt-mount', {
         videoId: videoId,
         playerVars: {
-            autoplay:        1,
+            autoplay:        0,
             rel:             0,
             modestbranding:  1,
             controls:        1,
