@@ -115,7 +115,7 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
     flex: 1;
     display: flex;
     align-items: center;
-    padding: 0 70px 0 16px;
+    padding: 0 16px;
     overflow: hidden;
 }
 #server-list {
@@ -211,34 +211,6 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
     line-height: 1.5;
     padding: 0 24px 22px;
 }
-
-/* Torrent tab, floating on the right edge */
-#torrent-tab {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    background: #000;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-right: none;
-    border-radius: 14px 0 0 14px;
-    padding: 16px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: #cfd3da;
-    z-index: 125;
-}
-#torrent-tab svg { width: 18px; height: 18px; color: #e8b923; }
-#torrent-tab span {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-size: 14px;
-    letter-spacing: .5px;
-}
-#torrent-tab:hover { background: #0d0d0d; border-color: rgba(255,255,255,0.32); }
 
 /* Small persistent trigger to reopen the server-select overlay while a
    direct source is already playing (keeps the video visible by default,
@@ -341,7 +313,6 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 .vjs-cosmos-title-container { border-left:4px solid #d80027; padding-left:12px; flex:1; min-width:0; }
 .vjs-cosmos-title { color:#fff; font-size:18px; font-weight:600; margin:0; text-transform:capitalize; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .vjs-cosmos-desc  { color:#aaa; font-size:12px; margin:2px 0 0 0; text-transform:uppercase; letter-spacing:1px; }
-.vjs-cosmos-logo  { max-height:30px; pointer-events:auto; flex-shrink:0; }
 .vjs-user-inactive .vjs-cosmos-top-bar { opacity:0; }
 </style>
 </head>
@@ -399,12 +370,6 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 
     <!-- ── Reopen trigger (shown once a direct source is already playing) ── -->
     <button id="server-trigger" onclick="showBar(); renderServerList();" title="Choose a server">Servers ▾</button>
-
-    <!-- ── Torrent tab ── -->
-    <div id="torrent-tab" title="Search for a torrent" onclick="openTorrentSearch()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
-        <span>Torrent</span>
-    </div>
 
 </div>
 <script>
@@ -469,8 +434,6 @@ const LINK_PROBE_MS = 10000;
 const SLOW_MS   = 8000;
 // Auto-advance to next embed after this many ms of silence (0 = never auto-advance)
 const AUTO_MS   = 0;
-
-const LOGO_SRC  = '../Attachments/Chithruka%20Streamer%20Logo.svg';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  URL PARAMS
@@ -725,10 +688,7 @@ function playDirectVideoJS(sources, srcType) {
             <div class="vjs-cosmos-title-container">
                 <h1 class="vjs-cosmos-title">${title}</h1>
                 <p class="vjs-cosmos-desc">${typeLabel}</p>
-            </div>
-            <img class="vjs-cosmos-logo" src="${LOGO_SRC}"
-                 oncontextmenu="return false;" ondragstart="return false;"
-                 onselectstart="return false;" alt="Logo">`;
+            </div>`;
         vjsPlayer.el().appendChild(topBar);
     });
 
@@ -1113,51 +1073,6 @@ function extractYouTubeId(url) {
 function extractVimeoId(url) {
     const m = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
     return m ? m[1] : null;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  TORRENT SEARCH
-// ═══════════════════════════════════════════════════════════════════════════
-
-const TORRENT_SEARCH_BASE = 'https://torrentseeker.com/search.php';
-
-function openTorrentSearch() {
-    if (!TMDB) return;
-
-    // Already have a title/year from a previous generated-links lookup? Reuse it.
-    if (lastLookup && lastLookup.title) {
-        launchTorrentSearch(lastLookup.title, lastLookup.year);
-        return;
-    }
-
-    if (!TMDB_API_KEY) {
-        // No TMDB key configured — nothing to build a query from.
-        return;
-    }
-
-    const isMovie = TYPE === 'movie';
-    const endpoint = isMovie
-        ? `https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`
-        : `https://api.themoviedb.org/3/tv/${TMDB}?api_key=${TMDB_API_KEY}`;
-
-    fetch(endpoint)
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => {
-            const title = isMovie ? data.title : data.name;
-            const year  = isMovie
-                ? (data.release_date ? data.release_date.split('-')[0] : '')
-                : (data.first_air_date ? data.first_air_date.split('-')[0] : '');
-            if (!title) return;
-            lastLookup = { title, year, sn: SN, ep: EP };
-            launchTorrentSearch(title, year);
-        })
-        .catch(() => console.warn('[auto-server] Torrent search: TMDB lookup failed'));
-}
-
-function launchTorrentSearch(title, year) {
-    const query = year ? `${title} ${year}` : title;
-    const url = `${TORRENT_SEARCH_BASE}?q=${encodeURIComponent(query).replace(/%20/g, '+')}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
