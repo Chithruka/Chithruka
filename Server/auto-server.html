@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Chithruka Server</title>
-    <link href="https://unpkg.com/video.js@8.24.0/dist/video-js.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/video.js@8.24.0/dist/video.min.js"></script>
-    <script src="https://unpkg.com/videojs-contrib-quality-levels@4.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
-    <script src="https://unpkg.com/videojs-http-source-selector@1.1.6/dist/videojs-http-source-selector.min.js"></script>
-    <link href="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.css" rel="stylesheet">
-    <script src="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@1/player/styles/default/theme.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@1/player/styles/default/layouts/video.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/vidstack@1/player"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/vidstack@1/player/layouts"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/vidstack@1/player/ui"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
 body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; font-family:'Poppins',sans-serif; }
 #player-container { width:100%; height:100%; position:relative; }
-.video-js  { width:100% !important; height:100% !important; }
+media-player { width:100% !important; height:100% !important; }
 .ext-iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
 #iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
 .iframe-wrapper   { position:relative; width:100%; height:100%; }
@@ -277,45 +276,13 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
     max-width: 80%;
 }
 
-/* ── VideoJS skin ────────────────────────────────────────────────────────── */
-.video-js { font-family:'Poppins',sans-serif !important; }
-.video-js .vjs-play-progress,
-.video-js .vjs-volume-level { background:#d80027 !important; }
-.video-js .vjs-control-bar  { background:linear-gradient(to top,rgba(0,0,0,.9) 0%,transparent 100%) !important; }
-.video-js .vjs-big-play-button {
-    background:rgba(0,0,0,.5) !important;
-    border:2px solid #d80027 !important;
-    border-radius:50% !important;
-    width:2.5em !important; height:2.5em !important;
-    line-height:2.3em !important;
-    margin-top:-1.25em !important; margin-left:-1.25em !important;
-}
-.video-js:hover .vjs-big-play-button,
-.video-js .vjs-big-play-button:hover,
-.video-js .vjs-big-play-button:focus {
-    border-color:#d80027 !important;
-    background:rgba(216,0,39,.2) !important;
-    outline:none !important;
-}
-.video-js .vjs-control:hover,
-.video-js .vjs-control:focus {
-    color:#d80027 !important; outline:none !important;
-    text-shadow:0 0 5px rgba(216,0,39,.5) !important;
+/* ── Vidstack skin ───────────────────────────────────────────────────────── */
+media-player {
+    font-family:'Poppins',sans-serif !important;
+    --media-brand: #d80027;
+    --media-focus-ring-color: #d80027;
 }
 
-/* ── Cosmos top bar (inside VideoJS) ─────────────────────────────────────── */
-.vjs-cosmos-top-bar {
-    position:absolute; top:0; left:0; width:100%;
-    background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);
-    padding:10px 15px;
-    display:flex; justify-content:space-between; align-items:flex-start;
-    pointer-events:none; z-index:10;
-    transition:opacity .3s ease; gap:15px;
-}
-.vjs-cosmos-title-container { border-left:4px solid #d80027; padding-left:12px; flex:1; min-width:0; }
-.vjs-cosmos-title { color:#fff; font-size:18px; font-weight:600; margin:0; text-transform:capitalize; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.vjs-cosmos-desc  { color:#aaa; font-size:12px; margin:2px 0 0 0; text-transform:uppercase; letter-spacing:1px; }
-.vjs-user-inactive .vjs-cosmos-top-bar { opacity:0; }
 </style>
 </head>
 <body>
@@ -327,8 +294,11 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
         <span class="spin-label" id="spin-label">Loading…</span>
     </div>
 
-    <!-- VideoJS direct player -->
-    <video id="vjs-player" class="video-js vjs-big-play-centered" style="display:none;"></video>
+    <!-- Vidstack direct player -->
+    <media-player id="media-player-el" style="display:none;" crossorigin playsinline>
+        <media-provider></media-provider>
+        <media-video-layout></media-video-layout>
+    </media-player>
 
     <!-- Iframe embed container -->
     <div id="iframe-container"></div>
@@ -437,6 +407,21 @@ const SLOW_MS   = 8000;
 // Auto-advance to next embed after this many ms of silence (0 = never auto-advance)
 const AUTO_MS   = 0;
 
+// ── OpenSubtitles auto-fetch ─────────────────────────────────────────────
+// Get a free API key at https://www.opensubtitles.com/en/consumers, then
+// paste it below to enable automatic subtitle lookup for direct sources
+// that don't already carry a `subtitles` array in videos.json.
+// NOTE: this key lives in client-side JS, so anyone viewing page source can
+// read it and use up its quota. If this page is public, put this fetch
+// behind a small server-side proxy (e.g. a Cloudflare Worker) that holds
+// the real key instead, and point OPENSUBTITLES_PROXY_URL at that worker.
+const OPENSUBTITLES_API_KEY_B64 = 'a2ZQY1hXN0dKbllPUVlZMFk5ak5FZklPT2szUmM1RWw=';
+const OPENSUBTITLES_API_KEY   = atob(OPENSUBTITLES_API_KEY_B64);
+const OPENSUBTITLES_PROXY_URL = '';           // optional: proxy that forwards to api.opensubtitles.com with the key attached server-side
+const OPENSUBTITLES_LANGS     = 'en,si';      // comma-separated ISO 639-1 codes, in priority order
+const OPENSUBTITLES_DEFAULT_LANG = 'en';      // which of the above gets `default: true` / shows automatically
+const OPENSUBTITLES_MAX_PER_LANG = 2;         // how many different releases to offer per language (viewer picks via the subtitles menu)
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  URL PARAMS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -462,7 +447,7 @@ let linkIdx       = 0;         // current GENERATED_LINK_FORMATS index being tri
 let provIdx       = 0;         // current EMBED_PROVIDERS index
 let slowTimer     = null;
 let autoTimer     = null;
-let vjsPlayer     = null;      // active VideoJS instance
+let mediaPlayer     = null;      // active Vidstack player element
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  UI HELPERS
@@ -487,7 +472,7 @@ function showBar()  {
 function hideBar()  {
     document.getElementById('control-bar').classList.remove('visible');
     // Offer a way back in only once something is actually playing.
-    if (vjsPlayer || document.getElementById('iframe-container').style.display === 'block') {
+    if (mediaPlayer || document.getElementById('iframe-container').style.display === 'block') {
         document.getElementById('server-trigger').classList.add('visible');
     }
 }
@@ -567,7 +552,7 @@ function renderServerList() {
                     linkIdx = i;
                     workingLink = { name: f.name, url };
                     setLabel(`Links · ${f.name}`);
-                    playDirectVideoJS([{ src: url, type: 'mp4', label: f.name }], 'mp4');
+                    playDirectNative([{ src: url, type: 'mp4', label: f.name }], 'mp4');
                 }
             });
         })));
@@ -600,7 +585,7 @@ function buildServerRow(name, status, onClick) {
 function renderProviderButtons() { renderServerList(); }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  DIRECT MODE  (videos.json → VideoJS / source iframes)
+//  DIRECT MODE  (videos.json → Vidstack / source iframes)
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function startDirect() {
@@ -646,8 +631,8 @@ function playDirect(sources) {
     // Clear any running embed
     clearEmbed();
 
-    // Types that must be rendered as an iframe rather than fed to VideoJS
-    const IFRAME_TYPES = ['youtube', 'vimeo', 'dailymotion', 'google-drive',
+    // Types that must be rendered as an iframe rather than fed to Vidstack
+    const IFRAME_TYPES = ['dailymotion', 'google-drive',
                            'mega', 'vk', 'telegram', 'facebook', 'iframe'];
     const TYPE_LABELS = {
         mp4: 'My Server', hls: 'My Server', iframe: 'My Server',
@@ -681,7 +666,7 @@ function playDirect(sources) {
 }
 
 // Play a single source from directList by index, and chain to the next one
-// on failure. Same underlying renderers (VideoJS / iframe) as before, just
+// on failure. Same underlying renderers (Vidstack / iframe) as before, just
 // scoped to one source at a time so each can be listed as its own "server".
 function playDirectSourceAt(idx) {
     if (idx >= directList.length) { autoFallbackToLinks('All direct sources failed'); return; }
@@ -702,7 +687,7 @@ function playDirectSourceAt(idx) {
         }
         renderDirectSourceIframe(url, idx);
     } else {
-        renderDirectSourceVideoJS(item.source, item.type, idx);
+        renderDirectSourceNative(item.source, item.type, idx);
     }
 
     setLabel('Direct · ' + item.label);
@@ -710,7 +695,7 @@ function playDirectSourceAt(idx) {
 }
 
 function renderDirectSourceIframe(url, idx) {
-    document.getElementById('vjs-player').style.display = 'none';
+    document.getElementById('media-player-el').style.display = 'none';
     const container = document.getElementById('iframe-container');
     container.style.display = 'block';
     container.innerHTML = '';
@@ -741,7 +726,7 @@ function renderDirectSourceIframe(url, idx) {
     container.appendChild(wrapper);
 }
 
-// Adds one or more subtitle/caption tracks to a VideoJS player from a
+// Adds one or more subtitle/caption tracks to a Vidstack player from a
 // source's `subtitles` array in videos.json, e.g.:
 //   "subtitles": [
 //     { "src": "https://example.com/en.vtt", "lang": "en", "label": "English", "default": true },
@@ -750,142 +735,241 @@ function renderDirectSourceIframe(url, idx) {
 // `src` must point to a .vtt (WebVTT) file. `lang` and `label` are optional
 // (default to "en" / "Subtitle N"); `default: true` marks the track that
 // should be shown automatically when playback starts.
-function addSubtitleTracks(player, subtitles) {
-    if (!Array.isArray(subtitles) || !subtitles.length) return;
-    subtitles.forEach((sub, i) => {
-        if (!sub || !sub.src) return;
-        const track = player.addRemoteTextTrack({
-            kind:     'subtitles',
-            src:      sub.src,
-            srclang:  sub.lang || sub.srclang || 'en',
-            label:    sub.label || sub.lang || `Subtitle ${i + 1}`,
-            default:  !!sub.default
-        }, false);
-        if (sub.default && track && track.track) track.track.mode = 'showing';
+//
+// If the source has no `subtitles` array (or an empty one) and OpenSubtitles
+// auto-fetch is configured, this falls back to looking subtitles up there.
+async function addSubtitleTracks(player, source) {
+    const list = Array.isArray(source && source.subtitles) ? source.subtitles : [];
+    if (list.length) {
+        list.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+        return;
+    }
+    if (!OPENSUBTITLES_API_KEY && !OPENSUBTITLES_PROXY_URL) return;
+    try {
+        const fetched = await fetchOpenSubtitles(TMDB, TYPE, SN, EP);
+        fetched.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+    } catch (err) {
+        console.warn('[auto-server] OpenSubtitles fetch failed:', err);
+    }
+}
+
+function addOneSubtitleTrack(player, sub, i) {
+    if (!sub || !sub.src) return;
+    player.textTracks.add({
+        kind:     'subtitles',
+        src:      sub.src,
+        language: sub.lang || sub.srclang || 'en',
+        label:    sub.label || sub.lang || `Subtitle ${i + 1}`,
+        default:  !!sub.default,
+        type:     'vtt'
     });
 }
 
-function renderDirectSourceVideoJS(source, srcType, idx) {
-    disposeVJS();
+// Looks subtitles up on OpenSubtitles for the given TMDB id, converts each
+// result from SRT to WebVTT client-side, and returns them in the same
+// { src, lang, label, default } shape as a videos.json `subtitles` entry.
+// `src` on the returned objects is a blob: URL valid for this page load only.
+//
+// OpenSubtitles is user-uploaded, and files are sometimes tagged with the
+// wrong language (e.g. a Danish subtitle mislabeled "si"). For languages
+// with a distinctive script we can catch that automatically: after
+// converting a candidate to text we check it actually contains characters
+// from that script, and skip + try the next candidate if it doesn't. Latin
+// -script languages (en, da, fr, ...) can't be verified this way, so those
+// are trusted as-is.
+const SCRIPT_RANGES = {
+    si: /[\u0D80-\u0DFF]/,   // Sinhala
+    ta: /[\u0B80-\u0BFF]/,   // Tamil
+    hi: /[\u0900-\u097F]/,   // Devanagari (Hindi)
+    ar: /[\u0600-\u06FF]/,   // Arabic
+    th: /[\u0E00-\u0E7F]/,   // Thai
+    ko: /[\uAC00-\uD7AF]/,   // Hangul (Korean)
+    ja: /[\u3040-\u30FF\u4E00-\u9FFF]/, // Kana + Kanji (Japanese)
+    zh: /[\u4E00-\u9FFF]/,   // Han (Chinese)
+    ru: /[\u0400-\u04FF]/,   // Cyrillic (Russian)
+    he: /[\u0590-\u05FF]/,   // Hebrew
+};
+
+const _osCache = {};
+async function fetchOpenSubtitles(tmdbId, type, season, episode) {
+    if (!tmdbId) return [];
+    const cacheKey = `${tmdbId}:${type}:${season}:${episode}`;
+    if (_osCache[cacheKey]) return _osCache[cacheKey];
+
+    const base = OPENSUBTITLES_PROXY_URL || 'https://api.opensubtitles.com/api/v1';
+    const headers = { 'Accept': 'application/json' };
+    if (!OPENSUBTITLES_PROXY_URL) headers['Api-Key'] = OPENSUBTITLES_API_KEY;
+
+    const qs = new URLSearchParams({
+        tmdb_id: tmdbId,
+        type: type === 'movie' ? 'movie' : 'episode',
+        languages: OPENSUBTITLES_LANGS
+    });
+    if (type !== 'movie') {
+        qs.set('season_number', season);
+        qs.set('episode_number', episode);
+    }
+
+    const searchRes = await fetch(`${base}/subtitles?${qs.toString()}`, { headers });
+    if (!searchRes.ok) throw new Error('OpenSubtitles search failed: ' + searchRes.status);
+    const searchData = await searchRes.json();
+
+    // Group every candidate (not just the top one) per requested language,
+    // ranked by download_count, so we have fallbacks if the top result
+    // turns out to be mislabeled.
+    const wanted = OPENSUBTITLES_LANGS.split(',').map(l => l.trim());
+    const byLang = {};
+    for (const item of (searchData.data || [])) {
+        const attrs = item.attributes || {};
+        const lang = attrs.language;
+        if (!wanted.includes(lang)) continue;
+        const file = (attrs.files || [])[0];
+        if (!file) continue;
+        (byLang[lang] = byLang[lang] || []).push({
+            file_id: file.file_id,
+            label: attrs.release || lang,
+            downloads: attrs.download_count || 0
+        });
+    }
+    Object.values(byLang).forEach(list => list.sort((a, b) => b.downloads - a.downloads));
+
+    // Per language, keep up to OPENSUBTITLES_MAX_PER_LANG validated
+    // candidates (not just the top one) so the viewer can pick between
+    // different releases of the same language via the subtitles menu —
+    // useful since OpenSubtitles sync/accuracy varies release to release.
+    const results = [];
+    for (const lang of wanted) {
+        const candidates = (byLang[lang] || []).slice(0, 3); // try up to 3 before giving up
+        let keptForLang = 0;
+        for (const hit of candidates) {
+            if (keptForLang >= OPENSUBTITLES_MAX_PER_LANG) break;
+            try {
+                const dlRes = await fetch(`${base}/download`, {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_id: hit.file_id })
+                });
+                if (!dlRes.ok) continue;
+                const dlData = await dlRes.json();
+                const fileRes = await fetch(dlData.link);
+                const srtText = await fileRes.text();
+
+                const scriptCheck = SCRIPT_RANGES[lang];
+                if (scriptCheck && !scriptCheck.test(srtText)) {
+                    console.warn(`[auto-server] OpenSubtitles result for "${lang}" (${hit.label}) doesn't contain ${lang} script text — likely mislabeled, skipping`);
+                    continue;
+                }
+
+                const vttBlob = new Blob([srtToVtt(srtText)], { type: 'text/vtt' });
+                results.push({
+                    src:     URL.createObjectURL(vttBlob),
+                    lang:    lang,
+                    // First kept variant per language keeps the plain
+                    // "EN (OpenSubtitles)" label + default flag; extra
+                    // variants are labeled with their release name so
+                    // they're distinguishable in the subtitles menu.
+                    label:   keptForLang === 0
+                        ? `${lang.toUpperCase()} (OpenSubtitles)`
+                        : `${lang.toUpperCase()} — ${hit.label}`,
+                    default: keptForLang === 0 && lang === OPENSUBTITLES_DEFAULT_LANG
+                });
+                keptForLang++;
+            } catch (err) {
+                console.warn('[auto-server] OpenSubtitles download failed for', lang, err);
+            }
+        }
+    }
+
+    _osCache[cacheKey] = results;
+    return results;
+}
+
+// Minimal SRT → WebVTT converter: swaps the comma decimal separator for a
+// period in timestamps and prepends the required "WEBVTT" header.
+function srtToVtt(srt) {
+    const body = srt
+        .replace(/\r+/g, '')
+        .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    return 'WEBVTT\n\n' + body;
+}
+
+function renderDirectSourceNative(source, srcType, idx) {
+    disposePlayer();
     document.getElementById('iframe-container').style.display = 'none';
     document.getElementById('iframe-container').innerHTML = '';
 
-    const el = document.getElementById('vjs-player');
+    const el = document.getElementById('media-player-el');
     el.style.display = 'block';
 
-    const isHLS = srcType === 'hls' || source.src.includes('.m3u8');
-    const typeLabel = TYPE === 'tv' ? 'TV SHOW' : 'MOVIE';
-    const rawName   = source.src.split('/').pop().split('?')[0].split('.')[0];
-    const title     = decodeURIComponent(rawName).replace(/[-_]/g, ' ');
-
-    const opts = {
-        controls: true, autoplay: false, fill: true,
-        sources: [{
-            src:  source.src,
-            type: isHLS ? 'application/vnd.apple.mpegurl' : 'video/mp4'
-        }],
-        plugins: {}
-    };
-
-    if (!isHLS) {
-        opts.plugins.vjsdownload = {
-            beforeElement: 'fullscreenToggle',
-            textControl:   'Download Video',
-            name:          'downloadButton',
-            downloadURL:   source.src
-        };
+    // Vidstack has built-in YouTube/Vimeo providers, so those are handed
+    // their normalized watch-page URLs with a matching `type`, rather than
+    // being sent to the iframe-embed path.
+    if (srcType === 'youtube') {
+        const vid = extractYouTubeId(source.src) || source.src;
+        el.src = { src: `https://www.youtube.com/watch?v=${vid}`, type: 'video/youtube' };
+    } else if (srcType === 'vimeo') {
+        const vid = extractVimeoId(source.src) || source.src;
+        el.src = { src: `https://vimeo.com/${vid}`, type: 'video/vimeo' };
+    } else {
+        const isHLS = srcType === 'hls' || source.src.includes('.m3u8');
+        el.src = { src: source.src, type: isHLS ? 'application/x-mpegurl' : 'video/mp4' };
     }
+    mediaPlayer = el;
 
-    vjsPlayer = videojs('vjs-player', opts);
-    if (isHLS) vjsPlayer.ready(() => vjsPlayer.httpSourceSelector());
-
-    vjsPlayer.ready(() => {
-        const topBar = document.createElement('div');
-        topBar.className = 'vjs-cosmos-top-bar';
-        topBar.innerHTML = `
-            <div class="vjs-cosmos-title-container">
-                <h1 class="vjs-cosmos-title">${title}</h1>
-                <p class="vjs-cosmos-desc">${typeLabel}</p>
-            </div>`;
-        vjsPlayer.el().appendChild(topBar);
-        addSubtitleTracks(vjsPlayer, source.subtitles);
-    });
-
-    vjsPlayer.one('loadeddata', () => {
+    const onLoadedData = () => {
         if (directActiveIdx === idx) {
             directStatus[idx] = 'playing';
             renderServerList();
         }
-    });
+        el.removeEventListener('loaded-data', onLoadedData);
+    };
+    el.addEventListener('loaded-data', onLoadedData);
 
-    vjsPlayer.on('error', () => {
-        console.warn('[auto-server] VideoJS: source failed (idx=' + idx + ')');
-        disposeVJS();
+    const onError = () => {
+        console.warn('[auto-server] Vidstack: source failed (idx=' + idx + ')');
+        el.removeEventListener('error', onError);
+        disposePlayer();
         el.style.display = 'none';
         directStatus[idx] = 'error';
         renderServerList();
         playDirectSourceAt(idx + 1);
-    });
+    };
+    el.addEventListener('error', onError);
+
+    addSubtitleTracks(el, source);
 }
 
 // Kept for generated-links playback and restoring a previously-working
-// link — plays a self-contained source list in one VideoJS instance.
-function playDirectVideoJS(sources, srcType) {
-    disposeVJS();
-    const el = document.getElementById('vjs-player');
+// link — plays a self-contained source list in one Vidstack instance.
+function playDirectNative(sources, srcType) {
+    disposePlayer();
+    const el = document.getElementById('media-player-el');
     el.style.display = 'block';
 
-    const isHLS = srcType === 'hls' || sources[0].src.includes('.m3u8');
-    const typeLabel = TYPE === 'tv' ? 'TV SHOW' : 'MOVIE';
-    const rawName   = sources[0].src.split('/').pop().split('?')[0].split('.')[0];
-    const title     = decodeURIComponent(rawName).replace(/[-_]/g, ' ');
+    // Vidstack picks the first playable source itself when given an array,
+    // so the srcType/HLS detection just needs to tag each entry correctly.
+    el.src = sources.map(s => ({
+        src:  s.src,
+        type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegurl' : 'video/mp4'
+    }));
+    mediaPlayer = el;
 
-    const opts = {
-        controls: true, autoplay: false, fill: true,
-        sources: sources.map(s => ({
-            src:   s.src,
-            type:  (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/vnd.apple.mpegurl' : 'video/mp4',
-            label: s.label || undefined
-        })),
-        plugins: {}
-    };
-
-    if (!isHLS) {
-        opts.plugins.vjsdownload = {
-            beforeElement: 'fullscreenToggle',
-            textControl:   'Download Video',
-            name:          'downloadButton',
-            downloadURL:   sources[0].src
-        };
-    }
-
-    vjsPlayer = videojs('vjs-player', opts);
-    if (isHLS) vjsPlayer.ready(() => vjsPlayer.httpSourceSelector());
-
-    vjsPlayer.ready(() => {
-        const topBar = document.createElement('div');
-        topBar.className = 'vjs-cosmos-top-bar';
-        topBar.innerHTML = `
-            <div class="vjs-cosmos-title-container">
-                <h1 class="vjs-cosmos-title">${title}</h1>
-                <p class="vjs-cosmos-desc">${typeLabel}</p>
-            </div>`;
-        vjsPlayer.el().appendChild(topBar);
-        const subSource = sources.find(s => s.subtitles && s.subtitles.length);
-        if (subSource) addSubtitleTracks(vjsPlayer, subSource.subtitles);
-    });
+    const subSource = sources.find(s => s.subtitles && s.subtitles.length) || sources[0];
+    addSubtitleTracks(el, subSource);
 
     // All sources failed → fall to next tier
-    vjsPlayer.on('error', () => {
-        console.warn('[auto-server] VideoJS: all sources failed (mode=' + mode + ')');
-        disposeVJS();
+    const onError = () => {
+        console.warn('[auto-server] Vidstack: all sources failed (mode=' + mode + ')');
+        el.removeEventListener('error', onError);
+        disposePlayer();
         el.style.display = 'none';
         if (mode === 'direct') {
             autoFallbackToLinks('Direct sources failed');
         } else {
             autoFallbackToEmbed('Playback failed');
         }
-    });
+    };
+    el.addEventListener('error', onError);
 
     setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
     hideBar();
@@ -1035,7 +1119,7 @@ async function startGeneratedLinks() {
             unspin();
             renderServerList();
             setLabel(`Links · ${fmt.name}`);
-            playDirectVideoJS([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
+            playDirectNative([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
             return;
         }
 
@@ -1065,22 +1149,22 @@ function switchMode(m) {
             flashTab('tab-direct');
         }
     } else if (m === 'links') {
-        disposeVJS();
-        document.getElementById('vjs-player').style.display = 'none';
+        disposePlayer();
+        document.getElementById('media-player-el').style.display = 'none';
         clearEmbed();
         if (workingLink) {
             mode = 'links';
             setActiveTab('links');
             showBar();
             setLabel(`Links · ${workingLink.name}`);
-            playDirectVideoJS([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
+            playDirectNative([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
         } else {
             startGeneratedLinks();
         }
     } else {
         mode = 'embed';
-        disposeVJS();
-        document.getElementById('vjs-player').style.display = 'none';
+        disposePlayer();
+        document.getElementById('media-player-el').style.display = 'none';
         clearEmbed();
         setActiveTab('embed');
         showBar();
@@ -1171,18 +1255,22 @@ function clearEmbed() {
     c.innerHTML = '';
 }
 
-function disposeVJS() {
-    if (vjsPlayer) {
-        try { vjsPlayer.dispose(); } catch {}
-        vjsPlayer = null;
-        // videojs dispose removes the element; recreate it
+function disposePlayer() {
+    if (mediaPlayer) {
+        const oldEl = document.getElementById('media-player-el');
+        try { oldEl.src = null; } catch {}
+        mediaPlayer = null;
+        // Recreate the element fresh so no stale sources/tracks/listeners linger
         const container = document.getElementById('player-container');
-        const newEl = document.createElement('video');
-        newEl.id = 'vjs-player';
-        newEl.className = 'video-js vjs-big-play-centered';
+        const newEl = document.createElement('media-player');
+        newEl.id = 'media-player-el';
         newEl.style.display = 'none';
+        newEl.setAttribute('crossorigin', '');
+        newEl.setAttribute('playsinline', '');
+        newEl.innerHTML = '<media-provider></media-provider><media-video-layout></media-video-layout>';
         // Insert before iframe-container
         container.insertBefore(newEl, document.getElementById('iframe-container'));
+        oldEl.remove();
     }
 }
 
