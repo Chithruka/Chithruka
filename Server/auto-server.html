@@ -20,6 +20,30 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 #iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
 .iframe-wrapper   { position:relative; width:100%; height:100%; }
 
+#next-source-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: #d80027;
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    transition: background 0.2s ease;
+}
+#next-source-btn:hover { background: #ff0030; }
+#next-source-btn .src-counter { background: rgba(0,0,0,0.3); border-radius: 3px; padding: 1px 6px; font-size: 11px; }
+
+
 /* ── Server-select overlay ───────────────────────────────────────────────── */
 /* Full-panel overlay, shown by JS when needed */
 #control-bar {
@@ -639,14 +663,22 @@ function playDirect(sources) {
     const first   = sources[0];
     const srcType = first.type || detectType(first.src);
 
-    // Native VideoJS types
-    if (srcType === 'mp4' || srcType === 'hls' || !first.src.match(/youtube|vimeo|dailymotion|drive\.google|mega\.nz|vk\.com|t\.me|telegram|facebook/)) {
-        playDirectVideoJS(sources, srcType);
+    // Types that must be rendered as an iframe rather than fed to VideoJS
+    const IFRAME_TYPES = ['youtube', 'vimeo', 'dailymotion', 'google-drive',
+                           'mega', 'vk', 'telegram', 'facebook', 'iframe'];
+
+    if (IFRAME_TYPES.includes(srcType)) {
+        // Only pass sources that are also iframe-flavored — a stray hls/mp4
+        // entry mixed into the same array wouldn't render as an iframe.
+        const iframeSources = sources.filter(s => IFRAME_TYPES.includes(s.type || srcType));
+        playDirectIframe(iframeSources.length ? iframeSources : sources, srcType);
         return;
     }
 
-    // Iframe-based types from your DB (YouTube, Dailymotion, etc.)
-    playDirectIframe(sources, srcType);
+    // mp4 / hls / anything else VideoJS can natively play — drop any
+    // iframe-flavored entries mixed into the same array.
+    const videoSources = sources.filter(s => !IFRAME_TYPES.includes(s.type || detectType(s.src)));
+    playDirectVideoJS(videoSources.length ? videoSources : sources, srcType);
 }
 
 function playDirectVideoJS(sources, srcType) {
@@ -708,32 +740,65 @@ function playDirectVideoJS(sources, srcType) {
     hideBar();
 }
 
-function playDirectIframe(sources, srcType) {
-    const url = buildDirectIframeUrl(sources[0], srcType);
-    if (!url) { autoFallbackToLinks('Invalid source URL'); return; }
+let directIframeSources = [];
+let directIframeIdx     = 0;
 
+function playDirectIframe(sources, srcType) {
+    // Build a playable URL for every source, honoring each source's own
+    // `type` when present (falls back to the type detected for the first).
+    directIframeSources = sources
+        .map(s => ({ url: buildDirectIframeUrl(s, s.type || srcType), type: s.type || srcType }))
+        .filter(s => !!s.url);
+
+    if (!directIframeSources.length) { autoFallbackToLinks('Invalid source URL'); return; }
+
+    directIframeIdx = 0;
+    renderDirectIframe();
+    setLabel('Direct · ' + srcType);
+    hideBar();
+}
+
+function renderDirectIframe() {
     const container = document.getElementById('iframe-container');
     container.style.display = 'block';
     container.innerHTML = '';
+
+    const hasMore = directIframeSources.length > 1;
+    const current = directIframeIdx + 1;
+    const total   = directIframeSources.length;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'iframe-wrapper';
 
     const iframe = document.createElement('iframe');
-    iframe.src = url;
+    iframe.src = directIframeSources[directIframeIdx].url;
     iframe.className = 'ext-iframe';
     iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
     iframe.setAttribute('allowfullscreen', 'true');
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
     iframe.onload  = unspin;
-    iframe.onerror = () => autoFallbackToLinks('Source failed to load');
-
+    iframe.onerror = () => nextDirectIframeSource();
     wrapper.appendChild(iframe);
-    container.appendChild(wrapper);
 
-    setLabel('Direct · ' + srcType);
-    hideBar();
+    if (hasMore) {
+        const btn = document.createElement('button');
+        btn.id = 'next-source-btn';
+        btn.innerHTML = `▶ Try Next Source <span class="src-counter">${current} / ${total}</span>`;
+        btn.onclick = () => nextDirectIframeSource();
+        wrapper.appendChild(btn);
+    }
+
+    container.appendChild(wrapper);
+}
+
+function nextDirectIframeSource() {
+    directIframeIdx++;
+    if (directIframeIdx < directIframeSources.length) {
+        renderDirectIframe();
+    } else {
+        autoFallbackToLinks('All direct iframe sources failed');
+    }
 }
 
 function buildDirectIframeUrl(s, srcType) {
