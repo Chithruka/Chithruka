@@ -216,7 +216,8 @@ media-player { width:100% !important; height:100% !important; }
    matching how the reference screenshot is a distinct, on-demand screen). */
 #server-trigger {
     position: absolute;
-    top: 14px; right: 14px;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
     z-index: 118;
     display: none;
     align-items: center;
@@ -352,11 +353,7 @@ const VIDEOS_JSON_PATH = 'videos.json';
 // Embed providers — tried in order when in embed mode.
 // [ID] = TMDB id, [S] = season, [E] = episode
 const EMBED_PROVIDERS = [
-    { name: 'VidRock',  movie: 'https://vidrock.ru/movie/[ID]',            tv: 'https://vidrock.ru/tv/[ID]/[S]/[E]' },
-    { name: 'VidLink',     movie: 'https://vidlink.pro/movie/[ID]?autoplay=false',   tv: 'https://vidlink.pro/tv/[ID]/[S]/[E]?autoplay=false' },
-    { name: 'VidSrc WTF',  movie: 'https://www.vidsrc.wtf/4/movie/[ID]',            tv: 'https://www.vidsrc.wtf/4/tv/[ID]/[S]/[E]' },
-    { name: '1Embed',      movie: 'https://1embed.cc/embed/movie/[ID]',              tv: 'https://1embed.cc/embed/tv/[ID]/[S]/[E]' },
-    { name: '2Embed',      movie: 'https://www.2embed.cc/embed/[ID]',               tv: 'https://www.2embed.cc/embedtv/[ID]&s=[S]&e=[E]' },
+    { name: 'RiveStream',  movie: 'https://www.rivestream.ru/embed?type=movie&id=[ID]',  tv: 'https://www.rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]' },
 ];
 
 // ── Generated Links (Baiscope) ───────────────────────────────────────────────
