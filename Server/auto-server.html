@@ -20,100 +20,248 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 #iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
 .iframe-wrapper   { position:relative; width:100%; height:100%; }
 
-/* ── Control bar ─────────────────────────────────────────────────────────── */
-/* Sits at the very bottom; always visible while in embed mode, hidden in direct */
+/* ── Server-select overlay ───────────────────────────────────────────────── */
+/* Full-panel overlay, shown by JS when needed */
 #control-bar {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
-    padding: 10px 14px 12px;
-    display: none;           /* shown by JS when needed */
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 45% at 50% 38%, rgba(255,255,255,0.05) 0%, transparent 70%),
+        rgba(0,0,0,0.94);
+    display: none;
     flex-direction: column;
-    gap: 8px;
     z-index: 120;
-    transition: opacity 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    animation: barFadeIn .25s ease;
 }
 #control-bar.visible { display: flex; }
+@keyframes barFadeIn { from { opacity:0; } to { opacity:1; } }
 
-/* Top row: mode tabs + current source label */
+/* Row 1: pill mode-dropdowns + collapse chevron */
 #bar-top {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 10px;
+    padding: 22px 16px 0;
     flex-wrap: wrap;
 }
 
 .mode-tab {
-    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
     font-weight: 600;
-    padding: 4px 11px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.2);
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.3);
     background: transparent;
-    color: #aaa;
+    color: #d6d6d6;
     cursor: pointer;
-    letter-spacing: .5px;
-    text-transform: uppercase;
+    letter-spacing: .2px;
     transition: all 0.2s;
     white-space: nowrap;
 }
-.mode-tab.active {
-    background: #d80027;
-    border-color: #d80027;
-    color: #fff;
-}
-.mode-tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; }
+.mode-tab .chev { font-size: 11px; opacity: .8; transform: translateY(1px); }
+.mode-tab.active { color: #fff; border-color: rgba(255,255,255,0.55); }
+.mode-tab:hover  { background: rgba(255,255,255,0.08); color: #fff; }
 
-#source-label {
-    color: #888;
-    font-size: 11px;
-    margin-left: auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 160px;
+#bar-collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: #d6d6d6;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
+#bar-collapse:hover { background: rgba(255,255,255,0.08); color: #fff; }
 
-/* Bottom row: provider buttons (embed / links modes only) */
-#provider-row,
-#links-provider-row {
-    display: none;
-    gap: 6px;
-    flex-wrap: wrap;
+/* Row 2: back arrow + list/refresh icon */
+#bar-icons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 0;
 }
-#provider-row.visible,
-#links-provider-row.visible { display: flex; }
-
-#bar-close {
+.icon-btn {
     background: transparent;
     border: none;
-    color: #666;
-    font-size: 16px;
-    line-height: 1;
+    color: #9a9a9a;
     cursor: pointer;
-    padding: 2px 4px;
-    margin-left: 6px;
-    flex-shrink: 0;
-    transition: color 0.2s;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color .2s, transform .15s;
 }
-#bar-close:hover { color: #fff; }
+.icon-btn:hover  { color: #fff; }
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn svg { width: 26px; height: 26px; }
 
+/* Source label, retained for accessibility / debugging, visually tucked away */
+#source-label {
+    position: absolute;
+    left: -9999px;
+}
 
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.07);
-    color: #ccc;
+/* Server list */
+#server-list-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 70px 0 16px;
+    overflow: hidden;
+}
+#server-list {
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+}
+
+.server-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 6px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.18s;
+    transition: opacity .3s ease, background .2s ease;
+    background: transparent;
+    border: 1px solid transparent;
+}
+.server-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+.server-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+.server-status {
+    font-size: 15px;
+    color: #6b7280;
     white-space: nowrap;
 }
-.prov-btn:hover  { background: rgba(255,255,255,0.15); color:#fff; }
-.prov-btn.active { background:#d80027; border-color:#d80027; color:#fff; }
-.prov-btn.trying { border-color: rgba(216,0,39,0.5); color:#d80027; animation: blink 1s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.server-row.status-error   .server-name,
+.server-row.status-error   .server-status { color: #e6231e; }
+
+.server-row.status-fetching {
+    padding: 18px 20px;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.02);
+}
+.server-row.status-fetching .server-name   { color: #cbd3df; font-size: 24px; }
+.server-row.status-fetching .server-status { color: #8b93a1; }
+
+.server-row.status-playing {
+    padding: 18px 20px;
+    border: 1px solid rgba(216,0,39,0.55);
+    border-radius: 14px;
+    background: rgba(216,0,39,0.06);
+}
+.server-row.status-playing .server-name   { color: #fff; font-size: 24px; }
+.server-row.status-playing .server-status { color: #d80027; }
+
+.server-row.status-available { opacity: .55; }
+.server-row.status-available:hover { opacity: .85; }
+
+.progress-track {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.09);
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    width: 30%;
+    border-radius: 999px;
+    background: #8199c9;
+    animation: fetchSweep 1.4s ease-in-out infinite;
+}
+.server-row.status-playing .progress-fill { background: #d80027; width: 100%; animation: none; }
+@keyframes fetchSweep {
+    0%   { width: 8%;  margin-left: 0%; }
+    50%  { width: 55%; margin-left: 20%; }
+    100% { width: 8%;  margin-left: 92%; }
+}
+
+/* Footer note */
+#bar-footnote {
+    text-align: center;
+    color: #7a7a7a;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0 24px 22px;
+}
+
+/* Torrent tab, floating on the right edge */
+#torrent-tab {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-right: none;
+    border-radius: 14px 0 0 14px;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #cfd3da;
+    z-index: 125;
+}
+#torrent-tab svg { width: 18px; height: 18px; color: #e8b923; }
+#torrent-tab span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 14px;
+    letter-spacing: .5px;
+}
+#torrent-tab:hover { background: #0d0d0d; border-color: rgba(255,255,255,0.32); }
+
+/* Small persistent trigger to reopen the server-select overlay while a
+   direct source is already playing (keeps the video visible by default,
+   matching how the reference screenshot is a distinct, on-demand screen). */
+#server-trigger {
+    position: absolute;
+    top: 14px; right: 14px;
+    z-index: 118;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.45);
+    color: #d6d6d6;
+    cursor: pointer;
+    letter-spacing: .3px;
+}
+#server-trigger.visible { display: inline-flex; }
+#server-trigger:hover { background: rgba(0,0,0,0.7); color: #fff; }
 
 /* ── Spinner ─────────────────────────────────────────────────────────────── */
 #spinner {
@@ -195,28 +343,10 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 .vjs-cosmos-desc  { color:#aaa; font-size:12px; margin:2px 0 0 0; text-transform:uppercase; letter-spacing:1px; }
 .vjs-cosmos-logo  { max-height:30px; pointer-events:auto; flex-shrink:0; }
 .vjs-user-inactive .vjs-cosmos-top-bar { opacity:0; }
-
-/* ── Intro overlay ───────────────────────────────────────────────────────── */
-#intro-overlay {
-    position:absolute; top:0; left:0; width:100%; height:100%;
-    background:#000; z-index:200;
-    display:flex; align-items:center; justify-content:center;
-    transition:opacity .5s ease;
-}
-#intro-overlay.fade-out { opacity:0; pointer-events:none; }
-#intro-player-wrap { width:100%; height:100%; position:relative; }
-#intro-vjs-player  { width:100% !important; height:100% !important; }
 </style>
 </head>
 <body>
 <div id="player-container">
-
-    <!-- Intro branding -->
-    <div id="intro-overlay">
-        <div id="intro-player-wrap">
-            <video id="intro-vjs-player" class="video-js vjs-big-play-centered"></video>
-        </div>
-    </div>
 
     <!-- Spinner -->
     <div id="spinner">
@@ -233,24 +363,47 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
     <!-- Error -->
     <div id="error-msg"></div>
 
-    <!-- ── Control bar (bottom) ── -->
+    <!-- ── Server-select overlay ── -->
     <div id="control-bar">
-        <!-- Row 1: mode tabs + label -->
+        <!-- Row 1: mode pills + collapse -->
         <div id="bar-top">
-            <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">⬤ Direct</button>
-            <button id="tab-links"  class="mode-tab"        onclick="switchMode('links')">🔗 Links</button>
-            <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">⊞ Embed</button>
-            <span id="source-label"></span>
-            <button id="bar-close" onclick="hideBar()" title="Close">✕</button>
+            <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">Direct <span class="chev">▾</span></button>
+            <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">Servers <span class="chev">▾</span></button>
+            <button id="tab-links"  class="mode-tab"        onclick="switchMode('links')">Links <span class="chev">▾</span></button>
+            <button id="bar-collapse" onclick="hideBar()" title="Collapse">▲</button>
         </div>
-        <!-- Row 2: provider buttons (embed only) -->
-        <div id="provider-row">
-            <!-- populated by JS -->
+
+        <!-- Row 2: back + retry icons -->
+        <div id="bar-icons">
+            <button class="icon-btn" onclick="barBack()" title="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+            </button>
+            <button class="icon-btn" onclick="retryAllServers()" title="Retry servers">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><circle cx="7" cy="7" r=".6" fill="currentColor"/><circle cx="7" cy="17" r=".6" fill="currentColor"/></svg>
+            </button>
         </div>
-        <!-- Row 3: generated-link format buttons (links mode only) -->
-        <div id="links-provider-row">
-            <!-- populated by JS -->
+
+        <span id="source-label"></span>
+
+        <!-- Server list -->
+        <div id="server-list-wrap">
+            <div id="server-list"><!-- populated by JS --></div>
         </div>
+
+        <!-- kept for direct/links wiring, hidden visually -->
+        <div id="provider-row" style="display:none"></div>
+        <div id="links-provider-row" style="display:none"></div>
+
+        <div id="bar-footnote"></div>
+    </div>
+
+    <!-- ── Reopen trigger (shown once a direct source is already playing) ── -->
+    <button id="server-trigger" onclick="showBar(); renderServerList();" title="Choose a server">Servers ▾</button>
+
+    <!-- ── Torrent tab ── -->
+    <div id="torrent-tab" title="Torrent download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        <span>Torrent</span>
     </div>
 
 </div>
@@ -317,7 +470,6 @@ const SLOW_MS   = 8000;
 // Auto-advance to next embed after this many ms of silence (0 = never auto-advance)
 const AUTO_MS   = 0;
 
-const INTRO_SRC = 'https://chithruka.github.io/Chithruka/Landing/src/video-devices-in-lq.mp4';
 const LOGO_SRC  = '../Attachments/Chithruka%20Streamer%20Logo.svg';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -354,39 +506,125 @@ function unspin()   { document.getElementById('spinner').classList.remove('visib
 function setLabel(txt) { document.getElementById('source-label').textContent = txt; }
 
 function showError(msg) {
-    document.getElementById('intro-overlay').style.display = 'none';
     unspin();
     const el = document.getElementById('error-msg');
     el.textContent = msg;
     el.style.display = 'block';
 }
 
-function showBar()  { document.getElementById('control-bar').classList.add('visible'); }
-function hideBar()  { document.getElementById('control-bar').classList.remove('visible'); }
+function showBar()  {
+    document.getElementById('control-bar').classList.add('visible');
+    document.getElementById('server-trigger').classList.remove('visible');
+}
+function hideBar()  {
+    document.getElementById('control-bar').classList.remove('visible');
+    // Offer a way back in only once something is actually playing.
+    if (vjsPlayer || document.getElementById('iframe-container').style.display === 'block') {
+        document.getElementById('server-trigger').classList.add('visible');
+    }
+}
+
+function barBack() {
+    if (mode !== 'direct' && directSources) {
+        switchMode('direct');
+    }
+    hideBar();
+}
+
+function retryAllServers() {
+    if (mode === 'links') {
+        linkStatus = linkStatus.map(() => 'idle');
+        startGeneratedLinks();
+    } else {
+        embedStatus = embedStatus.map(() => 'idle');
+        provIdx = 0;
+        loadEmbed(0);
+    }
+}
 
 // ── Mode tabs ───────────────────────────────────────────────────────────────
 function setActiveTab(m) {
     document.getElementById('tab-direct').classList.toggle('active', m === 'direct');
     document.getElementById('tab-links').classList.toggle('active',  m === 'links');
     document.getElementById('tab-embed').classList.toggle('active',  m === 'embed');
-    document.getElementById('provider-row').classList.toggle('visible', m === 'embed');
-    document.getElementById('links-provider-row').classList.toggle('visible', m === 'links');
+    renderServerList();
 }
 
-// ── Provider buttons ────────────────────────────────────────────────────────
-function renderProviderButtons(activeIdx, isTrying) {
-    const row = document.getElementById('provider-row');
-    row.innerHTML = '';
-    EMBED_PROVIDERS.forEach((p, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'prov-btn' +
-            (i === activeIdx && !isTrying ? ' active' : '') +
-            (i === activeIdx &&  isTrying ? ' trying' : '');
-        btn.textContent = p.name;
-        btn.onclick = () => loadEmbed(i);
-        row.appendChild(btn);
-    });
+// ── Server list (styled to match the reference "server select" screen) ────
+let embedStatus = EMBED_PROVIDERS.map(() => 'idle'); // 'idle' | 'fetching' | 'error' | 'playing'
+let linkStatus  = [];                                 // populated per TYPE by renderServerList
+
+const FOOTNOTES = {
+    direct: 'Playing from the direct library. Tap Servers if this source stalls or fails.',
+    embed:  'If a server errors out, the next one in the list is tried automatically.',
+    links:  'Checking generated links. If none are playable, we fall back to Servers.'
+};
+
+function renderServerList() {
+    const list = document.getElementById('server-list');
+    const foot = document.getElementById('bar-footnote');
+    list.innerHTML = '';
+    foot.textContent = FOOTNOTES[mode] || '';
+
+    if (mode === 'direct') {
+        const row = document.createElement('div');
+        row.className = 'server-row status-playing';
+        row.innerHTML = `
+            <div class="server-row-top">
+                <span class="server-name">My Server</span>
+                <span class="server-status">${directSources ? 'playing' : 'unavailable'}</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill"></div></div>`;
+        list.appendChild(row);
+        return;
+    }
+
+    if (mode === 'links') {
+        const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
+        if (linkStatus.length !== formats.length) linkStatus = formats.map(() => 'idle');
+        formats.forEach((f, i) => list.appendChild(buildServerRow(f.name, linkStatus[i], () => {
+            if (!lastLookup) return;
+            linkStatus[i] = 'fetching';
+            renderServerList();
+            const url = f.build(lastLookup);
+            testVideoUrl(url).then(ok => {
+                linkStatus[i] = ok ? 'playing' : 'error';
+                renderServerList();
+                if (ok) {
+                    linkIdx = i;
+                    workingLink = { name: f.name, url };
+                    setLabel(`Links · ${f.name}`);
+                    playDirectVideoJS([{ src: url, type: 'mp4', label: f.name }], 'mp4');
+                }
+            });
+        })));
+        return;
+    }
+
+    // embed mode
+    EMBED_PROVIDERS.forEach((p, i) => list.appendChild(buildServerRow(p.name, embedStatus[i], () => loadEmbed(i))));
 }
+
+function buildServerRow(name, status, onClick) {
+    const row = document.createElement('div');
+    const cls = status === 'idle' ? 'available' : status;
+    row.className = `server-row status-${cls}`;
+    row.onclick = onClick;
+
+    const statusLabel = { idle: 'available', fetching: 'fetching', error: 'error', playing: 'playing' }[status] || status;
+    row.innerHTML = `
+        <div class="server-row-top">
+            <span class="server-name">${name}</span>
+            <span class="server-status">${statusLabel}</span>
+        </div>`;
+    if (status === 'fetching' || status === 'playing') {
+        row.innerHTML += `<div class="progress-track"><div class="progress-fill"></div></div>`;
+    }
+    return row;
+}
+
+// Legacy no-ops kept so any stray calls elsewhere don't break.
+function renderProviderButtons() { renderServerList(); }
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  DIRECT MODE  (videos.json → VideoJS / source iframes)
@@ -507,7 +745,7 @@ function playDirectVideoJS(sources, srcType) {
     });
 
     setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
-    showBar();
+    hideBar();
 }
 
 function playDirectIframe(sources, srcType) {
@@ -535,7 +773,7 @@ function playDirectIframe(sources, srcType) {
     container.appendChild(wrapper);
 
     setLabel('Direct · ' + srcType);
-    showBar();
+    hideBar();
 }
 
 function buildDirectIframeUrl(s, srcType) {
@@ -581,7 +819,6 @@ function autoFallbackToEmbed(reason) {
     mode = 'embed';
     setActiveTab('embed');
     provIdx = 0;
-    renderProviderButtons(0, true);
     showBar();
     loadEmbed(0);
 }
@@ -635,7 +872,9 @@ function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
 async function startGeneratedLinks() {
     mode = 'links';
     setActiveTab('links');
-    renderLinkProviderButtons(-1, false);
+    const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
+    linkStatus = formats.map(() => 'idle');
+    renderServerList();
     showBar();
 
     if (!TMDB_API_KEY) {
@@ -644,7 +883,6 @@ async function startGeneratedLinks() {
     }
 
     const isMovie = TYPE === 'movie';
-    const formats = GENERATED_LINK_FORMATS[isMovie ? 'movie' : 'tv'];
 
     spin(isMovie ? 'Looking up movie info…' : 'Looking up show info…');
     let title, year;
@@ -671,59 +909,28 @@ async function startGeneratedLinks() {
         linkIdx = i;
         const fmt = formats[i];
         const url = fmt.build(lastLookup);
-        renderLinkProviderButtons(i, true);
+        linkStatus[i] = 'fetching';
+        renderServerList();
         spin(`Checking ${fmt.name}…`);
 
         const ok = await testVideoUrl(url);
         if (ok) {
             workingLink = { name: fmt.name, url };
+            linkStatus[i] = 'playing';
             unspin();
-            renderLinkProviderButtons(i, false);
+            renderServerList();
             setLabel(`Links · ${fmt.name}`);
             playDirectVideoJS([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
             return;
         }
 
+        linkStatus[i] = 'error';
+        renderServerList();
         console.info(`[auto-server] Generated link failed: ${fmt.name}`);
     }
 
     unspin();
     autoFallbackToEmbed('All generated links failed');
-}
-
-function renderLinkProviderButtons(activeIdx, isTrying) {
-    const row = document.getElementById('links-provider-row');
-    if (!row) return;
-    row.innerHTML = '';
-    const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
-    formats.forEach((f, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'prov-btn' +
-            (i === activeIdx && !isTrying ? ' active' : '') +
-            (i === activeIdx &&  isTrying ? ' trying' : '');
-        btn.textContent = f.name;
-        btn.onclick = () => {
-            if (!lastLookup) return;
-            linkIdx = i;
-            renderLinkProviderButtons(i, true);
-            spin(`Checking ${f.name}…`);
-            const url = f.build(lastLookup);
-            testVideoUrl(url).then(ok => {
-                if (ok) {
-                    workingLink = { name: f.name, url };
-                    unspin();
-                    renderLinkProviderButtons(i, false);
-                    setLabel(`Links · ${f.name}`);
-                    playDirectVideoJS([{ src: url, type: 'mp4', label: f.name }], 'mp4');
-                } else {
-                    unspin();
-                    renderLinkProviderButtons(i, false);
-                    setLabel(`Links · ${f.name} (unavailable)`);
-                }
-            });
-        };
-        row.appendChild(btn);
-    });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -749,7 +956,6 @@ function switchMode(m) {
         if (workingLink) {
             mode = 'links';
             setActiveTab('links');
-            renderLinkProviderButtons(linkIdx, false);
             showBar();
             setLabel(`Links · ${workingLink.name}`);
             playDirectVideoJS([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
@@ -762,7 +968,6 @@ function switchMode(m) {
         document.getElementById('vjs-player').style.display = 'none';
         clearEmbed();
         setActiveTab('embed');
-        renderProviderButtons(provIdx, true);
         showBar();
         loadEmbed(provIdx);
     }
@@ -783,7 +988,8 @@ function loadEmbed(idx) {
     const url  = buildEmbedUrl(TYPE === 'movie' ? prov.movie : prov.tv);
 
     spin(`Connecting to ${prov.name}…`);
-    renderProviderButtons(idx, true);
+    embedStatus[idx] = 'fetching';
+    renderServerList();
     setLabel(`Embed · ${prov.name}`);
 
     const container = document.getElementById('iframe-container');
@@ -804,12 +1010,16 @@ function loadEmbed(idx) {
     iframe.onload = () => {
         clearTimers();
         unspin();
-        renderProviderButtons(idx, false); // mark as loaded (not "trying")
+        embedStatus[idx] = 'playing';
+        renderServerList();
+        hideBar();
     };
 
     iframe.onerror = () => {
         // Hard network failure — skip immediately
         clearTimers();
+        embedStatus[idx] = 'error';
+        renderServerList();
         console.warn(`[auto-server] Network error: ${prov.name}`);
         tryNextEmbed();
     };
@@ -818,7 +1028,7 @@ function loadEmbed(idx) {
     slowTimer = setTimeout(() => {
         unspin();
         setLabel(`Embed · ${prov.name} (slow…)`);
-        renderProviderButtons(idx, true);
+        renderServerList();
     }, SLOW_MS);
 
     wrapper.appendChild(iframe);
@@ -914,46 +1124,7 @@ async function init() {
     await startDirect(); // always starts in direct mode
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  INTRO
-// ═══════════════════════════════════════════════════════════════════════════
-
-function playIntro() {
-    return new Promise(resolve => {
-        const overlay = document.getElementById('intro-overlay');
-        let ended = false;
-
-        const p = videojs('intro-vjs-player', {
-            controls:false, autoplay:false, muted:false, fill:true,
-            sources:[{ src:INTRO_SRC, type:'video/mp4' }]
-        });
-
-        function end() {
-            if (ended) return; ended = true;
-            p.dispose();
-            overlay.classList.add('fade-out');
-            setTimeout(() => { overlay.style.display='none'; resolve(); }, 500);
-        }
-
-        p.ready(function() {
-            const play = p.play();
-            if (play && typeof play.then === 'function') {
-                play.catch(() => {
-                    p.muted(true);
-                    const p2 = p.play();
-                    if (p2 && typeof p2.then === 'function') p2.catch(end);
-                });
-            }
-        });
-        p.on('ended', end);
-        p.on('error', end);
-    });
-}
-
-(async () => {
-    await playIntro();
-    await init();
-})();
+init();
 </script>
 </body>
 </html>
