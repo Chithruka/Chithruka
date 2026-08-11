@@ -85,4 +85,5 @@
 .server-panel-collapse{max-height:0;overflow:hidden;transition:max-height .35s ease}
 .server-panel-collapse.open{max-height:400px}
 .server-panel-collapse #server-buttons{padding:2px 2px 14px;margin-top:2px}
+.server-toggle-bar.hidden,.server-panel-collapse.hidden{display:none!important}
 @media (max-width:640px){.server-toggle-text{font-size:.8rem}}
