@@ -311,7 +311,6 @@ media-player {
         <div id="bar-top">
             <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">Direct <span class="chev">▾</span></button>
             <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">Servers <span class="chev">▾</span></button>
-            <button id="tab-links"  class="mode-tab"        onclick="switchMode('links')">Links <span class="chev">▾</span></button>
             <button id="bar-collapse" onclick="hideBar()" title="Collapse">▲</button>
         </div>
 
@@ -332,9 +331,8 @@ media-player {
             <div id="server-list"><!-- populated by JS --></div>
         </div>
 
-        <!-- kept for direct/links wiring, hidden visually -->
+        <!-- kept for direct/embed wiring, hidden visually -->
         <div id="provider-row" style="display:none"></div>
-        <div id="links-provider-row" style="display:none"></div>
 
         <div id="bar-footnote"></div>
     </div>
@@ -355,47 +353,6 @@ const VIDEOS_JSON_PATH = 'videos.json';
 const EMBED_PROVIDERS = [
     { name: 'RiveStream',  movie: 'https://www.rivestream.ru/embed?type=movie&id=[ID]',  tv: 'https://www.rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]' },
 ];
-
-// ── Generated Links (Baiscope) ───────────────────────────────────────────────
-// Mirrors link.html: fetches the title/year (movies) or name (TV) from TMDB,
-// then builds two candidate direct-file URLs (dots-format and
-// underscores-format filenames). Each is probed in a hidden <video> element;
-// the first that loads wins. Supports both movies and TV episodes.
-const TMDB_API_KEY            = '92850a79e50917b8cc19623455ae2240'; // set your TMDB v3 API key here to enable this step
-const BAISCOPE_MOVIE_BASE_URL = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/movies/';
-const BAISCOPE_TV_BASE_URL    = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/';
-
-function baiscopeDotsName(title) {
-    return title
-        .replace(/[^a-zA-Z0-9]/g, '.')
-        .replace(/\.+/g, '.')
-        .replace(/(^\.|\.$)/g, '');
-}
-function baiscopeUnderscoresName(title) {
-    return title
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/(^_|_$)/g, '');
-}
-function pad2(n) {
-    return String(n).padStart(2, '0');
-}
-
-// build(ctx) receives { title, year, sn, ep } — movie formats use title/year,
-// tv formats use title/sn/ep.
-const GENERATED_LINK_FORMATS = {
-    movie: [
-        { name: 'Format 1 (Dots)',        build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeDotsName(title)}.${year}.mp4` },
-        { name: 'Format 2 (Underscores)', build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeUnderscoresName(title)}_${year}.mp4` },
-    ],
-    tv: [
-        { name: 'Format 1 (Dots)',        build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeDotsName(title)}.S${pad2(sn)}E${pad2(ep)}.mp4` },
-        { name: 'Format 2 (Underscores)', build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeUnderscoresName(title)}_S${pad2(sn)}E${pad2(ep)}.mp4` },
-    ],
-};
-
-// How long to wait for each candidate link to prove it's playable
-const LINK_PROBE_MS = 10000;
 
 // If an iframe hasn't fired onload after this many ms, mark it as "slow"
 const SLOW_MS   = 8000;
@@ -431,14 +388,11 @@ const EP   = _p.get('e')    || '1';
 //  STATE
 // ═══════════════════════════════════════════════════════════════════════════
 
-let mode          = 'direct';  // 'direct' | 'links' | 'embed'
+let mode          = 'direct';  // 'direct' | 'embed'
 let directSources = null;      // array from videos.json, or null
 let directList    = [];        // [{ source, type, kind, label }] — one per direct source
 let directStatus  = [];        // parallel status array: 'idle' | 'fetching' | 'error' | 'playing'
 let directActiveIdx = -1;      // index into directList currently loading/playing
-let workingLink   = null;      // { name, url } of the generated link that proved playable, or null
-let lastLookup    = null;      // { title, year } from the last successful TMDB lookup, or null
-let linkIdx       = 0;         // current GENERATED_LINK_FORMATS index being tried
 let provIdx       = 0;         // current EMBED_PROVIDERS index
 let slowTimer     = null;
 let autoTimer     = null;
@@ -480,32 +434,24 @@ function barBack() {
 }
 
 function retryAllServers() {
-    if (mode === 'links') {
-        linkStatus = linkStatus.map(() => 'idle');
-        startGeneratedLinks();
-    } else {
-        embedStatus = embedStatus.map(() => 'idle');
-        provIdx = 0;
-        loadEmbed(0);
-    }
+    embedStatus = embedStatus.map(() => 'idle');
+    provIdx = 0;
+    loadEmbed(0);
 }
 
 // ── Mode tabs ───────────────────────────────────────────────────────────────
 function setActiveTab(m) {
     document.getElementById('tab-direct').classList.toggle('active', m === 'direct');
-    document.getElementById('tab-links').classList.toggle('active',  m === 'links');
     document.getElementById('tab-embed').classList.toggle('active',  m === 'embed');
     renderServerList();
 }
 
 // ── Server list (styled to match the reference "server select" screen) ────
 let embedStatus = EMBED_PROVIDERS.map(() => 'idle'); // 'idle' | 'fetching' | 'error' | 'playing'
-let linkStatus  = [];                                 // populated per TYPE by renderServerList
 
 const FOOTNOTES = {
     direct: 'Playing from the direct library. Tap Servers if this source stalls or fails.',
-    embed:  'If a server errors out, the next one in the list is tried automatically.',
-    links:  'Checking generated links. If none are playable, we fall back to Servers.'
+    embed:  'If a server errors out, the next one in the list is tried automatically.'
 };
 
 function renderServerList() {
@@ -529,28 +475,6 @@ function renderServerList() {
         directList.forEach((item, i) => list.appendChild(
             buildServerRow(item.label, directStatus[i], () => playDirectSourceAt(i))
         ));
-        return;
-    }
-
-    if (mode === 'links') {
-        const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
-        if (linkStatus.length !== formats.length) linkStatus = formats.map(() => 'idle');
-        formats.forEach((f, i) => list.appendChild(buildServerRow(f.name, linkStatus[i], () => {
-            if (!lastLookup) return;
-            linkStatus[i] = 'fetching';
-            renderServerList();
-            const url = f.build(lastLookup);
-            testVideoUrl(url).then(ok => {
-                linkStatus[i] = ok ? 'playing' : 'error';
-                renderServerList();
-                if (ok) {
-                    linkIdx = i;
-                    workingLink = { name: f.name, url };
-                    setLabel(`Links · ${f.name}`);
-                    playDirectNative([{ src: url, type: 'mp4', label: f.name }], 'mp4');
-                }
-            });
-        })));
         return;
     }
 
@@ -590,9 +514,9 @@ async function startDirect() {
 
     const db = await fetchDB();
     if (!db) {
-        // Can't even reach the DB — try generated links next
+        // Can't even reach the DB — go straight to embed
         unspin();
-        autoFallbackToLinks('Library unavailable');
+        autoFallbackToEmbed('Library unavailable');
         return;
     }
 
@@ -602,7 +526,7 @@ async function startDirect() {
 
     if (!sources || sources.length === 0) {
         unspin();
-        autoFallbackToLinks('Not in local library');
+        autoFallbackToEmbed('Not in local library');
         return;
     }
 
@@ -656,7 +580,7 @@ function playDirect(sources) {
     directStatus    = directList.map(() => 'idle');
     directActiveIdx = -1;
 
-    if (!directList.length) { autoFallbackToLinks('No direct sources'); return; }
+    if (!directList.length) { autoFallbackToEmbed('No direct sources'); return; }
     playDirectSourceAt(0);
 }
 
@@ -664,7 +588,7 @@ function playDirect(sources) {
 // on failure. Same underlying renderers (Vidstack / iframe) as before, just
 // scoped to one source at a time so each can be listed as its own "server".
 function playDirectSourceAt(idx) {
-    if (idx >= directList.length) { autoFallbackToLinks('All direct sources failed'); return; }
+    if (idx >= directList.length) { autoFallbackToEmbed('All direct sources failed'); return; }
 
     directActiveIdx   = idx;
     directStatus[idx] = 'fetching';
@@ -934,42 +858,6 @@ function renderDirectSourceNative(source, srcType, idx) {
     addSubtitleTracks(el, source);
 }
 
-// Kept for generated-links playback and restoring a previously-working
-// link — plays a self-contained source list in one Vidstack instance.
-function playDirectNative(sources, srcType) {
-    disposePlayer();
-    const el = document.getElementById('media-player-el');
-    el.style.display = 'block';
-
-    // Vidstack picks the first playable source itself when given an array,
-    // so the srcType/HLS detection just needs to tag each entry correctly.
-    el.src = sources.map(s => ({
-        src:  s.src,
-        type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegurl' : 'video/mp4'
-    }));
-    mediaPlayer = el;
-
-    const subSource = sources.find(s => s.subtitles && s.subtitles.length) || sources[0];
-    addSubtitleTracks(el, subSource);
-
-    // All sources failed → fall to next tier
-    const onError = () => {
-        console.warn('[auto-server] Vidstack: all sources failed (mode=' + mode + ')');
-        el.removeEventListener('error', onError);
-        disposePlayer();
-        el.style.display = 'none';
-        if (mode === 'direct') {
-            autoFallbackToLinks('Direct sources failed');
-        } else {
-            autoFallbackToEmbed('Playback failed');
-        }
-    };
-    el.addEventListener('error', onError);
-
-    setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
-    hideBar();
-}
-
 function buildDirectIframeUrl(s, srcType) {
     switch (srcType) {
         case 'youtube': {
@@ -1001,13 +889,7 @@ function buildDirectIframeUrl(s, srcType) {
     }
 }
 
-// Silent auto-fallback: direct sources failed/unavailable, try generated links next
-function autoFallbackToLinks(reason) {
-    console.info(`[auto-server] Direct failed (${reason}) — trying generated links`);
-    startGeneratedLinks();
-}
-
-// Silent auto-fallback: generated links exhausted/unsupported, go straight to embed
+// Silent auto-fallback: direct sources failed/unavailable, go straight to embed (RiveStream)
 function autoFallbackToEmbed(reason) {
     console.info(`[auto-server] Falling back to embed (${reason})`);
     mode = 'embed';
@@ -1015,116 +897,6 @@ function autoFallbackToEmbed(reason) {
     provIdx = 0;
     showBar();
     loadEmbed(0);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  GENERATED LINKS MODE  (direct-file URLs built from TMDB title/year)
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Probe a candidate URL using a hidden <video> element rather than fetch().
-// media.baiscopewatch.com sends no Access-Control-Allow-Origin header, so a
-// fetch() from the browser is blocked by CORS entirely (even for files that
-// exist) — the browser refuses to let JS read the response. Loading media via
-// a <video> element isn't subject to that restriction (CORS only gates JS
-// reading response bytes, not playback), so we listen for its native
-// loadedmetadata/error events instead.
-// Resolves true if the file exists and is playable, false otherwise.
-function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
-    return new Promise(resolve => {
-        const probe = document.createElement('video');
-        probe.preload = 'metadata';
-        probe.muted = true;
-        probe.style.display = 'none';
-
-        let settled = false;
-        const finish = (ok, reason) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            probe.removeAttribute('src');
-            probe.load();
-            probe.remove();
-            if (!ok) console.info(`[auto-server] Link unavailable: ${reason}`);
-            resolve(ok);
-        };
-
-        const timer = setTimeout(() => finish(false, 'timed out'), timeoutMs);
-
-        probe.addEventListener('loadedmetadata', () => finish(true), { once: true });
-        probe.addEventListener('error', () => {
-            // MediaError codes: 1=ABORTED 2=NETWORK 3=DECODE 4=SRC_NOT_SUPPORTED
-            const code = probe.error ? probe.error.code : 0;
-            finish(false, `media error ${code}`);
-        }, { once: true });
-
-        document.body.appendChild(probe);
-        probe.src = url;
-        probe.load();
-    });
-}
-
-async function startGeneratedLinks() {
-    mode = 'links';
-    setActiveTab('links');
-    const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
-    linkStatus = formats.map(() => 'idle');
-    renderServerList();
-    showBar();
-
-    if (!TMDB_API_KEY) {
-        autoFallbackToEmbed('No TMDB API key configured');
-        return;
-    }
-
-    const isMovie = TYPE === 'movie';
-
-    spin(isMovie ? 'Looking up movie info…' : 'Looking up show info…');
-    let title, year;
-    try {
-        const endpoint = isMovie
-            ? `https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`
-            : `https://api.themoviedb.org/3/tv/${TMDB}?api_key=${TMDB_API_KEY}`;
-        const res = await fetch(endpoint);
-        if (!res.ok) throw new Error('TMDB lookup failed');
-        const data = await res.json();
-        title = isMovie ? data.title : data.name;
-        year  = isMovie
-            ? (data.release_date ? data.release_date.split('-')[0] : '')
-            : (data.first_air_date ? data.first_air_date.split('-')[0] : '');
-        if (!title) throw new Error('No title returned');
-        lastLookup = { title, year, sn: SN, ep: EP };
-    } catch (err) {
-        console.warn('[auto-server] Generated links: TMDB lookup failed', err);
-        autoFallbackToEmbed('TMDB lookup failed');
-        return;
-    }
-
-    for (let i = 0; i < formats.length; i++) {
-        linkIdx = i;
-        const fmt = formats[i];
-        const url = fmt.build(lastLookup);
-        linkStatus[i] = 'fetching';
-        renderServerList();
-        spin(`Checking ${fmt.name}…`);
-
-        const ok = await testVideoUrl(url);
-        if (ok) {
-            workingLink = { name: fmt.name, url };
-            linkStatus[i] = 'playing';
-            unspin();
-            renderServerList();
-            setLabel(`Links · ${fmt.name}`);
-            playDirectNative([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
-            return;
-        }
-
-        linkStatus[i] = 'error';
-        renderServerList();
-        console.info(`[auto-server] Generated link failed: ${fmt.name}`);
-    }
-
-    unspin();
-    autoFallbackToEmbed('All generated links failed');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1142,19 +914,6 @@ function switchMode(m) {
             playDirect(directSources);
         } else {
             flashTab('tab-direct');
-        }
-    } else if (m === 'links') {
-        disposePlayer();
-        document.getElementById('media-player-el').style.display = 'none';
-        clearEmbed();
-        if (workingLink) {
-            mode = 'links';
-            setActiveTab('links');
-            showBar();
-            setLabel(`Links · ${workingLink.name}`);
-            playDirectNative([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
-        } else {
-            startGeneratedLinks();
         }
     } else {
         mode = 'embed';
