@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Chithruka Server</title>
-    <link href="https://unpkg.com/video.js@7/dist/video-js.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/video.js@7/dist/video.min.js"></script>
-    <script src="https://unpkg.com/videojs-contrib-quality-levels@2.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
+    <link href="https://unpkg.com/video.js@8.24.0/dist/video-js.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js@8.24.0/dist/video.min.js"></script>
+    <script src="https://unpkg.com/videojs-contrib-quality-levels@4.1.0/dist/videojs-contrib-quality-levels.min.js"></script>
     <script src="https://unpkg.com/videojs-http-source-selector@1.1.6/dist/videojs-http-source-selector.min.js"></script>
     <link href="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.css" rel="stylesheet">
     <script src="https://unpkg.com/videojs-vjsdownload/dist/videojs-vjsdownload.js"></script>
@@ -741,6 +741,30 @@ function renderDirectSourceIframe(url, idx) {
     container.appendChild(wrapper);
 }
 
+// Adds one or more subtitle/caption tracks to a VideoJS player from a
+// source's `subtitles` array in videos.json, e.g.:
+//   "subtitles": [
+//     { "src": "https://example.com/en.vtt", "lang": "en", "label": "English", "default": true },
+//     { "src": "https://example.com/si.vtt", "lang": "si", "label": "Sinhala" }
+//   ]
+// `src` must point to a .vtt (WebVTT) file. `lang` and `label` are optional
+// (default to "en" / "Subtitle N"); `default: true` marks the track that
+// should be shown automatically when playback starts.
+function addSubtitleTracks(player, subtitles) {
+    if (!Array.isArray(subtitles) || !subtitles.length) return;
+    subtitles.forEach((sub, i) => {
+        if (!sub || !sub.src) return;
+        const track = player.addRemoteTextTrack({
+            kind:     'subtitles',
+            src:      sub.src,
+            srclang:  sub.lang || sub.srclang || 'en',
+            label:    sub.label || sub.lang || `Subtitle ${i + 1}`,
+            default:  !!sub.default
+        }, false);
+        if (sub.default && track && track.track) track.track.mode = 'showing';
+    });
+}
+
 function renderDirectSourceVideoJS(source, srcType, idx) {
     disposeVJS();
     document.getElementById('iframe-container').style.display = 'none';
@@ -784,6 +808,7 @@ function renderDirectSourceVideoJS(source, srcType, idx) {
                 <p class="vjs-cosmos-desc">${typeLabel}</p>
             </div>`;
         vjsPlayer.el().appendChild(topBar);
+        addSubtitleTracks(vjsPlayer, source.subtitles);
     });
 
     vjsPlayer.one('loadeddata', () => {
@@ -846,6 +871,8 @@ function playDirectVideoJS(sources, srcType) {
                 <p class="vjs-cosmos-desc">${typeLabel}</p>
             </div>`;
         vjsPlayer.el().appendChild(topBar);
+        const subSource = sources.find(s => s.subtitles && s.subtitles.length);
+        if (subSource) addSubtitleTracks(vjsPlayer, subSource.subtitles);
     });
 
     // All sources failed → fall to next tier
@@ -872,7 +899,7 @@ function buildDirectIframeUrl(s, srcType) {
         }
         case 'dailymotion': {
             let url = s.src.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
-            return appendParam(url, 'autoplay', '1');
+            return appendParam(url, 'autoplay', '0');
         }
         case 'google-drive': {
             const m = s.src.match(/\/d\/(.+?)\//);
