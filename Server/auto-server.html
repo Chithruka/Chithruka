@@ -20,28 +20,6 @@ body, html { margin:0; padding:0; width:100%; height:100%; background:#000; over
 #iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
 .iframe-wrapper   { position:relative; width:100%; height:100%; }
 
-#next-source-btn {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: #d80027;
-    color: #fff;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 5px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-    transition: background 0.2s ease;
-}
-#next-source-btn:hover { background: #ff0030; }
-#next-source-btn .src-counter { background: rgba(0,0,0,0.3); border-radius: 3px; padding: 1px 6px; font-size: 11px; }
 
 
 /* ── Server-select overlay ───────────────────────────────────────────────── */
@@ -475,6 +453,9 @@ const EP   = _p.get('e')    || '1';
 
 let mode          = 'direct';  // 'direct' | 'links' | 'embed'
 let directSources = null;      // array from videos.json, or null
+let directList    = [];        // [{ source, type, kind, label }] — one per direct source
+let directStatus  = [];        // parallel status array: 'idle' | 'fetching' | 'error' | 'playing'
+let directActiveIdx = -1;      // index into directList currently loading/playing
 let workingLink   = null;      // { name, url } of the generated link that proved playable, or null
 let lastLookup    = null;      // { title, year } from the last successful TMDB lookup, or null
 let linkIdx       = 0;         // current GENERATED_LINK_FORMATS index being tried
@@ -554,15 +535,20 @@ function renderServerList() {
     foot.textContent = FOOTNOTES[mode] || '';
 
     if (mode === 'direct') {
-        const row = document.createElement('div');
-        row.className = 'server-row status-playing';
-        row.innerHTML = `
-            <div class="server-row-top">
-                <span class="server-name">My Server</span>
-                <span class="server-status">${directSources ? 'playing' : 'unavailable'}</span>
-            </div>
-            <div class="progress-track"><div class="progress-fill"></div></div>`;
-        list.appendChild(row);
+        if (!directList.length) {
+            const row = document.createElement('div');
+            row.className = 'server-row status-error';
+            row.innerHTML = `
+                <div class="server-row-top">
+                    <span class="server-name">My Server</span>
+                    <span class="server-status">unavailable</span>
+                </div>`;
+            list.appendChild(row);
+            return;
+        }
+        directList.forEach((item, i) => list.appendChild(
+            buildServerRow(item.label, directStatus[i], () => playDirectSourceAt(i))
+        ));
         return;
     }
 
@@ -660,27 +646,165 @@ function playDirect(sources) {
     // Clear any running embed
     clearEmbed();
 
-    const first   = sources[0];
-    const srcType = first.type || detectType(first.src);
-
     // Types that must be rendered as an iframe rather than fed to VideoJS
     const IFRAME_TYPES = ['youtube', 'vimeo', 'dailymotion', 'google-drive',
                            'mega', 'vk', 'telegram', 'facebook', 'iframe'];
+    const TYPE_LABELS = {
+        mp4: 'My Server', hls: 'My Server', iframe: 'My Server',
+        youtube: 'YouTube', vimeo: 'Vimeo', dailymotion: 'Dailymotion',
+        'google-drive': 'Google Drive', mega: 'Mega', vk: 'VK',
+        telegram: 'Telegram', facebook: 'Facebook'
+    };
 
-    if (IFRAME_TYPES.includes(srcType)) {
-        // Only pass sources that are also iframe-flavored — a stray hls/mp4
-        // entry mixed into the same array wouldn't render as an iframe.
-        const iframeSources = sources.filter(s => IFRAME_TYPES.includes(s.type || srcType));
-        playDirectIframe(iframeSources.length ? iframeSources : sources, srcType);
-        return;
-    }
+    // Build one list entry per source in videos.json, each independently
+    // selectable from the Servers panel.
+    directList = sources.map(s => {
+        const type = s.type || detectType(s.src);
+        const kind = IFRAME_TYPES.includes(type) ? 'iframe' : 'video';
+        const base = TYPE_LABELS[type] || type;
+        return { source: s, type, kind, base };
+    });
+    // Number duplicate labels (e.g. two "Google Drive" sources → "Google Drive 1/2")
+    const counts = {};
+    directList.forEach(item => { counts[item.base] = (counts[item.base] || 0) + 1; });
+    const seenSoFar = {};
+    directList.forEach(item => {
+        seenSoFar[item.base] = (seenSoFar[item.base] || 0) + 1;
+        item.label = counts[item.base] > 1 ? `${item.base} ${seenSoFar[item.base]}` : item.base;
+    });
 
-    // mp4 / hls / anything else VideoJS can natively play — drop any
-    // iframe-flavored entries mixed into the same array.
-    const videoSources = sources.filter(s => !IFRAME_TYPES.includes(s.type || detectType(s.src)));
-    playDirectVideoJS(videoSources.length ? videoSources : sources, srcType);
+    directStatus    = directList.map(() => 'idle');
+    directActiveIdx = -1;
+
+    if (!directList.length) { autoFallbackToLinks('No direct sources'); return; }
+    playDirectSourceAt(0);
 }
 
+// Play a single source from directList by index, and chain to the next one
+// on failure. Same underlying renderers (VideoJS / iframe) as before, just
+// scoped to one source at a time so each can be listed as its own "server".
+function playDirectSourceAt(idx) {
+    if (idx >= directList.length) { autoFallbackToLinks('All direct sources failed'); return; }
+
+    directActiveIdx   = idx;
+    directStatus[idx] = 'fetching';
+    renderServerList();
+
+    const item = directList[idx];
+
+    if (item.kind === 'iframe') {
+        const url = buildDirectIframeUrl(item.source, item.type);
+        if (!url) {
+            directStatus[idx] = 'error';
+            renderServerList();
+            playDirectSourceAt(idx + 1);
+            return;
+        }
+        renderDirectSourceIframe(url, idx);
+    } else {
+        renderDirectSourceVideoJS(item.source, item.type, idx);
+    }
+
+    setLabel('Direct · ' + item.label);
+    hideBar();
+}
+
+function renderDirectSourceIframe(url, idx) {
+    document.getElementById('vjs-player').style.display = 'none';
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'iframe-wrapper';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.className = 'ext-iframe';
+    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
+    iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    iframe.onload = () => {
+        unspin();
+        if (directActiveIdx === idx) {
+            directStatus[idx] = 'playing';
+            renderServerList();
+        }
+    };
+    iframe.onerror = () => {
+        directStatus[idx] = 'error';
+        renderServerList();
+        playDirectSourceAt(idx + 1);
+    };
+    wrapper.appendChild(iframe);
+    container.appendChild(wrapper);
+}
+
+function renderDirectSourceVideoJS(source, srcType, idx) {
+    disposeVJS();
+    document.getElementById('iframe-container').style.display = 'none';
+    document.getElementById('iframe-container').innerHTML = '';
+
+    const el = document.getElementById('vjs-player');
+    el.style.display = 'block';
+
+    const isHLS = srcType === 'hls' || source.src.includes('.m3u8');
+    const typeLabel = TYPE === 'tv' ? 'TV SHOW' : 'MOVIE';
+    const rawName   = source.src.split('/').pop().split('?')[0].split('.')[0];
+    const title     = decodeURIComponent(rawName).replace(/[-_]/g, ' ');
+
+    const opts = {
+        controls: true, autoplay: false, fill: true,
+        sources: [{
+            src:  source.src,
+            type: isHLS ? 'application/vnd.apple.mpegurl' : 'video/mp4'
+        }],
+        plugins: {}
+    };
+
+    if (!isHLS) {
+        opts.plugins.vjsdownload = {
+            beforeElement: 'fullscreenToggle',
+            textControl:   'Download Video',
+            name:          'downloadButton',
+            downloadURL:   source.src
+        };
+    }
+
+    vjsPlayer = videojs('vjs-player', opts);
+    if (isHLS) vjsPlayer.ready(() => vjsPlayer.httpSourceSelector());
+
+    vjsPlayer.ready(() => {
+        const topBar = document.createElement('div');
+        topBar.className = 'vjs-cosmos-top-bar';
+        topBar.innerHTML = `
+            <div class="vjs-cosmos-title-container">
+                <h1 class="vjs-cosmos-title">${title}</h1>
+                <p class="vjs-cosmos-desc">${typeLabel}</p>
+            </div>`;
+        vjsPlayer.el().appendChild(topBar);
+    });
+
+    vjsPlayer.one('loadeddata', () => {
+        if (directActiveIdx === idx) {
+            directStatus[idx] = 'playing';
+            renderServerList();
+        }
+    });
+
+    vjsPlayer.on('error', () => {
+        console.warn('[auto-server] VideoJS: source failed (idx=' + idx + ')');
+        disposeVJS();
+        el.style.display = 'none';
+        directStatus[idx] = 'error';
+        renderServerList();
+        playDirectSourceAt(idx + 1);
+    });
+}
+
+// Kept for generated-links playback and restoring a previously-working
+// link — plays a self-contained source list in one VideoJS instance.
 function playDirectVideoJS(sources, srcType) {
     disposeVJS();
     const el = document.getElementById('vjs-player');
@@ -738,67 +862,6 @@ function playDirectVideoJS(sources, srcType) {
 
     setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
     hideBar();
-}
-
-let directIframeSources = [];
-let directIframeIdx     = 0;
-
-function playDirectIframe(sources, srcType) {
-    // Build a playable URL for every source, honoring each source's own
-    // `type` when present (falls back to the type detected for the first).
-    directIframeSources = sources
-        .map(s => ({ url: buildDirectIframeUrl(s, s.type || srcType), type: s.type || srcType }))
-        .filter(s => !!s.url);
-
-    if (!directIframeSources.length) { autoFallbackToLinks('Invalid source URL'); return; }
-
-    directIframeIdx = 0;
-    renderDirectIframe();
-    setLabel('Direct · ' + srcType);
-    hideBar();
-}
-
-function renderDirectIframe() {
-    const container = document.getElementById('iframe-container');
-    container.style.display = 'block';
-    container.innerHTML = '';
-
-    const hasMore = directIframeSources.length > 1;
-    const current = directIframeIdx + 1;
-    const total   = directIframeSources.length;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'iframe-wrapper';
-
-    const iframe = document.createElement('iframe');
-    iframe.src = directIframeSources[directIframeIdx].url;
-    iframe.className = 'ext-iframe';
-    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
-    iframe.setAttribute('allowfullscreen', 'true');
-    iframe.setAttribute('frameborder', '0');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-    iframe.onload  = unspin;
-    iframe.onerror = () => nextDirectIframeSource();
-    wrapper.appendChild(iframe);
-
-    if (hasMore) {
-        const btn = document.createElement('button');
-        btn.id = 'next-source-btn';
-        btn.innerHTML = `▶ Try Next Source <span class="src-counter">${current} / ${total}</span>`;
-        btn.onclick = () => nextDirectIframeSource();
-        wrapper.appendChild(btn);
-    }
-
-    container.appendChild(wrapper);
-}
-
-function nextDirectIframeSource() {
-    directIframeIdx++;
-    if (directIframeIdx < directIframeSources.length) {
-        renderDirectIframe();
-    } else {
-        autoFallbackToLinks('All direct iframe sources failed');
-    }
 }
 
 function buildDirectIframeUrl(s, srcType) {
