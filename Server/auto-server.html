@@ -289,19 +289,6 @@ function addOneSubtitleTrack(player, sub, i) {
     });
 }
 
-const SCRIPT_RANGES = {
-    si: /[\u0D80-\u0DFF]/,   // Sinhala
-    ta: /[\u0B80-\u0BFF]/,   // Tamil
-    hi: /[\u0900-\u097F]/,   // Devanagari (Hindi)
-    ar: /[\u0600-\u06FF]/,   // Arabic
-    th: /[\u0E00-\u0E7F]/,   // Thai
-    ko: /[\uAC00-\uD7AF]/,   // Hangul (Korean)
-    ja: /[\u3040-\u30FF\u4E00-\u9FFF]/, // Kana + Kanji (Japanese)
-    zh: /[\u4E00-\u9FFF]/,   // Han (Chinese)
-    ru: /[\u0400-\u04FF]/,   // Cyrillic (Russian)
-    he: /[\u0590-\u05FF]/,   // Hebrew
-};
-
 const _osCache = {};
 async function fetchOpenSubtitles(tmdbId, type, season, episode) {
     if (!tmdbId) return [];
@@ -358,12 +345,6 @@ async function fetchOpenSubtitles(tmdbId, type, season, episode) {
                 const dlData = await dlRes.json();
                 const fileRes = await fetch(dlData.link);
                 const srtText = await fileRes.text();
-
-                const scriptCheck = SCRIPT_RANGES[lang];
-                if (scriptCheck && !scriptCheck.test(srtText)) {
-                    console.warn(`[auto-server] OpenSubtitles result for "${lang}" (${hit.label}) doesn't contain ${lang} script text — likely mislabeled, skipping`);
-                    continue;
-                }
 
                 const vttBlob = new Blob([srtToVtt(srtText)], { type: 'text/vtt' });
                 results.push({
