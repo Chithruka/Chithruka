@@ -87,3 +87,25 @@
 .server-panel-collapse #server-buttons{padding:2px 2px 14px;margin-top:2px}
 .server-toggle-bar.hidden,.server-panel-collapse.hidden{display:none!important}
 @media (max-width:640px){.server-toggle-text{font-size:.8rem}}
+
+/* ── Content Safety: blur adult posters unless "Include 18+" is enabled ── */
+.poster-img,.top-poster,.result-poster{transition:filter .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1)}
+.poster-img.adult-blurred,.top-poster.adult-blurred{filter:blur(20px) saturate(0.6);transform:scale(1.08)}
+.result-poster.adult-blurred{filter:blur(6px) saturate(0.6)}
+.poster-img.adult-blurred.adult-revealed,.top-poster.adult-blurred.adult-revealed{filter:blur(0) saturate(1);transform:scale(1)}
+.poster-wrapper,.top-10-card{isolation:isolate}
+.adult-reveal-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border:none;border-radius:50%;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;transition:opacity .3s ease,transform .2s ease,background .2s ease}
+.adult-reveal-btn svg{width:20px;height:20px}
+.adult-reveal-btn:hover{background:rgba(229,9,20,.85);transform:translate(-50%,-50%) scale(1.08)}
+.adult-reveal-btn.hidden{opacity:0;pointer-events:none;transform:translate(-50%,-50%) scale(.8)}
+.adult-badge{position:absolute;bottom:8px;left:8px;z-index:6;background:rgba(229,9,20,.92);color:#fff;font-size:9px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:4px;text-transform:uppercase;pointer-events:none}
+@media (max-width:767px){.adult-reveal-btn{width:38px;height:38px}.adult-reveal-btn svg{width:17px;height:17px}}
+
+/* ── Movie/TV detail page: blur hero backdrop, trailer & pinned poster ── */
+.detail-hero-media,#detail-poster{transition:filter .5s ease}
+.detail-hero-media.adult-blurred{filter:blur(28px) saturate(0.6)}
+#detail-poster.adult-blurred{filter:blur(22px) saturate(0.6)}
+.detail-adult-reveal-btn{width:56px;height:56px;z-index:15}
+.detail-adult-reveal-btn svg{width:26px;height:26px}
+.detail-adult-badge{top:16px;left:16px;bottom:auto;font-size:11px;padding:4px 9px;z-index:15}
+@media (min-width:768px){.detail-adult-badge{top:20px;left:24px}}
