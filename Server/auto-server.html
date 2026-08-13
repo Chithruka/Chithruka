@@ -207,8 +207,12 @@ function playDirect(sources) {
 function playDirectSourceAt(idx) {
     if (idx >= directList.length) { autoFallbackToEmbed('All direct sources failed'); return; }
 
-    directActiveIdx   = idx;
-    directStatus[idx] = 'fetching';
+    directActiveIdx = idx;
+    // Any other source still marked "playing"/"fetching" from before is no
+    // longer active now that we're switching away from it — reset it so
+    // the list doesn't keep showing every previously-played source as
+    // "playing" forever.
+    directStatus = directStatus.map((s, i) => i === idx ? 'fetching' : (s === 'playing' || s === 'fetching' ? 'idle' : s));
     renderServerList();
 
     const item = directList[idx];
@@ -568,7 +572,9 @@ function loadEmbed(idx) {
     const url  = buildEmbedUrl(TYPE === 'movie' ? prov.movie : prov.tv);
 
     spin(`Connecting to ${prov.name}…`);
-    embedStatus[idx] = 'fetching';
+    // Reset any other server still marked "playing"/"fetching" from a prior
+    // attempt now that it's no longer the active one.
+    embedStatus = embedStatus.map((s, i) => i === idx ? 'fetching' : (s === 'playing' || s === 'fetching' ? 'idle' : s));
     renderServerList();
     setLabel(`Embed · ${prov.name}`);
 
