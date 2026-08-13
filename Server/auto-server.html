@@ -268,9 +268,19 @@ async function addSubtitleTracks(player, source) {
         list.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
         return;
     }
+    // Live sources don't have OpenSubtitles-style entries, and the fetch
+    // chain below is slow (sequential search + download requests). If the
+    // player element gets disposed/reconfigured while it's still in flight,
+    // calling player.textTracks.add() afterwards on a stale element can
+    // throw deep inside Vidstack. Skip it outright for live sources.
+    if (source && source.live) return;
     if (!OPENSUBTITLES_API_KEY && !OPENSUBTITLES_PROXY_URL) return;
     try {
         const fetched = await fetchOpenSubtitles(TMDB, TYPE, SN, EP);
+        // The fetch above can take a while; if the user switched sources/
+        // servers meanwhile, `player` may be a disposed/stale element.
+        // Only attach tracks if it's still the one actually in use.
+        if (player !== mediaPlayer) return;
         fetched.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
     } catch (err) {
         console.warn('[auto-server] OpenSubtitles fetch failed:', err);
@@ -396,6 +406,16 @@ function renderDirectSourceNative(source, srcType, idx) {
         el.src = { src: `https://vimeo.com/${vid}`, type: 'video/vimeo' };
     } else {
         const isHLS = srcType === 'hls' || source.src.includes('.m3u8');
+
+        // Live sources need stream-type='live' or Vidstack treats the manifest
+        // like an on-demand video and waits indefinitely for VOD-style signals
+        // that a live stream never sends, leaving the buffering spinner stuck.
+        // Set as an ATTRIBUTE (not the `streamType` JS property) — Vidstack's
+        // docs configure this declaratively, and driving it through the same
+        // observed-attribute pipeline avoids poking the property setter
+        // directly, which can run provider-reconfig logic before the
+        // freshly (re)created element's provider is fully wired up.
+        el.setAttribute('stream-type', source.live ? 'live' : 'on-demand');
         el.src = { src: source.src, type: isHLS ? 'application/x-mpegurl' : 'video/mp4' };
     }
 
@@ -589,24 +609,27 @@ function clearEmbed() {
 }
 
 function disposePlayer() {
-    if (mediaPlayer) {
-        const oldEl = document.getElementById('media-player-el');
-        try { oldEl.src = null; } catch {}
-        mediaPlayer = null;
-        
-        const container = document.getElementById('player-container');
-        const newEl = document.createElement('media-player');
-        newEl.id = 'media-player-el';
-        newEl.style.display = 'none';
-        newEl.setAttribute('crossorigin', '');
-        newEl.setAttribute('playsinline', '');
-        newEl.setAttribute('log-level', 'warn');
-        newEl.setAttribute('title', 'Video');
-        newEl.innerHTML = '<media-provider></media-provider><media-video-layout thumbnails=""></media-video-layout>';
-
-container.insertBefore(newEl,document.getElementById('iframe-container'));
-        oldEl.remove();
-    }
+    // Previously this destroyed and recreated the whole <media-player>
+    // custom element on every source switch. That's a risky pattern with
+    // Vidstack's signals-based reactive core (see vidstack-CN2DhJ-S.js):
+    // the old instance's cleanup effects are scheduled via queueMicrotask,
+    // and if one of those fires *after* a brand-new instance has already
+    // reset shared/internal state, it can read from something that's now
+    // null deep inside the framework — which matches the crash we hit.
+    //
+    // Reusing a single persistent element and just clearing its source
+    // avoids tearing down/recreating the element (and its internal
+    // reactive graph) altogether, sidestepping that whole race.
+    if (!mediaPlayer) return;
+    const el = document.getElementById('media-player-el');
+    try { el.src = ''; } catch {}
+    // Clear any text tracks left over from the previous source so stale
+    // subtitle/chapter tracks don't linger onto the next one.
+    try {
+        const tracks = el.textTracks ? Array.from(el.textTracks) : [];
+        tracks.forEach(t => { try { el.textTracks.remove(t); } catch {} });
+    } catch {}
+    mediaPlayer = null;
 }
 
 function clearTimers() {
