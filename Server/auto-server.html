@@ -12,8 +12,8 @@ const AUTO_MS   = 0;
 const OPENSUBTITLES_API_KEY_B64 = 'a2ZQY1hXN0dKbllPUVlZMFk5ak5FZklPT2szUmM1RWw=';
 const OPENSUBTITLES_API_KEY   = atob(OPENSUBTITLES_API_KEY_B64);
 const OPENSUBTITLES_PROXY_URL = '';           
-const OPENSUBTITLES_LANGS     = 'en,si';      
-const OPENSUBTITLES_DEFAULT_LANG = 'en'; 
+const OPENSUBTITLES_LANGS     = 'si,en';      
+const OPENSUBTITLES_DEFAULT_LANG = 'si'; 
 const OPENSUBTITLES_MAX_PER_LANG = 2;
 const _p   = new URLSearchParams(window.location.search);
 const TMDB = _p.get('id')   || '';
@@ -262,10 +262,22 @@ function renderDirectSourceIframe(url, idx) {
     container.appendChild(wrapper);
 }
 
+// Sinhala language codes that count as a match when deciding which track
+// to mark as default.
+const SINHALA_LANG_CODES = ['si', 'sin', 'si-lk'];
+
+function isSinhala(lang) {
+    return SINHALA_LANG_CODES.includes(String(lang || '').toLowerCase());
+}
+
 async function addSubtitleTracks(player, source) {
     const list = Array.isArray(source && source.subtitles) ? source.subtitles : [];
     if (list.length) {
-        list.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+        // Prioritize Sinhala as the default track whenever one is present,
+        // regardless of whichever track the source data itself marked as
+        // default.
+        const hasSinhala = list.some(sub => isSinhala(sub.lang || sub.srclang));
+        list.forEach((sub, i) => addOneSubtitleTrack(player, sub, i, hasSinhala));
         return;
     }
     // Live sources don't have OpenSubtitles-style entries, and the fetch
@@ -281,20 +293,26 @@ async function addSubtitleTracks(player, source) {
         // servers meanwhile, `player` may be a disposed/stale element.
         // Only attach tracks if it's still the one actually in use.
         if (player !== mediaPlayer) return;
-        fetched.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+        const hasSinhala = fetched.some(sub => isSinhala(sub.lang));
+        fetched.forEach((sub, i) => addOneSubtitleTrack(player, sub, i, hasSinhala));
     } catch (err) {
         console.warn('[auto-server] OpenSubtitles fetch failed:', err);
     }
 }
 
-function addOneSubtitleTrack(player, sub, i) {
+function addOneSubtitleTrack(player, sub, i, preferSinhala) {
     if (!sub || !sub.src) return;
+    const lang = sub.lang || sub.srclang || 'en';
+    // If a Sinhala track exists in this batch, it wins the default slot;
+    // every other track in the batch is forced non-default so there's only
+    // ever one default track.
+    const isDefault = preferSinhala ? isSinhala(lang) : !!sub.default;
     player.textTracks.add({
         kind:     'subtitles',
         src:      sub.src,
-        language: sub.lang || sub.srclang || 'en',
+        language: lang,
         label:    sub.label || sub.lang || `Subtitle ${i + 1}`,
-        default:  !!sub.default,
+        default:  isDefault,
         type:     'vtt'
     });
 }
@@ -473,8 +491,14 @@ function buildDirectIframeUrl(s, srcType) {
             return vid ? `https://www.youtube.com/embed/${vid}?modestbranding=1&rel=0&autoplay=1` : null;
         }
         case 'dailymotion': {
-            let url = s.src.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
-            return appendParam(url, 'autoplay', '0');
+            const vid = extractDailymotionId(s.src);
+            const url = vid ? `https://www.dailymotion.com/embed/video/${vid}` : s.src;
+            // Preserve a playlist param from the original URL, if present —
+            // several library entries use ?playlist=xID to autoplay through
+            // a related-videos queue.
+            const playlistMatch = s.src.match(/[?&]playlist=([^&]+)/);
+            const withPlaylist = playlistMatch ? appendParam(url, 'playlist', playlistMatch[1]) : url;
+            return appendParam(withPlaylist, 'autoplay', '0');
         }
         case 'google-drive': {
             const m = s.src.match(/\/d\/(.+?)\//);
@@ -669,6 +693,16 @@ function extractYouTubeId(url) {
 
 function extractVimeoId(url) {
     const m = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return m ? m[1] : null;
+}
+
+function extractDailymotionId(url) {
+    // Matches every shape seen in the library: watch pages
+    // (dailymotion.com/video/xID), plain embed pages (dailymotion.com/embed/xID),
+    // explicit embed/video pages (dailymotion.com/embed/video/xID), and
+    // short links (dai.ly/xID). The optional "video/" segment covers both
+    // embed URL styles Dailymotion has used.
+    const m = url.match(/(?:dailymotion\.com\/(?:embed\/)?(?:video\/)?|dai\.ly\/)([a-zA-Z0-9]+)/);
     return m ? m[1] : null;
 }
 
