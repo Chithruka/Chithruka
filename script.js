@@ -636,7 +636,7 @@ section.classList.remove('hidden');container.innerHTML='';history.forEach(item=>
                         <span class="text-xs text-gray-500">Resume</span>
                     </div>
                 </div>
-            `;card.onclick=async()=>{await selectContent(item.tmdbId,item.title,item.mediaType);if(item.mediaType==='tv'){setTimeout(()=>{const seasonSelect=document.getElementById('season-select');if(seasonSelect)seasonSelect.value=item.season;changeSeason(item.season,item.episode)},800)}};container.appendChild(card)});updateScrollButtons(container)}
+            `;card.onclick=async()=>{await selectContent(item.tmdbId,item.title,item.mediaType,item.mediaType==='tv'?item.season:null,item.mediaType==='tv'?item.episode:null)};container.appendChild(card)});updateScrollButtons(container)}
 window.removeFromHistory=function(id,event){if(event)event.stopPropagation();let history=JSON.parse(localStorage.getItem('watch_history')||'[]');history=history.filter(h=>Number(h.tmdbId)!==Number(id));localStorage.setItem('watch_history',JSON.stringify(history));updateContinueWatchingUI()}
 function loadProgress(){updateContinueWatchingUI()}
 window.nextEpisode=function(){if(mediaType!=='tv')return;const sIndex=episodeData.findIndex(s=>s.season===currentSeason);if(sIndex===-1)return;let nextS=currentSeason,nextE=currentEpisode+1;if(nextE>episodeData[sIndex].episodes){if(episodeData[sIndex+1]){nextS=episodeData[sIndex+1].season;nextE=1;document.getElementById('season-select').value=nextS;changeSeason(nextS,nextE);showMessage(`Starting Season ${nextS}...`);return}else{showMessage("No more episodes.",!0);return}}
