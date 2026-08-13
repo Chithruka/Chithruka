@@ -405,6 +405,11 @@ function renderDirectSourceNative(source, srcType, idx) {
     el.title  = source.title  || directList[idx]?.label || 'Video';
     el.poster = source.poster || '';
 
+    // Wire the default video layout's thumbnail preview strip up to the
+    // per-source thumbnails VTT (falls back to none if not provided).
+    const layout = el.querySelector('media-video-layout');
+    if (layout) layout.thumbnails = source.thumbnails || '';
+
     mediaPlayer = el;
 
     const onLoadedData = () => {
@@ -428,6 +433,17 @@ function renderDirectSourceNative(source, srcType, idx) {
     el.addEventListener('error', onError);
 
     addSubtitleTracks(el, source);
+    addChapterTrack(el, source);
+}
+
+function addChapterTrack(player, source) {
+    if (!source || !source.chapters) return;
+    player.textTracks.add({
+        kind:    'chapters',
+        src:     source.chapters,
+        default: true,
+        type:    'vtt'
+    });
 }
 
 function buildDirectIframeUrl(s, srcType) {
