@@ -212,16 +212,16 @@ function updatePlayer() {
     
     if (currentServer === 'megaplay' || currentServer === 'anikoto') {
         iframe.src = `https://megaplay.buzz/stream/ani/${currentAnimeId}/${currentEp}/${audioMode}`;
-    } else if (currentServer === 'vidrock') {
-        iframe.src = `https://vidrock.ru/anime/${currentAnimeId}/${currentEp}/${audioMode}`;
+    } else if (currentServer === 'vidlink') {
+        iframe.src = `https://vidlink.pro/anime/${currentMalId}/${currentEp}/${audioMode}`;
     }
     
     document.getElementById('btn-sub').classList.toggle('active', audioMode === 'sub');
     document.getElementById('btn-dub').classList.toggle('active', audioMode === 'dub');
     
     document.getElementById('btn-server1').classList.toggle('active', currentServer === 'megaplay');
-    document.getElementById('btn-server2').classList.toggle('active', currentServer === 'vidrock');
     document.getElementById('btn-server3').classList.toggle('active', currentServer === 'anikoto');
+    document.getElementById('btn-server4').classList.toggle('active', currentServer === 'vidlink');
 }
 
 function setupSearch() {
