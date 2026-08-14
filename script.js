@@ -1038,3 +1038,102 @@ function renderLoadMoreButton(){
     };
     trendingPaginationEl.appendChild(btn);
 }
+window.openTorrentModal=async function(){
+  const modal=document.getElementById('torrent-modal');
+  const body=document.getElementById('torrent-modal-body');
+  if(!modal||!body)return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  window.toggleMobileNav(!0);
+
+  // Ensure we have an IMDb ID (fetched when detail page loaded)
+  let imdbId=IMDB_ID;
+  if(!imdbId&&TMDB_ID){
+    try{
+      const ext=await fetchCached(`${BASE_TMDB_URL}/${mediaType}/${TMDB_ID}/external_ids?api_key=${TMDB_API_KEY}`);
+      imdbId=ext.imdb_id||null;
+    }catch(e){console.warn('[Torrent] Could not resolve IMDb ID',e)}
+  }
+  if(!imdbId){
+    body.innerHTML='<p class="text-center text-gray-400 py-4">No IMDb ID available for this title.</p>';
+    return;
+  }
+
+  // Loading state
+  body.innerHTML=`<div class="flex items-center justify-center gap-2 py-6 text-gray-400">
+    <svg class="svg-icon animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M208 48a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm0 416a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zM48 208a48 48 0 1 1 0 96 48 48 0 1 1 0-96zm368 48a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zM75 369.1A48 48 0 1 1 142.9 437 48 48 0 1 1 75 369.1zM75 75A48 48 0 1 1 142.9 142.9 48 48 0 1 1 75 75zM437 369.1A48 48 0 1 1 369.1 437 48 48 0 1 1 437 369.1z"/></svg>
+    <span>Searching torrents…</span>
+  </div>`;
+
+  // Build torrentio URL
+  const streamId=mediaType==='tv'
+    ?`${imdbId}:${currentSeason}:${currentEpisode}`
+    :imdbId;
+  const torrentioUrl=`https://torrentio.strem.fun/stream/${mediaType==='tv'?'series':'movie'}/${streamId}.json`;
+
+  let streams=[];
+  try{
+    const res=await fetch(torrentioUrl);
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    streams=data.streams||[];
+  }catch(e){
+    console.error('[Torrent] Fetch failed',e);
+    body.innerHTML='<p class="text-center text-red-400 py-4">Failed to fetch torrent links. Try again later.</p>';
+    return;
+  }
+
+  if(streams.length===0){
+    body.innerHTML='<p class="text-center text-gray-400 py-4">No torrents found for this title.</p>';
+    return;
+  }
+
+  // Trackers used in generated magnet links
+  const TRACKERS=[
+    'udp://open.demonii.com:1337/announce',
+    'udp://tracker.openbittorrent.com:80/announce',
+    'udp://tracker.coppersurfer.tk:6969/announce',
+    'udp://glotorrents.pw:6969/announce',
+    'udp://tracker.opentrackr.org:1337/announce',
+    'udp://torrent.gresille.org:80/announce',
+    'udp://tracker.pirateparty.gr:6969/announce',
+    'udp://tracker.dler.org:6969/announce',
+  ].map(t=>`&tr=${encodeURIComponent(t)}`).join('');
+
+  body.innerHTML='';
+  streams.slice(0,20).forEach(stream=>{
+    const label=(stream.name||stream.title||'Torrent').replace(/\n/g,' – ');
+    const desc=(stream.description||stream.behaviorHints?.filename||'').replace(/\n/g,' · ').slice(0,120);
+
+    let href='#';
+    let isValid=!1;
+    if(stream.url){
+      href=stream.url;
+      isValid=!0;
+    }else if(stream.infoHash){
+      const dn=encodeURIComponent(stream.behaviorHints?.filename||stream.name||currentTitle||'');
+      const ix=stream.fileIdx!=null?`&so=${stream.fileIdx}`:'';
+      href=`magnet:?xt=urn:btih:${stream.infoHash}&dn=${dn}${ix}${TRACKERS}`;
+      isValid=!0;
+    }
+
+    const isMagnet=href.startsWith('magnet:');
+    const badge=isMagnet
+      ?`<span style="background:rgba(29,185,84,.15);color:#1db954;border:1px solid rgba(29,185,84,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full">MAGNET</span>`
+      :`<span style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full">DIRECT</span>`;
+
+    const el=document.createElement('a');
+    el.href=isValid?href:'#';
+    if(!isMagnet)el.target='_blank';
+    el.rel='noopener noreferrer';
+    el.className='flex flex-col gap-1 p-3 rounded-xl border border-gray-700 bg-gray-800/40 hover:bg-[#1db954]/10 hover:border-[#1db954]/50 transition-all cursor-pointer no-underline';
+    el.innerHTML=`
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-white font-semibold text-sm leading-snug truncate">${label}</span>
+        ${badge}
+      </div>
+      ${desc?`<span class="text-gray-400 text-xs truncate">${desc}</span>`:''}
+    `;
+    body.appendChild(el);
+  })
+};window.closeTorrentModal=function(){const modal=document.getElementById('torrent-modal');if(modal){modal.classList.add('hidden');document.body.style.overflow='';window.toggleMobileNav(!1)}};const torrentModalEl=document.getElementById('torrent-modal');if(torrentModalEl){torrentModalEl.addEventListener('click',e=>{if(e.target===torrentModalEl)closeTorrentModal();})}
