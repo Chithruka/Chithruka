@@ -1100,10 +1100,14 @@ window.openTorrentModal=async function(){
     'udp://tracker.dler.org:6969/announce',
   ].map(t=>`&tr=${encodeURIComponent(t)}`).join('');
 
+  // Escape helper for safe HTML injection
+  const escHtml=(s)=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
   body.innerHTML='';
   streams.slice(0,20).forEach(stream=>{
-    const label=(stream.name||stream.title||'Torrent').replace(/\n/g,' – ');
-    const desc=(stream.description||stream.behaviorHints?.filename||'').replace(/\n/g,' · ').slice(0,120);
+    const rawTitle=stream.title||stream.description||'';
+    const label=(stream.name||'Torrent').replace(/\n/g,' – ');
+    const rawMeta=rawTitle.replace(/\n/g,' · ');
 
     let href='#';
     let isValid=!1;
@@ -1119,20 +1123,84 @@ window.openTorrentModal=async function(){
 
     const isMagnet=href.startsWith('magnet:');
     const badge=isMagnet
-      ?`<span style="background:rgba(29,185,84,.15);color:#1db954;border:1px solid rgba(29,185,84,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full">MAGNET</span>`
-      :`<span style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full">DIRECT</span>`;
+      ?`<span style="background:rgba(29,185,84,.15);color:#1db954;border:1px solid rgba(29,185,84,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">MAGNET</span>`
+      :`<span style="background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.4)" class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">DIRECT</span>`;
+
+    // ── Extract whatever fields are available from the stream payload ──
+    const filename=stream.behaviorHints?.filename||'';
+    const fileSizeRaw=stream.behaviorHints?.videoSize;
+    const sizeMatch=rawTitle.match(/💾\s*([\d.,]+\s*(?:GB|MB|TB))/i)||rawTitle.match(/([\d.,]+\s*(?:GB|MB|TB))/i);
+    const fileSize=fileSizeRaw?`${(fileSizeRaw/1073741824).toFixed(2)} GB`:(sizeMatch?sizeMatch[1]:null);
+
+    const seedMatch=rawTitle.match(/👤\s*(\d+)/)||rawTitle.match(/(?:seeds?|seeders?)[:\s]*(\d+)/i);
+    const seeders=seedMatch?seedMatch[1]:null;
+
+    const trackerMatch=rawTitle.match(/⚙️\s*([^\n·]+)/);
+    const tracker=trackerMatch?trackerMatch[1].trim():(stream.name?stream.name.split(/[\n·]/)[0].trim():null);
+
+    const codecMatch=rawTitle.match(/\b(x264|x265|HEVC|AVC|AV1|H\.?264|H\.?265)\b/i);
+    const codec=codecMatch?codecMatch[1]:null;
+
+    const qualityMatch=rawTitle.match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i)||label.match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i);
+    const quality=qualityMatch?qualityMatch[1]:null;
+
+    const langFlags=(rawTitle.match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu)||[]).join(' ');
+    const langMatch=rawTitle.match(/🌐\s*([^\n·]+)/);
+    const languages=[langFlags,langMatch?langMatch[1].trim():''].filter(Boolean).join(' ')||null;
+
+    const subs=Array.isArray(stream.subtitles)&&stream.subtitles.length
+      ?stream.subtitles.map(s=>s.lang||s.id||JSON.stringify(s)).join(', ')
+      :null;
+
+    const debridStatus=stream.url
+      ?(/cached|debrid|rd|premiumize|ad\b/i.test(label+rawTitle)?'Cached (Debrid)':'Direct/Debrid Link')
+      :'P2P (Magnet — not cached)';
+
+    const behaviorHintsRest=stream.behaviorHints
+      ?Object.entries(stream.behaviorHints).filter(([k])=>k!=='filename').map(([k,v])=>`${k}: ${typeof v==='object'?JSON.stringify(v):v}`).join(' | ')
+      :null;
+
+    // ── Build labeled rows for every field that has data (Provider Name shown in title, not repeated here) ──
+    const rows=[
+      ['Raw Metadata String', rawMeta||null],
+      ['Direct Web URL', stream.url||null],
+      ['Streaming Format', isMagnet?'BitTorrent (Magnet)':'Direct Stream/HTTP'],
+      ['BitTorrent InfoHash', stream.infoHash||null],
+      ['File Index', stream.fileIdx!=null?String(stream.fileIdx):null],
+      ['Subtitles', subs],
+      ['Behavior Hints', behaviorHintsRest],
+      ['Torrent File Name', filename||null],
+      ['File Size', fileSize],
+      ['Active Seeders', seeders],
+      ['Languages', languages],
+      ['Tracker/Codec', [tracker,codec].filter(Boolean).join(' / ')||null],
+      ['Debrid Status', debridStatus],
+    ].filter(([,v])=>v);
+
+    const rowsHtml=rows.map(([k,v])=>`
+      <div class="flex flex-col gap-0.5 py-1.5 border-b border-white/5 last:border-b-0">
+        <span class="text-[10px] uppercase tracking-wide font-bold text-gray-500">${escHtml(k)}</span>
+        <span class="text-xs text-gray-200 break-all leading-relaxed">${escHtml(v)}</span>
+      </div>
+    `).join('');
+
+    // Combined title: Provider Name - Resolution - Size (strip quality from label if it's already embedded there)
+    const qualityRe=/\b(4K|2160p|1080p|720p|480p|360p)\b/ig;
+    const labelClean=label.replace(qualityRe,'').replace(/\s{2,}/g,' ').replace(/[\s\-–|]+$/,'').trim();
+    const titleParts=[labelClean||label,quality,fileSize].filter(Boolean);
+    const cardTitle=titleParts.join(' - ');
 
     const el=document.createElement('a');
     el.href=isValid?href:'#';
     if(!isMagnet)el.target='_blank';
     el.rel='noopener noreferrer';
-    el.className='flex flex-col gap-1 p-3 rounded-xl border border-gray-700 bg-gray-800/40 hover:bg-[#1db954]/10 hover:border-[#1db954]/50 transition-all cursor-pointer no-underline';
+    el.className='flex flex-col gap-1 p-3 rounded-xl border border-gray-700 bg-gray-800/40 hover:bg-[#1db954]/10 hover:border-[#1db954]/50 transition-all cursor-pointer no-underline w-full';
     el.innerHTML=`
       <div class="flex items-center justify-between gap-2">
-        <span class="text-white font-semibold text-sm leading-snug truncate">${label}</span>
+        <span class="text-white font-semibold text-sm leading-snug break-words min-w-0">${escHtml(cardTitle)}</span>
         ${badge}
       </div>
-      ${desc?`<span class="text-gray-400 text-xs truncate">${desc}</span>`:''}
+      <div class="flex flex-col w-full">${rowsHtml}</div>
     `;
     body.appendChild(el);
   })
