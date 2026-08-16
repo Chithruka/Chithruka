@@ -1076,7 +1076,16 @@ window.openTorrentModal=async function(){
     const res=await fetch(torrentioUrl);
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const data=await res.json();
-    streams=data.streams||[];
+    const rawStreams=data.streams||[];
+    const seenKeys=new Set();
+    streams=rawStreams.filter(s=>{
+      const key=s.infoHash
+        ?`${s.infoHash}::${s.fileIdx??''}`
+        :(s.url||JSON.stringify(s));
+      if(seenKeys.has(key))return false;
+      seenKeys.add(key);
+      return true;
+    });
   }catch(e){
     console.error('[Torrent] Fetch failed',e);
     body.innerHTML='<p class="text-center text-red-400 py-4">Failed to fetch torrent links. Try again later.</p>';
@@ -1132,28 +1141,15 @@ window.openTorrentModal=async function(){
     const sizeMatch=rawTitle.match(/💾\s*([\d.,]+\s*(?:GB|MB|TB))/i)||rawTitle.match(/([\d.,]+\s*(?:GB|MB|TB))/i);
     const fileSize=fileSizeRaw?`${(fileSizeRaw/1073741824).toFixed(2)} GB`:(sizeMatch?sizeMatch[1]:null);
 
-    const seedMatch=rawTitle.match(/👤\s*(\d+)/)||rawTitle.match(/(?:seeds?|seeders?)[:\s]*(\d+)/i);
-    const seeders=seedMatch?seedMatch[1]:null;
-
-    const trackerMatch=rawTitle.match(/⚙️\s*([^\n·]+)/);
-    const tracker=trackerMatch?trackerMatch[1].trim():(stream.name?stream.name.split(/[\n·]/)[0].trim():null);
-
-    const codecMatch=rawTitle.match(/\b(x264|x265|HEVC|AVC|AV1|H\.?264|H\.?265)\b/i);
-    const codec=codecMatch?codecMatch[1]:null;
-
     const qualityMatch=rawTitle.match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i)||label.match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i);
     const quality=qualityMatch?qualityMatch[1]:null;
-
-    const langFlags=(rawTitle.match(/[\u{1F1E6}-\u{1F1FF}]{2}/gu)||[]).join(' ');
-    const langMatch=rawTitle.match(/🌐\s*([^\n·]+)/);
-    const languages=[langFlags,langMatch?langMatch[1].trim():''].filter(Boolean).join(' ')||null;
 
     const subs=Array.isArray(stream.subtitles)&&stream.subtitles.length
       ?stream.subtitles.map(s=>s.lang||s.id||JSON.stringify(s)).join(', ')
       :null;
 
     const debridStatus=stream.url
-      ?(/cached|debrid|rd|premiumize|ad\b/i.test(label+rawTitle)?'Cached (Debrid)':'Direct/Debrid Link')
+      ?(/cached|debrid|rd|premiumize|ad\b/i.test(label)?'Cached (Debrid)':'Direct/Debrid Link')
       :'P2P (Magnet — not cached)';
 
     const behaviorHintsRest=stream.behaviorHints
@@ -1170,10 +1166,6 @@ window.openTorrentModal=async function(){
       ['Subtitles', subs],
       ['Behavior Hints', behaviorHintsRest],
       ['Torrent File Name', filename||null],
-      ['File Size', fileSize],
-      ['Active Seeders', seeders],
-      ['Languages', languages],
-      ['Tracker/Codec', [tracker,codec].filter(Boolean).join(' / ')||null],
       ['Debrid Status', debridStatus],
     ].filter(([,v])=>v);
 
