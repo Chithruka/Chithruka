@@ -13,23 +13,6 @@ window.addEventListener('unhandledrejection', (e) => {
 
 const VIDEOS_JSON_PATH = 'videos.json';
 
-// Same-origin Cloudflare Pages Function proxy (functions/api/hls-proxy.js).
-// Works automatically once deployed on Cloudflare Pages — no external URL
-// needed since it's served from your own domain. Leave empty to disable
-// proxying (sources requested directly).
-const HLS_PROXY_URL = '/api/hls-proxy';
-
-// Wraps a stream URL so it's fetched through the Worker instead of directly.
-// The worker fetches on our behalf, adds permissive CORS headers, and
-// rewrites any relative segment/key URIs inside .m3u8 playlists so they also
-// route back through the proxy.
-function proxify(url) {
-    if (!HLS_PROXY_URL || !url) return url;
-    // Don't double-wrap something that's already pointed at the proxy.
-    if (url.startsWith(HLS_PROXY_URL)) return url;
-    return HLS_PROXY_URL.replace(/\/$/, '') + '/?url=' + encodeURIComponent(url);
-}
-
 const EMBED_PROVIDERS = [
     { name: 'RiveStream',  movie: 'https://www.rivestream.ru/embed?type=movie&id=[ID]',  tv: 'https://www.rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]' },
 ];
@@ -466,8 +449,7 @@ function renderDirectSourceNative(source, srcType, idx) {
         // directly, which can run provider-reconfig logic before the
         // freshly (re)created element's provider is fully wired up.
         el.setAttribute('stream-type', source.live ? 'live' : 'on-demand');
-        const playbackSrc = isHLS ? proxify(source.src) : source.src;
-        el.src = { src: playbackSrc, type: isHLS ? 'application/x-mpegurl' : 'video/mp4' };
+        el.src = { src: source.src, type: isHLS ? 'application/x-mpegurl' : 'video/mp4' };
     }
 
     // Keep title/poster in sync with whatever source is playing so the
