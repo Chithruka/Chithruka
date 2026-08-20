@@ -14,8 +14,12 @@ window.addEventListener('unhandledrejection', (e) => {
 const VIDEOS_JSON_PATH = 'videos.json';
 
 const EMBED_PROVIDERS = [
-    { name: 'RiveStream',  movie: 'https://www.rivestream.ru/embed?type=movie&id=[ID]',  tv: 'https://www.rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]' },
+    { name: 'PStream',  movie: 'https://pstream.cfd/media/tmdb-movie-[ID]',  tv: null /* resolved async via TMDB */ },
 ];
+
+// TMDB API key used to resolve PStream TV URLs (season.id + episode.id)
+const PSTREAM_TMDB_API_KEY = '3a73619bbb8fc6d47742d1b5b2b707b5';
+const PSTREAM_BASE = 'https://pstream.cfd';
 
 const SLOW_MS   = 8000;
 const AUTO_MS   = 0;
@@ -580,13 +584,29 @@ function flashTab(id) {
     setTimeout(() => el.style.opacity = '', 600);
 }
 
-function loadEmbed(idx) {
+async function loadEmbed(idx) {
     clearTimers();
     if (idx < 0 || idx >= EMBED_PROVIDERS.length) return;
 
     provIdx = idx;
     const prov = EMBED_PROVIDERS[idx];
-    const url  = buildEmbedUrl(TYPE === 'movie' ? prov.movie : prov.tv);
+
+    let url;
+    if (TYPE === 'movie') {
+        url = buildEmbedUrl(prov.movie);
+    } else if (prov.tv === null) {
+        // PStream TV: resolve season.id + episode.id from TMDB
+        spin(`Connecting to ${prov.name}…`);
+        url = await buildPStreamTvUrl();
+        if (!url) {
+            embedStatus[idx] = 'error';
+            renderServerList();
+            tryNextEmbed();
+            return;
+        }
+    } else {
+        url = buildEmbedUrl(prov.tv);
+    }
 
     spin(`Connecting to ${prov.name}…`);
     // Reset any other server still marked "playing"/"fetching" from a prior
@@ -688,6 +708,30 @@ function clearTimers() {
 
 function buildEmbedUrl(t) {
     return t.replace(/\[ID\]/g, TMDB).replace(/\[S\]/g, SN).replace(/\[E\]/g, EP);
+}
+
+// Resolves the correct PStream TV URL by fetching season details from TMDB
+// to get the internal season.id and episode.id required by PStream.
+async function buildPStreamTvUrl() {
+    const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    try {
+        // Fetch show details to get the slug
+        const showRes = await fetch(`https://api.themoviedb.org/3/tv/${TMDB}?api_key=${PSTREAM_TMDB_API_KEY}`);
+        const showData = await showRes.json();
+        const slug = slugify(showData.name || String(TMDB));
+
+        // Fetch season details to get season.id and episode.id
+        const seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${TMDB}/season/${SN}?api_key=${PSTREAM_TMDB_API_KEY}`);
+        const seasonData = await seasonRes.json();
+        const seasonId = seasonData.id;
+        const epObj = (seasonData.episodes || []).find(e => String(e.episode_number) === String(EP));
+        if (!seasonId || !epObj) return null;
+
+        return `${PSTREAM_BASE}/media/tmdb-tv-${TMDB}-${slug}/${seasonId}/${epObj.id}`;
+    } catch (e) {
+        console.warn('[auto-server] PStream TV URL resolution failed:', e);
+        return null;
+    }
 }
 
 function detectType(src) {
