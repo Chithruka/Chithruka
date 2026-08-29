@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix</title>
+    
+    <link href='https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico' rel='shortcut icon' type='image/x-icon'/>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://image.tmdb.org">
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=5">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<div id="page-background"></div>
+
+<div class="container mx-auto px-4">
+
+   <nav class="navbar">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" 
+     class="logo-img h-8 md:h-12 cursor-pointer" 
+     alt="Netflix Logo" 
+     onclick="location.href='index.html';">
+
+        <div class="ai-btn-wrapper" onclick="toggleAIModal()">
+            <div class="outer-cont ai-flex-row">
+                <svg viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="none">
+                        <path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z"></path>
+                        <path d="M9.107 5.448c.598-1.75 3.016-1.803 3.725-.159l.06.16l.807 2.36a4 4 0 0 0 2.276 2.411l.217.081l2.36.806c1.75.598 1.803 3.016.16 3.725l-.16.06l-2.36.807a4 4 0 0 0-2.412 2.276l-.081.216l-.806 2.361c-.598 1.75-3.016 1.803-3.724.16l-.062-.16l-.806-2.36a4 4 0 0 0-2.276-2.412l-.216-.081l-2.36-.806c-1.751-.598-1.804-3.016-.16-3.724l.16-.062l2.36-.806A4 4 0 0 0 8.22 8.025l.081-.216zM11 6.094l-.806 2.36a6 6 0 0 1-3.49 3.649l-.25.091l-2.36.806l2.36.806a6 6 0 0 1 3.649 3.49l.091.25l.806 2.36l.806-2.36a6 6 0 0 1 3.49-3.649l.25-.09l2.36-.807l-2.36-.806a6 6 0 0 1-3.649-3.49l-.09-.25zM19 2a1 1 0 0 1 .898.56l.048.117l.35 1.026l1.027.35a1 1 0 0 1 .118 1.845l-.118.048l-1.026.35l-.35 1.027a1 1 0 0 1-1.845.117l-.048-.117l-.35-1.026l-1.027-.35a1 1 0 0 1-.118-1.845l.118-.048l1.026-.35l.35-1.027A1 1 0 0 1 19 2" fill="currentColor"></path>
+                    </g>
+                </svg>
+                Ask AI
+            </div>
+        </div>
+
+        <div class="search-group">
+            <button onclick="openFilterModal()" class="filter-btn" title="Filter Content">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+            <div class="relative w-full max-w-[300px] flex-grow">
+                <input type="text" id="search-input" class="glass-input" placeholder="Search...">
+                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+                <ul id="search-results" class="glass-panel"></ul>
+            </div>
+        </div>
+
+        <div id="user-section" class="relative">
+            <button id="tmdb-login-btn" onclick="authenticateTMDB()" class="login-btn" title="Login">
+    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+</button>
+            <img id="user-avatar" src="" class="user-avatar hidden" onclick="toggleUserMenu()">
+            <div id="user-menu" class="user-menu">
+                <div class="user-menu-item" onclick="loadMyLibrary('favorite')"><i class="fas fa-heart text-red-500 mr-2"></i> Favorites</div>
+                <div class="user-menu-item" onclick="loadMyLibrary('watchlist')"><i class="fas fa-bookmark text-blue-500 mr-2"></i> Watchlist</div>
+                <div class="user-menu-item" onclick="logoutTMDB()"><i class="fas fa-sign-out-alt text-gray-400 mr-2"></i> Logout</div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="hero-section">
+        <div id="hero-slides"></div>
+        <div id="hero-indicators" class="hero-indicators"></div>
+    </div>
+    
+    <div id="continue-watching-section" class="mb-12 relative hidden">
+            <div class="flex justify-between items-center px-2 mb-4 md:mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-white flex items-center section-title">
+                    Continue Watching
+                </h2>
+                <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-red-500 px-3 py-1 rounded-full transition-colors">
+                    Clear All
+                </button>
+            </div>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('continue-watching-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="continue-watching-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('continue-watching-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-12 relative" id="top10-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title">
+            Top 10 Trending
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('top10-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="top10-container" class="flex flex-nowrap gap-6 pl-4 overflow-x-auto pb-8 scrollbar-hide scroll-smooth">
+                </div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('top10-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="mb-12 relative" id="trailers-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title">
+            Latest Trailers
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trailers-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="trailers-container" class="flex flex-nowrap gap-6 pl-4 overflow-x-auto pb-8 scrollbar-hide scroll-smooth"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trailers-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+ <div id="quote-section" class="mb-16 relative">
+    <h2 class="text-xl md:text-2xl font-bold mb-8 text-white flex items-center px-2 section-title">
+        Iconic Lines
+    </h2>
+
+    <div class="flex justify-center w-full px-4">
+        <div class="quote-slider-wrapper relative">
+            <button onclick="prevQuote()" class="nav-arrow left-arrow">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <div id="quote-card" class="card" onclick="openQuoteMovie()">
+                <div class="content">
+                    <div class="header">
+                        <strong id="q-char" class="text-red-500 text-lg md:text-xl">Character Name</strong>
+                        <p id="q-movie" class="para text-sm text-gray-400">Movie Title (Year)</p>
+                    </div>
+                    
+                    <div class="footer mt-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 330 307" height="80" width="80" class="text-gray-700 mb-4 opacity-50">
+                            <path d="M302.258 176.221C320.678 176.221 329.889 185.432 329.889 203.853V278.764C329.889 297.185 320.678 306.395 302.258 306.395H231.031C212.61 306.395 203.399 297.185 203.399 278.764V203.853C203.399 160.871 207.902 123.415 216.908 91.4858C226.323 59.1472 244.539 30.902 271.556 6.75027C280.562 -1.02739 288.135 -2.05076 294.275 3.68014L321.906 29.4692C328.047 35.2001 326.614 42.1591 317.608 50.3461C303.69 62.6266 292.228 80.4334 283.223 103.766C274.626 126.69 270.328 150.842 270.328 176.221H302.258ZM99.629 176.221C118.05 176.221 127.26 185.432 127.26 203.853V278.764C127.26 297.185 118.05 306.395 99.629 306.395H28.402C9.98126 306.395 0.770874 297.185 0.770874 278.764V203.853C0.770874 160.871 5.27373 123.415 14.2794 91.4858C23.6945 59.1472 41.9106 30.902 68.9277 6.75027C77.9335 -1.02739 85.5064 -2.05076 91.6467 3.68014L119.278 29.4692C125.418 35.2001 123.985 42.1591 114.98 50.3461C101.062 62.6266 89.6 80.4334 80.5942 103.766C71.9979 126.69 67.6997 150.842 67.6997 176.221H99.629Z"></path>
+                        </svg>
+                        <p id="q-text" class="para text-xl md:text-3xl font-serif italic text-white leading-relaxed">
+                            "Loading iconic quote..."
+                        </p>
+                        <button class="button mt-6">
+                            <span id="q-actor" class="actor text-sm uppercase tracking-widest text-gray-500">Watch Now</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="nextQuote()" class="nav-arrow right-arrow">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8">
+        <div class="flex flex-col md:flex-row gap-8 md:items-start">
+            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52 detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
+                <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover" loading="lazy">
+            </div>
+            <div class="flex-grow min-w-0">
+                <img id="detail-logo" src="" alt="Title Logo" class="title-logo" loading="lazy">
+                <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white"></h2>
+    
+                <p id="detail-tagline" class="text-gray-400 italic text-sm md:text-base mb-4"></p>
+                
+                <div class="flex flex-wrap items-center gap-4 md:gap-5 text-sm text-gray-300 mb-6">
+                    <span id="detail-date" class="flex items-center cursor-pointer hover:text-accent transition" title="Filter by Year"><i class="far fa-calendar-alt mr-2 text-accent"></i> <span></span></span>
+                    <span id="detail-rating" class="flex items-center cursor-pointer hover:text-yellow-400 transition" title="Filter by Rating"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
+                    <span id="detail-runtime" class="flex items-center"><i class="far fa-clock mr-2"></i> <span></span></span>
+                    <span id="detail-status" class="flex items-center text-green-400 font-semibold"><i class="fas fa-info-circle mr-2"></i><span></span></span>
+                    
+                    <span id="detail-country" class="flex items-center hidden cursor-pointer hover:text-blue-400 transition"><i class="fas fa-globe mr-2"></i> <span></span></span>
+                    <span id="detail-age" class="flex items-center hidden px-2 py-0.5 border border-gray-500 rounded text-xs font-bold"><span></span></span>
+                </div>
+
+                <div id="interaction-bar" class="interaction-bar hidden">
+                    <div id="btn-favorite" onclick="toggleFavorite()" class="interact-btn" title="Add to Favorites"><i class="fa-regular fa-heart"></i></div>
+                    <div id="btn-watchlist" onclick="toggleWatchlist()" class="interact-btn" title="Add to Watchlist"><i class="fa-regular fa-bookmark"></i></div>
+                    <div onclick="toggleRatingSlider()" class="interact-btn" title="Rate this"><i class="fas fa-star"></i></div>
+                        <button class="interaction-btn" onclick="shareMovie()" aria-label="Share">
+                            <i class="fa-solid fa-share-nodes"></i>
+                            <span>Share</span>
+                        </button>
+                    
+                    <div id="toast" class="toast">Link copied to clipboard!</div>
+                    <div id="rating-slider" class="rating-slider-container">
+                        <input type="range" min="1" max="10" step="0.5" id="rating-input" oninput="document.getElementById('rating-val').innerText = this.value">
+                        <span id="rating-val" class="text-sm font-bold text-yellow-400 w-6">5</span>
+                        <button onclick="submitRating()" class="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/40">OK</button>
+                    </div>
+                </div>
+                <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
+                <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
+
+                <div id="cast-container" class="mt-4">
+                    <h4 class="section-title text-lg md:text-xl mb-4">Top Cast</h4>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('cast-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="cast-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('cast-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+<div id="soundtrack-section" class="mt-4 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Official Soundtrack</h4>
+    <div class="glass-panel p-0 rounded-xl overflow-hidden relative bg-black/40">
+        <div id="soundtrack-embed-container" class="w-full"></div>
+        
+        <div class="p-3 text-center bg-black/50">
+            <a id="soundtrack-link" href="#" target="_blank" class="text-xs text-gray-400 hover:text-pink-400 transition-colors">
+                <i class="fas fa-external-link-alt mr-1"></i> Open Music
+            </a>
+        </div>
+    </div>
+</div>
+                <div id="crew-container" class="mt-6 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Behind the Scenes</h4>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('crew-list', -200)"><i class="fas fa-chevron-left"></i></button>
+                        <div id="crew-list" class="cast-scroll scrollbar-hide scroll-smooth"></div>
+                        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('crew-list', 200)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+<div id="gallery-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Gallery & Wallpapers</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('gallery-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="gallery-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('gallery-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+<div id="logos-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Official Logos</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('logos-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="logos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('logos-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+<div id="videos-container" class="mt-8 hidden">
+    <h4 class="section-title text-lg md:text-xl mb-4">Trailers & More</h4>
+    <div class="relative group">
+        <button class="scroll-btn left-0 -ml-2" onclick="scrollContainer('videos-list', -300)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <div id="videos-list" class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide scroll-smooth"></div>
+        
+        <button class="scroll-btn right-0 -mr-2" onclick="scrollContainer('videos-list', 300)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h5><i class="fas fa-building mr-2"></i> Production</h5>
+                        <div id="production-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-calendar-check mr-2"></i> Release Dates</h5>
+                        <div id="release-dates-list" class="info-list"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-language mr-2"></i> Alt. Titles</h5>
+                        <div id="alt-titles-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                    <div class="info-block">
+                        <h5><i class="fas fa-cogs mr-2"></i> Tech Specs</h5>
+                        <div id="tech-specs-list" class="info-list text-sm text-gray-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="player-interface" class="hidden fade-in">
+        <div class="mb-6 rounded-xl overflow-hidden shadow-2xl relative bg-black border border-gray-800">
+             <div id="server-loading-msg" class="hidden"></div>
+             <iframe id="player-iframe" allowfullscreen onerror="handleServerError()"></iframe>
+        </div>
+
+        <div class="glass-panel p-4 rounded-xl mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div id="server-buttons" class="flex flex-wrap gap-2"></div>
+            <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                <button id="next-ep-btn" onclick="nextEpisode()" class="action-btn btn-next flex-grow md:flex-grow-0 hidden shadow-lg">
+                    <i class="fas fa-step-forward mr-2"></i> Next
+                </button>
+                <button onclick="openDownloadModal()" class="action-btn btn-download flex-grow md:flex-grow-0 shadow-lg">
+                    <i class="fas fa-download mr-2"></i> Download
+                </button>
+            </div>
+        </div>
+
+        <div id="tv-controls" class="hidden mb-12">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs text-gray-400 ml-1">Select Season</label>
+                    <div id="season-status-badge" class="text-xs font-bold px-2 py-1 rounded bg-white/10 hidden"></div>
+                </div>
+                <select id="season-select" class="glass-select w-full p-3 rounded-xl font-bold text-white cursor-pointer" onchange="changeSeason(this.value)">
+                    </select>
+            </div>
+
+            <div class="accordion-header" onclick="toggleAccordion()">
+                <span id="current-episode-info" class="font-semibold">Select an Episode</span>
+                <i id="accordion-icon" class="fas fa-chevron-down text-gray-400"></i>
+            </div>
+            <div id="episode-accordion-content" class="accordion-content"></div>
+        </div>
+    </div>
+
+    <div id="collection-section" class="mb-8 relative hidden">
+        <h2 id="collection-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title">
+            Collection
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('collection-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="collection-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('collection-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="recommendations-section" class="mb-8 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title">
+            You May Also Like
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('recommendations-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="recommendations-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('recommendations-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+<div id="similar-section" class="mb-8 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            More Like This
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('similar-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="similar-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('similar-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+    <div class="mb-12 relative">
+        <h2 id="trending-header" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-white flex items-center px-2 section-title">
+            Trending Now
+        </h2>
+        <div class="relative group px-2">
+            <button id="scroll-left" class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button id="scroll-right" class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="person-details-container" class="hidden mt-8 mx-2 md:mx-4 glass-panel p-6 rounded-xl animate-fade-in">
+            </div>
+
+    </div>
+</div>
+
+<footer class="relative bg-black/90 backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10">
+    <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent"></div>
+
+    <div class="container mx-auto px-6 max-w-7xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            
+            <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                <p class="text-gray-400 text-sm mb-6 max-w-xs leading-relaxed">
+                    Your ultimate destination for movies & TV. Streaming perfection, curated just for you.
+                </p>
+                
+                <div id="user-country" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300 hover:bg-white/10 transition-colors">
+                    <i class="fas fa-globe text-blue-500 animate-pulse"></i> Locating...
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center md:items-start">
+                <h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3>
+                <ul class="space-y-3 text-sm text-gray-400 w-full text-center md:text-left">
+                    <li><a href="#" onclick="location.href='index.html';" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fas fa-home text-xs opacity-50"></i> Home</a></li>
+                    <li><a href="Maturity-Ratings.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fa-brands fa-markdown text-xs opacity-50"></i> Maturity ratings</a></li>
+                    <li><a href="#" onclick="openFilterModal()" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fa-solid fa-filter text-xs opacity-50"></i> Filter</a></li>
+                    <li><a href="credits.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2"><i class="fa-solid fa-triangle-exclamation text-xs opacity-50"></i> Disclaimer</a></li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col items-center md:items-start">
+                 <h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">App & Legal</h3>
+                 
+                 <button id="install-app-btn" onclick="installPWA()" class="hidden w-full md:w-auto flex items-center justify-center gap-4 bg-white/5 hover:bg-red-600 text-white px-5 py-3 rounded-xl transition-all duration-300 group mb-6 border border-white/10 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20">
+                    <i class="fab fa-android text-2xl group-hover:scale-110 transition-transform"></i>
+                    <i class="fa-solid fa-slash"></i>
+                    <i class="fa-solid fa-desktop text-2xl group-hover:scale-110 transition-transform"></i>
+                    <div class="text-left">
+                        <div class="text-[10px] uppercase opacity-60 font-bold leading-none mb-1">Download for</div>
+                        <div class="font-bold text-sm leading-none">Android \ PC</div>
+                    </div>
+                </button>
+
+                <p class="text-xs text-gray-500 leading-relaxed text-center md:text-left max-w-xs">
+                    This site does not store any files on its server. All contents are provided by <a style="color: #e43a43;" href="credits.html">non-affiliated third parties</a>.
+                </p>
+            </div>
+        </div>
+
+        <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p class="text-xs text-gray-500 font-medium">
+                &copy; <span id="footer-year"></span> Netflix. All Rights Reserved.
+            </p>
+            
+            <div class="flex gap-4">
+    <a href="Sports/sports.html" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+       <i class="fa-solid fa-baseball-bat-ball"></i>
+    </a>
+                
+    <a href="TV/tv.html" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+        <i class="fa-solid fa-tv"></i>
+    </a>
+    
+    <a href="Radio/radio.html" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+        <i class="fa-solid fa-radio"></i>
+    </a>
+<a href="Books/Books.html" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+        <i class="fa-solid fa-book"></i>
+    </a>
+                <a href="Games/Games.html" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+        <i class="fa-solid fa-gamepad"></i>
+                </a>
+    <a onclick="window.scrollTo({top:0, behavior:'smooth'})" class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300">
+        <i class="fa-solid fa-angles-up"></i>
+    </a>
+</div>
+        </div>
+    </div>
+</footer>
+
+<div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
+        <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="section-title text-xl font-bold mb-4 text-center text-white">Discover</h3>
+        <div class="flex flex-col gap-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Type</label>
+                <select id="filter-type" class="glass-select w-full p-2 rounded-lg" onchange="loadGenres()">
+                    <option value="movie">Movie</option>
+                    <option value="tv">TV Show</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Genre</label>
+                <select id="filter-genre" class="glass-select w-full p-2 rounded-lg">
+                    <option value="">Any Genre</option>
+                </select>
+            </div>
+
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Country</label>
+                    <select id="filter-country" class="glass-select w-full p-2 rounded-lg">
+                        <option value="">Any Country</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Language</label>
+                    <select id="filter-language" class="glass-select w-full p-2 rounded-lg">
+                        <option value="">Any Language</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Year</label>
+                    <input type="number" id="filter-year" class="glass-input w-full p-2 rounded-lg" placeholder="2023">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">Min Rating</label>
+                    <input type="number" step="0.1" id="filter-rating" class="glass-input w-full p-2 rounded-lg" placeholder="8.0">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Sort By</label>
+                <select id="filter-sort" class="glass-select w-full p-2 rounded-lg">
+                    <option value="popularity.desc">Most Popular</option>
+                    <option value="vote_average.desc">Top Rated</option>
+                    <option value="primary_release_date.desc">Newest First</option>
+                    <option value="primary_release_date.asc">Oldest First</option>
+                    <option value="revenue.desc">Box Office</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10">
+                <span class="text-xs text-gray-400">Content Safety</span>
+                <label class="flex items-center cursor-pointer gap-2">
+                    <span class="text-xs text-gray-300 font-semibold">Include 18+</span>
+                    <input type="checkbox" id="filter-adult" class="w-4 h-4 rounded accent-red-600 cursor-pointer">
+                </label>
+            </div>
+            <div class="flex gap-3 mt-2">
+                <button onclick="clearFilters()" class="flex-1 p-3 bg-[#333333] hover:bg-[#555555] rounded-lg text-white font-bold transition">
+                    Reset
+                </button> 
+                <button onclick="applyFilter()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
+                    Apply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="trailer-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+    <div class="w-full max-w-4xl relative">
+        <button onclick="closeTrailerModal()" class="absolute -top-10 right-0 text-white hover:text-red-500 text-2xl"><i class="fas fa-times"></i></button>
+        <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl bg-black">
+            <iframe id="trailer-iframe" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+<div id="download-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative shadow-2xl">
+        <button onclick="closeDownloadModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <h3 class="text-xl font-bold mb-2 text-center text-white">Download</h3>
+        <p class="text-gray-400 text-sm text-center mb-6" id="download-modal-subtitle">Select a source</p>
+        <div class="flex flex-col gap-3">
+            <a id="dl-link-1" href="#" target="_blank" class="block w-full p-4 bg-gray-800/50 hover:bg-green-600/20 border border-gray-600 hover:border-green-500 rounded-xl text-center transition-all group">
+                <div class="font-bold text-white mb-1">Source 1 (VidSrc)</div>
+                <div class="text-xs text-gray-400 group-hover:text-green-300">Standard Quality</div>
+            </a>
+            <a id="dl-link-2" href="#" target="_blank" class="block w-full p-4 bg-gray-800/50 hover:bg-blue-600/20 border border-gray-600 hover:border-blue-500 rounded-xl text-center transition-all group">
+                <div class="font-bold text-white mb-1">Source 2 (GoDrive)</div>
+                <div class="text-xs text-gray-400 group-hover:text-blue-300">Fast Server</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="ai-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 hidden backdrop-blur-md p-4 animate-fade-in">
+    <div class="w-full max-w-lg relative flex flex-col items-center">
+        <button class="mt-8 text-gray-500 hover:text-white transition-colors text-sm flex items-center gap-2" onclick="toggleAIModal()">
+            <i class="fa-solid fa-xmark"></i> Close
+        </button><br>
+        <div class="input w-full mb-6 relative" id="ai-input-container">
+            <svg class="svg" onclick="handleAISearch()" style="cursor: pointer; pointer-events: auto;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M11.5 6C11.3949 6.00006 11.2925 5.96705 11.2073 5.90565C11.1221 5.84425 11.0583 5.75758 11.0251 5.65792L10.7623 4.86908C10.6623 4.57101 10.4288 4.33629 10.13 4.23693L9.34102 3.97354C9.24166 3.94019 9.1553 3.87649 9.09411 3.79142C9.03292 3.70635 9 3.60421 9 3.49943C9 3.39465 9.03292 3.29252 9.09411 3.20745C9.1553 3.12238 9.24166 3.05867 9.34102 3.02532L10.13 2.76193C10.4282 2.66191 10.663 2.42852 10.7623 2.12979L11.0258 1.34094C11.0591 1.24161 11.1229 1.15526 11.2079 1.09409C11.293 1.03291 11.3952 1 11.5 1C11.6048 1 11.707 1.03291 11.7921 1.09409C11.8771 1.15526 11.9409 1.24161 11.9742 1.34094L12.2377 2.12979C12.2868 2.27697 12.3695 2.4107 12.4792 2.52041C12.589 2.63013 12.7227 2.71281 12.87 2.76193L13.659 3.02532C13.7583 3.05867 13.8447 3.12238 13.9059 3.20745C13.9671 3.29252 14 3.39465 14 3.49943C14 3.60421 13.9671 3.70635 13.9059 3.79142C13.8447 3.87649 13.7583 3.94019 13.659 3.97354L12.87 4.23693C12.5718 4.33696 12.337 4.57034 12.2377 4.86908L11.9742 5.65792C11.9411 5.75747 11.8774 5.84406 11.7923 5.90545C11.7072 5.96684 11.6049 5.99992 11.5 6Z" fill="currentColor"></path>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.5005 23C13.3376 23 13.1791 22.9469 13.049 22.8487C12.9189 22.7505 12.8243 22.6127 12.7795 22.456L11.9665 19.61C11.7915 18.9971 11.4631 18.4389 11.0124 17.9882C10.5616 17.5374 10.0035 17.209 9.39054 17.034L6.54454 16.221C6.38795 16.1761 6.25021 16.0815 6.15216 15.9514C6.05411 15.8214 6.00108 15.6629 6.00108 15.5C6.00108 15.3371 6.05411 15.1786 6.15216 15.0486C6.25021 14.9185 6.38795 14.8239 6.54454 14.779L9.39054 13.966C10.0035 13.791 10.5616 13.4626 11.0124 13.0118C11.4631 12.5611 11.7915 12.0029 11.9665 11.39L12.7795 8.544C12.8244 8.38741 12.919 8.24967 13.0491 8.15162C13.1792 8.05357 13.3376 8.00054 13.5005 8.00054C13.6634 8.00054 13.8219 8.05357 13.952 8.15162C14.0821 8.24967 14.1767 8.38741 14.2215 8.544L15.0345 11.39C15.2096 12.0029 15.538 12.5611 15.9887 13.0118C16.4394 13.4626 16.9976 13.791 17.6105 13.966L20.4565 14.779C20.6131 14.8239 20.7509 14.9185 20.8489 15.0486C20.947 15.1786 21 15.3371 21 15.5C21 15.6629 20.947 15.8214 20.8489 15.9514C20.7509 16.0815 20.6131 16.1761 20.4565 16.221L17.6105 17.034C16.9976 17.209 16.4394 17.5374 15.9887 17.9882C15.538 18.4389 15.2096 18.9971 15.0345 19.61L14.2215 22.456C14.1768 22.6127 14.0822 22.7505 13.9521 22.8487C13.822 22.9469 13.6635 23 13.5005 23Z" fill="currentColor"></path>
+            </svg>
+            <input class="search" id="ai-search-input" type="text" placeholder="Describe a plot or mood..." onkeydown="if(event.key === 'Enter') handleAISearch()" />
+            <button id="ai-mic-btn" onclick="startVoiceInput()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+                <i class="fas fa-microphone text-lg"></i>
+            </button>
+        </div>
+
+        <div class="w-full rounded-r-xl bg-white/5 border-l-4 border-red-600 p-4 flex items-start gap-4 transition-all duration-300 hover:bg-white/10 hover:scale-[1.02] shadow-xl backdrop-blur-sm group cursor-default">
+            
+            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-600/20 to-black rounded-lg flex items-center justify-center border border-red-500/30 group-hover:border-red-500/60 transition-colors">
+                <svg class="w-8 h-8 text-red-500 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]" viewBox="0 0 48 48" fill="currentColor">
+                    <path d="M18.542,30.532l15.956-11.776 c0.783-0.576,1.902-0.354,2.274,0.545c1.962,4.728,1.084,10.411-2.819,14.315c-3.903,3.901-9.333,4.756-14.299,2.808l-5.423,2.511 c7.778,5.315,17.224,4,23.125-1.903c4.682-4.679,6.131-11.058,4.775-16.812l0.011,0.011c-1.966-8.452,0.482-11.829,5.501-18.735 C47.759,1.332,47.88,1.166,48,1l-6.602,6.599V7.577l-22.86,22.958"/>
+                    <path d="M15.248,33.392c-5.582-5.329-4.619-13.579,0.142-18.339 c3.521-3.522,9.294-4.958,14.331-2.847l5.412-2.497c-0.974-0.704-2.224-1.46-3.659-1.994c-6.478-2.666-14.238-1.34-19.505,3.922 C6.904,16.701,5.31,24.488,8.045,31.133c2.044,4.965-1.307,8.48-4.682,12.023C2.164,44.411,0.967,45.67,0,47l15.241-13.608"/>
+                </svg>
+            </div>
+
+            <div class="flex-grow">
+                <h4 class="text-white font-bold text-sm mb-1 uppercase tracking-wide">Intelligent Search</h4>
+                <p class="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                    Forget keywords. Just describe the plot, a character, or even a vague memory. 
+                    <br><span class="italic text-red-400/80 mt-1 block">"Man stuck on Mars growing potatoes"</span>
+                </p>
+            </div>
+        </div>
+
+        <div id="ai-loader" class="loader-wrapper hidden mt-8">
+          <span class="loader-letter">S</span><span class="loader-letter">e</span><span class="loader-letter">a</span><span class="loader-letter">r</span><span class="loader-letter">c</span><span class="loader-letter">h</span><span class="loader-letter">i</span><span class="loader-letter">n</span><span class="loader-letter">g</span>
+          <div class="loader"></div>
+        </div>
+    </div>
+</div>
+
+<div id="message-box" class="fixed bottom-5 right-5 p-4 rounded-lg shadow-lg hidden z-50 text-white font-semibold max-w-sm text-center"></div>
+<div id="ai-insight-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl border border-pink-500/30">
+        <button onclick="closeAIInsight()" class="absolute top-3 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        
+        <div class="text-center mb-6">
+            <h3 style="font-family: 'Montserrat' !important;" class="section-titletext-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mb-1">
+                <i class="fa-solid fa-user-astronaut mr-2"></i>AI INTEL
+            </h3>
+            <p id="ai-insight-title" class="text-sm text-gray-400">Asking about: Movie Title</p>
+        </div>
+
+        <div id="ai-options" class="grid grid-cols-1 gap-3 mb-4">
+            <button onclick="fetchAIInsight('hype')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-fire"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Hype Me Up</div>
+                    <div class="text-[10px] text-gray-500">Why should I watch this?</div>
+                </div>
+            </button>
+            <button onclick="fetchAIInsight('trivia')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-lightbulb"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Hidden Trivia</div>
+                    <div class="text-[10px] text-gray-500">Behind the scenes facts</div>
+                </div>
+            </button>
+            <button onclick="fetchAIInsight('parents')" class="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition flex items-center group">
+                <span class="w-8 h-8 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center mr-3 group-hover:scale-110 transition"><i class="fas fa-shield-alt"></i></span>
+                <div>
+                    <div class="font-bold text-sm text-gray-200">Parents Guide</div>
+                    <div class="text-[10px] text-gray-500">Is it safe for kids?</div>
+                </div>
+            </button>
+        </div>
+
+        <div id="ai-insight-loader" class="hidden flex flex-col items-center py-4">
+            <div class="loader-wrapper transform scale-50 mb-2">
+                <div class="loader"></div>
+            </div>
+            <p class="text-xs text-pink-400 animate-pulse">Consulting the AI core...</p>
+        </div>
+
+        <div id="ai-insight-result" class="hidden bg-black/40 p-4 rounded-xl border border-white/5 max-h-60 overflow-y-auto">
+            <p class="text-sm text-gray-300 leading-relaxed"></p>
+        </div>
+    </div>
+</div>
+<div id="image-lightbox" class="fixed inset-0 z-[60] bg-black/90 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+    <div id="lightbox-wrapper" class="relative w-full max-w-5xl h-[85vh] flex flex-col transform scale-95 transition-transform duration-300">
+        
+        <div class="flex items-center justify-between p-4 z-10">
+            <div class="flex items-center gap-4">
+                <a id="lightbox-external-link" href="#" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all group" title="Open Original">
+                    <i class="fas fa-external-link-alt group-hover:scale-110 transition-transform"></i>
+                </a>
+                
+                <span id="lightbox-lang" class="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-bold shadow-lg uppercase tracking-wide">
+                    ENG
+                </span>
+            </div>
+
+            <button onclick="closeLightbox()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 text-white transition-all">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center relative overflow-hidden p-2">
+            <img id="lightbox-img" src="" alt="Full Preview" class="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg">
+        </div>
+    </div>
+</div>
+<script src="script.js?v=10"></script>
+</body>
+</html>
