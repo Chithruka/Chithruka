@@ -124,6 +124,44 @@ function isContentSafetyEnabled(){return localStorage.getItem('include_adult')==
 function isAdultItem(item){return!!(item&&item.adult===!0)}
 function adultPosterClass(item){if(!isAdultItem(item))return'';return isContentSafetyEnabled()?' adult-poster':' adult-poster adult-blurred'}
 function adultOverlayHtml(item){return(isAdultItem(item)&&!isContentSafetyEnabled())?`<button type="button" class="adult-reveal-btn" title="Show poster (18+)" aria-label="Show poster" onclick="revealAdultPoster(this,event)">${EYE_OFF_SVG}</button><div class="adult-badge">18+</div>`:''}
+function buildStatusBadgeHtml(item){
+    if(!item||item.media_type==='person'||item.media_type==='company')return{typeHtml:'',statusHtml:''};
+    const now=new Date();
+    const typeHtml=item.media_type==='tv'?'<div class="media-badge tv">TV</div>':(item.media_type==='movie'?'<div class="media-badge movie">MOVIE</div>':'');
+    let statusHtml='';
+    if(item.media_type==='tv'){
+        const lastEp=item.last_episode_to_air;
+        const nextEp=item.next_episode_to_air;
+        const lastAirDate=lastEp&&lastEp.air_date?new Date(lastEp.air_date+'T00:00:00'):null;
+        const daysSinceLastEp=lastAirDate?Math.floor((now-lastAirDate)/86400000):null;
+        if(lastAirDate&&daysSinceLastEp!==null&&daysSinceLastEp>=0&&daysSinceLastEp<=10){
+            if(lastEp.episode_number===1){
+                statusHtml=`<div class="media-status-badge status-new-season"><span>New season</span></div>`;
+            }else{
+                statusHtml=`<div class="media-status-badge-group"><div class="media-status-badge status-new-episode"><span>New episode</span></div><div class="media-status-badge status-watch-now"><span>Watch now</span></div></div>`;
+            }
+        }else if(nextEp&&nextEp.air_date){
+            const nextAirDate=new Date(nextEp.air_date+'T00:00:00');
+            const daysUntil=Math.ceil((nextAirDate-now)/86400000);
+            if(daysUntil>=0&&daysUntil<=7){
+                statusHtml=`<div class="media-status-badge status-coming-soon"><span>New episode ${daysUntil===0?'today':daysUntil===1?'tomorrow':`in ${daysUntil}d`}</span></div>`;
+            }
+        }
+    }
+    if(!statusHtml){
+        const primaryDate=item.release_date||item.first_air_date;
+        if(primaryDate){
+            const releaseDate=new Date(primaryDate+(primaryDate.length===10?'T00:00:00':''));
+            const daysSinceRelease=Math.floor((now-releaseDate)/86400000);
+            if(daysSinceRelease>=0&&daysSinceRelease<=14){
+                statusHtml=`<div class="media-status-badge status-recently-added"><span>Recently added</span></div>`;
+            }else if(daysSinceRelease>=0&&daysSinceRelease<=30){
+                statusHtml=`<div class="media-status-badge status-new"><span>New</span></div>`;
+            }
+        }
+    }
+    return{typeHtml,statusHtml};
+}
 function revealAdultPoster(btn,event){if(event){event.preventDefault();event.stopPropagation()}const wrapper=btn.closest('.poster-wrapper')||btn.closest('.top-10-card');if(!wrapper)return;const img=wrapper.querySelector('.poster-img,.top-poster');if(img)img.classList.add('adult-revealed');btn.classList.add('hidden')}
 function syncAdultBlurState(){const enabled=isContentSafetyEnabled();document.querySelectorAll('.adult-poster').forEach(img=>{const wrapper=img.closest('.poster-wrapper')||img.closest('.top-10-card');if(enabled){img.classList.remove('adult-blurred','adult-revealed');if(wrapper){const btn=wrapper.querySelector('.adult-reveal-btn');if(btn)btn.remove();const badge=wrapper.querySelector('.adult-badge');if(badge)badge.remove()}}else{if(!img.classList.contains('adult-revealed'))img.classList.add('adult-blurred');if(wrapper&&!wrapper.querySelector('.adult-reveal-btn')&&!img.classList.contains('adult-revealed')){wrapper.insertAdjacentHTML('beforeend',`<button type="button" class="adult-reveal-btn" title="Show poster (18+)" aria-label="Show poster" onclick="revealAdultPoster(this,event)">${EYE_OFF_SVG}</button><div class="adult-badge">18+</div>`)}}});applyDetailAdultBlur(currentIsAdult)}
 const ADULT_KEYWORDS=['pink film','roman porno','softcore','hardcore','hentai','ecchi','gravure idol','pornographic','porn'];
@@ -202,7 +240,7 @@ function renderTop10List(items){top10Container.innerHTML='';items.forEach((item,
             `;card.onclick=()=>selectContent(item.id,title,item.media_type);top10Container.appendChild(card)});updateScrollButtons(top10Container)}
 function renderCards(items,container,trackIds){items.forEach(item=>{if(trackIds&&item.media_type!=='company'){if(loadedIds.has(item.id))return;loadedIds.add(item.id)}else if(item.media_type==='person'&&!trackIds){return}
 const title=item.title||item.name;let poster="";let isPerson=!1;let isCompany=!1;if(item.media_type==='person'){isPerson=!0;poster=item.profile_path?`${TMDB_POSTER_MD}${item.profile_path}`:null}else if(item.media_type==='company'){isCompany=!0;poster=item.logo_path?`${TMDB_IMG_BASE_URL}${item.logo_path}`:null}else{poster=item.poster_path?`${TMDB_POSTER_MD}${item.poster_path}`:null}
-const fallbackImage='https://placehold.co/150x225/222/999?text=No+Image';if(!poster)poster=fallbackImage;const rating=item.vote_average?item.vote_average.toFixed(1):'NR';const year=(item.release_date||item.first_air_date||'N/A').substring(0,4);let badgeHtml="";if(item.media_type==='tv')badgeHtml=`<div class="media-badge tv">TV</div>`;else if(item.media_type==='movie')badgeHtml=`<div class="media-badge movie">MOVIE</div>`;const releaseDate=new Date(item.release_date||item.first_air_date);const now=new Date();const diffTime=Math.abs(now-releaseDate);const diffDays=Math.ceil(diffTime/(1000*60*60*24));if(diffDays<=30&&releaseDate<=now){badgeHtml+=`<div class="media-badge new">NEW</div>`}
+const fallbackImage='https://placehold.co/150x225/222/999?text=No+Image';if(!poster)poster=fallbackImage;const rating=item.vote_average?item.vote_average.toFixed(1):'NR';const year=(item.release_date||item.first_air_date||'N/A').substring(0,4);const{typeHtml,statusHtml}=buildStatusBadgeHtml(item);const badgeHtml=typeHtml+statusHtml;
 const card=document.createElement('div');card.className='scroll-card';card.dataset.mediaType=item.media_type;if(isPerson){card.innerHTML=`
                 <div class="poster-wrapper" style="border-radius: 50%; aspect-ratio: 1/1; width: 140px; margin: 0 auto; border: 2px solid #333; overflow: hidden;">
                     <img src="${poster}" class="poster-img skeleton" loading="lazy" alt="${title}" 
@@ -921,9 +959,8 @@ function buildGridCard(item){
     const poster=item.poster_path?`${TMDB_POSTER_MD}${item.poster_path}`:fallbackImage;
     const rating=item.vote_average?item.vote_average.toFixed(1):'NR';
     const year=(item.release_date||item.first_air_date||'N/A').substring(0,4);
-    let badgeHtml='';
-    if(item.media_type==='tv')badgeHtml='<div class="media-badge tv">TV</div>';
-    else if(item.media_type==='movie')badgeHtml='<div class="media-badge movie">MOVIE</div>';
+    const{typeHtml:gridTypeHtml,statusHtml:gridStatusHtml}=buildStatusBadgeHtml(item);
+    const badgeHtml=gridTypeHtml+gridStatusHtml;
     const card=document.createElement('div');
     card.className='grid-card';
     card.dataset.mediaType=item.media_type;

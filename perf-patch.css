@@ -159,3 +159,85 @@
 #torrent-modal-body .flex.items-center.justify-between span:first-child {
   display: inline;
 }
+
+/* ============================================
+   Poster status badges (New Episode / Watch Now /
+   New Season / Recently Added) — inspired by
+   streaming-app poster overlays.
+   ============================================ */
+.media-status-badge-group {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 11;
+  display: flex;
+  align-items: stretch;
+  max-width: 100%;
+  border-radius: 0 6px 0 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+.media-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: none;
+  padding: 4px 8px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Standalone badges (New Season / Recently Added / New / Coming Soon)
+   sit at the bottom-left of the poster like the type badges sit top-left */
+.poster-wrapper > .media-status-badge,
+.grid-card .poster-wrapper > .media-status-badge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 11;
+  border-radius: 0 6px 0 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* Two-part group: "New episode" (red) + "Watch now" (white) side by side */
+.media-status-badge.status-new-episode {
+  background: #e50914;
+  color: #fff;
+}
+
+.media-status-badge.status-watch-now {
+  background: #fff;
+  color: #111;
+}
+
+/* Single badges */
+.media-status-badge.status-new-season {
+  background: #e50914;
+  color: #fff;
+}
+
+.media-status-badge.status-recently-added {
+  background: #e50914;
+  color: #fff;
+}
+
+.media-status-badge.status-new {
+  background: #10b981;
+  color: #fff;
+}
+
+.media-status-badge.status-coming-soon {
+  background: #f1c40f;
+  color: #111;
+}
+
+@media (max-width: 768px) {
+  .media-status-badge {
+    font-size: .52rem;
+    padding: 3px 6px;
+  }
+}
