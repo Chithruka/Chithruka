@@ -271,27 +271,22 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,.35);
+  background:transparent;
   border:none;
   border-radius:6px;
   box-shadow:none;
   color:rgba(255,255,255,.85);
   cursor:pointer;
   z-index:20;
-  opacity:0;
-  transition:opacity .25s ease,transform .25s ease,background .2s ease;
+  opacity:1;
+  transition:background .2s ease;
 }
-.scroll-btn svg{width:14px;height:14px}
+.scroll-btn svg{width:26px;height:26px}
 .scroll-btn.hidden{display:none!important}
 
-.scroll-btn.left-0{left:0;transform:translateX(-100%)}
-.scroll-btn.right-0{right:0;transform:translateX(100%)}
+.scroll-btn.left-0{left:0}
+.scroll-btn.right-0{right:0}
 
-.group:hover .scroll-btn{opacity:1;transform:translateX(0)}
-.scroll-btn:hover{background:rgba(0,0,0,.6)}
-
-@media (max-width:768px){
-  .scroll-btn{opacity:.6}
-  .scroll-btn.left-0{transform:translateX(0)}
-  .scroll-btn.right-0{transform:translateX(0)}
-}
+.scroll-btn:hover,
+.scroll-btn:active,
+.scroll-btn:focus{background:rgba(0,0,0,.5)}
