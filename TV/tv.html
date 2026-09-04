@@ -87,12 +87,46 @@
         /* --- Horizontal channel posters (scoped to this page only) --- */
         .tv-card { position: relative; flex-shrink: 0; cursor: pointer; width: 200px; }
         @media (min-width: 768px) { .tv-card { width: 240px; } }
-        .tv-poster { aspect-ratio: 16 / 9; background: #1f1f1f; border-radius: 0.75rem; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; padding: 14px; transition: border-color .3s ease, box-shadow .3s ease; }
-        .tv-card:hover .tv-poster { border-color: rgba(255,255,255,0.4); box-shadow: 0 12px 24px rgba(0,0,0,0.7); }
-        .tv-poster img { transition: transform .3s ease; }
+        .tv-poster {
+            aspect-ratio: 16 / 9;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0) 60%),
+                linear-gradient(160deg, #2b2f3a 0%, #1c1e26 55%, #131419 100%);
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.45);
+            backdrop-filter: blur(12px) saturate(140%);
+            -webkit-backdrop-filter: blur(12px) saturate(140%);
+            transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+        }
+        .tv-card:hover .tv-poster { border-color: rgba(255,255,255,0.22); transform: translateY(-3px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(0,0,0,0.2), 0 18px 32px rgba(0,0,0,0.6); }
+        .tv-poster img { transition: transform .3s ease; position: relative; z-index: 1; }
         .tv-card:hover .tv-poster img { transform: scale(1.08); }
         .tv-play-overlay { opacity: 0; transition: opacity .3s ease; }
         .tv-card:hover .tv-play-overlay { opacity: 1; }
+
+        /* Beta-style corner badge (matches Hulu "BETA" tag) */
+        .tv-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+            background: rgba(210, 213, 219, 0.95);
+            color: #1a1a1a;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            padding: 4px 7px 3px;
+            border-radius: 0 0.9rem 0 0.6rem;
+            text-transform: uppercase;
+        }
 
         /* --- Now Streaming hero --- */
         #tv-hero { margin: 8px 0 28px; }
@@ -436,33 +470,35 @@
         renderHeroChannel();
     });
 
-    // "Now Streaming" hero — shows a random channel logo (falls back to name) next to the streamer logo
-    function renderHeroChannel() {
-        if (!allChannels.length) return;
-        heroChannel = allChannels[Math.floor(Math.random() * allChannels.length)];
-
+    // "Now Streaming" hero — shows a random channel logo only (channels without a logo are skipped)
+    function renderHeroChannel(attemptsLeft = 5) {
+        const heroEl = document.getElementById('tv-hero');
         const logoImg = document.getElementById('hero-channel-logo');
         const nameSpan = document.getElementById('hero-channel-name');
-        if (!logoImg || !nameSpan) return;
+        if (!heroEl || !logoImg || !nameSpan) return;
 
-        nameSpan.textContent = heroChannel.name;
-
-        if (heroChannel.logo) {
-            logoImg.src = heroChannel.logo;
-            logoImg.classList.remove('hidden');
-            nameSpan.classList.add('hidden');
-        } else {
-            logoImg.classList.add('hidden');
-            logoImg.removeAttribute('src');
-            nameSpan.classList.remove('hidden');
+        const withLogo = allChannels.filter(c => c.logo);
+        if (!withLogo.length) {
+            heroEl.classList.add('hidden');
+            return;
         }
+
+        heroChannel = withLogo[Math.floor(Math.random() * withLogo.length)];
+        nameSpan.classList.add('hidden');
+        logoImg.dataset.retriesLeft = attemptsLeft;
+        logoImg.src = heroChannel.logo;
+        logoImg.classList.remove('hidden');
+        heroEl.classList.remove('hidden');
     }
 
     window.handleHeroLogoError = function() {
         const logoImg = document.getElementById('hero-channel-logo');
-        const nameSpan = document.getElementById('hero-channel-name');
-        logoImg.classList.add('hidden');
-        nameSpan.classList.remove('hidden');
+        const retriesLeft = parseInt(logoImg.dataset.retriesLeft || '0', 10) - 1;
+        if (retriesLeft > 0) {
+            renderHeroChannel(retriesLeft); // this channel's logo is broken — try another logo-having channel
+        } else {
+            document.getElementById('tv-hero').classList.add('hidden');
+        }
     };
 
     window.tuneHeroChannel = function() {
@@ -539,15 +575,14 @@
     function generateCardHTML(channel) {
         const isHLS = channel.type === 'm3u8';
         const badgeText = isHLS ? 'HLS' : 'EMBED';
-        const badgeClass = isHLS ? 'bg-[#e50914]' : 'bg-blue-600';
-        const logo = channel.logo || 'https://placehold.co/320x180/222/999?text=TV+Channel';
+        const logo = channel.logo || '../Attachment/TV-logo.png';
 
         return `
             <div class="tv-card" onclick="playStream('${channel.id}')">
                 <div class="tv-poster">
-                    <div class="absolute top-2 left-2 ${badgeClass} text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10 tracking-wider">${badgeText}</div>
+                    <div class="tv-badge">${badgeText}</div>
                     
-                    <img src="${logo}" class="max-w-full max-h-full object-contain filter drop-shadow-md" loading="lazy" onerror="this.src='https://placehold.co/320x180/222/999?text=TV'">
+                    <img src="${logo}" class="max-w-full max-h-full object-contain filter drop-shadow-md" loading="lazy" onerror="this.src='../Attachment/TV-logo.png'">
                     
                     <div class="tv-play-overlay absolute inset-0 bg-black/50 flex items-center justify-center z-20">
                         <i class="fas fa-play-circle text-4xl text-white drop-shadow-lg"></i>
