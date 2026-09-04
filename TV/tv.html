@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live TV - Chithruka Streamer</title>
+    <title>Live TV - Netflix</title>
     
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/theme.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/layouts/video.min.css"/>
@@ -210,11 +209,13 @@
 
         <div class="search-group flex items-center flex-grow max-w-xl mx-4 gap-2">
             <button onclick="openFilterModal()" class="filter-btn bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#e50914] text-gray-400 hover:text-white rounded-full p-2.5 transition flex-shrink-0" title="Filter Content">
-                <i class="fas fa-sliders-h"></i>
+                <svg class="svg-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
             </button>
             <div class="relative w-full">
                 <input type="text" id="search-input" class="glass-input w-full bg-black/40 border border-white/10 rounded-full px-5 py-2.5 text-white focus:outline-none focus:border-[#e50914] transition-all" placeholder="Search Channels..." onkeyup="applyFilters()">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
+                <button id="search-submit-btn" title="Search" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:0 0;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;transition:color .2s" onmouseenter='this.style.color="#fff"' onmouseleave='this.style.color="#9ca3af"'>
+                    <svg id="search-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #c0b9c0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
             </div>
         </div>
     </nav>
@@ -253,13 +254,13 @@
 
             <div class="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
                 <button id="vfx-btn" onclick="toggleVFX()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all">
-                    <i class="fas fa-tv"></i> <span>VCR FX: OFF</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg> <span>VCR FX: OFF</span>
                 </button>
                 <button id="rec-btn" onclick="toggleRecording()" class="flex items-center gap-2 bg-white/5 hover:bg-red-900/40 border border-white/10 hover:border-red-500 text-gray-300 hover:text-white font-semibold py-2 px-5 rounded-lg transition-all">
-                    <i class="fas fa-circle text-red-500"></i> <span id="rec-text">Record</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg text-red-500" style="width:16px;height:16px"><circle cx="12" cy="12" r="8"></circle></svg> <span id="rec-text">Record</span>
                 </button>
                 <button id="fs-btn" onclick="toggleFullscreen()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all ml-auto">
-                    <i class="fas fa-expand"></i> <span>Fullscreen</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M4 4H10V6H6V10H4V4ZM20 4V10H18V6H14V4H20ZM4 20V14H6V18H10V20H4ZM20 20H14V18H18V14H20V20Z"></path></svg> <span>Fullscreen</span>
                 </button>
             </div>
         </div>
@@ -320,7 +321,7 @@
 
 <div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative border border-white/10 shadow-2xl bg-[#111]">
-        <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true" style="width:1em;height:1em"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></button>
         <h3 class="text-xl font-bold mb-4 text-center text-white border-b border-white/10 pb-2">Filter Channels</h3>
         
         <div class="flex flex-col gap-4">
@@ -585,7 +586,7 @@
                     <img src="${logo}" class="max-w-full max-h-full object-contain filter drop-shadow-md" loading="lazy" onerror="this.src='../Attachments/TV-logo.png'">
                     
                     <div class="tv-play-overlay absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-                        <i class="fas fa-play-circle text-4xl text-white drop-shadow-lg"></i>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="text-white drop-shadow-lg" style="width:2.5rem;height:2.5rem"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM10 8.64L15.27 12L10 15.36V8.64Z"></path></svg>
                     </div>
                 </div>
                 <div class="card-body mt-2 px-1">
@@ -710,7 +711,7 @@
         screenWrapper.classList.toggle('retro-mode');
         const btn = document.getElementById('vfx-btn');
         const isOn = screenWrapper.classList.contains('retro-mode');
-        btn.innerHTML = `<i class="fas fa-tv"></i> <span>VCR FX: ${isOn ? 'ON' : 'OFF'}</span>`;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg> <span>VCR FX: ${isOn ? 'ON' : 'OFF'}</span>`;
         if(isOn) {
             btn.classList.add('border-red-500', 'text-white');
         } else {
