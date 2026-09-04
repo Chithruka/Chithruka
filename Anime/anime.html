@@ -7,6 +7,7 @@
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
     <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="../output.css">
+    <link rel="stylesheet" href="../perf-patch.css">
     <style>
         #player-container {
     position: relative;
@@ -103,9 +104,195 @@
     fill: currentColor;
     transition: transform 0.2s ease;
 }
+
+/* --- ALL-TIME POPULAR: featured rank-1 card + unbounded ranked scroll list --- */
+.alltime-featured-card {
+    position: relative;
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    background: linear-gradient(120deg, rgba(20,20,20,0.97), rgba(8,8,8,0.9));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    padding: 16px;
+    min-height: 210px;
+    transition: border-color 0.3s ease;
+}
+.alltime-featured-card:hover { border-color: rgba(229,9,20,0.4); }
+.alltime-featured-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.16;
+    filter: blur(3px) saturate(1.1);
+    z-index: 0;
+    pointer-events: none;
+}
+.alltime-featured-poster {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    width: 120px;
+}
+.alltime-featured-poster img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    display: block;
+}
+@media (min-width: 640px) {
+    .alltime-featured-poster { width: 170px; }
+}
+.alltime-rank-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    background: #e50914;
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 10px;
+    text-align: center;
+    line-height: 1.1;
+    box-shadow: 0 4px 10px rgba(229,9,20,0.45);
+}
+.alltime-rank-badge .alltime-rank-label {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.alltime-rank-badge .alltime-rank-num {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+.alltime-featured-info {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    padding-right: 60px;
+}
+.alltime-featured-title {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+@media (min-width: 640px) { .alltime-featured-title { font-size: 1.4rem; } }
+.alltime-featured-meta {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.alltime-featured-cast {
+    color: #d1d5db;
+    font-size: 0.78rem;
+}
+.alltime-featured-desc {
+    color: #d1d5db;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.alltime-trailer-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.alltime-trailer-btn:hover {
+    background: #e50914;
+    border-color: #e50914;
+}
+
+.alltime-rank-card {
+    flex-shrink: 0;
+    width: 150px;
+    cursor: pointer;
+}
+@media (min-width: 768px) { .alltime-rank-card { width: 170px; } }
+.alltime-rank-poster-wrapper {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1f1f1f;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+.alltime-rank-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    display: block;
+}
+.alltime-rank-card:hover .alltime-rank-poster { transform: scale(1.06); }
+.alltime-rank-badge-small {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    background: #e50914;
+    color: #fff;
+    padding: 3px 9px 4px 8px;
+    border-radius: 0 0 8px 0;
+    line-height: 1.1;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.alltime-rank-badge-small span {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.alltime-rank-badge-small strong {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 900;
+}
+.alltime-rank-body { padding: 8px 2px 0; }
+.alltime-rank-title {
+    color: #eee;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
+.alltime-rank-meta {
+    color: #9ca3af;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.alltime-rank-meta i { color: #f5c518; }
     </style>
     </head>
 <body>
+<svg style="width:0;height:0;position:absolute" aria-hidden="true"><filter id="footer-noise"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="turbulence"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="turbulence" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
 <div id="page-background"></div>
 <aside class="sidebar">
     <div class="sidebar-header">
@@ -184,13 +371,75 @@
         </h2>
         <div class="relative group px-2">
             <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('trending-container', -300)">
-                <i class="fas fa-chevron-left"></i>
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
             </button>
-            
             <div id="trending-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
-            
             <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('trending-container', 300)">
-                <i class="fas fa-chevron-right"></i>
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-12 relative" id="season-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Popular This Season
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('season-container', -300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
+            </button>
+            <div id="season-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('season-container', 300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-12 relative" id="popular-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-1 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            All-Time Popular
+        </h2>
+        <p class="text-sm text-gray-400 mb-6 px-2 ml-1">The most watched anime right now</p>
+
+        <div id="alltime-featured-wrapper" class="px-2 mb-6"></div>
+
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('popular-container', -300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
+            </button>
+            <div id="popular-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('popular-container', 300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-12 relative" id="toprated-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Top Rated
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('toprated-container', -300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
+            </button>
+            <div id="toprated-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('toprated-container', 300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-12 relative" id="upcoming-section">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Upcoming Next Season
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('upcoming-container', -300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
+            </button>
+            <div id="upcoming-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('upcoming-container', 300)">
+                <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
             </button>
         </div>
     </div> <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8 mt-8">
@@ -344,6 +593,8 @@
         </div>
     </div>
 </div>
+<footer class="relative backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10" style="overflow:hidden;background-color:#0a0a0a"><div class="footer-noise-bg" style="position:absolute;inset:-5%;width:110%;height:110%;filter:url(#footer-noise);background:radial-gradient(circle at 50% 100%, #e50914 0%, #4a0409 45% 65%, #000000 85%) no-repeat center / auto;pointer-events:none;z-index:0"></div><div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" style="z-index:1"></div><div class="container mx-auto px-6 max-w-7xl relative" style="z-index:1"><div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12"><div class="flex flex-col items-center md:items-start text-center md:text-left"><img loading="lazy" src="../Attachments/Chithruka%20Signature.svg" alt="Netflix Signature" class="h-12 mb-4"><p class="text-white text-sm mb-6 max-w-xs leading-relaxed">A full world of entertainment in one place – series, movies, live events, games, and podcasts.</p></div><div class="flex flex-col items-center md:items-start"><h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3><ul class="space-y-3 text-sm text-white w-full text-center md:text-left"><li><a href="https://help.netflix.com/en/node/2064" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Maturity ratings</a></li><li><a href="../credits.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Disclaimer</a></li></ul></div></div><div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6"><p class="text-xs text-white font-medium">&copy;<span id="footer-year"></span> Netflix<span id="footer-country"></span>. All Rights Reserved.</p><div class="flex gap-4"><a onclick='window.scrollTo({top:0,behavior:"smooth"})' class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160zm160 352l-160-160c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 329.4 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3z"/></svg></a></div></div></div></footer>
 <script src="anime-script.js" defer></script>
+<script>document.addEventListener("DOMContentLoaded",()=>{const y=document.getElementById("footer-year");if(y)y.textContent=new Date().getFullYear();});</script>
 </body>
 </html>

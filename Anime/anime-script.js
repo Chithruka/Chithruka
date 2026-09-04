@@ -18,6 +18,83 @@ query ($page: Int, $perPage: Int) {
   }
 }`;
 
+const SEASON_QUERY = `
+query ($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC, type: ANIME) {
+      id
+      idMal
+      title { english romaji }
+      coverImage { extraLarge large }
+      bannerImage
+      averageScore
+      description
+      genres
+      episodes
+    }
+  }
+}`;
+
+const POPULAR_QUERY = `
+query ($page: Int, $perPage: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(sort: POPULARITY_DESC, type: ANIME) {
+      id
+      idMal
+      title { english romaji }
+      coverImage { extraLarge large }
+      bannerImage
+      averageScore
+      description
+      genres
+      episodes
+      format
+      startDate { year }
+    }
+  }
+}`;
+
+// How many ranks to show in the "All-Time Popular" list (rank 1 becomes the
+// featured card, the rest fill the scrollable ranked row). Bump this to 100
+// (or any number) for a Top 100 style list — nothing beyond rank 10 is ever
+// dropped, unlike the old fixed Top 10 slider.
+const ALLTIME_POPULAR_COUNT = 50;
+
+const TOP_RATED_QUERY = `
+query ($page: Int, $perPage: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(sort: SCORE_DESC, type: ANIME) {
+      id
+      idMal
+      title { english romaji }
+      coverImage { extraLarge large }
+      bannerImage
+      averageScore
+      description
+      genres
+      episodes
+    }
+  }
+}`;
+
+const UPCOMING_QUERY = `
+query ($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int) {
+  Page(page: $page, perPage: $perPage) {
+    media(season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC, type: ANIME, status: NOT_YET_RELEASED) {
+      id
+      idMal
+      title { english romaji }
+      coverImage { extraLarge large }
+      bannerImage
+      averageScore
+      description
+      genres
+      episodes
+    }
+  }
+}`;
+
+
 const SEARCH_QUERY = `
 query ($search: String) {
   Page(perPage: 10) {
@@ -52,8 +129,198 @@ async function fetchAniList(query, variables) {
     }
 }
 
+function buildAnimeCard(anime) {
+    const title = anime.title.english || anime.title.romaji;
+    const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'NR';
+    const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
+
+    const card = document.createElement('div');
+    card.className = 'scroll-card';
+
+    card.innerHTML = `
+        <div class="poster-wrapper">
+            <div class="media-badge tv">ANIME</div>
+            <img src="${anime.coverImage.large || fallbackImage}" class="poster-img skeleton" loading="lazy" alt="${title}" onload="this.classList.remove('skeleton')">
+            <div class="play-overlay">
+                <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="card-title" title="${title}">${title}</div>
+            <div class="card-meta">
+                <span>${anime.episodes ? anime.episodes + ' Eps' : 'Ongoing'}</span>
+                <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
+            </div>
+        </div>
+    `;
+
+    card.onclick = () => selectAnime(anime);
+    return card;
+}
+
+function stripHtml(html) {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function formatLabel(anime) {
+    return anime.format === 'MOVIE' ? 'Movie' : 'TV Show';
+}
+
+// Large hero-style card for rank #1 of the All-Time Popular list.
+function buildAllTimeFeaturedCard(anime, rank) {
+    const title = anime.title.english || anime.title.romaji;
+    const fallbackImage = 'https://placehold.co/300x450/222/999?text=No+Image';
+    const year = anime.startDate && anime.startDate.year ? anime.startDate.year : '';
+    const genres = (anime.genres || []).slice(0, 3).join(', ');
+    const descFull = stripHtml(anime.description);
+    const desc = descFull.length > 160 ? descFull.slice(0, 160).trim() + '…' : descFull;
+
+    const card = document.createElement('div');
+    card.className = 'alltime-featured-card';
+
+    card.innerHTML = `
+        <div class="alltime-featured-backdrop" style="background-image:url('${anime.bannerImage || anime.coverImage.extraLarge || ''}')"></div>
+        <div class="alltime-rank-badge">
+            <span class="alltime-rank-label">TOP</span>
+            <span class="alltime-rank-num">${rank}</span>
+        </div>
+        <div class="alltime-featured-poster">
+            <img src="${anime.coverImage.extraLarge || anime.coverImage.large || fallbackImage}" loading="lazy" alt="${title}">
+        </div>
+        <div class="alltime-featured-info">
+            <h3 class="alltime-featured-title">${title}</h3>
+            <div class="alltime-featured-meta">${year ? year + ' · ' : ''}${formatLabel(anime)}</div>
+            ${genres ? `<div class="alltime-featured-cast">${genres}</div>` : ''}
+            <p class="alltime-featured-desc">${desc}</p>
+            <button class="alltime-trailer-btn" type="button">See details</button>
+        </div>
+    `;
+
+    card.onclick = () => selectAnime(anime);
+    const btn = card.querySelector('.alltime-trailer-btn');
+    if (btn) {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            selectAnime(anime);
+        };
+    }
+    return card;
+}
+
+// Compact ranked card used for every entry after rank #1 in the All-Time
+// Popular row. Unlike the old Top 10 card, rank has no upper bound here.
+function buildAllTimeRankedCard(anime, rank) {
+    const title = anime.title.english || anime.title.romaji;
+    const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
+    const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'NR';
+    const year = anime.startDate && anime.startDate.year ? anime.startDate.year : '';
+
+    const card = document.createElement('div');
+    card.className = 'alltime-rank-card';
+
+    card.innerHTML = `
+        <div class="alltime-rank-poster-wrapper">
+            <div class="alltime-rank-badge-small">
+                <span>TOP</span>
+                <strong>${rank}</strong>
+            </div>
+            <img src="${anime.coverImage.large || fallbackImage}" class="alltime-rank-poster" loading="lazy" alt="${title}">
+        </div>
+        <div class="alltime-rank-body">
+            <div class="alltime-rank-title" title="${title}">${title}</div>
+            <div class="alltime-rank-meta"><i class="fas fa-star"></i> ${rating} · ${year ? year + ' · ' : ''}${formatLabel(anime)}</div>
+        </div>
+    `;
+
+    card.onclick = () => selectAnime(anime);
+    return card;
+}
+
+function getCurrentAniListSeason() {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    let season;
+    if (month >= 1 && month <= 3) season = 'WINTER';
+    else if (month >= 4 && month <= 6) season = 'SPRING';
+    else if (month >= 7 && month <= 9) season = 'SUMMER';
+    else season = 'FALL';
+    return { season, year };
+}
+
+function getNextAniListSeason() {
+    const { season, year } = getCurrentAniListSeason();
+    const order = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
+    const idx = order.indexOf(season);
+    const nextIdx = (idx + 1) % order.length;
+    const nextYear = nextIdx === 0 ? year + 1 : year;
+    return { season: order[nextIdx], year: nextYear };
+}
+
+async function loadSeasonPopular() {
+    const { season, year } = getCurrentAniListSeason();
+    const data = await fetchAniList(SEASON_QUERY, { page: 1, perPage: 20, season, seasonYear: year });
+    const container = document.getElementById('season-container');
+    if (!container || !data) return;
+
+    data.Page.media.forEach(anime => {
+        container.appendChild(buildAnimeCard(anime));
+    });
+
+    updateScrollButtons(container);
+}
+
+async function loadAllTimePopular() {
+    const data = await fetchAniList(POPULAR_QUERY, { page: 1, perPage: ALLTIME_POPULAR_COUNT });
+    const featuredWrapper = document.getElementById('alltime-featured-wrapper');
+    const container = document.getElementById('popular-container');
+    if (!container || !featuredWrapper || !data) return;
+
+    const list = data.Page.media;
+    if (!list.length) return;
+
+    featuredWrapper.innerHTML = '';
+    featuredWrapper.appendChild(buildAllTimeFeaturedCard(list[0], 1));
+
+    list.slice(1).forEach((anime, index) => {
+        container.appendChild(buildAllTimeRankedCard(anime, index + 2));
+    });
+
+    updateScrollButtons(container);
+}
+
+async function loadTopRated() {
+    const data = await fetchAniList(TOP_RATED_QUERY, { page: 1, perPage: 20 });
+    const container = document.getElementById('toprated-container');
+    if (!container || !data) return;
+
+    data.Page.media.forEach(anime => {
+        container.appendChild(buildAnimeCard(anime));
+    });
+
+    updateScrollButtons(container);
+}
+
+async function loadUpcoming() {
+    const { season, year } = getNextAniListSeason();
+    const data = await fetchAniList(UPCOMING_QUERY, { page: 1, perPage: 20, season, seasonYear: year });
+    const container = document.getElementById('upcoming-container');
+    if (!container || !data) return;
+
+    data.Page.media.forEach(anime => {
+        container.appendChild(buildAnimeCard(anime));
+    });
+
+    updateScrollButtons(container);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadTrending();
+    loadSeasonPopular();
+    loadAllTimePopular();
+    loadTopRated();
+    loadUpcoming();
     fetchNewQuote();
     setupSearch();
 });
@@ -61,39 +328,17 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadTrending() {
     const data = await fetchAniList(TRENDING_QUERY, { page: 1, perPage: 20 });
     const container = document.getElementById('trending-container');
-    
+    if (!container || !data) return;
+
     if (data.Page.media.length > 0) {
         initHero(data.Page.media.slice(0, 5));
     }
 
     data.Page.media.forEach(anime => {
-        const title = anime.title.english || anime.title.romaji;
-        const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'NR';
-        const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
-
-        const card = document.createElement('div');
-        card.className = 'scroll-card';
-        
-        card.innerHTML = `
-            <div class="poster-wrapper">
-                <div class="media-badge tv">ANIME</div>
-                <img src="${anime.coverImage.large || fallbackImage}" class="poster-img skeleton" loading="lazy" alt="${title}" onload="this.classList.remove('skeleton')">
-                <div class="play-overlay">
-                    <div class="play-icon-circle"><i class="fas fa-play"></i></div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="card-title" title="${title}">${title}</div>
-                <div class="card-meta">
-                    <span>${anime.episodes ? anime.episodes + ' Eps' : 'Ongoing'}</span>
-                    <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
-                </div>
-            </div>
-        `;
-        
-        card.onclick = () => selectAnime(anime);
-        container.appendChild(card);
+        container.appendChild(buildAnimeCard(anime));
     });
+
+    updateScrollButtons(container);
 }
 
 function getDominantColor(imageUrl) {
@@ -122,7 +367,12 @@ let currentServer = 'megaplay';
 async function selectAnime(anime, targetEp = 1) {
     if (!anime.duration && !anime.status) {
         const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id: anime.id });
-        anime = fullData.Media;
+        // If this extra lookup fails (network blip, AniList rate limit, etc.)
+        // fall back to the data we already have instead of crashing and
+        // leaving the details section stuck hidden.
+        if (fullData && fullData.Media) {
+            anime = fullData.Media;
+        }
     }
 
     currentAnimeId = anime.id;
@@ -136,6 +386,10 @@ async function selectAnime(anime, targetEp = 1) {
 
     document.getElementById('hero-section').style.display = 'none';
     document.getElementById('trending-section').style.display = 'none';
+    document.getElementById('season-section').style.display = 'none';
+    document.getElementById('popular-section').style.display = 'none';
+    document.getElementById('toprated-section').style.display = 'none';
+    document.getElementById('upcoming-section').style.display = 'none';
     
     const detailsSection = document.getElementById('details-section');
     const playerInterface = document.getElementById('player-interface');
@@ -277,6 +531,25 @@ window.scrollContainer = function(id, amount) {
     document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
 }
 
+function updateScrollButtons(e) {
+    if (!e) return;
+    const t = e.previousElementSibling, n = e.nextElementSibling,
+        r = e.scrollWidth - e.clientWidth,
+        o = e.scrollLeft <= 5,
+        s = e.scrollWidth <= e.clientWidth || e.scrollLeft >= r - 5;
+    t && t.classList.contains("scroll-btn") && (o ? t.classList.add("hidden") : t.classList.remove("hidden"));
+    n && n.classList.contains("scroll-btn") && (s ? n.classList.add("hidden") : n.classList.remove("hidden"));
+    e.classList.contains("scrollbar-hide") && (e.classList.toggle("at-left", o), e.classList.toggle("at-right", s));
+}
+window.updateScrollButtons = updateScrollButtons;
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.overflow-x-auto').forEach(el => {
+        updateScrollButtons(el);
+        el.addEventListener('scroll', () => updateScrollButtons(el));
+    });
+});
+
 let heroInterval;
 function initHero(items) {
     const slidesContainer = document.getElementById('hero-slides');
@@ -309,12 +582,17 @@ function initHero(items) {
         slidesContainer.appendChild(slide);
 
         const ind = document.createElement('div');
-        ind.className = `indicator ${i === 0 ? 'active' : ''}`;
+        ind.className = `indicator anime-indicator ${i === 0 ? 'active' : ''}`;
+        const posterUrl = item.coverImage && (item.coverImage.large || item.coverImage.extraLarge);
+        ind.innerHTML = posterUrl
+            ? `<img src="${posterUrl}" class="indicator-poster" alt="${title}" loading="lazy">`
+            : `<div class="indicator-poster-empty">${title}</div>`;
         ind.onclick = () => showHeroSlide(i);
         indicatorsContainer.appendChild(ind);
     });
 
     if (heroInterval) clearInterval(heroInterval);
+    slidesContainer.style.transform = 'translateX(0%)';
     heroInterval = setInterval(() => {
         let slides = document.querySelectorAll('.hero-slide');
         if (slides.length === 0) return;
@@ -325,12 +603,16 @@ function initHero(items) {
 }
 
 function showHeroSlide(index) {
+    const slidesContainer = document.getElementById('hero-slides');
     const slides = document.querySelectorAll('.hero-slide');
     const indicators = document.querySelectorAll('.indicator');
     slides.forEach(s => s.classList.remove('active'));
     indicators.forEach(i => i.classList.remove('active'));
     if (slides[index]) slides[index].classList.add('active');
     if (indicators[index]) indicators[index].classList.add('active');
+    if (slidesContainer) {
+        slidesContainer.style.transform = `translateX(-${index * 100}%)`;
+    }
 }
 
 async function loadRandomQuote() {
