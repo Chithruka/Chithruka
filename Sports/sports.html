@@ -144,7 +144,8 @@
 
         /* --- SPORTS SPECIFIC STYLES --- */
         .hero {
-    height: 55vh; 
+    aspect-ratio: 16 / 9; 
+    height: auto;
     width: 100%; 
     position: relative; 
     border-radius: 20px; 
@@ -157,7 +158,6 @@
 }
         .hero-overlay {
             position: absolute; inset: 0;
-            background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(0,0,0,0.6) 40%, transparent);
             display: flex; flex-direction: column; justify-content: center; padding-left: 5%;
         }
         .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 0.9; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
@@ -296,23 +296,7 @@
             </div>
         </nav>
 
-        <div class="hero">
-            <div class="hero-overlay">
-                <h1 class="hero-title text-white font-extrabold mb-2">LIVE SPORT</h1>
-                <h2 class="hero-subtitle font-bold text-red-600 mb-4">UNLIMITED</h2>
-                <p class="text-gray-300 text-sm md:text-lg max-w-lg mb-6 leading-relaxed drop-shadow-md" style="font-family: 'Montserrat', sans-serif;">
-                    Stream the biggest matches in Cricket, Football, Tennis and more. High definition, zero buffering.
-                </p>
-                <div class="flex gap-4">
-                    <button class="btn btn-play shadow-lg" onclick="playRandom()">
-                        <i class="fa-solid fa-shuffle"></i> Random
-                    </button>
-                    <button class="btn btn-info shadow-lg" onclick="showMoreInfo('IPL')">
-                        <i class="fa-solid fa-bat-ball"></i> Cricket Info
-                    </button>
-                </div>
-            </div>
-        </div>
+        <div class="hero"></div>
 
         <div id="main-content">
             <div class="flex justify-center mt-12 mb-12">
@@ -691,27 +675,35 @@
 
         fetchChannels();
 
-        // Updated Hero Background Image Rotation Logic (Infinite Mode)
+        // Hero Background Image Rotation Logic (Local Images)
 const heroSection = document.querySelector('.hero');
+const heroImages = [
+    '../Attachments/backdrop1.jpg',
+    '../Attachments/backdrop2.jpg',
+    '../Attachments/backdrop3.jpg',
+    '../Attachments/backdrop4.jpg',
+    '../Attachments/backdrop5.jpg'
+];
+let heroImageIndex = 0;
 
 function updateHeroBackground() {
-    // Generate a unique URL by adding a timestamp to bypass caching
-    const randomImageUrl = `https://loremflickr.com/1920/1080/sports?random=${Date.now()}`;
-    
+    const imageUrl = heroImages[heroImageIndex];
+    heroImageIndex = (heroImageIndex + 1) % heroImages.length;
+
     // Pre-load the image in the background for a smooth transition
     const img = new Image();
-    img.src = randomImageUrl;
-    
+    img.src = imageUrl;
+
     img.onload = () => {
         // Only change the background once the new image is fully downloaded
-        heroSection.style.backgroundImage = `url('${randomImageUrl}')`;
+        heroSection.style.backgroundImage = `url('${imageUrl}')`;
     };
 }
 
 // Initial load
 updateHeroBackground();
 
-// Fetch a brand new random image every 8 seconds
+// Rotate to a new image every 8 seconds
 setInterval(updateHeroBackground, 8000);
     </script>
 
