@@ -11,8 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/theme.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/layouts/video.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/cdn/with-layouts/vidstack.js" type="module"></script>
     
     <link rel="stylesheet" href="../output.css">
     <link rel="stylesheet" href="../perf-patch.css">
@@ -47,14 +48,13 @@
         @media (max-width: 767px) { body { padding-bottom: 70px; } }
 
         /* --- VCR VFX & Player Overrides --- */
-        .video-js { width: 100% !important; height: 100% !important; border-radius: 0.75rem; background-color: #000; }
-        .vjs-big-play-button { display: none !important; }
+        media-player { width: 100% !important; height: 100% !important; border-radius: 0.75rem; overflow: hidden; background-color: #000; --media-brand: #e50914; --media-focus-ring-color: #e50914; }
         
         .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; border-radius: 0.75rem; }
         .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
         .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
         .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
-        .retro-mode video { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
+        .retro-mode #screen-wrapper video, .retro-mode #screen-wrapper iframe { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
         @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
         @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
 
@@ -116,6 +116,7 @@
     </style>
 </head>
 <body class="bg-black text-gray-200 font-sans overflow-x-hidden">
+<svg style="width:0;height:0;position:absolute" aria-hidden="true"><filter id="footer-noise"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="turbulence"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="turbulence" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
 
 <div id="page-background" class="fixed inset-0 bg-black z-[-1]"></div>
 
@@ -210,8 +211,10 @@
                 <div class="noise"></div>
                 <div class="vignette"></div>
                 
-                <video id="video-player" class="video-js vjs-default-skin w-full h-full" controls preload="auto" autoplay muted playsinline></video>
-                <iframe id="iframe-player" allow="autoplay; fullscreen; encrypted-media" class="hidden w-full h-full absolute inset-0 z-0 border-none"></iframe>
+                <media-player id="tv-player" class="w-full h-full" autoplay muted playsinline crossorigin>
+                    <media-provider></media-provider>
+                    <media-video-layout></media-video-layout>
+                </media-player>
             </div>
 
             <div class="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
@@ -278,6 +281,8 @@
     </div>
 
 </div>
+
+<footer class="relative backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10" style="overflow:hidden;background-color:#0a0a0a"><div class="footer-noise-bg" style="position:absolute;inset:-5%;width:110%;height:110%;filter:url(#footer-noise);background:radial-gradient(circle at 50% 100%, #e50914 0%, #4a0409 45% 65%, #000000 85%) no-repeat center / auto;pointer-events:none;z-index:0"></div><div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" style="z-index:1"></div><div class="container mx-auto px-6 max-w-7xl relative" style="z-index:1"><div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12"><div class="flex flex-col items-center md:items-start text-center md:text-left"><img loading="lazy" src="../Attachments/Chithruka%20Signature.svg" alt="Netflix Signature" class="h-12 mb-4"><p class="text-white text-sm mb-6 max-w-xs leading-relaxed">A full world of entertainment in one place – series, movies, live events, games, and podcasts.</p></div><div class="flex flex-col items-center md:items-start"><h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3><ul class="space-y-3 text-sm text-white w-full text-center md:text-left"><li><a href="https://help.netflix.com/en/node/2064" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Maturity ratings</a></li><li><a href="../credits.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Disclaimer</a></li></ul></div></div><div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6"><p class="text-xs text-white font-medium">&copy;<span id="footer-year"></span> Netflix<span id="footer-country"></span>. All Rights Reserved.</p><div class="flex gap-4"><a onclick='window.scrollTo({top:0,behavior:"smooth"})' class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160zm160 352l-160-160c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 329.4 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3z"/></svg></a></div></div></div></footer>
 
 <div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative border border-white/10 shadow-2xl bg-[#111]">
@@ -395,7 +400,7 @@
     };
 
     // --- IPTV LOGIC ---
-    const player = videojs('video-player', { fluid: false, autoplay: true, controls: true, responsive: true, playbackRates: [0.5, 1, 1.5, 2] });
+    const player = document.getElementById('tv-player');
 
     const PLAYLIST_SOURCES = [
         'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
@@ -407,8 +412,6 @@
 
     const screenWrapper = document.getElementById('screen-wrapper');
     const playerSection = document.getElementById('player-section');
-    const iframePlayer = document.getElementById('iframe-player');
-    const videoElement = document.getElementById('video-player');
     const channelDisplay = document.getElementById('current-channel-display');
     const searchResultsSection = document.getElementById('search-results-section');
 
@@ -520,29 +523,16 @@
         return channels;
     }
 
-    function getEmbedUrl(url) {
-        // Already an embeddable URL
-        if (/youtube(-nocookie)?\.com\/embed\//i.test(url)) return url;
-
+    function extractYouTubeId(url) {
         // Standard video links: watch?v=, youtu.be/, /v/, /e/, /embed/
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-        if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&modestbranding=1`;
+        if (ytMatch && ytMatch[1]) return ytMatch[1];
 
-        // Channel "live" links, e.g. youtube.com/channel/UCxxxx, /UCxxxx/, /UCxxxx/live
-        // These are NOT framable directly (YouTube blocks framing of its own m./www. pages),
-        // so they must be converted to the live_stream embed endpoint.
-        const channelMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]{10,})/i);
-        if (channelMatch && channelMatch[1]) {
-            return `https://www.youtube.com/embed/live_stream?channel=${channelMatch[1]}&autoplay=1&modestbranding=1`;
-        }
-
-        // NOTE: handle-based links (youtube.com/@name or youtube.com/@name/live) and bare
-        // channel homepages CANNOT be resolved to an embeddable URL client-side — YouTube's
-        // live_stream embed endpoint only accepts the internal UC... channel ID, and turning
-        // a handle into that ID requires a server-side call to the YouTube Data API with an
-        // API key. Those get returned unchanged here and are caught by the fallback UI in
-        // playStream() instead of silently breaking with an X-Frame-Options error.
-        return url;
+        // NOTE: handle-based links (youtube.com/@name or youtube.com/@name/live), bare
+        // channel homepages, and youtube.com/channel/UCxxxx "live" pages can't be resolved
+        // to a single playable video ID client-side without a server-side YouTube Data API
+        // call, so these are left unresolved and caught by the fallback UI in playStream().
+        return null;
     }
 
     // Rendering Cards
@@ -660,32 +650,24 @@
         playerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         if (channel.type === 'embed') {
-            player.pause();
-            const embedUrl = getEmbedUrl(channel.url);
+            const ytId = extractYouTubeId(channel.url);
 
-            // If we couldn't convert it to a real /embed/ URL, don't try to frame it —
-            // YouTube blocks framing of its own non-embed pages (X-Frame-Options), so
-            // setting iframe.src to a raw youtube.com/m.youtube.com link just breaks silently.
-            if (!/youtube(-nocookie)?\.com\/embed\//i.test(embedUrl)) {
-                console.warn('Cannot embed this channel (no video/channel ID resolvable):', channel.url);
-                videoElement.classList.add('hidden');
-                iframePlayer.classList.add('hidden');
-                iframePlayer.src = "";
+            // If we can't resolve a single video ID (e.g. a channel handle/live page),
+            // Vidstack's YouTube provider has nothing playable to load.
+            if (!ytId) {
+                console.warn('Cannot embed this channel (no video ID resolvable):', channel.url);
+                player.src = '';
                 channelDisplay.innerHTML = `Tuned: ${channel.name} — <span class="text-red-400">can't embed this channel directly.</span> <a href="${channel.url}" target="_blank" rel="noopener" class="underline text-blue-400">Open on YouTube</a>`;
                 return;
             }
 
-            videoElement.classList.add('hidden');
-            iframePlayer.classList.remove('hidden');
-            iframePlayer.src = embedUrl;
+            // Vidstack plays YouTube natively inside the same player — no separate iframe needed.
+            player.src = `youtube/${ytId}`;
         } else {
-            iframePlayer.src = "";
-            iframePlayer.classList.add('hidden');
-            videoElement.classList.remove('hidden');
-            
-            player.src({ src: channel.url, type: 'application/x-mpegURL' });
-            player.play().catch(e => console.log("Stream blocked or requires interaction."));
+            player.src = { src: channel.url, type: 'application/x-mpegurl' };
         }
+
+        player.play().catch(e => console.log("Stream blocked or requires interaction."));
     };
 
     // VFX & Controls
@@ -712,8 +694,8 @@
 
     // Recording (Video.js only)
     window.toggleRecording = function() {
-        if (!videoElement.classList.contains('hidden') === false) {
-            alert("Recording is not supported for external embedded websites (Iframes) due to browser security restrictions.");
+        if (!document.querySelector('#screen-wrapper video')) {
+            alert("Recording is not supported for YouTube channels due to browser security restrictions.");
             return;
         }
         if (!isRecording) startRecording();
@@ -721,7 +703,7 @@
     };
 
     function startRecording() {
-        const rawVideo = document.querySelector('#video-player_html5_api');
+        const rawVideo = document.querySelector('#screen-wrapper video');
         if (!rawVideo || rawVideo.paused) { alert("No active video stream to record!"); return; }
         
         let stream;
@@ -778,6 +760,8 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
+
+<script>document.addEventListener("DOMContentLoaded",()=>{const y=document.getElementById("footer-year");if(y)y.textContent=new Date().getFullYear();});</script>
 
 </body>
 </html>
