@@ -30,3 +30,4 @@
 .poster-wrapper>.media-status-badge,.grid-card .poster-wrapper>.media-status-badge,.media-status-badge-group{left:50%!important;right:auto!important;transform:translateX(-50%);border-radius:6px 6px 0 0}
 .cast-card{align-items:flex-start;text-align:left}
 .cast-name,.cast-char,.crew-job{text-align:left;width:100%}
+.prod-netflix-badge{position:absolute;top:8px;left:8px;width:16px;height:auto;z-index:11;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));pointer-events:none}
