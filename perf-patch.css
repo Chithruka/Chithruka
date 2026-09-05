@@ -28,3 +28,5 @@
 .card-meta-3{justify-content:flex-start!important;align-items:center;gap:4px;flex-wrap:wrap}
 .card-meta-3 .card-meta-dot{color:#666;font-size:.65rem}
 .poster-wrapper>.media-status-badge,.grid-card .poster-wrapper>.media-status-badge,.media-status-badge-group{left:50%!important;right:auto!important;transform:translateX(-50%);border-radius:6px 6px 0 0}
+.cast-card{align-items:flex-start;text-align:left}
+.cast-name,.cast-char,.crew-job{text-align:left;width:100%}
