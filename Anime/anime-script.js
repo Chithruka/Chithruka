@@ -918,3 +918,17 @@ window.closeTraceMoeModal = () => {
     originalCloseTraceMoe();
     window.toggleMobileNav(false);
 };
+
+// Profile avatar dropdown (no login system on this page)
+window.toggleUserMenu = function() {
+    const menu = document.getElementById('user-menu');
+    if (menu) menu.classList.toggle('show');
+};
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('user-menu');
+    const avatar = document.getElementById('user-avatar');
+    if (!menu || !avatar) return;
+    if (menu.classList.contains('show') && !menu.contains(e.target) && e.target !== avatar) {
+        menu.classList.remove('show');
+    }
+});

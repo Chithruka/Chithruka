@@ -359,6 +359,15 @@
                 <ul id="search-results" class="glass-panel hidden"></ul>
             </div>
         </div>
+        <div id="user-section" class="relative">
+            <img id="user-avatar" src="" class="user-avatar" onclick="toggleUserMenu()">
+            <div id="user-menu" class="user-menu">
+                <div class="user-menu-item" onclick="openAvatarModal()">
+                    <svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;display:inline-block;vertical-align:-2px"><path fill="currentColor" d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"></path></svg>
+                    Change Avatar
+                </div>
+            </div>
+        </div>
     </nav>
 
     <div id="hero-section">
@@ -596,5 +605,290 @@
 <footer class="relative backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10" style="overflow:hidden;background-color:#0a0a0a"><div class="footer-noise-bg" style="position:absolute;inset:-5%;width:110%;height:110%;filter:url(#footer-noise);background:radial-gradient(circle at 50% 100%, #e50914 0%, #4a0409 45% 65%, #000000 85%) no-repeat center / auto;pointer-events:none;z-index:0"></div><div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" style="z-index:1"></div><div class="container mx-auto px-6 max-w-7xl relative" style="z-index:1"><div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12"><div class="flex flex-col items-center md:items-start text-center md:text-left"><img loading="lazy" src="../Attachments/Chithruka%20Signature.svg" alt="Netflix Signature" class="h-12 mb-4"><p class="text-white text-sm mb-6 max-w-xs leading-relaxed">A full world of entertainment in one place – series, movies, live events, games, and podcasts.</p></div><div class="flex flex-col items-center md:items-start"><h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3><ul class="space-y-3 text-sm text-white w-full text-center md:text-left"><li><a href="https://help.netflix.com/en/node/2064" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Maturity ratings</a></li><li><a href="../credits.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Disclaimer</a></li></ul></div></div><div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6"><p class="text-xs text-white font-medium">&copy;<span id="footer-year"></span> Netflix<span id="footer-country"></span>. All Rights Reserved.</p><div class="flex gap-4"><a onclick='window.scrollTo({top:0,behavior:"smooth"})' class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160zm160 352l-160-160c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 329.4 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3z"/></svg></a></div></div></div></footer>
 <script src="anime-script.js" defer></script>
 <script>document.addEventListener("DOMContentLoaded",()=>{const y=document.getElementById("footer-year");if(y)y.textContent=new Date().getFullYear();});</script>
+<style>
+  #avatarModalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:100000}
+  #avatarModalOverlay.active{display:flex}
+  @media (min-width:640px){#avatarModalOverlay{align-items:center}}
+  #avatarModalOverlay .modal-panel{background:#181b1e;width:100%;max-width:640px;max-height:90vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:amSlideUp .25s ease}
+  @media (min-width:640px){#avatarModalOverlay .modal-panel{border-radius:16px;max-height:85vh}}
+  @keyframes amSlideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+  #avatarModalOverlay .modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #2b2f33;flex-shrink:0}
+  #avatarModalOverlay .modal-header h2{margin:0;font-size:22px;font-weight:700;color:#eef0f2}
+  #avatarModalOverlay .back-btn{background:none;border:none;color:#eef0f2;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%}
+  #avatarModalOverlay .back-btn:hover{background:#1f2226}
+  #avatarModalOverlay .back-btn.visible{display:flex}
+  #avatarModalOverlay .close-btn{background:none;border:none;color:#9aa1a8;font-size:22px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  #avatarModalOverlay .close-btn:hover{background:#1f2226;color:#eef0f2}
+  #avatarModalOverlay .modal-body{overflow-y:auto;padding:20px 24px 32px}
+  #avatarModalOverlay .am-section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:#9aa1a8;text-transform:uppercase;margin:24px 0 14px}
+  #avatarModalOverlay .am-section-title:first-child{margin-top:0}
+  #avatarModalOverlay .am-avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  #avatarModalOverlay .am-avatar-item{aspect-ratio:1/1;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#1f2226;transition:border-color .15s ease,transform .15s ease}
+  #avatarModalOverlay .am-avatar-item img{width:100%;height:100%;object-fit:cover;display:block}
+  #avatarModalOverlay .am-avatar-item:hover{transform:scale(1.05)}
+  #avatarModalOverlay .am-avatar-item.selected{border-color:#e50914}
+  #avatarModalOverlay .am-see-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:18px;padding:10px;background:none;border:none;color:#9aa1a8;font-size:14px;font-weight:600;cursor:pointer}
+  #avatarModalOverlay .am-see-more-btn:hover{color:#eef0f2}
+  #avatarModalOverlay .am-see-more-btn svg{transition:transform .2s ease}
+  #avatarModalOverlay .am-see-more-btn.expanded svg{transform:rotate(180deg)}
+  #avatarModalOverlay .am-poster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:14px 14px}
+  #avatarModalOverlay .am-poster-item{cursor:pointer;text-align:left;width:100%;min-width:0;display:flex;flex-direction:column}
+  #avatarModalOverlay .am-poster-item .am-poster-thumb{width:100%;aspect-ratio:2/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#1f2226;transition:transform .15s ease;display:flex;align-items:center;justify-content:center}
+  #avatarModalOverlay .am-poster-item:hover .am-poster-thumb{transform:scale(1.03)}
+  #avatarModalOverlay .am-poster-item .am-poster-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+  #avatarModalOverlay .am-poster-item .am-poster-title{display:block;margin-top:8px;font-size:13px;color:#eef0f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #avatarModalOverlay .am-loading,#avatarModalOverlay .am-empty-state{color:#9aa1a8;font-size:14px;padding:20px 0;text-align:center}
+  #avatarModalOverlay .modal-body::-webkit-scrollbar{width:8px}
+  #avatarModalOverlay .modal-body::-webkit-scrollbar-thumb{background:#3a3f45;border-radius:4px}
+</style>
+<div class="modal-overlay" id="avatarModalOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <button class="back-btn" id="amBackBtn" aria-label="Back">&#8592;</button>
+      <h2 id="amModalTitle">Change avatar</h2>
+      <button class="close-btn" id="amCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="amModalBody">
+      <!-- content injected by JS -->
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const AVATAR_SETS_RAW = [
+    { path: "Classics", count: 21, previewCount: 12 },
+    { path: "movie-194", count: 10 },
+    { path: "tv-71907", count: 12 },
+    { path: "tv-82452", count: 12 },
+    { path: "tv-94605", count: 12 }
+  ];
+
+  function deriveSetMeta(raw){
+    const match = /^(movie|tv)-(\d+)$/.exec(raw.path);
+    if (match){
+      const [, mediaType, id] = match;
+      return { ...raw, key: raw.path, type: "title", tmdb: { id: Number(id), mediaType }, label: raw.label || raw.path };
+    }
+    return { ...raw, key: raw.path, type: "grid", label: raw.label || raw.path };
+  }
+
+  const AVATAR_SETS = AVATAR_SETS_RAW.map(deriveSetMeta);
+  const AM_TMDB_API_KEY = "3a73619bbb8fc6d47742d1b5b2b707b5";
+  const AM_TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w300";
+  const AVATAR_BASE_PATH = "../Attachments/Avatars";
+  const CUSTOM_AVATAR_KEY = "custom_avatar_path";
+
+  const overlay = document.getElementById("avatarModalOverlay");
+  const modalBody = document.getElementById("amModalBody");
+  const modalTitle = document.getElementById("amModalTitle");
+  const backBtn = document.getElementById("amBackBtn");
+  const closeBtn = document.getElementById("amCloseBtn");
+
+  let selectedAvatar = localStorage.getItem(CUSTOM_AVATAR_KEY) || null;
+
+  function buildImagePath(set, index){
+    return `${AVATAR_BASE_PATH}/${set.path}/${index}.png`;
+  }
+
+  function renderMainView(){
+    modalTitle.textContent = "Change avatar";
+    backBtn.classList.remove("visible");
+    modalBody.innerHTML = "";
+
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    const titleSets = AVATAR_SETS.filter(s => s.type === "title");
+
+    gridSets.forEach(set => {
+      const section = document.createElement("div");
+      const heading = document.createElement("div");
+      heading.className = "am-section-title";
+      heading.textContent = set.label;
+      section.appendChild(heading);
+      section.appendChild(buildAvatarGrid(set));
+      modalBody.appendChild(section);
+    });
+
+    if (titleSets.length){
+      const heading = document.createElement("div");
+      heading.className = "am-section-title";
+      heading.textContent = "From Shows & Movies";
+      modalBody.appendChild(heading);
+
+      const posterGrid = document.createElement("div");
+      posterGrid.className = "am-poster-grid";
+      modalBody.appendChild(posterGrid);
+
+      titleSets.forEach(set => {
+        const item = document.createElement("div");
+        item.className = "am-poster-item";
+        item.innerHTML = `
+          <div class="am-poster-thumb"><div class="am-loading">\u00b7\u00b7\u00b7</div></div>
+          <span class="am-poster-title">${set.label}</span>
+        `;
+        item.addEventListener("click", () => renderTitleView(set));
+        posterGrid.appendChild(item);
+
+        resolvePosterAndTitle(set).then(({ posterUrl, title }) => {
+          const thumb = item.querySelector(".am-poster-thumb");
+          thumb.innerHTML = posterUrl
+            ? `<img src="${posterUrl}" alt="${title}">`
+            : `<div class="am-loading">No image</div>`;
+          if (title) {
+            set.label = title;
+            item.querySelector(".am-poster-title").textContent = title;
+          }
+        });
+      });
+    }
+  }
+
+  function buildAvatarGrid(set, expanded){
+    const grid = document.createElement("div");
+    grid.className = "am-avatar-grid";
+
+    const previewCount = set.previewCount || set.count;
+    const showCount = expanded ? set.count : Math.min(previewCount, set.count);
+
+    for (let i = 1; i <= showCount; i++){
+      const item = document.createElement("div");
+      item.className = "am-avatar-item";
+      if (selectedAvatar === buildImagePath(set, i)) item.classList.add("selected");
+
+      const img = document.createElement("img");
+      img.src = buildImagePath(set, i);
+      img.alt = `${set.label} avatar ${i}`;
+      img.loading = "lazy";
+      item.appendChild(img);
+
+      item.addEventListener("click", () => selectAvatar(set, i, item));
+      grid.appendChild(item);
+    }
+
+    if (!expanded && set.count > previewCount){
+      const wrapper = document.createElement("div");
+      wrapper.appendChild(grid);
+
+      const seeMoreBtn = document.createElement("button");
+      seeMoreBtn.className = "am-see-more-btn";
+      seeMoreBtn.innerHTML = `See more
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>`;
+      seeMoreBtn.addEventListener("click", () => {
+        const newGrid = buildAvatarGrid(set, true);
+        wrapper.replaceWith(newGrid);
+      });
+      wrapper.appendChild(seeMoreBtn);
+      return wrapper;
+    }
+
+    return grid;
+  }
+
+  function applyAvatarToProfile(path){
+    const avatarImg = document.getElementById("user-avatar");
+    if (avatarImg){
+      avatarImg.src = path;
+      avatarImg.classList.remove("hidden");
+    }
+  }
+
+  function selectAvatar(set, index, el){
+    selectedAvatar = buildImagePath(set, index);
+    localStorage.setItem(CUSTOM_AVATAR_KEY, selectedAvatar);
+    document.querySelectorAll(".am-avatar-item.selected").forEach(n => n.classList.remove("selected"));
+    el.classList.add("selected");
+    applyAvatarToProfile(selectedAvatar);
+    if (typeof showMessage === "function") showMessage("Avatar updated!");
+  }
+
+  function renderTitleView(set){
+    modalTitle.textContent = set.label;
+    backBtn.classList.add("visible");
+    modalBody.innerHTML = "";
+
+    const heading = document.createElement("div");
+    heading.className = "am-section-title";
+    heading.textContent = "Choose an avatar";
+    modalBody.appendChild(heading);
+
+    modalBody.appendChild(buildAvatarGrid(set, false));
+
+    backBtn.onclick = renderMainView;
+  }
+
+  const tmdbCache = {};
+  async function resolvePosterAndTitle(set){
+    if (set.poster || set.title){
+      return { posterUrl: set.poster || null, title: set.title || set.label };
+    }
+    if (!set.tmdb) return { posterUrl: null, title: set.label };
+
+    const cacheKey = `${set.tmdb.mediaType}-${set.tmdb.id}`;
+    if (tmdbCache[cacheKey]) return tmdbCache[cacheKey];
+
+    try {
+      const url = `https://api.themoviedb.org/3/${set.tmdb.mediaType}/${set.tmdb.id}?api_key=${AM_TMDB_API_KEY}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("TMDB fetch failed");
+      const data = await res.json();
+      const title = data.title || data.name || set.label;
+      const posterUrl = data.poster_path ? `${AM_TMDB_IMG_BASE}${data.poster_path}` : null;
+      const result = { posterUrl, title };
+      tmdbCache[cacheKey] = result;
+      return result;
+    } catch (err){
+      console.warn("TMDB lookup failed for", set.key, err);
+      return { posterUrl: null, title: set.label };
+    }
+  }
+
+  window.openAvatarModal = function(){
+    const userMenu = document.getElementById("user-menu");
+    if (userMenu) userMenu.classList.remove("show");
+    overlay.classList.add("active");
+    renderMainView();
+    document.body.style.overflow = "hidden";
+  };
+  window.closeAvatarModal = function(){
+    overlay.classList.remove("active");
+    document.body.style.overflow = "";
+  };
+
+  closeBtn.addEventListener("click", window.closeAvatarModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) window.closeAvatarModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("active")) window.closeAvatarModal();
+  });
+
+  // No login system on this page: always show the avatar, and if the
+  // user never picked one, randomly assign one on every page load.
+  function pickRandomAvatar(){
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    if (!gridSets.length) return null;
+    const set = gridSets[Math.floor(Math.random() * gridSets.length)];
+    const count = set.count || 1;
+    const index = Math.floor(Math.random() * count) + 1;
+    return buildImagePath(set, index);
+  }
+
+  function initAvatar(){
+    const avatarImg = document.getElementById("user-avatar");
+    if (!avatarImg) return;
+    let saved = localStorage.getItem(CUSTOM_AVATAR_KEY);
+    if (!saved){
+      saved = pickRandomAvatar();
+      if (saved) selectedAvatar = saved;
+    }
+    if (saved){
+      avatarImg.src = saved;
+      avatarImg.classList.remove("hidden");
+    }
+  }
+  document.addEventListener("DOMContentLoaded", initAvatar);
+})();
+</script>
 </body>
 </html>
