@@ -42,3 +42,83 @@
 .cast-card{align-items:flex-start;text-align:left}
 .cast-name,.cast-char,.crew-job{text-align:left;width:100%}
 .prod-netflix-badge{position:absolute;top:8px;left:8px;width:16px;height:auto;z-index:11;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));pointer-events:none}
+
+/* ===== Profile dropdown menu restyle (animated, theme-matched) ===== */
+#user-menu{
+  background:linear-gradient(180deg,rgba(20,20,20,.98),rgba(10,10,10,.98))!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:14px!important;
+  box-shadow:0 20px 50px -10px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03)!important;
+  backdrop-filter:blur(20px)!important;
+  -webkit-backdrop-filter:blur(20px)!important;
+  min-width:220px!important;
+  padding:8px!important;
+  overflow:hidden!important;
+  top:calc(100% + 10px)!important;
+  transform-origin:top right;
+  opacity:0;
+  transform:translateY(-8px) scale(.96);
+  pointer-events:none;
+  transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);
+  display:block!important;
+}
+#user-menu.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+#user-menu::before{
+  content:'';
+  position:absolute;
+  top:-6px;
+  right:18px;
+  width:12px;
+  height:12px;
+  background:rgba(20,20,20,.98);
+  border-left:1px solid rgba(255,255,255,.08);
+  border-top:1px solid rgba(255,255,255,.08);
+  transform:rotate(45deg);
+  border-radius:2px 0 0 0;
+}
+.user-menu-item{
+  border-bottom:none!important;
+  color:#e5e7eb!important;
+  border-radius:9px!important;
+  padding:11px 12px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:2px;
+  transition:background .18s ease,transform .18s ease,color .18s ease!important;
+  position:relative;
+}
+.user-menu-item:hover{
+  background:rgba(229,9,20,.14)!important;
+  color:#fff!important;
+  transform:translateX(2px);
+}
+.user-menu-item:active{transform:translateX(2px) scale(.98);}
+.user-menu-item:last-child{border-bottom:none!important;}
+.user-menu-item + .user-menu-item{margin-top:2px;}
+
+/* Force all icons inside the dropdown to be plain white, no per-item colors */
+.user-menu-item svg.svg-icon,
+.user-menu-item svg.svg-icon *{
+  color:#fff!important;
+  fill:#fff!important;
+}
+.user-menu-item svg.svg-icon{
+  opacity:.85;
+  transition:opacity .18s ease,transform .18s ease;
+  flex-shrink:0;
+}
+.user-menu-item:hover svg.svg-icon{
+  opacity:1;
+  transform:scale(1.08);
+}
+
+/* subtle divider before the destructive "Logout" action */
+.user-menu-item[onclick*="logoutTMDB"]{
+  margin-top:6px!important;
+  padding-top:11px!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+}
