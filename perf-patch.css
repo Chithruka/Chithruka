@@ -24,3 +24,7 @@
 #awards-modal .award-category{font-family:'Cinzel',serif;font-weight:700;font-size:.8rem;color:#fff;text-transform:uppercase;letter-spacing:1px;line-height:1.3;margin-bottom:4px}
 #awards-modal .award-recipient{font-size:.72rem;color:var(--gold-light);font-style:italic}
 #awards-modal .omdb-summary{display:inline-block;background:rgba(212,175,55,.1);border-left:3px solid var(--gold-primary);padding:.6rem 1rem;font-size:.85rem;color:var(--gold-light);border-radius:0 4px 4px 0;margin-bottom:1.75rem}
+.wl-add-btn{top:8px;right:8px;bottom:auto}
+.card-meta-3{justify-content:flex-start!important;align-items:center;gap:4px;flex-wrap:wrap}
+.card-meta-3 .card-meta-dot{color:#666;font-size:.65rem}
+.poster-wrapper>.media-status-badge,.grid-card .poster-wrapper>.media-status-badge,.media-status-badge-group{left:50%!important;right:auto!important;transform:translateX(-50%);border-radius:6px 6px 0 0}
