@@ -1082,13 +1082,24 @@ document.addEventListener('click', function(e) {
 
   // No login system on this page: always show the avatar, and if the
   // user never picked one, randomly assign one on every page load.
-  function pickRandomAvatar(){
+  // NOTE: only pick within `previewCount` (the images guaranteed to be
+  // shown/available by default) — `count` can include extra slots for
+  // avatars that aren't uploaded yet, which produced broken images.
+  function pickRandomAvatar(excludePath){
     const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
     if (!gridSets.length) return null;
     const set = gridSets[Math.floor(Math.random() * gridSets.length)];
-    const count = set.count || 1;
+    const count = Math.min(set.previewCount || set.count, set.count) || 1;
     const index = Math.floor(Math.random() * count) + 1;
-    return buildImagePath(set, index);
+    const path = buildImagePath(set, index);
+    if (path === excludePath && count > 1) return pickRandomAvatar(excludePath);
+    return path;
+  }
+
+  function fallbackAvatar(){
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    if (!gridSets.length) return null;
+    return buildImagePath(gridSets[0], 1);
   }
 
   function initAvatar(){
@@ -1100,6 +1111,16 @@ document.addEventListener('click', function(e) {
       if (saved) selectedAvatar = saved;
     }
     if (saved){
+      let retries = 2;
+      avatarImg.onerror = () => {
+        if (retries > 0){
+          retries--;
+          avatarImg.src = pickRandomAvatar(avatarImg.src);
+        } else {
+          avatarImg.onerror = null;
+          avatarImg.src = fallbackAvatar();
+        }
+      };
       avatarImg.src = saved;
       avatarImg.classList.remove("hidden");
     }
