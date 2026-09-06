@@ -142,14 +142,14 @@ function buildAnimeCard(anime) {
             <div class="media-badge tv">ANIME</div>
             <img src="${anime.coverImage.large || fallbackImage}" class="poster-img skeleton" loading="lazy" alt="${title}" onload="this.classList.remove('skeleton')">
             <div class="play-overlay">
-                <div class="play-icon-circle"><i class="fas fa-play"></i></div>
+                <div class="play-icon-circle"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></div>
             </div>
         </div>
         <div class="card-body">
             <div class="card-title" title="${title}">${title}</div>
             <div class="card-meta">
                 <span>${anime.episodes ? anime.episodes + ' Eps' : 'Ongoing'}</span>
-                <span class="rating-badge"><i class="fas fa-star mr-1"></i>${rating}</span>
+                <span class="rating-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" class="mr-1" style="display:inline-block;vertical-align:-1px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>${rating}</span>
             </div>
         </div>
     `;
@@ -229,7 +229,7 @@ function buildAllTimeRankedCard(anime, rank) {
         </div>
         <div class="alltime-rank-body">
             <div class="alltime-rank-title" title="${title}">${title}</div>
-            <div class="alltime-rank-meta"><i class="fas fa-star"></i> ${rating} · ${year ? year + ' · ' : ''}${formatLabel(anime)}</div>
+            <div class="alltime-rank-meta"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="display:inline-block;vertical-align:-1px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg> ${rating} · ${year ? year + ' · ' : ''}${formatLabel(anime)}</div>
         </div>
     `;
 
@@ -365,8 +365,8 @@ let audioMode = 'sub';
 let currentServer = 'megaplay';
 
 async function selectAnime(anime, targetEp = 1) {
-    if (!anime.duration && !anime.status) {
-        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id: anime.id });
+    if (!anime.duration && !anime.status || !anime.characters) {
+        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id: anime.id });
         // If this extra lookup fails (network blip, AniList rate limit, etc.)
         // fall back to the data we already have instead of crashing and
         // leaving the details section stuck hidden.
@@ -402,11 +402,31 @@ async function selectAnime(anime, targetEp = 1) {
     let cleanDesc = anime.description ? anime.description.replace(/<br><br>/g, '\n').replace(/<[^>]*>?/gm, '') : 'No overview available.';
     document.getElementById('detail-overview').textContent = cleanDesc;
 
-    document.getElementById('detail-date').querySelector('span').textContent = anime.seasonYear || 'TBA';
-    document.getElementById('detail-rating').querySelector('span').textContent = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'NR';
-    document.getElementById('detail-runtime').querySelector('span').textContent = anime.duration ? `${anime.duration}m` : 'N/A';
-    document.getElementById('detail-status').querySelector('span').textContent = anime.status ? anime.status.replace(/_/g, ' ') : 'UNKNOWN';
-    document.getElementById('detail-episodes').querySelector('span').textContent = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
+    document.getElementById('detail-date').textContent = anime.seasonYear || 'TBA';
+    document.getElementById('detail-rating').textContent = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'NR';
+    document.getElementById('detail-runtime').textContent = anime.duration ? `${anime.duration}m` : 'N/A';
+    document.getElementById('detail-status').textContent = anime.status ? anime.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Unknown';
+    document.getElementById('detail-episodes').textContent = anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing';
+    document.getElementById('detail-tvrating').textContent = anime.isAdult ? 'TV-MA' : 'TV-14';
+    document.getElementById('detail-category').textContent = anime.format ? anime.format.replace(/_/g, ' ') : 'Anime';
+
+    const seasonsWrap = document.getElementById('detail-seasons-wrap');
+    if (anime.seasons) {
+        document.getElementById('detail-seasons').textContent = `${anime.seasons} Season${anime.seasons === 1 ? '' : 's'}`;
+        seasonsWrap.style.display = '';
+    } else {
+        seasonsWrap.style.display = 'none';
+    }
+
+    const countryWrap = document.getElementById('detail-country-wrap');
+    const countryFlags = { JP: '🇯🇵', KR: '🇰🇷', CN: '🇨🇳', TW: '🇹🇼', US: '🇺🇸' };
+    if (anime.countryOfOrigin) {
+        document.getElementById('detail-country-flag').textContent = countryFlags[anime.countryOfOrigin] || '';
+        document.getElementById('detail-country').textContent = ({ JP: 'Japan', KR: 'Korea', CN: 'China', TW: 'Taiwan', US: 'USA' })[anime.countryOfOrigin] || anime.countryOfOrigin;
+        countryWrap.style.display = '';
+    } else {
+        countryWrap.style.display = 'none';
+    }
 
     const genreContainer = document.getElementById('detail-genres');
     genreContainer.innerHTML = '';
@@ -442,8 +462,138 @@ async function selectAnime(anime, targetEp = 1) {
     
     epSelect.value = currentEp;
 
+    renderCastAndStaff(anime);
+    renderRelations(anime);
+
     updatePlayer();
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+}
+
+function renderCastAndStaff(anime) {
+    const charList = document.getElementById('characters-list');
+    const staffList = document.getElementById('staff-list');
+    const charSection = document.getElementById('characters-section');
+    const staffSection = document.getElementById('staff-section');
+    if (!charList || !staffList) return;
+
+    charList.innerHTML = '';
+    staffList.innerHTML = '';
+
+    const placeholderImg = 'https://placehold.co/100x140/1c2230/555?text=%20';
+    const roleLabel = r => r ? r.charAt(0) + r.slice(1).toLowerCase() : '';
+
+    const characters = (anime.characters && anime.characters.edges) || [];
+    if (characters.length) {
+        charSection.style.display = '';
+        characters.forEach(edge => {
+            const charName = edge.node && edge.node.name ? edge.node.name.full : 'Unknown';
+            const charImg = (edge.node && edge.node.image && edge.node.image.large) || placeholderImg;
+            const va = edge.voiceActors && edge.voiceActors[0];
+            const vaName = va ? va.name.full : '';
+            const vaImg = (va && va.image && va.image.large) || placeholderImg;
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:stretch; background:#1c2230; border-radius:10px; overflow:hidden; margin-bottom:6px; min-height:88px;';
+            row.innerHTML = `
+                <img src="${charImg}" alt="${charName}" loading="lazy" style="width:64px; object-fit:cover; flex-shrink:0; background:#11151d;">
+                <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:space-between; padding:14px 10px;">
+                    <div style="color:#e5e7eb; font-size:14px; font-weight:500; line-height:1.3; overflow-wrap:break-word; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${charName}</div>
+                    <div style="color:#8b93a1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${roleLabel(edge.role)}</div>
+                </div>
+                ${vaName ? `
+                <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; text-align:right; padding:14px 10px; border-left:1px solid rgba(255,255,255,0.06);">
+                    <div style="color:#e5e7eb; font-size:14px; font-weight:500; line-height:1.3; overflow-wrap:break-word; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${vaName}</div>
+                    <div style="color:#8b93a1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Japanese</div>
+                </div>
+                <img src="${vaImg}" alt="${vaName}" loading="lazy" style="width:64px; object-fit:cover; flex-shrink:0; background:#11151d;">
+                ` : ''}
+            `;
+            charList.appendChild(row);
+        });
+    } else if (charSection) {
+        charSection.style.display = 'none';
+    }
+
+    const staff = (anime.staff && anime.staff.edges) || [];
+    if (staff.length) {
+        staffSection.style.display = '';
+        staff.forEach(edge => {
+            const staffName = edge.node && edge.node.name ? edge.node.name.full : 'Unknown';
+            const staffImg = (edge.node && edge.node.image && edge.node.image.large) || placeholderImg;
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:stretch; background:#1c2230; border-radius:10px; overflow:hidden; margin-bottom:6px; min-height:88px;';
+            row.innerHTML = `
+                <img src="${staffImg}" alt="${staffName}" loading="lazy" style="width:64px; object-fit:cover; flex-shrink:0; background:#11151d;">
+                <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px;">
+                    <div style="color:#e5e7eb; font-size:14px; font-weight:500; line-height:1.3; overflow-wrap:break-word; word-break:break-word; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${staffName}</div>
+                    <div style="color:#8b93a1; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${edge.role || ''}</div>
+                </div>
+                <div style="display:flex; align-items:center; padding-right:16px;">
+                    <svg width="22" height="16" viewBox="0 0 22 16" fill="none"><line x1="0" y1="2" x2="22" y2="2" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round"></line><line x1="0" y1="8" x2="22" y2="8" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round"></line><line x1="0" y1="14" x2="22" y2="14" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round"></line></svg>
+                </div>
+            `;
+            staffList.appendChild(row);
+        });
+    } else if (staffSection) {
+        staffSection.style.display = 'none';
+    }
+}
+
+function relationTypeLabel(type) {
+    if (!type) return '';
+    return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function buildRelationCard(node, relationType) {
+    const title = node.title.english || node.title.romaji;
+    const rating = node.averageScore ? (node.averageScore / 10).toFixed(1) : 'NR';
+    const fallbackImage = 'https://placehold.co/150x225/222/999?text=No+Image';
+
+    const card = document.createElement('div');
+    card.className = 'scroll-card';
+
+    card.innerHTML = `
+        <div class="poster-wrapper">
+            <div class="media-badge tv" style="background:#e50914;">${relationTypeLabel(relationType)}</div>
+            <img src="${node.coverImage && node.coverImage.large || fallbackImage}" class="poster-img skeleton" loading="lazy" alt="${title}" onload="this.classList.remove('skeleton')">
+            <div class="play-overlay">
+                <div class="play-icon-circle"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="card-title" title="${title}">${title}</div>
+            <div class="card-meta">
+                <span>${node.episodes ? node.episodes + ' Eps' : 'Ongoing'}</span>
+                <span class="rating-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" class="mr-1" style="display:inline-block;vertical-align:-1px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg>${rating}</span>
+            </div>
+        </div>
+    `;
+
+    card.onclick = () => selectAnime(node);
+    return card;
+}
+
+function renderRelations(anime) {
+    const relSection = document.getElementById('relations-section');
+    const relContainer = document.getElementById('relations-container');
+    if (!relSection || !relContainer) return;
+
+    relContainer.innerHTML = '';
+
+    const excludedTypes = ['CHARACTER', 'OTHER', 'COMPILATION'];
+    const edges = ((anime.relations && anime.relations.edges) || [])
+        .filter(e => e.node && e.node.title && !excludedTypes.includes(e.relationType));
+
+    if (edges.length) {
+        relSection.style.display = '';
+        edges.forEach(edge => {
+            relContainer.appendChild(buildRelationCard(edge.node, edge.relationType));
+        });
+        setTimeout(() => updateScrollButtons(relContainer), 50);
+    } else {
+        relSection.style.display = 'none';
+    }
 }
 
 window.setAudioMode = function(mode) {
@@ -523,7 +673,7 @@ function setupSearch() {
 }
 
 window.fetchFullAnimeDetails = async function(id, targetEp = 1) {
-   const data = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration}}`, { id });
+   const data = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id });
     selectAnime(data.Media, targetEp);
 }
 
@@ -571,10 +721,10 @@ function initHero(items) {
         slide.innerHTML = `
             <div class="hero-overlay">
                 <div class="hero-content fade-in">
-                    <h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>
+                    <h1 class="hero-title-font text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">${title}</h1>
                     <p class="hero-text text-white text-gray-200">${cleanDesc}</p>
                     <button onclick='fetchFullAnimeDetails(${item.id})' class="action-btn btn-play text-base md:text-lg px-6 md:px-8 py-2 md:py-3">
-                        <i class="fas fa-play mr-2"></i> Watch Now
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="mr-2" style="display:inline-block;vertical-align:-2px"><path d="M8 5v14l11-7z"></path></svg> Watch Now
                     </button>
                 </div>
             </div>
@@ -854,7 +1004,7 @@ window.searchTraceMoe = async () => {
                     <div class="flex flex-col justify-center flex-1 min-w-0">
                         <span class="text-sm font-bold text-white truncate flex items-center">${title} ${isAdult}</span>
                         <div class="text-xs text-gray-400 mt-1 flex items-center justify-between">
-                            <span><i class="fas fa-tv mr-1 text-blue-400"></i> Ep: ${ep}</span>
+                            <span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 text-blue-400" style="display:inline-block;vertical-align:-2px"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg> Ep: ${ep}</span>
                             <span class="${similarity > 85 ? 'text-green-400' : 'text-yellow-400'} font-bold">${similarity}% Match</span>
                         </div>
                     </div>

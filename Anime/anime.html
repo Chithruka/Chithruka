@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chithruka Anime</title>
     <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
-    <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../output.css">
     <link rel="stylesheet" href="../pref-patch.css">
     <style>
@@ -289,6 +291,10 @@
     gap: 4px;
 }
 .alltime-rank-meta i { color: #f5c518; }
+
+.hero-title-font {
+    font-family: 'Caveat', cursive;
+}
     </style>
     </head>
 <body>
@@ -350,12 +356,12 @@
         <img src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Logo" class="logo-img" onclick="location.href='anime.html';">
         <div class="search-group">
             <button onclick="openTraceMoeModal()" class="filter-btn" title="Search by Image">
-                <i class="fas fa-image"></i>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </button>
             
             <div class="relative w-full max-w-[300px] flex-grow">
                 <input type="text" id="search-input" class="glass-input" placeholder="Search Anime...">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg>
+                <span class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"><svg id="search-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #c0b9c0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
                 <ul id="search-results" class="glass-panel hidden"></ul>
             </div>
         </div>
@@ -461,12 +467,19 @@
             <div class="flex-grow min-w-0">
                 <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white"></h2>
                 
-                <div class="flex flex-wrap items-center gap-4 md:gap-5 text-sm text-gray-300 mb-6 mt-4">
-                    <span id="detail-date" class="flex items-center"><i class="far fa-calendar-alt mr-2 text-accent"></i> <span></span></span>
-                    <span id="detail-rating" class="flex items-center"><i class="fas fa-star text-yellow-500 mr-2"></i> <span></span></span>
-                    <span id="detail-runtime" class="flex items-center"><i class="far fa-clock mr-2"></i> <span></span></span>
-                    <span id="detail-status" class="flex items-center text-green-400 font-semibold"><i class="fas fa-info-circle mr-2"></i><span></span></span>
-                    <span id="detail-episodes" class="flex items-center text-blue-400 font-semibold"><i class="fas fa-layer-group mr-2"></i><span></span></span>
+                <div id="detail-meta-row" class="text-sm text-gray-300 mb-6 mt-4" style="display:flex; flex-wrap:wrap; align-items:center; column-gap:12px; row-gap:8px;">
+                    <span style="display:flex; align-items:center; gap:8px;">
+                        <svg width="16" height="16" viewBox="0 0 329.942 329.942" fill="#E50914"><path d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837 c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922 c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07 c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059 l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352 l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"></path></svg>
+                        <span id="detail-rating" class="text-white font-bold"></span>
+                    </span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-date"></span></span>
+                    <span id="detail-seasons-wrap" style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-seasons"></span></span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-episodes"></span></span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-tvrating" class="font-bold text-white" style="border:1px solid #9ca3af; border-radius:4px; padding:2px 6px; font-size:0.75rem;"></span></span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-runtime"></span></span>
+                    <span id="detail-country-wrap" style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-country-flag"></span><span id="detail-country"></span></span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-status" class="text-red-500 font-bold"></span></span>
+                    <span style="display:flex; align-items:center; gap:12px;"><span class="text-gray-500">•</span><span id="detail-category" class="text-gray-300"></span></span>
                 </div>
 
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
@@ -508,6 +521,29 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="characters-section" class="mb-8" style="display:none;">
+                    <h3 style="color:#9aa3af; font-size:1.15rem; font-weight:600; margin-bottom:14px;">Characters</h3>
+                    <div id="characters-list"></div>
+                </div>
+
+                <div id="staff-section" class="mb-8" style="display:none;">
+                    <h3 style="color:#9aa3af; font-size:1.15rem; font-weight:600; margin-bottom:14px;">Staff</h3>
+                    <div id="staff-list"></div>
+                </div>
+
+                <div id="relations-section" class="mb-8 relative" style="display:none;">
+                    <h3 style="color:#9aa3af; font-size:1.15rem; font-weight:600; margin-bottom:14px;">Relations</h3>
+                    <div class="relative group">
+                        <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('relations-container', -300)">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>
+                        </button>
+                        <div id="relations-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+                        <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('relations-container', 300)">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -519,7 +555,7 @@
         <div class="flex justify-center w-full px-4">
             <div class="quote-slider-wrapper relative">
                 <button onclick="fetchNewQuote()" class="nav-arrow left-arrow">
-                    <i class="fas fa-chevron-left"></i>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
 
                 <div id="quote-card" class="card" onclick="fetchNewQuote()">
@@ -544,7 +580,7 @@
                 </div>
 
                 <button onclick="fetchNewQuote()" class="nav-arrow right-arrow">
-                    <i class="fas fa-chevron-right"></i>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
             </div>
         </div>
@@ -552,7 +588,7 @@
   <div id="tracemoe-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
     <div class="glass-panel p-6 rounded-2xl max-w-md w-full relative shadow-2xl border border-white/10">
         <button onclick="closeTraceMoeModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl z-20">
-            <i class="fas fa-times"></i>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
         
         <div class="text-center mb-6">
@@ -570,7 +606,7 @@
             <div id="tracemoe-dropzone" class="relative border-2 border-dashed border-gray-600 rounded-xl h-40 flex items-center justify-center overflow-hidden transition-all duration-300 bg-black/30 hover:border-[#e50914] group">
                 
                 <div id="tracemoe-default-state" class="pointer-events-none text-center p-4">
-                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2 group-hover:text-[#e50914] transition-colors"></i>
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mb-2 group-hover:text-[#e50914] transition-colors mx-auto"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><polyline points="9 15 12 12 15 15"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
                     <p class="text-sm text-gray-300 font-bold">Drag & drop or tap to upload</p>
                 </div>
 
@@ -583,7 +619,7 @@
     </div>
 
     <button onclick="clearTraceMoeSelection(event)" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-700 hover:scale-110 transition-all shadow-lg pointer-events-auto" title="Remove image">
-        <i class="fas fa-times text-sm"></i>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
 </div>
 
@@ -591,11 +627,11 @@
             </div>
 
             <button onclick="searchTraceMoe()" class="w-full p-3 bg-[#E50914] hover:bg-[#B20710] rounded-xl text-white font-bold transition flex justify-center items-center gap-2 shadow-lg mt-2">
-                <i class="fas fa-search"></i> Find Anime
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Find Anime
             </button>
             
             <div id="tracemoe-loading" class="hidden text-center text-[#e50914] animate-pulse text-sm font-bold my-2">
-                <i class="fas fa-spinner fa-spin mr-2"></i> Analyzing frames...
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2 animate-spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg> Analyzing frames...
             </div>
             
             <div id="tracemoe-results" class="max-h-[250px] overflow-y-auto flex flex-col gap-3 mt-2 pr-1 custom-scrollbar"></div>
