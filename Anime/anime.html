@@ -457,15 +457,18 @@
                 <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M311.1 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L243.2 256 73.9 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>
             </button>
         </div>
-    </div> <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8 mt-8">
-        <div class="flex flex-col md:flex-row gap-8 md:items-start">
+    </div> <div id="details-section" class="glass-panel p-6 md:p-8 rounded-2xl hidden mb-8 mt-8" style="position:relative; overflow:hidden;">
+        <div id="detail-poster-backdrop" style="position:absolute; top:0; left:0; right:0; height:260px; background-size:cover; background-position:center; z-index:0; -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0) 100%); mask-image:linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0) 100%); pointer-events:none;"></div>
+        <div class="flex flex-col md:flex-row gap-8 md:items-start" style="position:relative; z-index:1;">
             
-            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52 detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
-                <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover" loading="lazy">
+            <div class="flex-shrink-0 mx-auto md:mx-0 w-48 md:w-52">
+                <div class="detail-poster-wrapper rounded-xl overflow-hidden shadow-2xl border border-gray-700">
+                    <img id="detail-poster" src="" alt="Poster" class="w-full h-full object-cover" loading="lazy">
+                </div>
             </div>
             
             <div class="flex-grow min-w-0">
-                <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white"></h2>
+                <h2 id="detail-heading" class="text-3xl md:text-4xl font-bold mb-1 text-white" style="text-shadow: 0 2px 8px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9);"></h2>
                 
                 <div id="detail-meta-row" class="text-sm text-gray-300 mb-6 mt-4" style="display:flex; flex-wrap:wrap; align-items:center; column-gap:12px; row-gap:8px;">
                     <span style="display:flex; align-items:center; gap:8px;">

@@ -397,6 +397,12 @@ async function selectAnime(anime, targetEp = 1) {
     playerInterface.classList.remove('hidden');
 
     document.getElementById('detail-poster').src = anime.coverImage.extraLarge || 'https://placehold.co/300x450/222/999?text=No+Poster';
+
+    const posterBackdrop = document.getElementById('detail-poster-backdrop');
+    if (posterBackdrop) {
+        const backdropImg = anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large;
+        posterBackdrop.style.backgroundImage = backdropImg ? `url('${backdropImg}')` : 'none';
+    }
     document.getElementById('detail-heading').textContent = title;
     
     let cleanDesc = anime.description ? anime.description.replace(/<br><br>/g, '\n').replace(/<[^>]*>?/gm, '') : 'No overview available.';
