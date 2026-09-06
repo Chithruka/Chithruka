@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chithruka - Game Streaming</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Albert+Sans:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../pref-patch.css">
     
     <style>
         :root {
@@ -23,12 +22,30 @@
             padding: 0;
         }
 
+        html {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+
         body {
             background-color: var(--netflix-dark);
             color: var(--text-white);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
+            max-width: 100%;
             padding-bottom: 50px;
+        }
+
+        /* Override pref-patch.css's negative offsets on .scroll-btn, which push
+           the row scroll arrows 10px past the viewport edge and cause the page
+           to gain horizontal scroll. This rule loads after pref-patch.css and
+           matches its specificity, so it wins without editing the shared file. */
+        .row-scroll-wrapper .scroll-btn.left-0 {
+            left: 0;
+        }
+
+        .row-scroll-wrapper .scroll-btn.right-0 {
+            right: 0;
         }
 
         /* --- Header / Navbar --- */
@@ -39,6 +56,7 @@
             padding: 20px 4%;
             position: fixed;
             top: 0;
+            left: 0;
             width: 100%;
             z-index: 1000;
             background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
@@ -50,11 +68,25 @@
         }
 
         .logo {
-            font-family: 'Bebas Neue', sans-serif;
-            color: var(--netflix-red);
-            font-size: 2.5rem;
-            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             text-decoration: none;
+        }
+
+        .logo-icon {
+            height: 34px;
+            width: auto;
+            display: block;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .logo-games {
+            font-family: 'Albert Sans', sans-serif;
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 1.6rem;
+            letter-spacing: 1px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
@@ -91,6 +123,8 @@
             color: white;
             cursor: pointer;
             font-size: 1.2rem;
+            display: flex;
+            align-items: center;
         }
 
         /* --- Hero Section --- */
@@ -100,24 +134,99 @@
             display: flex;
             align-items: center;
             padding-left: 4%;
-            background-image: linear-gradient(to right, rgba(20,20,20,1) 10%, rgba(20,20,20,0) 50%), url('https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/c1f0c7c3-3611-4f93-49ae-3b779e216c00/enlarged');
+            background-color: var(--netflix-black);
+            overflow: hidden;
+        }
+
+        .hero-bg-layer {
+            position: absolute;
+            inset: 0;
             background-size: cover;
             background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+            z-index: 0;
+        }
+
+        .hero-bg-layer.active {
+            opacity: 1;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(20,20,20,1) 10%, rgba(20,20,20,0.15) 55%, rgba(20,20,20,0.55) 100%);
+            z-index: 1;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 15%;
+            background: linear-gradient(to top, var(--netflix-dark) 0%, rgba(20,20,20,0) 100%);
+            z-index: 1;
         }
 
         .hero-content {
             max-width: 500px;
+            position: relative;
             z-index: 2;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-dots {
+            position: absolute;
+            left: 4%;
+            bottom: 24px;
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .hero-dot {
+            width: 26px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.35);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .hero-dot.active {
+            background-color: var(--netflix-red);
+        }
+
+        .hero-tag {
+            color: var(--netflix-red);
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 3px black;
         }
 
         .hero-title {
-            width: 100%;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            line-height: 1;
+            letter-spacing: 1px;
+            color: var(--text-white);
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.7);
+            margin-bottom: 16px;
         }
 
         .hero-desc {
             font-size: 1.1rem;
             margin-bottom: 20px;
             text-shadow: 1px 1px 2px black;
+            max-width: 460px;
         }
 
         .btn-play {
@@ -141,17 +250,19 @@
 
         /* --- Game Rows --- */
         .category-title {
-            margin: 30px 4% 10px;
-            font-size: 1.2rem;
+            margin: 40px 4% 12px;
+            font-size: 1.3rem;
             font-weight: 600;
             color: #e5e5e5;
+            letter-spacing: 0.3px;
         }
 
         .row-container {
             display: flex;
             overflow-x: auto;
-            padding: 10px 4%;
-            gap: 10px;
+            overflow-y: visible;
+            padding: 16px 4%;
+            gap: 14px;
             scrollbar-width: none; /* Firefox */
         }
         
@@ -159,47 +270,101 @@
             display: none; /* Chrome/Safari */
         }
 
+        /* Positioning context for the scroll-btn pair from pref-patch.css */
+        .row-scroll-wrapper {
+            position: relative;
+        }
+
         .game-card {
             flex: 0 0 auto;
             width: 250px;
-            aspect-ratio: 16/9;
-            position: relative;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.3s ease, z-index 0.3s;
+            background-color: #181818;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-poster {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background-color: #000;
         }
 
         .game-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+
+        .card-poster::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 45%);
+        }
+
+        .card-play-badge {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .card-play-badge svg {
+            width: 42px;
+            height: 42px;
+            fill: rgba(255,255,255,0.95);
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
         }
 
         .game-card:hover {
-            transform: scale(1.1);
+            transform: scale(1.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             z-index: 10;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .game-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .game-card:hover .card-play-badge {
+            opacity: 1;
         }
 
         .card-info {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 10px;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
+            padding: 10px 12px;
+            border-top: 2px solid transparent;
+            transition: border-color 0.25s ease;
         }
 
         .game-card:hover .card-info {
-            opacity: 1;
+            border-color: var(--netflix-red);
         }
 
         .card-title {
             font-size: 0.9rem;
-            font-weight: bold;
+            font-weight: 600;
+            color: var(--text-white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-category {
+            font-size: 0.72rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
         /* --- Search Results Area --- */
@@ -278,8 +443,13 @@
         /* --- Mobile Responsiveness --- */
         @media (max-width: 768px) {
             .game-card { width: 160px; }
+            .card-title { font-size: 0.8rem; }
+            .card-category { font-size: 0.65rem; }
+            .hero-title { font-size: 2.6rem; }
+            .hero-desc { font-size: 0.95rem; }
             .search-container input:focus { width: 120px; }
-            .logo { font-size: 1.8rem; }
+            .logo-icon { height: 24px; }
+            .logo-games { font-size: 1.15rem; }
         }
         /* --- DESKTOP SIDEBAR --- */
 .sidebar {
@@ -347,6 +517,28 @@
     body { padding-left: 64px; }
     /* Shifts the existing top header so it doesn't hide behind the sidebar */
     header#navbar { padding-left: calc(4% + 64px); } 
+
+    /* The sidebar overlays content (it's position:fixed) and expands to 240px
+       wide on hover, which can cover the hero/category/row content that only
+       clears its collapsed 64px width. Rather than permanently reserving the
+       expanded width (which shifts content right all the time), only apply
+       the extra clearance while the sidebar is actually expanded - toggled by
+       JS via the .sidebar-expanded class on <body>. */
+    .hero, .category-title, .row-container {
+        transition: padding-left 0.3s ease, margin-left 0.3s ease;
+    }
+    body.sidebar-expanded .hero { padding-left: clamp(4%, 4% + 25vw, 240px); }
+    body.sidebar-expanded .category-title { margin-left: clamp(4%, 4% + 25vw, 240px); margin-right: 4%; }
+    body.sidebar-expanded .row-container { padding-left: clamp(4%, 4% + 25vw, 240px); }
+
+    /* .hero is height:70vh and vertically centers its content; on short/narrow
+       windows that box gets short enough that the centered title renders
+       underneath the fixed header. Guarantee a minimum height and top
+       clearance so that never happens. */
+    .hero {
+        min-height: 480px;
+        padding-top: 90px;
+    }
 }
 @media (max-width: 767px) { 
     body { padding-bottom: 70px; } 
@@ -405,40 +597,83 @@
     </div>
 </div>
     <header id="navbar">
-        <a href="#" class="logo" onclick="resetHome()">CHITHRUKA</a>
+        <a href="#" class="logo" onclick="resetHome()">
+            <svg class="logo-icon" viewBox="0 0 551.11109 999.99998" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <linearGradient id="chLogoGrad1">
+                        <stop style="stop-color:#b1060f;stop-opacity:1;" offset="0" />
+                        <stop style="stop-color:#7b010c;stop-opacity:1" offset="0.62500739" />
+                        <stop style="stop-color:#b1060f;stop-opacity:0;" offset="1" />
+                    </linearGradient>
+                    <linearGradient id="chLogoGrad2">
+                        <stop style="stop-color:#b1060f;stop-opacity:1" offset="0" />
+                        <stop style="stop-color:#7b010c;stop-opacity:1" offset="0.54607224" />
+                        <stop style="stop-color:#e50914;stop-opacity:0;" offset="1" />
+                    </linearGradient>
+                    <linearGradient xlink:href="#chLogoGrad2" id="chLogoGrad1Pos" x1="78.23394" y1="423.76712" x2="221.66281" y2="365.09167" gradientUnits="userSpaceOnUse" />
+                    <linearGradient xlink:href="#chLogoGrad1" id="chLogoGrad2Pos" x1="456.36462" y1="521.55957" x2="309.67599" y2="583.49475" gradientUnits="userSpaceOnUse" />
+                </defs>
+                <path style="fill:url(#chLogoGrad1Pos);stroke:none;fill-opacity:1" d="M -1.1524947,-1.1524946 2.3049893,1002.6704 C 75.577724,988.55904 133.19716,990.10098 198.22908,984.23044 V 0 Z" />
+                <path style="fill:url(#chLogoGrad2Pos);stroke:none;fill-opacity:1" d="m 353.81586,0 h 199.38158 l 2.30498,1000.3654 -202.83905,-33.42238 z" />
+                <path style="fill:#e50914;fill-opacity:1;stroke:none" d="M 1.1524964,-3.6590427e-7 C 5.7624764,11.524946 346.90086,981.92546 346.90086,981.92546 c 56.0558,-0.40033 131.2191,8.75315 205.1441,17.28745 L 197.07656,-3.6590427e-7 Z" />
+            </svg>
+            <span class="logo-games">GAMES</span>
+        </a>
         <div class="search-container">
-            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+            <button class="search-btn"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.031 16.6168L22.3137 20.8995L20.8995 22.3137L16.6168 18.031C15.0769 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.0769 18.031 16.6168ZM16.0247 15.8748C17.2475 14.6146 18 12.8956 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18C12.8956 18 14.6146 17.2475 15.8748 16.0247L16.0247 15.8748Z"></path></svg></button>
             <input type="text" id="searchInput" placeholder="Titles, people, genres">
         </div>
     </header>
 
     <div id="main-view">
-        <div class="hero">
-            <div class="hero-content">
-                <img class="hero-title" src="https://rawg.io/assets/images/games.4423d0579639f1241bc49dbc7e65f7ac.png" alt="" srcset="">
-                <p class="hero-desc">Experience intense tactical combat in this high-octane online shooter. Dominate the battlefield now.</p>
-                <button class="btn-play" onclick="playGame(9)">
-                    <i class="fa-solid fa-play"></i> Play
+        <div class="hero" id="heroSection">
+            <div class="hero-bg-layer" id="heroBgA"></div>
+            <div class="hero-bg-layer" id="heroBgB"></div>
+            <div class="hero-content" id="heroContent">
+                <div class="hero-tag">Featured Game</div>
+                <h1 class="hero-title" id="heroTitle"></h1>
+                <p class="hero-desc" id="heroDesc"></p>
+                <button class="btn-play" id="heroPlayBtn">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align:-2px; margin-right:6px;"><path d="M4.5 3.5V20.5L20.5 12L4.5 3.5Z"></path></svg>Play
                 </button>
-                <button class="btn-play" style="background:rgba(109, 109, 110, 0.7); color: white; margin-left: 10px;" onclick="showMoreInfo('cyberpunk-2077')">
-    <i class="fa-solid fa-circle-info"></i> More Info
-</button>
             </div>
+            <div class="hero-dots" id="heroDots"></div>
         </div>
 
         <h3 class="category-title">Trending Now</h3>
-        <div class="row-container" id="row-trending">
-            </div>
-<h3 class="category-title">Latest Free Web Games</h3>
-<div class="row-container" id="row-f2p">
-    </div>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-trending">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
         <h3 class="category-title">Action & Adventure</h3>
-        <div class="row-container" id="row-action">
-            </div>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-action">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
 
         <h3 class="category-title">Strategy & Puzzle</h3>
-        <div class="row-container" id="row-strategy">
-            </div>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-strategy">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
     </div>
 
     <div id="search-results">
@@ -454,53 +689,13 @@
         // Game Database
         const games = [
             {
-                id: 1,
-                title: "Ninja Breakout",
-                category: "action",
-                poster: "https://www.htmlgames.com/uploaded/game/thumb800/ninjabreakout800450.webp",
-                type: "script",
-                code: `<iframe src="https://htmlgames.com/NinjaBreakout/" width="100%" height="100%" frameborder="0"></iframe>` 
-            },
-            {
-                id: 2,
-                title: "Bus Puzzle",
-                category: "strategy",
-                poster: "https://www.htmlgames.com/uploaded/game/thumb800/buspuzzle800450.webp",
-                type: "script",
-                code: `<iframe src="https://htmlgames.com/BusPuzzle/" width="100%" height="100%" frameborder="0"></iframe>`
-            },
-            {
-                id: 3,
-                title: "Super Mario Bros",
-                category: "classic",
-                poster: "https://enam.mariogames.be/articles/title-screen.png",
-                type: "iframe",
-                url: "https://www.mariogames.be/Super_Mario_Bros_Game"
-            },
-            {
                 id: 4,
                 title: "Sri Lankan Pol. Mario",
                 category: "trending",
                 poster: "https://i.ytimg.com/vi/uaJ1pFVaXw0/hq720.jpg",
                 type: "iframe",
-                url: "https://chithruka.github.io/Mahi-Run/"
-            },
-            {
-                id: 5,
-                title: "Cat Survivors",
-                category: "action",
-                poster: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTL1wHXptDooOXV1p0b_LdIFo1QRgGttGGAK-jSWkudJQ&s",
-                type: "iframe",
-                url: "https://play.js13kgames.com/cat-survivors/"
-            },
-            {
-                id: 6,
-                title: "Gas Station Simulator",
-                category: "trending",
-                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/5efc382f-b4f3-45c6-86e9-de1cd4015300/w=800,fit=cover",
-                type: "iframe",
-                url: "https://playgama.com/export/game/gas-station-simulator",
-                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+                url: "https://chithruka.github.io/Mahi-Run/",
+                description: "Run, jump, and dodge through a wacky Sri Lankan-themed platformer adventure."
             },
             {
                 id: 7,
@@ -509,7 +704,8 @@
                 poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/0c888413-a125-4ef5-56cd-89a6a329e900/enlarged",
                 type: "iframe",
                 url: "https://playgama.com/export/game/stickman-kombat-2d",
-                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Face off in fast-paced stickman brawls packed with combos and knockouts."
             },
             {
                 id: 8,
@@ -518,7 +714,8 @@
                 poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/79d71efd-42d5-48c6-4e91-532faf999f00/enlarged",
                 type: "iframe",
                 url: "https://playgama.com/export/game/deadly-descent",
-                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Survive a perilous freefall through danger-filled depths in this tense action game."
             },
             {
                 id: 9,
@@ -527,7 +724,8 @@
                 poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/c1f0c7c3-3611-4f93-49ae-3b779e216c00/enlarged",
                 type: "iframe",
                 url: "https://playgama.com/export/game/hazmob-fps-online-shooter",
-                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture"
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Experience intense tactical combat in this high-octane online shooter. Dominate the battlefield now."
             },
             {
                 id: 10,
@@ -535,7 +733,8 @@
                 category: "strategy",
                 poster: "https://playpager.com/app-images/1x1/chess-1x1-300.avif",
                 type: "iframe",
-                url: "https://playpager.com/embed/chess/index.html"
+                url: "https://playpager.com/embed/chess/index.html",
+                description: "Sharpen your strategy in a fully rendered 3D chess board with smooth animations."
             },
             {
                 id: 11,
@@ -543,7 +742,8 @@
                 category: "strategy",
                 poster: "https://playpager.com/app-images/checkers/Checkers-1x1-300.avif",
                 type: "iframe",
-                url: "https://playpager.com/embed/checkers/index.html"
+                url: "https://playpager.com/embed/checkers/index.html",
+                description: "Outmaneuver your opponent in this classic board game of checkers."
             },
             {
                 id: 12,
@@ -551,26 +751,117 @@
                 category: "strategy",
                 poster: "https://playpager.com/app-images/scorpion/scorpion-solitaire-300-1x1.avif",
                 type: "iframe",
-                url: "https://playpager.com/embed/solitaire/index.html"
+                url: "https://playpager.com/embed/solitaire/index.html",
+                description: "Unwind with a timeless game of solitaire, perfect for a quick mental break."
             },
             {
                 id: 13,
-                title: "Chess",
+                title: "Chess LK",
                 category: "strategy",
                 poster: "https://roskomsvoboda.org/uploads/images/block_chesscom.jpg",
                 type: "iframe",
-                url: "https://chithruka.github.io/Chithruka/Games/Chess/home.html"
+                url: "https://chithruka.github.io/Chithruka/Games/Chess/home.html",
+                description: "Take on a locally hosted chess experience built for quick, casual matches."
             }
         ];
 
         // --- Render Functions ---
 
+        let heroSlides = [];
+        let heroIndex = 0;
+        let heroTimer = null;
+        let heroLayerToggle = false; // false -> layer A is next to receive the image, true -> layer B
+
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function renderHero() {
+            const slideCount = Math.min(5, games.length);
+            heroSlides = shuffleArray(games).slice(0, slideCount);
+            if (heroSlides.length === 0) return;
+
+            const dotsContainer = document.getElementById('heroDots');
+            dotsContainer.innerHTML = heroSlides.map((g, i) =>
+                `<button class="hero-dot" onclick="goToHeroSlide(${i})" aria-label="${g.title}"></button>`
+            ).join('');
+
+            showHeroSlide(0, true);
+            startHeroTimer();
+        }
+
+        function showHeroSlide(index, isFirst) {
+            const game = heroSlides[index];
+            if (!game) return;
+            heroIndex = index;
+
+            const layerA = document.getElementById('heroBgA');
+            const layerB = document.getElementById('heroBgB');
+            const incoming = heroLayerToggle ? layerA : layerB;
+            const outgoing = heroLayerToggle ? layerB : layerA;
+            heroLayerToggle = !heroLayerToggle;
+
+            incoming.style.backgroundImage = `url('${game.poster}')`;
+
+            const applyFade = () => {
+                incoming.classList.add('active');
+                outgoing.classList.remove('active');
+            };
+            isFirst ? applyFade() : requestAnimationFrame(applyFade);
+
+            const heroContent = document.getElementById('heroContent');
+            const updateText = () => {
+                document.getElementById('heroTitle').textContent = game.title;
+                document.getElementById('heroDesc').textContent = game.description || '';
+                document.getElementById('heroPlayBtn').onclick = () => playGame(game.id);
+            };
+
+            if (isFirst) {
+                updateText();
+            } else {
+                heroContent.style.opacity = 0;
+                setTimeout(() => {
+                    updateText();
+                    heroContent.style.opacity = 1;
+                }, 250);
+            }
+
+            document.querySelectorAll('.hero-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+
+        function goToHeroSlide(index) {
+            showHeroSlide(index, false);
+            startHeroTimer();
+        }
+
+        function startHeroTimer() {
+            if (heroTimer) clearInterval(heroTimer);
+            if (heroSlides.length > 1) {
+                heroTimer = setInterval(() => {
+                    showHeroSlide((heroIndex + 1) % heroSlides.length, false);
+                }, 6000);
+            }
+        }
+
         function createGameCard(game) {
             return `
                 <div class="game-card" onclick="playGame(${game.id})">
-                    <img src="${game.poster}" alt="${game.title}">
+                    <div class="card-poster">
+                        <img src="${game.poster}" alt="${game.title}" loading="lazy">
+                        <div class="card-play-badge">
+                            <svg viewBox="0 0 24 24"><path d="M4.5 3.5V20.5L20.5 12L4.5 3.5Z"></path></svg>
+                        </div>
+                    </div>
                     <div class="card-info">
                         <div class="card-title">${game.title}</div>
+                        <div class="card-category">${game.category}</div>
                     </div>
                 </div>
             `;
@@ -667,94 +958,55 @@
                 header.classList.remove('scrolled');
             }
         });
+
+        // Sync main content clearance with the sidebar's hover-expanded state,
+        // so content only shifts over while the sidebar is actually wide (see
+        // the body.sidebar-expanded rules in the stylesheet), instead of
+        // permanently.
+        (function initSidebarExpandSync() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+            sidebar.addEventListener('mouseenter', () => document.body.classList.add('sidebar-expanded'));
+            sidebar.addEventListener('mouseleave', () => document.body.classList.remove('sidebar-expanded'));
+        })();
 // Initialize
+renderHero();
 renderRows();
-fetchFreeBrowserGames();
+initRowScrollers();
 
-// --- Free-To-Play API Logic ---
-async function fetchFreeBrowserGames() {
-    const f2pContainer = document.getElementById('row-f2p');
-    f2pContainer.innerHTML = '<div style="color: gray; padding: 20px;">Loading live games...</div>';
+// --- Row Scroll Buttons (wired to pref-patch.css .scroll-btn styles) ---
+function initRowScrollers() {
+    document.querySelectorAll('.row-scroll-wrapper').forEach(wrapper => {
+        const track = wrapper.querySelector('.row-container');
+        const leftBtn = wrapper.querySelector('.scroll-btn.left-0');
+        const rightBtn = wrapper.querySelector('.scroll-btn.right-0');
+        if (!track || !leftBtn || !rightBtn) return;
 
-    try {
-        // We use a public CORS proxy here because the F2P API sometimes blocks direct browser requests
-        const proxyUrl = 'https://corsproxy.io/?'; 
-        const targetUrl = encodeURIComponent('https://www.freetogame.com/api/games?platform=browser&sort-by=popularity');
-        
-        const response = await fetch(proxyUrl + targetUrl);
-        const data = await response.json();
+        const updateState = () => {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            const atStart = track.scrollLeft <= 4;
+            const atEnd = maxScroll <= 4 || track.scrollLeft >= maxScroll - 4;
 
-        f2pContainer.innerHTML = ''; // Clear loading text
+            leftBtn.classList.toggle('hidden', atStart);
+            rightBtn.classList.toggle('hidden', atEnd);
+            track.classList.toggle('at-left', atStart);
+            track.classList.toggle('at-right', atEnd);
+        };
 
-        // Grab the top 10 most popular free browser games
-        data.slice(0, 10).forEach(game => {
-            const cardHtml = `
-                <div class="game-card" onclick="window.open('${game.game_url}', '_blank')">
-                    <img src="${game.thumbnail}" alt="${game.title}">
-                    <div class="card-info">
-                        <div class="card-title">${game.title}</div>
-                    </div>
-                </div>
-            `;
-            f2pContainer.innerHTML += cardHtml;
+        leftBtn.addEventListener('click', () => {
+            track.scrollBy({ left: -track.clientWidth * 0.8, behavior: 'smooth' });
         });
-    } catch (error) {
-        console.error('Error fetching F2P games:', error);
-        f2pContainer.innerHTML = '<div style="color: #E50914; padding: 20px;">Failed to load games.</div>';
-    }
+        rightBtn.addEventListener('click', () => {
+            track.scrollBy({ left: track.clientWidth * 0.8, behavior: 'smooth' });
+        });
+
+        track.addEventListener('scroll', updateState, { passive: true });
+        window.addEventListener('resize', updateState);
+
+        updateState();
+    });
 }
 
-// --- RAWG Redirect + Plyr Logic ---
-async function showMoreInfo(gameId) {
-    const modal = document.getElementById('gameModal');
-    const body = document.getElementById('modalBody');
-    
-    modal.style.display = "flex";
-    body.innerHTML = '<div style="color:white; padding: 20px;">Loading game data...</div>';
-
-    try {
-        // Use the Phalcode redirect URL instead of api.rawg.io
-        // This service maps IDs to Steam data automatically
-        const baseUrl = "https://rawg2steam.phalco.de/api/games";
-        
-        const detailsRes = await fetch(`${baseUrl}/${gameId}`);
-        const game = await detailsRes.json();
-
-        // Note: The redirect service provides Steam-based data.
-        // It typically includes a "clip" or "trailers" field if available.
-        let mediaSection = `<img src="${game.background_image}" style="width:100%; height:400px; object-fit:cover;" />`;
-
-        if (game.clip && game.clip.clip) {
-            mediaSection = `
-                <video id="trailer-player" playsinline controls data-poster="${game.background_image}" style="width: 100%; height: 400px; object-fit: cover;">
-                    <source src="${game.clip.clip}" type="video/mp4" />
-                </video>
-            `;
-        }
-
-        body.innerHTML = `
-            <div style="width:100%; height:100%; display:flex; flex-direction:column; background:var(--netflix-dark); color:white; overflow-y:auto;">
-                ${mediaSection}
-                <div style="padding: 30px;">
-                    <h2 style="font-family:'Bebas Neue', sans-serif; font-size:3.5rem; color:var(--netflix-red); margin-bottom: 10px; line-height: 1;">${game.name}</h2>
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px; font-weight: bold; color: #46d369;">
-                        <span>${game.released ? game.released.split('-')[0] : 'N/A'}</span>
-                        <span>⭐ ${game.rating || 'N/A'} / 5</span>
-                    </div>
-                    <p style="color:var(--text-gray); font-size: 1.1rem; line-height: 1.5;">${game.description_raw || 'No description available.'}</p>
-                </div>
-            </div>
-        `;
-
-        if (game.clip && game.clip.clip) {
-            new Plyr('#trailer-player', { autoplay: true, muted: false });
-        }
-
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        body.innerHTML = '<div style="color:white; padding: 20px;">Error loading game details. Using a redirect service...</div>';
-    }
-} 
 // --- MOBILE MORE DRAWER LOGIC ---
 function toggleMoreMenu() {
     const drawer = document.getElementById('mobile-more-drawer');
@@ -775,6 +1027,5 @@ document.addEventListener('click', function(e) {
         }
     }
 }); </script>
-    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 </body>
 </html>
