@@ -227,6 +227,58 @@
     border-color: #e50914;
 }
 
+/* --- RANKINGS: badges shown on the anime details page --- */
+.rankings-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.ranking-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(229,9,20,0.14), rgba(20,20,20,0.6));
+    border: 1px solid rgba(229,9,20,0.35);
+    border-radius: 999px;
+    padding: 7px 14px 7px 10px;
+    color: #f3f4f6;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.ranking-badge:hover {
+    transform: translateY(-2px);
+    border-color: rgba(229,9,20,0.7);
+    background: linear-gradient(135deg, rgba(229,9,20,0.22), rgba(20,20,20,0.7));
+}
+.ranking-badge--alltime {
+    border-color: rgba(255,193,7,0.55);
+    background: linear-gradient(135deg, rgba(255,193,7,0.14), rgba(20,20,20,0.6));
+}
+.ranking-badge--alltime:hover { border-color: rgba(255,193,7,0.85); }
+.ranking-badge-icon {
+    display: inline-flex;
+    color: #e50914;
+    flex-shrink: 0;
+}
+.ranking-badge--alltime .ranking-badge-icon { color: #ffc107; }
+.ranking-badge-rank {
+    color: #fff;
+    font-weight: 900;
+    font-size: 0.88rem;
+}
+.ranking-badge-label {
+    color: #d1d5db;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+@media (max-width: 480px) {
+    .ranking-badge { padding: 6px 12px 6px 9px; font-size: 0.74rem; }
+}
+
 .alltime-rank-card {
     flex-shrink: 0;
     width: 150px;
@@ -486,6 +538,11 @@
                 </div>
 
                 <div id="detail-genres" class="flex flex-wrap gap-2 mb-6"></div>
+
+                <div id="rankings-section" style="display:none; margin-bottom: 1.5rem;">
+                    <div id="rankings-container" class="rankings-row"></div>
+                </div>
+
                 <p id="detail-overview" class="text-gray-300 leading-relaxed text-sm md:text-base mb-6"></p>
                 
                 <div id="player-interface" class="hidden fade-in">

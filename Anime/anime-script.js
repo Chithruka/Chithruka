@@ -366,7 +366,7 @@ let currentServer = 'megaplay';
 
 async function selectAnime(anime, targetEp = 1) {
     if (!anime.duration && !anime.status || !anime.characters) {
-        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id: anime.id });
+        const fullData = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration rankings{rank type format year season allTime context} characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id: anime.id });
         // If this extra lookup fails (network blip, AniList rate limit, etc.)
         // fall back to the data we already have instead of crashing and
         // leaving the details section stuck hidden.
@@ -470,6 +470,7 @@ async function selectAnime(anime, targetEp = 1) {
 
     renderCastAndStaff(anime);
     renderRelations(anime);
+    renderRankings(anime);
 
     updatePlayer();
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
@@ -544,6 +545,45 @@ function renderCastAndStaff(anime) {
     } else if (staffSection) {
         staffSection.style.display = 'none';
     }
+}
+
+// Renders the AniList "rankings" data (e.g. "#27 highest rated all time")
+// as a row of Netflix-styled badges on the details page.
+function renderRankings(anime) {
+    const section = document.getElementById('rankings-section');
+    const container = document.getElementById('rankings-container');
+    if (!section || !container) return;
+
+    container.innerHTML = '';
+
+    const rankings = (anime.rankings || []).slice().sort((a, b) => {
+        if (a.allTime !== b.allTime) return a.allTime ? -1 : 1;
+        if (a.type !== b.type) return a.type === 'RATED' ? -1 : 1;
+        return (b.year || 0) - (a.year || 0);
+    });
+
+    if (!rankings.length) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const trophyIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3h-2V1H7v2H5a3 3 0 0 0-3 3v1a5 5 0 0 0 5 5 5.99 5.99 0 0 0 4 4.9V19H8v2h8v-2h-3v-2.1A5.99 5.99 0 0 0 17 12a5 5 0 0 0 5-5V6a3 3 0 0 0-3-3zM4 7V6a1 1 0 0 1 1-1h2v5.9A3 3 0 0 1 4 8V7zm16 1a3 3 0 0 1-3 2.9V5h2a1 1 0 0 1 1 1z"/></svg>';
+    const flameIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2s-6 6.4-6 11a6 6 0 0 0 12 0c0-2-1-3.5-1-3.5s-.5 2-2 2.5c1-2 .5-5-1-6.5-.2 1.5-1 2.7-2 3.5-1.3 1-2 2.3-2 4a3 3 0 0 0 6 0c0-.6-.2-1.1-.4-1.5.9.8 1.4 2 1.4 3.5a5 5 0 0 1-10 0c0-4 3-8 5-13z"/></svg>';
+
+    rankings.forEach(r => {
+        const badge = document.createElement('div');
+        badge.className = 'ranking-badge' + (r.allTime ? ' ranking-badge--alltime' : '');
+        const icon = r.type === 'RATED' ? trophyIcon : flameIcon;
+        const context = r.context ? r.context.charAt(0).toUpperCase() + r.context.slice(1) : (r.type === 'RATED' ? 'Highest Rated' : 'Most Popular');
+        badge.innerHTML = `
+            <span class="ranking-badge-icon">${icon}</span>
+            <span class="ranking-badge-rank">#${r.rank}</span>
+            <span class="ranking-badge-label">${context}</span>
+        `;
+        container.appendChild(badge);
+    });
+
+    section.style.display = '';
 }
 
 function relationTypeLabel(type) {
@@ -679,7 +719,7 @@ function setupSearch() {
 }
 
 window.fetchFullAnimeDetails = async function(id, targetEp = 1) {
-   const data = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id });
+   const data = await fetchAniList(`query($id:Int){Media(id:$id){id idMal title{english romaji} coverImage{extraLarge large} bannerImage description episodes genres averageScore seasonYear status duration rankings{rank type format year season allTime context} characters(sort:[ROLE,RELEVANCE],perPage:8){edges{role node{name{full}image{large}}voiceActors(language:JAPANESE,sort:RELEVANCE){name{full}image{large}}}}staff(sort:[RELEVANCE],perPage:3){edges{role node{name{full}image{large}}}}relations{edges{relationType(version:2) node{id idMal title{english romaji} coverImage{large} episodes averageScore format status}}}}}`, { id });
     selectAnime(data.Media, targetEp);
 }
 
