@@ -126,3 +126,85 @@
 #message-icon{width:34px!important;height:34px!important;border-radius:8px!important;background:#e50914!important;color:#fff!important;font-size:16px!important}
 #message-icon svg{width:16px;height:16px}
 #message-text{color:#141414!important;font-weight:700!important}
+
+/* ===== Netflix-style hero redesign: only logo + plot in the content area,
+   Top10 rank moved inline under the logo, age-rating badge moved to the
+   top-right corner where the rank badge used to sit ===== */
+
+/* Corner age-rating badge (was: .hero-rank-badge position).
+   Same grey as the "More Info" button, flush against the right edge of
+   the hero section, no rounded corners, with a solid white vertical
+   divider at the badge's left edge spanning its full height, and plain
+   (non-MPAA-font) rating text. */
+.hero-corner-badge{
+  position:absolute;
+  top:20px;
+  right:0;
+  z-index:15;
+  display:flex;
+  align-items:stretch;
+  height:36px;
+  gap:10px;
+  padding:0 18px 0 0;
+  background:rgb(109 109 110 / .7);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  border-radius:0;
+  opacity:0;
+  transform:translateY(-6px);
+  transition:opacity .5s ease,transform .5s ease;
+}
+.hero-corner-badge.visible,.hero-slide.active .hero-corner-badge{
+  opacity:1;
+  transform:translateY(0);
+}
+.hero-corner-divider{
+  width:2px;
+  align-self:stretch;
+  background:#fff;
+  flex-shrink:0;
+}
+.hero-corner-rating{
+  font-size:1rem;
+  color:#fff;
+  letter-spacing:0;
+  font-weight:600;
+  align-self:center;
+  white-space:nowrap;
+}
+@media (max-width:640px){
+  .hero-corner-badge{top:14px;height:30px;gap:7px;padding:0 14px 0 0}
+  .hero-corner-rating{font-size:.85rem}
+}
+
+/* Inline "No.5 in TV Programmes Today" line inside hero-content (was: .hero-meta) */
+.hero-top10-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+.hero-top10-line .hero-rank-icon{
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  display:block;
+  border-radius:6px;
+  overflow:hidden;
+}
+.hero-top10-text{
+  font-size:.95rem;
+  font-weight:600;
+  color:#e5e7eb;
+  white-space:nowrap;
+  letter-spacing:.01em;
+}
+.hero-top10-num{
+  font-weight:900;
+  color:#fff;
+}
+@media (max-width:640px){
+  .hero-top10-line{gap:7px;margin-bottom:10px}
+  .hero-top10-line .hero-rank-icon{width:21px;height:21px}
+  .hero-top10-text{font-size:.78rem;white-space:normal}
+}
