@@ -122,3 +122,7 @@
   padding-top:11px!important;
   border-top:1px solid rgba(255,255,255,.08)!important;
 }
+#message-box-inner{background:#fff!important;border:none!important;box-shadow:0 10px 30px rgba(0,0,0,.5)!important}
+#message-icon{width:34px!important;height:34px!important;border-radius:8px!important;background:#e50914!important;color:#fff!important;font-size:16px!important}
+#message-icon svg{width:16px;height:16px}
+#message-text{color:#141414!important;font-weight:700!important}
