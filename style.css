@@ -3,8 +3,8 @@ body>.container{padding-top:86px}
 #hero-section,#details-section{margin-top:-86px}
 #trending-header{scroll-margin-top:86px}
 @media (max-width:767px){#footer-scroll-top-btn{display:none}}
-@media (max-width:991px){footer{padding-bottom:100px}}@media (min-width:768px){.cw-featured-card{width:auto}
-.cw-featured-wrapper{aspect-ratio:16/9;height:calc(var(--card-width) * 1.5);width:auto;transition:aspect-ratio .3s ease,height .3s ease}}
+@media (max-width:991px){footer{padding-bottom:100px}}@media (min-width:768px){.cw-featured-card.cw-featured-wrapper-backdrop{width:auto}
+.cw-featured-wrapper.cw-featured-wrapper-backdrop{aspect-ratio:16/9;height:calc(var(--card-width) * 1.5);width:auto;transition:aspect-ratio .3s ease,height .3s ease}}
 .cw-featured-img{object-fit:cover}
 .cw-featured-wrapper.cw-featured-wrapper-backdrop .cw-featured-img{object-position:center}
 .cw-featured-logo-wrap{position:absolute;left:10px;bottom:10px;z-index:12;max-width:45%;max-height:35%;display:flex;align-items:flex-end;pointer-events:none}
