@@ -303,6 +303,44 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   }
   .poster-name{font-size:12px;margin-top:6px;font-weight:600;color:var(--text-dim);line-height:1.3;}
 
+  /* ---------- Row scroll arrow buttons ---------- */
+  .row-wrap{position:relative;}
+  .scroll-btn{
+    position:absolute;z-index:10;top:0;bottom:0;width:44px;height:auto;
+    border-radius:6px;background:transparent;border:none;color:#fff;
+    font-size:2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    padding:0;opacity:.7;transition:opacity .3s ease,transform .3s ease,color .2s ease;
+  }
+  .scroll-btn svg{width:28px;height:28px;}
+  .scroll-btn:hover{opacity:1;color:var(--accent);transform:scale(1.15);}
+  .scroll-btn.left-0{left:0;}
+  .scroll-btn.right-0{right:0;}
+  .scroll-btn.hidden{display:flex!important;opacity:0;pointer-events:none;}
+  .scroll-btn.left-0.hidden{transform:translateX(-20px);}
+  .scroll-btn.right-0.hidden{transform:translateX(20px);}
+  @media (max-width:767px){
+    .scroll-btn{width:34px;font-size:1.5rem;}
+    .scroll-btn svg{width:20px;height:20px;}
+  }
+
+  /* Fading edges on scrollable rows - shrinks to the side that still has more content */
+  .mask-scroll{
+    -webkit-mask-image:linear-gradient(to right,transparent 0,black 40px,black calc(100% - 40px),transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0,black 40px,black calc(100% - 40px),transparent 100%);
+  }
+  .mask-scroll.at-left{
+    -webkit-mask-image:linear-gradient(to right,black 0,black calc(100% - 40px),transparent 100%);
+    mask-image:linear-gradient(to right,black 0,black calc(100% - 40px),transparent 100%);
+  }
+  .mask-scroll.at-right{
+    -webkit-mask-image:linear-gradient(to right,transparent 0,black 40px,black 100%);
+    mask-image:linear-gradient(to right,transparent 0,black 40px,black 100%);
+  }
+  .mask-scroll.at-left.at-right{
+    -webkit-mask-image:none;
+    mask-image:none;
+  }
+
   /* ---------- Search: Top Result page ---------- */
   .top-result-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;}
   .top-result-banner img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -317,11 +355,6 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .detail-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;}
   .detail-banner img{width:100%;height:100%;object-fit:cover;}
   .detail-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 55%,#000 96%);}
-  .back-btn{
-    position:absolute;top:16px;left:16px;z-index:5;
-    width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);
-    display:flex;align-items:center;justify-content:center;font-size:16px;
-  }
   .detail-header{display:flex;gap:14px;padding:0 18px;margin-top:-56px;position:relative;z-index:2;}
   .detail-poster{width:96px;height:136px;border-radius:8px;overflow:hidden;flex-shrink:0;box-shadow:0 8px 20px rgba(0,0,0,.6);background:var(--card);}
   .detail-poster img{width:100%;height:100%;object-fit:cover;}
@@ -1347,9 +1380,9 @@ function updatePlayerIframe(){
 
   let src;
   if(player === '1'){
-    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}`;
+    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}?autoplay=1&muted=0`;
   } else {
-    src = `https://vidlink.pro/anime/${aniId}/${ep}/${lang}?fallback=true`;
+    src = `https://vidlink.pro/anime/${aniId}/${ep}/${lang}?fallback=true&autoplay=true&muted=false`;
   }
   document.getElementById('player-iframe').src = src;
 
@@ -1534,7 +1567,6 @@ function renderDetail(m){
 
   page.innerHTML = `
     <div class="detail-banner">
-      <div class="back-btn" onclick="goBack()">←</div>
       <img src="${m.bannerImage || m.coverImage.extraLarge}" alt="">
     </div>
     <div class="detail-header">
@@ -1560,7 +1592,7 @@ function renderDetail(m){
         </div>
         User Score
       </div>
-      <div class="icon-action"><div class="ia-circle" onclick="showToast('Downloads aren\\'t available in this demo')">${DOWNLOAD_ICON}</div>Download</div>
+      <div class="icon-action"><div class="ia-circle" onclick="window.open('https://nyaa.si/?f=0&c=1_2&q=${encodeURIComponent(displayTitle(m))}','_blank')">${DOWNLOAD_ICON}</div>Download</div>
       <div class="icon-action"><div class="ia-circle" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">▶</div>Watch</div>
     </div>
 
@@ -1861,6 +1893,94 @@ function isOpenResult(anilistId){
     </div>
   </div>
 </div>
+
+<script>
+(function(){
+  const ROW_SELECTOR = '.row-scroll, .poster-row, .top10-row, .genre-row';
+  const LEFT_ARROW = '<svg viewBox="0 0 48 48" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m15.414 24 15.293 15.293-1.414 1.414-16-16a1 1 0 0 1 0-1.414l16-16 1.414 1.414z"/></svg>';
+  const RIGHT_ARROW = '<svg viewBox="0 0 48 48" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M32.586 24 17.293 8.707l1.414-1.414 16 16a1 1 0 0 1 0 1.414l-16 16-1.414-1.414z"/></svg>';
+
+  function updateScrollButtons(row){
+    const wrap = row.parentElement;
+    if(!wrap || !wrap.classList.contains('row-wrap')) return;
+    const leftBtn = wrap.querySelector(':scope > .scroll-btn.left-0');
+    const rightBtn = wrap.querySelector(':scope > .scroll-btn.right-0');
+    const maxScroll = row.scrollWidth - row.clientWidth;
+    const atStart = row.scrollLeft <= 5;
+    const atEnd = row.scrollWidth <= row.clientWidth || row.scrollLeft >= maxScroll - 5;
+    if(leftBtn) leftBtn.classList.toggle('hidden', atStart);
+    if(rightBtn) rightBtn.classList.toggle('hidden', atEnd);
+    row.classList.toggle('at-left', atStart);
+    row.classList.toggle('at-right', atEnd);
+  }
+
+  function isHorizontallyScrollable(row){
+    const style = window.getComputedStyle(row);
+    return style.overflowX === 'auto' || style.overflowX === 'scroll';
+  }
+
+  function wrapRow(row){
+    if(!row || row.dataset.scrollWrapped) return;
+    if(!isHorizontallyScrollable(row)) return; // e.g. My List grid uses overflow:visible
+
+    const wrap = document.createElement('div');
+    wrap.className = 'row-wrap';
+    row.parentNode.insertBefore(wrap, row);
+    wrap.appendChild(row);
+    row.classList.add('mask-scroll');
+
+    const leftBtn = document.createElement('button');
+    leftBtn.className = 'scroll-btn left-0 hidden';
+    leftBtn.type = 'button';
+    leftBtn.setAttribute('aria-label', 'Scroll left');
+    leftBtn.innerHTML = LEFT_ARROW;
+    leftBtn.addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' }));
+
+    const rightBtn = document.createElement('button');
+    rightBtn.className = 'scroll-btn right-0';
+    rightBtn.type = 'button';
+    rightBtn.setAttribute('aria-label', 'Scroll right');
+    rightBtn.innerHTML = RIGHT_ARROW;
+    rightBtn.addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' }));
+
+    wrap.insertBefore(leftBtn, row);
+    wrap.appendChild(rightBtn);
+
+    row.dataset.scrollWrapped = '1';
+    row.addEventListener('scroll', () => updateScrollButtons(row));
+    window.addEventListener('resize', () => updateScrollButtons(row));
+
+    // Rows are frequently populated asynchronously (innerHTML set after this
+    // wrapper is created), so watch for content changes and re-check size.
+    const contentObserver = new MutationObserver(() => updateScrollButtons(row));
+    contentObserver.observe(row, { childList: true });
+
+    updateScrollButtons(row);
+    setTimeout(() => updateScrollButtons(row), 300); // catch late-loading images
+  }
+
+  function scanForRows(root){
+    if(!root.querySelectorAll) return;
+    root.querySelectorAll(ROW_SELECTOR).forEach(wrapRow);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => scanForRows(document));
+  scanForRows(document);
+
+  // The app rewrites whole page sections via innerHTML at runtime (home,
+  // search, detail, my list, etc.), so watch the whole document for new rows.
+  const bodyObserver = new MutationObserver((mutations) => {
+    for(const m of mutations){
+      m.addedNodes.forEach(node => {
+        if(node.nodeType !== 1) return;
+        if(node.matches && node.matches(ROW_SELECTOR)) wrapRow(node);
+        scanForRows(node);
+      });
+    }
+  });
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
 
 </body>
 </html>
