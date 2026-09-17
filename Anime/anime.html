@@ -342,14 +342,24 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   }
 
   /* ---------- Search: Top Result page ---------- */
-  .top-result-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;}
-  .top-result-banner img{width:100%;height:100%;object-fit:cover;display:block;}
-  .top-result-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),#000 92%);}
+  .top-result-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;cursor:pointer;}
+  .top-result-banner img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease;}
+  .top-result-banner:hover img{transform:scale(1.04);}
+  .top-result-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),#000 92%);pointer-events:none;}
   .tr-body{padding:14px 18px 6px;}
-  .tr-title{font-family:'Anton',sans-serif;font-size:24px;letter-spacing:.3px;margin-bottom:8px;}
+  .tr-title{font-family:'Anton',sans-serif;font-size:24px;letter-spacing:.3px;margin-bottom:8px;cursor:pointer;display:inline-block;}
+  .tr-title:hover{text-decoration:underline;}
   .tr-actions{display:flex;gap:10px;margin-bottom:12px;}
+  .tr-actions .btn-white{max-width:150px;}
   .tr-meta{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;font-weight:600;}
   .tr-desc{font-size:13.5px;color:#c9c9cd;line-height:1.5;}
+  .search-results-header{display:flex;align-items:baseline;justify-content:space-between;padding:20px 18px 12px;gap:10px;flex-wrap:wrap;}
+  .search-results-count{font-size:12px;color:var(--text-dim);font-weight:600;}
+  .search-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px 12px;padding:4px 18px 8px;}
+  .search-grid .poster-card{width:100%;}
+  .search-grid .poster-wrap{width:100%;height:auto;aspect-ratio:110/156;}
+  .poster-play{position:absolute;left:6px;bottom:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;backdrop-filter:blur(4px);}
+  .poster-play:hover{background:var(--accent);}
 
   /* ---------- Detail page ---------- */
   .detail-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;}
@@ -464,6 +474,8 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     .tr-title{font-size:36px;}
     .tr-actions .btn-white{max-width:220px;}
     .tr-desc{font-size:15px;max-width:680px;}
+    .search-results-header{padding:28px 48px 14px;}
+    .search-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px;padding:4px 48px 8px;}
 
     /* Detail page */
     .detail-banner{aspect-ratio:21/7;max-height:460px;}
@@ -1313,22 +1325,40 @@ function renderTopResultLayout(list, customLabel){
   const added = addedSet.has(top.id);
   page.innerHTML = `
     <div class="section-title caps" style="padding-bottom:0;padding-top:16px;">${customLabel || 'Top Result'}</div>
-    <div class="top-result-banner">
+    <div class="top-result-banner" onclick="openDetail(${top.id})">
       <img src="${top.bannerImage || top.coverImage.extraLarge}" alt="">
     </div>
     <div class="tr-body">
-      <div class="tr-title">${displayTitle(top)}</div>
+      <div class="tr-title" onclick="openDetail(${top.id})">${displayTitle(top)}</div>
       <div class="tr-actions">
-        <button class="btn-white" style="flex:0 0 150px;" onclick="openPlayerModal(${top.id}, ${top.episodes||1})">▶ &nbsp;Watch Now</button>
-        <button class="btn-icon-square ${added?'added':''}" onclick="toggleAdd(${top.id}, this)">${added?'✓':'+'}</button>
+        <button class="btn-white" onclick="event.stopPropagation();openPlayerModal(${top.id}, ${top.episodes||1})">▶ &nbsp;Watch Now</button>
+        <button class="btn-more-info" onclick="event.stopPropagation();openDetail(${top.id})">ⓘ &nbsp;More Info</button>
+        <button class="btn-icon-square ${added?'added':''}" onclick="event.stopPropagation();toggleAdd(${top.id}, this)">${added?'✓':'+'}</button>
       </div>
       <div class="tr-meta">${top.seasonYear || '—'} &nbsp;•&nbsp; ${fmtStatus(top.status)} &nbsp;•&nbsp; ${top.episodes ? top.episodes+' Episodes' : fmtFormat(top.format)} &nbsp;•&nbsp; ${top.genres[0]||''}</div>
       <div class="tr-desc">${cleanDesc(top.description).slice(0,220)}${cleanDesc(top.description).length>220?'…':''}</div>
     </div>
-    <div class="section-title">More Like This</div>
-    <div class="poster-row" id="mlt-row"></div>
+    ${rest.length ? `
+    <div class="search-results-header">
+      <div class="section-title" style="padding:0;">Other Results</div>
+      <div class="search-results-count">${rest.length} more match${rest.length===1?'':'es'}</div>
+    </div>
+    <div class="search-grid" id="mlt-row"></div>` : ''}
   `;
-  document.getElementById('mlt-row').innerHTML = rest.map(m=>posterCardHTML(m)).join('');
+  if(rest.length) document.getElementById('mlt-row').innerHTML = rest.map(m=>searchResultCardHTML(m)).join('');
+}
+
+function searchResultCardHTML(m){
+  const added = addedSet.has(m.id);
+  return `
+    <div class="poster-card">
+      <div class="poster-wrap" onclick="openDetail(${m.id})">
+        <img src="${m.coverImage.large}" alt="">
+        <div class="poster-play" onclick="event.stopPropagation(); openPlayerModal(${m.id}, ${m.episodes||1})" title="Play">▶</div>
+        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?'✓':'+'}</div>
+      </div>
+      <div class="poster-name">${displayTitle(m)}</div>
+    </div>`;
 }
 
 function playTrailer(id, site, key){
