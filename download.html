@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Dubbed Versions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --netflix-red: #E50914; --netflix-black: #141414; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--netflix-black); color: white; margin: 0; }
+        .netflix-logo { font-family: 'Bebas Neue', sans-serif; color: var(--netflix-red); font-size: 2.2rem; text-decoration: none; }
+        .backdrop-overlay { background: linear-gradient(to top, var(--netflix-black) 10%, rgba(20, 20, 20, 0.8) 50%, rgba(20, 20, 20, 0.3) 100%); }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col">
+
+    <div id="backdrop-bg" class="fixed inset-0 z-[-1] bg-cover bg-center transition-opacity duration-1000 opacity-20"></div>
+    <div class="fixed inset-0 z-[-1] backdrop-overlay"></div>
+
+    <header class="w-full p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
+        <a href="download.html" class="netflix-logo">CHITHRUKA</a>
+        <div class="relative w-full max-w-md">
+            <input type="text" id="search-input" autocomplete="off" placeholder="Search for dubbed content..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full focus:outline-none focus:border-purple-500 transition-all">
+            <button onclick="handleSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
+                <i class="fas fa-search"></i>
+            </button>
+            <ul id="search-dropdown" class="absolute left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto hidden"></ul>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-10 max-w-6xl">
+        <div id="details-view" class="hidden flex flex-col md:flex-row gap-8 items-start">
+<div class="w-full md:w-1/4 flex-shrink-0"> 
+    <img id="movie-poster" src="" alt="Poster" class="w-full rounded-2xl shadow-2xl hidden border border-gray-700">
+    <div id="poster-skeleton" class="w-full aspect-[2/3] bg-gray-800 animate-pulse rounded-2xl"></div>
+</div>
+            <div class="w-full md:w-2/3 flex flex-col gap-6">
+                <div>
+                    <img id="movie-logo" src="" alt="Logo" class="h-24 object-contain mb-4 hidden">
+                    <h1 id="movie-title" class="text-4xl md:text-5xl font-extrabold mb-2 hidden"></h1>
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300 font-semibold mb-4">
+                        <span id="movie-year" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
+                        <span id="movie-runtime" class="bg-gray-800 px-3 py-1 rounded-md border border-gray-700"></span>
+                        <span class="bg-purple-600/20 text-purple-300 px-3 py-1 rounded-md border border-purple-500/30">DUBBED</span>
+                    </div>
+                    <p id="movie-overview" class="text-gray-300 leading-relaxed text-lg"></p>
+                </div>
+                <hr class="border-gray-800 my-2">
+                <div id="download-section">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fas fa-download text-purple-500"></i> Download Links
+                    </h2>
+                    <div id="download-links-container" class="flex flex-col gap-8"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="grid-view" class="hidden">
+            <div id="movie-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+            <div id="load-more-container" class="mt-12 flex justify-center hidden">
+                <button id="load-more-btn" onclick="loadMoreMovies()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-lg flex items-center gap-2">
+                    <span>Load More</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full py-8 mt-10 bg-gray-900/80 border-t border-gray-800 text-center text-gray-500 text-sm">
+        <p>&copy; <span id="current-year"></span> Chithruka. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        const ENCODED_KEY = "OTI4NTBhNzllNTA5MTdiOGNjMTk2MjM0NTVhZTIyNDA=";
+        const TMDB_API_KEY = atob(ENCODED_KEY);
+        const urlParams = new URLSearchParams(window.location.search);
+        const MOVIE_ID = urlParams.get('id');
+        const typeParam = urlParams.get('type');
+        let currentSearchQuery = urlParams.get('search') || "";
+
+        let DUBBED_REGISTRY = {};
+        let currentFilteredEntries = [];
+        let displayedCount = 0;
+        const ITEMS_PER_PAGE = 10;
+        let tmdbLogos = [];
+
+        // --- UTILITY ---
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = btn.querySelector('i');
+                const oldClass = icon.className;
+                icon.className = 'fas fa-check text-green-400';
+                setTimeout(() => icon.className = oldClass, 2000);
+            });
+        }
+
+// --- CORE LOGIC ---
+
+async function getSearchResults(query) {
+    if (!query) return Object.entries(DUBBED_REGISTRY);
+    
+    const lowerQuery = query.toLowerCase().trim();
+    const isYearQuery = /^\d{4}$/.test(lowerQuery); // Checks if the search is exactly 4 numbers
+    let matchedEntries = new Map();
+
+    // 1. Local Registry Search
+    Object.entries(DUBBED_REGISTRY).forEach(([id, data]) => {
+        // Matches if query is in the title (e.g., "Titanic (1997)")
+        if (data.title.toLowerCase().includes(lowerQuery)) {
+            matchedEntries.set(id, data);
+        }
+        
+        // Explicit Year match: if user types "2018", look for "(2018)" in your registry titles
+        if (isYearQuery && data.title.includes(`(${lowerQuery})`)) {
+            matchedEntries.set(id, data);
+        }
+    });
+
+    // 2. TMDB API Search (Handles translations and years)
+    try {
+        // Multi-search is great for titles; for years, it finds titles containing the year
+        const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(lowerQuery)}&include_adult=false`;
+        const resp = await fetch(searchUrl);
+        
+        if (resp.ok) {
+            const tmdbData = await resp.json();
+            tmdbData.results.forEach(result => {
+                const idStr = result.id.toString();
+                const releaseDate = result.release_date || result.first_air_date || "";
+                const resultYear = releaseDate.substring(0, 4);
+
+                // If TMDB finds a match and we have it in our local registry...
+                if (DUBBED_REGISTRY[idStr]) {
+                    // If it's a year search, only add it if the release year matches exactly
+                    if (isYearQuery) {
+                        if (resultYear === lowerQuery) {
+                            matchedEntries.set(idStr, DUBBED_REGISTRY[idStr]);
+                        }
+                    } else {
+                        // Otherwise, it's a normal title match
+                        matchedEntries.set(idStr, DUBBED_REGISTRY[idStr]);
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("TMDB Search error:", e);
+    }
+
+    return Array.from(matchedEntries.entries());
+}
+
+async function getSearchResults(query) {
+    if (!query) return Object.entries(DUBBED_REGISTRY);
+    
+    const lowerQuery = query.toLowerCase().trim();
+    const isYearQuery = /^\d{4}$/.test(lowerQuery); // Checks if the search is exactly 4 numbers
+    let matchedEntries = new Map();
+
+    // 1. Local Registry Search
+    Object.entries(DUBBED_REGISTRY).forEach(([id, data]) => {
+        // Matches if query is in the title (e.g., "Titanic (1997)")
+        if (data.title.toLowerCase().includes(lowerQuery)) {
+            matchedEntries.set(id, data);
+        }
+        
+        // Explicit Year match: if user types "2018", look for "(2018)" in your registry titles
+        if (isYearQuery && data.title.includes(`(${lowerQuery})`)) {
+            matchedEntries.set(id, data);
+        }
+    });
+
+    // 2. TMDB API Search (Handles translations and years)
+    try {
+        // Multi-search is great for titles; for years, it finds titles containing the year
+        const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(lowerQuery)}&include_adult=false`;
+        const resp = await fetch(searchUrl);
+        
+        if (resp.ok) {
+            const tmdbData = await resp.json();
+            tmdbData.results.forEach(result => {
+                const idStr = result.id.toString();
+                const releaseDate = result.release_date || result.first_air_date || "";
+                const resultYear = releaseDate.substring(0, 4);
+
+                // If TMDB finds a match and we have it in our local registry...
+                if (DUBBED_REGISTRY[idStr]) {
+                    // If it's a year search, only add it if the release year matches exactly
+                    if (isYearQuery) {
+                        if (resultYear === lowerQuery) {
+                            matchedEntries.set(idStr, DUBBED_REGISTRY[idStr]);
+                        }
+                    } else {
+                        // Otherwise, it's a normal title match
+                        matchedEntries.set(idStr, DUBBED_REGISTRY[idStr]);
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("TMDB Search error:", e);
+    }
+
+    return Array.from(matchedEntries.entries());
+}
+
+
+        async function init() {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            try {
+                const res = await fetch('registry.json');
+                DUBBED_REGISTRY = await res.json();
+            } catch (e) {
+                console.error("Failed to load registry", e);
+                return;
+            }
+
+            setupLiveSearch();
+
+            if (MOVIE_ID && DUBBED_REGISTRY[MOVIE_ID]) {
+                document.getElementById('details-view').classList.remove('hidden');
+                await fetchMovieDetails();
+            } else {
+                document.getElementById('grid-view').classList.remove('hidden');
+                renderMovieGrid(currentSearchQuery);
+            }
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            currentSearchQuery = query;
+            
+            const url = new URL(window.location);
+            if (query) url.searchParams.set('search', query); else url.searchParams.delete('search');
+            url.searchParams.delete('id');
+            window.history.pushState({}, '', url);
+
+            document.getElementById('details-view').classList.add('hidden');
+            document.getElementById('grid-view').classList.remove('hidden');
+            document.getElementById('search-dropdown').classList.add('hidden');
+            
+            renderMovieGrid(query, false);
+        }
+
+        async function renderMovieGrid(filter = "", isAppend = false) {
+            const grid = document.getElementById('movie-grid');
+            const container = document.getElementById('load-more-container');
+            
+            // 1. Initial Setup / Loading State
+            if (!isAppend) {
+                grid.innerHTML = `
+                    <div id="grid-loader" class="col-span-full flex flex-col items-center py-20">
+                        <div class="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p class="text-gray-400">Searching and fetching posters...</p>
+                    </div>`;
+                
+                // Use the dual search (Local + TMDB API)
+                currentFilteredEntries = await getSearchResults(filter);
+                displayedCount = 0;
+            }
+
+            const loader = document.getElementById('grid-loader');
+            const itemsToLoad = currentFilteredEntries.slice(displayedCount, displayedCount + ITEMS_PER_PAGE);
+
+            // 2. Handle No Results
+            if (currentFilteredEntries.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-20">
+                        <i class="fas fa-search mb-4 text-4xl text-gray-600"></i>
+                        <p class="text-xl text-gray-400">No movies found matching "${filter}"</p>
+                        <button onclick="renderMovieGrid('')" class="mt-4 text-purple-500 hover:underline">Clear Search</button>
+                    </div>`;
+                if (container) container.classList.add('hidden');
+                return;
+            }
+
+            // 3. Fetch TMDB Data for the current batch
+            const movieData = await Promise.all(itemsToLoad.map(async ([id, d]) => {
+                try {
+                    const type = d.type || 'movie';
+                    const resp = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
+                    const tmdb = resp.ok ? await resp.json() : null;
+                    return { id, d, tmdb };
+                } catch (e) {
+                    return { id, d, tmdb: null };
+                }
+            }));
+
+            // Remove loader on first load
+            if (!isAppend && loader) loader.remove();
+
+            // 4. Render Movie Cards
+            movieData.forEach(({ id, d, tmdb }) => {
+                const posterPath = tmdb?.poster_path 
+                    ? `https://image.tmdb.org/t/p/w500${tmdb.poster_path}` 
+                    : 'https://via.placeholder.com/500x750?text=No+Poster';
+                
+                const rating = tmdb?.vote_average ? tmdb.vote_average.toFixed(1) : 'N/A';
+                
+                // --- NEW LOGIC FOR DYNAMIC TITLES & YEARS ---
+                const tmdbTitle = tmdb ? (tmdb.title || tmdb.name) : d.title;
+                const fullDate = tmdb ? (tmdb.release_date || tmdb.first_air_date || "") : "";
+                const displayYear = fullDate ? fullDate.substring(0, 4) : (d.title.match(/\((.*?)\)/)?.[1] || "N/A");
+
+                const card = document.createElement('div');
+                card.className = "movie-card group relative bg-gray-900 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:z-10 shadow-lg border border-gray-800 hover:border-purple-500";
+                card.innerHTML = `
+                    <div class="aspect-[2/3] relative overflow-hidden">
+                        <img src="${posterPath}" alt="${tmdbTitle}" class="w-full h-full object-cover" loading="lazy">
+                        <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
+                        <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1">
+                            <i class="fas fa-star text-yellow-500"></i> ${rating}
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-bold text-sm truncate group-hover:text-purple-400 transition-colors">${tmdbTitle}</h3>
+                        <div class="flex items-center justify-between mt-1 text-[10px] text-gray-400">
+                            <span>${displayYear}</span>
+                            <span class="border border-gray-700 px-1 rounded uppercase">${d.type || 'movie'}</span>
+                        </div>
+                    </div>
+                `;
+                card.onclick = () => window.location.href = `?id=${id}&type=${d.type || 'movie'}`;
+                grid.appendChild(card);
+            });
+
+            // 5. Update Pagination State
+            displayedCount += itemsToLoad.length;
+            if (container) {
+                if (displayedCount >= currentFilteredEntries.length) {
+                    container.classList.add('hidden');
+                } else {
+                    container.classList.remove('hidden');
+                }
+            }
+        }
+
+
+        function loadMoreMovies() {
+            const btn = document.getElementById('load-more-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Loading...';
+            renderMovieGrid(currentSearchQuery, true).then(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Load More</span><i class="fas fa-chevron-down"></i>';
+            });
+        }
+
+        // --- TMDB DETAILS & SEARCH ---
+async function fetchMovieDetails() {
+    const type = typeParam || DUBBED_REGISTRY[MOVIE_ID]?.type || 'movie';
+    try {
+        // Added include_image_language to ensure we get logos for all relevant languages
+        const resp = await fetch(`https://api.themoviedb.org/3/${type}/${MOVIE_ID}?api_key=${TMDB_API_KEY}&append_to_response=images,translations,alternative_titles&include_image_language=en,si,hi,null`);
+        const data = await resp.json();
+        
+        // Handle the difference between TV and Movie alternative titles
+        window.tmdbAlternativeTitles = data.alternative_titles?.titles || data.alternative_titles?.results || [];
+        window.tmdbTranslations = data.translations?.translations || [];
+        tmdbLogos = data.images?.logos || [];
+
+        // Update Backdrop & Poster
+        const poster = document.getElementById('movie-poster');
+        poster.src = `https://image.tmdb.org/t/p/w342${data.poster_path}`;
+        poster.onload = () => { 
+            poster.classList.remove('hidden'); 
+            document.getElementById('poster-skeleton').classList.add('hidden'); 
+        };
+        document.getElementById('backdrop-bg').style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${data.backdrop_path})`;
+        
+        // Main Header Logo (Top of page)
+        const mainLogo = tmdbLogos.find(l => l.iso_639_1 === 'en') || tmdbLogos.find(l => !l.iso_639_1) || tmdbLogos[0];
+        if (mainLogo) {
+            document.getElementById('movie-logo').src = `https://image.tmdb.org/t/p/w500${mainLogo.file_path}`;
+            document.getElementById('movie-logo').classList.remove('hidden');
+            document.getElementById('movie-title').classList.add('hidden');
+        } else {
+            document.getElementById('movie-title').textContent = data.title || data.name;
+            document.getElementById('movie-title').classList.remove('hidden');
+            document.getElementById('movie-logo').classList.add('hidden');
+        }
+
+        document.getElementById('movie-year').textContent = (data.release_date || data.first_air_date || "").substring(0, 4);
+        document.getElementById('movie-runtime').textContent = `${data.runtime || (data.episode_run_time?.[0]) || 'N/A'} min`;
+        document.getElementById('movie-overview').textContent = data.overview;
+
+        renderGroupedLinks();
+    } catch (e) {
+        console.error("Error fetching movie details:", e);
+    }
+}
+
+        
+        const LANG_MAP = {
+    "Sinhala": { iso: "si", country: "LK" },
+    "Hindi": { iso: "hi", country: "IN" },
+    "English": { iso: "en", country: "US" },
+    "Tamil": { iso: "ta", country: "IN" },
+    "Japanese": { iso: "ja", country: "JP" }
+};
+
+function getLinkIcon(url) {
+    if (url.includes('drive.google.com') || url.includes('drive.usercontent.google.com')) {
+        return 'fab fa-google-drive text-yellow-500';
+    }
+    if (url.includes('mega.nz')) {
+        return 'fas fa-cloud text-red-500'; // Mega doesn't have a free FA brand icon, red cloud is the standard look
+    }
+    if (url.includes('t.me') || url.includes('telegram.org')) {
+        return 'fab fa-telegram text-blue-400';
+    }
+    if (url.includes('workers.dev') || url.includes('cloudew.workers.dev') || url.includes('sinhalachr.workers.dev')) {
+        return 'fas fa-server text-purple-400';
+    }
+    if (url.includes('ginisisilacartoon.net') || url.includes('lakvisiontv.net')) {
+        return 'fas fa-globe text-green-400';
+    }
+    // Default generic link icon
+    return 'fas fa-link text-gray-500';
+}
+
+function renderGroupedLinks() {
+    const container = document.getElementById('download-links-container');
+    if (!DUBBED_REGISTRY[MOVIE_ID]) return;
+
+    const links = DUBBED_REGISTRY[MOVIE_ID].links;
+    const grouped = links.reduce((acc, l) => { 
+        (acc[l.language] = acc[l.language] || []).push(l); 
+        return acc; 
+    }, {});
+    
+    container.innerHTML = '';
+
+    for (const [langName, langLinks] of Object.entries(grouped)) {
+        const langData = LANG_MAP[langName] || { iso: null, country: null };
+        
+        let brandHtml = "";
+        let displayTitle = "";
+
+        // 1. Try to find a Logo for this specific language
+        const langLogo = tmdbLogos.find(l => l.iso_639_1 === langData.iso);
+        
+        if (langLogo) {
+            brandHtml = `<img src="https://image.tmdb.org/t/p/w300${langLogo.file_path}" class="h-8 object-contain" alt="${langName}">`;
+        } else {
+            // 2. Fallback: Translated Title from TMDB Translations
+            const translation = window.tmdbTranslations.find(t => t.iso_639_1 === langData.iso);
+            const translatedName = translation?.data?.title || translation?.data?.name;
+            
+            if (translatedName) {
+                displayTitle = translatedName;
+            } 
+            // 3. Fallback: Alternative Name from the specific Country
+            else {
+                const altTitle = window.tmdbAlternativeTitles.find(a => a.iso_3166_1 === langData.country);
+                displayTitle = altTitle ? altTitle.title : "";
+            }
+        }
+
+        // Final Header Logic: 
+        // If logo exists -> Logo + "— Language"
+        // If no logo but title exists -> "Translated Title — Language"
+        // If neither exists -> "Language"
+        const headerContent = brandHtml 
+            ? `${brandHtml} <span class="ml-2 text-gray-400 text-lg font-medium">— ${langName}</span>` 
+            : `<span class="text-2xl font-bold">${displayTitle || langName}</span> ${displayTitle ? `<span class="text-gray-400 text-lg font-medium"> — ${langName}</span>` : ""}`;
+
+        const section = document.createElement('div');
+        section.className = "space-y-4 mb-10";
+        section.innerHTML = `
+            <div class="border-b border-gray-800 pb-3 flex items-center">
+                ${headerContent}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                ${langLinks.map(l => {
+                    const iconClass = getLinkIcon(l.url);
+                    return `
+                    <div class="flex items-center bg-gray-800/40 border border-gray-700 rounded-lg overflow-hidden hover:border-purple-500/50 transition-all group">
+                        <a href="${l.url}" target="_blank" class="flex-grow p-3 hover:bg-purple-600/10 flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">${l.quality}</span>
+                                <span class="text-sm font-semibold text-gray-200">${l.size}</span>
+                            </div>
+                            <i class="${iconClass} text-xl opacity-70 group-hover:opacity-100 transition-opacity"></i>
+                        </a>
+                        <button onclick="copyToClipboard('${l.url}', this)" class="p-4 bg-gray-800/60 hover:bg-purple-600 border-l border-gray-700 transition-colors" title="Copy Link">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>`;
+                }).join('')}
+            </div>`;
+        container.appendChild(section);
+    }
+}
+        function setupLiveSearch() {
+            const input = document.getElementById('search-input');
+            const dropdown = document.getElementById('search-dropdown');
+            
+            input.addEventListener('input', debounce(async (e) => {
+                const query = e.target.value.trim();
+                if (!query) { dropdown.classList.add('hidden'); return; }
+                
+                dropdown.innerHTML = '<li class="p-3 text-center text-gray-500 text-xs animate-pulse">Searching TMDB & Local...</li>';
+                dropdown.classList.remove('hidden');
+
+                // Get combined results using your dual-search logic
+                const allMatches = await getSearchResults(query);
+                const top5Matches = allMatches.slice(0, 5);
+                
+                if (top5Matches.length === 0) {
+                    dropdown.innerHTML = '<li class="p-3 text-center text-gray-400">No results found</li>';
+                    return;
+                }
+
+                // Fetch full TMDB details to get the official title and year
+                const detailedRes = await Promise.all(top5Matches.map(async ([id, d]) => {
+                    const type = d.type || 'movie';
+                    try {
+                        const resp = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
+                        return { id, d, tmdb: resp.ok ? await resp.json() : null };
+                    } catch { 
+                        return { id, d, tmdb: null }; 
+                    }
+                }));
+
+                dropdown.innerHTML = ''; 
+                
+                detailedRes.forEach(({ id, d, tmdb }) => {
+                    const posterUrl = tmdb?.poster_path 
+                        ? `https://image.tmdb.org/t/p/w92${tmdb.poster_path}` 
+                        : 'https://via.placeholder.com/92x138?text=No+Poster';
+                    
+                    // --- DISPLAY LOGIC ---
+                    // 1. Use TMDB's title (movies) or name (TV), fallback to registry title if fetch failed
+                    const tmdbTitle = tmdb ? (tmdb.title || tmdb.name) : d.title;
+                    
+                    // 2. Extract year from release_date or first_air_date
+                    const fullDate = tmdb ? (tmdb.release_date || tmdb.first_air_date || "") : "";
+                    const displayYear = fullDate ? `(${fullDate.substring(0, 4)})` : "";
+                    
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-gray-700 cursor-pointer flex items-center gap-3 border-b border-gray-700 transition-colors";
+                    li.innerHTML = `
+                        <img src="${posterUrl}" alt="Poster" class="w-8 h-12 object-cover bg-gray-600 rounded shadow">
+                        <div class="truncate text-sm font-medium text-gray-200">
+                            ${tmdbTitle} <span class="text-gray-500 font-normal ml-1">${displayYear}</span>
+                        </div>
+                    `;
+                    li.onclick = () => window.location.href = `?id=${id}&type=${d.type || 'movie'}`;
+                    dropdown.appendChild(li);
+                });
+            }, 500));
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
