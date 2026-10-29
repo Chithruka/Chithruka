@@ -1,0 +1,2815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess - New Game</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU" crossorigin="anonymous">
+    <style>
+        /* Shared CSS Variables based on your provided design */
+        :root {
+            --bg-color: #262522;
+            --bg-panel: #312e2b;
+            --bg-panel-hover: #3c3a38;
+            --bg-panel-shadow: #21201d;
+            --text-main: #ffffff;
+            --text-muted: #99958f;
+            --green-accent: #81b64c;
+            --green-shadow: #649137;
+            --glass-bg-dark: rgba(50, 48, 45, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --avatar-bg: rgba(60, 58, 55, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+        }
+
+        /* --- View Visibility Classes --- */
+        .view-section {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =========================================
+           VIEW 1: NEW GAME UI (Based on Screenshot)
+           ========================================= */
+        
+        /* Top Header */
+        .ng-top-bar {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 16px;
+            flex-shrink: 0;
+        }
+
+        .ng-back-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ng-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            gap: 8px;
+            margin-right: 24px; /* offset for centering */
+        }
+
+        .ng-title-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .ng-title-container img {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Main Scrollable Area */
+        .ng-content {
+            flex-grow: 1;
+            padding: 0 16px;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .ng-content::-webkit-scrollbar { display: none; }
+
+        /* Generic chunky button style */
+        .chunky-btn {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+            border: none;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .chunky-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--bg-panel-shadow);
+        }
+
+        /* Specific Buttons */
+        .ng-time-btn {
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ng-time-btn .clock-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--green-accent);
+        }
+
+        .ng-time-btn .chevron {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+            margin-left: -4px;
+        }
+
+        .ng-start-btn {
+            background-color: var(--green-accent);
+            box-shadow: 0 6px 0 var(--green-shadow);
+            font-size: 20px;
+            padding: 18px;
+            justify-content: center;
+            border-radius: 10px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .ng-start-btn:active {
+            box-shadow: 0 0 0 var(--green-shadow);
+            transform: translateY(6px);
+        }
+
+        .ng-menu-btn {
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .ng-menu-btn:hover {
+            background-color: var(--bg-panel-hover);
+        }
+
+        .ng-icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .icon-svg {
+            flex-shrink: 0;
+            display: block;
+        }
+
+        /* Divider */
+        .ng-divider {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 0;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .ng-divider svg {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .ng-divider.collapsed svg {
+            transform: rotate(180deg);
+        }
+
+        .ng-more-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.25s ease-in-out, opacity 0.2s ease-in-out;
+            opacity: 1;
+        }
+
+        .ng-more-options.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        /* =========================================
+           VIEW 2: BOT SELECTION (Your provided code)
+           ========================================= */
+        .bot-selection-container {
+            background-image: radial-gradient(circle at 50% 0%, #3a3835 0%, #262522 60%);
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 16px;
+            padding-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            color: var(--text-muted);
+            margin-right: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        
+        .back-btn:hover { color: var(--text-main); }
+        
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+            transform: translateX(-16px);
+        }
+        .title-container svg { color: var(--green-accent); }
+
+        .scroll-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scroll-area::-webkit-scrollbar { display: none; }
+
+        /* Play in Person */
+        .pip-scroll-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 24px;
+        }
+        .pip-status {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: center;
+            margin: 4px 0 16px;
+        }
+        .pip-status.pip-status-over {
+            color: var(--green-accent);
+        }
+        .pip-board-wrap {
+            width: 100%;
+            max-width: 340px;
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+            box-sizing: border-box;
+        }
+        #board-play-in-person {
+            width: 100%;
+            line-height: 0;
+        }
+        /* Rotate the far side's pieces 180° so both players can read their
+           own pieces right-side up when passing the device across a table,
+           without having to flip the whole board. Targets chessboard.js's
+           piece <img> elements via the data-piece attribute it stamps on
+           every piece it builds.
+           NOTE: these rules are scoped to `body.pip-rotate-*` rather than
+           `#board-play-in-person.pip-rotate-*` on purpose. While a piece is
+           being picked up (dragged, or even just tapped-and-released, since
+           chessboard.js starts its own drag internally), chessboard.js
+           clones it into a new <img> appended directly to <body> (not
+           inside the board container) so it can float freely under the
+           cursor/finger. A selector scoped to the board container would
+           miss that floating clone, so the piece would flash upright while
+           held and snap back to rotated on release. Scoping to `body`
+           instead reaches both the in-square piece and the floating clone. */
+        body img[data-piece] { transition: transform 0.15s ease-in-out; }
+        body.pip-rotate-black img[data-piece^="b"] {
+            transform: rotate(180deg);
+        }
+        body.pip-rotate-white img[data-piece^="w"] {
+            transform: rotate(180deg);
+        }
+        /* Click-to-move highlighting (in addition to drag-and-drop) */
+        #board-play-in-person .pip-selected {
+            box-shadow: inset 0 0 0 3px rgba(255, 191, 0, 0.9);
+        }
+        #board-play-in-person .pip-move-hint::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 26%;
+            height: 26%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.28);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        #board-play-in-person .pip-capture-hint {
+            box-shadow: inset 0 0 0 4px rgba(200, 40, 40, 0.75);
+        }
+        #board-play-in-person .square-55d63 {
+            cursor: pointer;
+        }
+        .pip-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 340px;
+            margin-top: 16px;
+        }
+        .pip-control-btn {
+            flex: 1;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+        .pip-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: none;
+            background: var(--bg-panel);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .pip-toggle-btn.active {
+            background: var(--green-accent);
+            color: #ffffff;
+        }
+        .pip-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 300px;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+
+        /* Custom Game (board editor + Stockfish) */
+        .cg-hidden { display: none !important; }
+        #board-custom-game { width: 100%; line-height: 0; }
+        #board-custom-game .pip-selected {
+            box-shadow: inset 0 0 0 3px rgba(255, 191, 0, 0.9);
+        }
+        #board-custom-game .pip-move-hint::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 26%;
+            height: 26%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.28);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        #board-custom-game .pip-capture-hint {
+            box-shadow: inset 0 0 0 4px rgba(200, 40, 40, 0.75);
+        }
+        #board-custom-game .square-55d63 {
+            cursor: pointer;
+        }
+        /* chessboard.js spare-piece trays (fixed class names baked into the library CSS) */
+        .spare-pieces-7492f {
+            background: var(--bg-panel-hover);
+            border-radius: 8px;
+            padding: 6px 4px;
+        }
+        .spare-pieces-top-4028b { margin-bottom: 8px; }
+        .spare-pieces-bottom-ae20f { margin-top: 8px; }
+
+        .cg-field-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 14px 0 6px;
+            width: 100%;
+            max-width: 340px;
+        }
+        .cg-seg-group {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 340px;
+        }
+        .cg-seg-btn {
+            flex: 1;
+            text-align: center;
+            justify-content: center;
+            padding: 10px 8px;
+            border-radius: 999px;
+            border: none;
+            background: var(--bg-panel);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .cg-seg-btn.active {
+            background: var(--green-accent);
+            color: #ffffff;
+        }
+        .cg-select {
+            width: 100%;
+            max-width: 340px;
+            background: var(--bg-panel);
+            color: var(--text-main);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2399958f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        .cg-setup-message {
+            min-height: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-align: center;
+            width: 100%;
+            max-width: 340px;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+        .cg-setup-message.cg-message-error { color: #ff6b5b; }
+        .cg-play-btn {
+            width: 100%;
+            max-width: 340px;
+            margin-top: 6px;
+        }
+
+        .chat-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 8px;
+        }
+
+        .active-avatar-large {
+            width: 80px;
+            height: 80px;
+            background: var(--avatar-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            color: var(--text-main);
+        }
+        .active-avatar-large svg { width: 50%; height: 50%; }
+
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            color: #262522;
+            border-radius: 12px;
+            padding: 16px;
+            margin-left: 20px;
+            font-weight: 600;
+            position: relative;
+            flex-grow: 1;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 12px 10px 0;
+            border-style: solid;
+            border-color: transparent rgba(255, 255, 255, 0.95) transparent transparent;
+        }
+
+        .bot-details {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .bot-details h1 { font-size: 24px; font-weight: 800; }
+        .bot-details .elo { color: var(--text-muted); font-size: 16px; font-weight: 600; }
+        .bot-details .flag { font-size: 18px; }
+
+        .category-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            margin-top: 8px;
+        }
+        .category-title span { color: var(--text-main); }
+
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .bot-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bot-avatar {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--avatar-bg);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            position: relative;
+            color: var(--text-main);
+        }
+        .bot-avatar svg { width: 50%; height: 50%; }
+        .bot-avatar img { width: 100%; height: 100%; object-fit: contain; border-radius: 6px; }
+
+        .bot-avatar:hover { transform: translateY(-2px); background: rgba(80, 78, 75, 0.7); }
+        .bot-avatar.selected {
+            border: 3px solid var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(129, 182, 76, 0.2);
+            color: var(--green-accent);
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            height: 16px;
+        }
+        .status-icon { width: 12px; height: 12px; }
+        .crown { color: #f2a900; filter: drop-shadow(0 0 4px rgba(242, 169, 0, 0.5)); }
+        .lock { color: var(--text-muted); }
+
+        .bottom-area {
+            padding: 16px;
+            background: linear-gradient(to top, var(--bg-color) 80%, transparent);
+            flex-shrink: 0;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .options-btn {
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        .options-btn:hover { background: rgba(60, 58, 55, 0.8); }
+        .options-btn .left { display: flex; align-items: center; gap: 8px; }
+
+        .color-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 2px;
+        }
+
+        .color-btn {
+            background-color: transparent;
+            border: 2px solid transparent;
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .color-btn svg { width: 20px; height: 20px; }
+        .color-btn.active {
+            border-color: var(--green-accent);
+            background-color: rgba(129, 182, 76, 0.15);
+            box-shadow: 0 0 8px rgba(129, 182, 76, 0.2);
+        }
+
+        .play-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 24px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+
+        /* =========================================
+           LICHESS-POWERED: Options Modal
+           ========================================= */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-sheet {
+            width: 100%;
+            max-width: 400px;
+            max-height: 82dvh;
+            background: var(--bg-panel);
+            border-radius: 16px 16px 0 0;
+            padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transform: translateY(100%);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+        }
+        .modal-overlay.active .modal-sheet {
+            transform: translateY(0);
+        }
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--text-muted);
+            opacity: 0.4;
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .modal-close {
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .modal-close:hover { background: var(--bg-panel-hover); }
+
+        .option-group-title {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 8px;
+        }
+
+        .chip-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .chip-btn {
+            background: var(--bg-panel-hover);
+            color: var(--text-main);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px 6px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+        .chip-btn:hover { background: #46433f; }
+        .chip-btn.active {
+            border-color: var(--green-accent);
+            background: rgba(129, 182, 76, 0.15);
+            color: var(--green-accent);
+        }
+
+        .custom-time-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .custom-time-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .custom-time-field label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .custom-time-field input {
+            background: var(--bg-panel-shadow);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .modal-done-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 5px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .modal-done-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+
+        /* Spinner for in-flight requests */
+        .btn-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: -3px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .chunky-btn[disabled], .play-btn[disabled] {
+            opacity: 0.75;
+            cursor: default;
+        }
+
+        /* Share link banner after a game is created */
+        .share-banner {
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%) translateY(120%);
+            width: calc(100% - 32px);
+            max-width: 368px;
+            background: var(--bg-panel);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            z-index: 200;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .share-banner.active {
+            transform: translateX(-50%) translateY(0);
+        }
+        .share-banner-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .share-banner-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green-accent);
+            box-shadow: 0 0 8px var(--green-accent);
+        }
+        .share-banner-row {
+            display: flex;
+            gap: 8px;
+        }
+        .share-banner-link {
+            flex: 1;
+            background: var(--bg-panel-shadow);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .share-banner-copy {
+            background: var(--green-accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0 14px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .share-banner-close {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-banner {
+            background: rgba(220, 80, 70, 0.15);
+            border: 1px solid rgba(220, 80, 70, 0.4);
+            color: #ff8a80;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* =========================================
+           VIEW 0: HOME (Hero + Tabs + Play CTA)
+           ========================================= */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        /* --- Hero banner --- */
+        .home-hero {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2600 / 1076;
+            flex-shrink: 0;
+            background-image:
+                linear-gradient(to top, rgba(38,37,34,0.97) 0%, rgba(38,37,34,0.55) 45%, rgba(38,37,34,0.05) 100%),
+                url('Assets/images/ui/chessboard-background.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+        }
+        .home-hero-badge {
+            position: absolute;
+            top: 14px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+        .home-hero-badge .beat {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green-accent);
+            box-shadow: 0 0 8px var(--green-accent);
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        .home-hero-text h1 {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.15;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+        .home-hero-text p {
+            margin-top: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        }
+
+        /* --- Tab switcher --- */
+        .home-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 14px 16px 4px;
+            flex-shrink: 0;
+        }
+        .home-tab-btn {
+            flex: 1;
+            background: var(--bg-panel);
+            border: none;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 12px;
+            padding: 9px 4px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 3px 0 var(--bg-panel-shadow);
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s, color 0.2s;
+        }
+        .home-tab-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 var(--bg-panel-shadow);
+        }
+        .home-tab-btn.active {
+            background: var(--green-accent);
+            color: #ffffff;
+            box-shadow: 0 3px 0 var(--green-shadow);
+        }
+
+        .home-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .home-content::-webkit-scrollbar { display: none; }
+
+        .home-tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .home-tab-panel.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .widget-card {
+            background: var(--bg-panel);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 0 var(--bg-panel-shadow);
+        }
+        .widget-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .widget-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .widget-card-link {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .widget-card-link:hover { color: var(--text-main); }
+
+        .widget-frame-wrap {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-panel-shadow);
+        }
+
+        .widget-linkout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 12px;
+            padding: 20px 8px 8px;
+        }
+        .widget-linkout-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .widget-linkout-icon .icon-svg { width: 100%; height: 100%; }
+        .widget-linkout p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+            max-width: 280px;
+        }
+        .widget-linkout a.chunky-btn {
+            text-decoration: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .widget-iframe {
+            width: 100%;
+            border: none;
+            display: block;
+            background: var(--bg-panel-shadow);
+        }
+        .widget-frame-wrap.wf-tv .widget-iframe { aspect-ratio: 1 / 1; height: auto; }
+        .widget-frame-wrap.wf-puzzle .widget-iframe { height: 360px; }
+        .widget-frame-wrap.wf-analysis .widget-iframe { height: 430px; }
+        .widget-frame-wrap.wf-broadcast .widget-iframe { height: 380px; }
+
+        .widget-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-panel-shadow);
+            transition: opacity 0.25s ease;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .widget-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .widget-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--green-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .widget-empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .widget-empty a {
+            color: var(--green-accent);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .home-play-area {
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top, var(--bg-color) 75%, transparent);
+            flex-shrink: 0;
+        }
+        .home-play-btn {
+            width: 100%;
+            background-color: var(--green-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--green-shadow);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .home-play-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--green-shadow);
+        }
+        .home-play-btn svg { width: 22px; height: 22px; fill: #ffffff; }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+
+    <!-- ==========================================
+         VIEW 0: HOME (Lichess widgets + Play CTA)
+         ========================================== -->
+    <div id="view-home" class="view-section active">
+
+        <!-- Hero banner -->
+        <div class="home-hero">
+            <div class="home-hero-badge"><span class="beat"></span> Chess</div>
+            <div class="home-hero-text">
+                <h1>Welcome back</h1>
+                <p>Play, learn, and sharpen your game.</p>
+            </div>
+        </div>
+
+        <!-- Tab switcher -->
+        <div class="home-tabs">
+            <button class="home-tab-btn active" data-tab="live">📺 Live</button>
+            <button class="home-tab-btn" data-tab="learn"><svg class="icon-svg" viewBox="0 0 90 90" width="16" height="16" aria-hidden="true"><path d="M44.995 23.63C29.01 23.63 18 38.516 18 38.516l-1.704 21.756a6 6 0 0 0 2.511 5.363l14.241 10.098a20 20 0 0 0 22.802.233l15.236-10.343a6 6 0 0 0 2.612-5.433L72 38.516S60.989 23.63 45.005 23.63h-.01z" fill="#009FD9"/><path fill-rule="evenodd" clip-rule="evenodd" d="M58.19 27H31.81C23.27 31.391 18 38.516 18 38.516l-.604 7.705 28.476 14.512A44.973 44.973 0 0 1 60.6 72.741l10.486-7.118a6 6 0 0 0 2.612-5.433L72 38.516S66.73 31.391 58.19 27z" fill="#0069AB"/><path d="m17.395 46.223-1.1 14.05a6 6 0 0 0 2.512 5.361l11.392 8.079-10.358-9.984a5 5 0 0 1-1.519-3.275l-.927-14.231z" fill="#4DC3EA"/><path d="m88.088 59.61-.047-4.02V29.51l-3.082-2.323V55.59l-.047 4.02L83 76.55c0 1.02 1.564 1.85 3.5 1.85s3.5-.83 3.5-1.85l-1.912-16.94z" fill="#F7C631"/><path d="M88.04 36.592v-5.869l-3.08-.535v7.402l3.08-.998z" fill="#B27314"/><path d="m47.262 53.852 40.086-20.337a4.844 4.844 0 0 0 .031-8.623L47.295 4.185a5 5 0 0 0-4.59 0L2.621 24.892a4.844 4.844 0 0 0 .031 8.623l40.086 20.337a5 5 0 0 0 4.524 0z" fill="#009FD9"/><path opacity=".5" d="M42.704 4.187 2.372 25.033a1 1 0 0 0 .013 1.784l40.383 20.14a5 5 0 0 0 4.463 0l40.383-20.14a1 1 0 0 0 .013-1.784L47.296 4.187a5 5 0 0 0-4.592 0z" fill="#4DC3EA"/><path fill-rule="evenodd" clip-rule="evenodd" d="M67.665 43.501 47.262 53.852a5 5 0 0 1-4.524 0l-7.475-3.792-33.95-17.548a4.844 4.844 0 0 1 1.308-7.62l28.706-14.829L6.822 24.9c-1.364.826-1.26 2.838.181 3.52l34.26 16.189a9 9 0 0 0 7.512.082l28.967-12.922-31.658 16.31A2 2 0 0 0 45 49.856v.68a2 2 0 0 0 2.815 1.827l19.85-8.862z" fill="#4DC3EA"/></svg> Learn</button>
+            <button class="home-tab-btn" data-tab="puzzle"><svg class="icon-svg" viewBox="0 0 90 90" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M67.882 15.1v17.09h7.448c4.475 0 9.67-2.93 9.67-7.92V15.1H67.882zM29.5 20.09v9.17c0 2.797 2.626 3.4 4.83 3.4 5 0 10.91 3.398 10.91 8.95h1V20.09H29.5zM5 50.14v-9.17l39.965 10 39.965-10v9.07c0 1.48-.69 2.96-2.07 4.09l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 54.23C5.69 53.1 5 51.62 5 50.14z" fill="#A93616"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.995 40.006a6.786 6.786 0 0 0-3.34 1.84L52.36 69.14a16.743 16.743 0 0 0-4.844 13.278A7.366 7.366 0 0 0 49.9 81.13l32.96-27c1.38-1.13 2.07-2.61 2.07-4.09v-9.17s-.87-.476-1.935-.864z" fill="#DC501D"/><path d="M75.33 7.18c4.673 0 10.164 3.272 9.644 8.56-.523 5.314-6.14 7.24-10.734 7.24-2.432 0-4.824 2.79-2.41 4.75l11.02 9.03c1.385 1.134 2.07 2.57 2.07 4.21 0 1.64-.694 2.854-2.07 3.98l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 45.06c-1.3-1.065-2.063-2.498-2.063-4.09 0-1.592.604-2.905 2.063-4.1l8.51-6.98c3.3-2.71 8.01-.369 8.01 2.14 0 5.686 5.861 9.19 10.93 9.19 5.101 0 11.02-3.463 10.713-9.19-.29-5.377-6.03-8.55-10.903-8.55-2.172 0-4.802-1.497-4.83-3.48 0-.761.046-1.54 1.04-2.36l9.48-7.77c2.76-2.26 7.24-2.26 10 0l9.87 8.08c1.87 1.53 6.14.77 5.8-2.21-.52-5.293 4.957-8.57 9.64-8.57v.01z" fill="#FA742C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M77.794 49.091 49.89 71.95c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L21.834 57.157l18.333 10.336a10 10 0 0 0 10.436-.376L77.794 49.09z" fill="#FFA459"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="m74.943 30.28 7.907 6.48c1.385 1.134 2.07 2.57 2.07 4.21 0 1.64-.694 2.854-2.07 3.98l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 45.06c-1.3-1.065-2.063-2.498-2.063-4.09 0-.252.015-.498.046-.737l13.921 10.709c11.231 8.639 27.54 5.046 34.1-7.513a22.793 22.793 0 0 1 15.316-11.71l6.553-1.438zM57.074 15.644l-5.578-3.598a10 10 0 0 0-10.948.07l-11.026 7.311c.06-.579.272-1.171 1.018-1.787l9.48-7.77c2.76-2.26 7.24-2.26 10 0l7.054 5.774z" fill="#FFA459"/></svg> Puzzle</button>
+            <button class="home-tab-btn" data-tab="practice"><svg class="icon-svg" viewBox="0 0 90 90" width="14" height="14" aria-hidden="true"><path d="M14.569 84.562c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m31.939 67.19-9.13-9.13L5.698 75.171l9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M7.009 54.9c-3.47 3.47 0 12.561 7.75 20.311s16.88 11.22 20.35 7.79l4.65-4.64-28.07-28.11-4.68 4.65z" fill="#666564"/><path d="M39.749 78.321c3.47-3.47 0-12.56-7.76-20.31-7.75-7.75-16.851-11.221-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.31 7.76z" fill="#4B4847"/><path d="M10.539 43c-4.51 4.51 0 16.33 10.08 26.411 10.08 10.08 21.9 14.59 26.39 10.06l6.001-6L16.57 36.94 10.529 43h.01z" fill="#666564"/><path d="M53.06 73.441c4.51-4.51 0-16.34-10.08-26.411-10.081-10.07-21.902-14.59-26.412-10.08-4.51 4.51 0 16.34 10.08 26.41C36.728 73.442 48.55 77.952 53.06 73.442z" fill="#8B8987"/><path d="M39.38 59.76c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m56.75 42.38-9.13-9.13-17.111 17.11 9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M39.08 14.419c-4.51 4.51 0 16.34 10.08 26.42C59.24 50.92 71.07 55.43 75.58 50.92l6-6L45.12 8.379l-6.04 6.04z" fill="#666564"/><path d="M81.621 44.88c4.51-4.51 0-16.34-10.08-26.411C61.46 8.389 49.64 3.879 45.13 8.389c-4.51 4.51 0 16.34 10.08 26.41 10.08 10.08 21.9 14.591 26.411 10.08z" fill="#8B8987"/><path d="M50.87 11.059c-3.47 3.47 0 12.56 7.76 20.31 7.76 7.75 16.841 11.231 20.311 7.76l4.64-4.65-28.06-28.05-4.65 4.64v-.01z" fill="#666564"/><path d="M83.582 34.49c3.47-3.47 0-12.56-7.76-20.311-7.75-7.75-16.851-11.22-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.311 7.76z" fill="#8B8987"/><path d="M74.11 25.02c1.13-1.13 0-4.091-2.52-6.611-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m84.561 14.579-9.13-9.13-10.44 10.44 9.13 9.13 10.44-10.44z" fill="#DAD8D6"/><path d="M84.562 14.569c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#F1F1F1"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="M62.771 26.222c.165.17.331.339.5.507 7.623 7.624 16.553 11.106 20.136 7.925l-4.466 4.476c-3.47 3.47-12.55-.01-20.31-7.76a45.798 45.798 0 0 1-.5-.508l4.64-4.64zM14.274 74.719c.16.165.321.329.485.492 7.75 7.75 16.88 11.22 20.35 7.79l2.512-2.505c4.04 1.21 7.437.97 9.419-1.013l6-6c-4.54 4.444-16.32-.07-26.37-10.12a57.636 57.636 0 0 1-.517-.523l-6.045 6.045c.168.173.339.346.51.518 4.79 4.788 9.972 8.32 14.578 10.224-4.343-.366-10.376-3.684-15.758-9.066a44.807 44.807 0 0 1-.5-.507l-4.664 4.665zm40.43-40.43-6.044 6.044c.165.17.331.339.5.507 10.08 10.08 21.91 14.59 26.42 10.08l6-6c-4.539 4.444-16.32-.07-26.37-10.12-.17-.17-.339-.34-.505-.512z" fill="#4B4847"/><path fill-rule="evenodd" clip-rule="evenodd" d="M57.948 5.196c-.974.184-1.8.586-2.437 1.223-3.451 3.451-.037 12.462 7.635 20.185-6.24-8.344-8.77-17.323-5.635-20.968a4.3 4.3 0 0 1 .437-.44zM19.041 35.523c-.966.283-1.8.755-2.473 1.427-3.701 3.701-1.327 12.333 5.215 20.876-5.232-9.421-6.61-18.126-2.777-22.264a6.43 6.43 0 0 1 .035-.039zM47.603 6.96c-.967.283-1.801.755-2.473 1.427-3.702 3.701-1.328 12.333 5.214 20.876-5.232-9.42-6.609-18.125-2.777-22.264l.036-.038z" fill="#BEBDB9"/></svg> Practice</button>
+        </div>
+
+        <div class="home-content">
+
+            <!-- LIVE TAB -->
+            <div class="home-tab-panel active" data-panel="live">
+
+                <!-- Lichess TV -->
+                <div class="widget-card">
+                    <div class="widget-card-header">
+                        <div class="widget-card-title"><svg class="icon-svg" viewBox="0 0 512.003 512.003" width="18" height="18" aria-hidden="true">
+<polygon style="fill:#D7D5D9;" points="65.094,21.334 512,21.334 512,320.028 1.329,320.028 1.329,21.334 "/>
+<path style="fill:#FF5023;" d="M255.336,75.815c52.394,0,94.867,42.473,94.867,94.867s-42.473,94.867-94.867,94.867
+	s-94.867-42.473-94.867-94.867c0-36.1,20.164-67.491,49.843-83.523C210.313,87.158,233.28,75.815,255.336,75.815z"/>
+<rect x="1.329" y="320.028" style="fill:#57545C;" width="510.675" height="43.118"/>
+<path style="opacity:0.25;fill:#2F2D30;enable-background:new    ;" d="M465.439,21.334v212.499v4.178
+	c0,26.81-21.734,48.544-48.544,48.544H0v33.473v43.119h510.672v-43.12V21.334H465.439z"/>
+<polygon style="fill:#57545C;" points="200.461,393.22 205.636,361.839 305.535,361.839 322.833,461.835 188.338,461.835 
+	192.919,435.902 "/>
+<polygon style="fill:#FFFFFF;" points="231.556,119.564 303.412,170.682 231.556,221.798 "/>
+<rect x="145.577" y="461.831" style="fill:#3E3B43;" width="223.691" height="28.837"/>
+<g style="opacity:0.53;">
+	<polygon style="fill:#2F2D30;" points="305.409,361.839 205.51,361.839 200.334,393.22 200.293,393.46 310.88,393.46 	"/>
+</g>
+<polygon style="opacity:0.37;fill:#FFFFFF;enable-background:new    ;" points="201.084,320.028 118.813,320.028 309.589,21.334 
+	391.858,21.334 "/>
+</svg> Live on Lichess TV</div>
+                        <a class="widget-card-link" href="https://lichess.org/tv" target="_blank" rel="noopener">Open ↗</a>
+                    </div>
+                    <div class="widget-frame-wrap wf-tv">
+                        <div class="widget-loading" id="loading-tv"><span class="widget-spinner"></span>Loading…</div>
+                        <iframe class="widget-iframe" id="frame-tv" src="https://lichess.org/tv/frame?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+                <!-- Live Broadcast (dynamic) -->
+                <div class="widget-card">
+                    <div class="widget-card-header">
+                        <div class="widget-card-title"><svg class="icon-svg" viewBox="0 0 90 90" width="18" height="18" aria-hidden="true"><path d="M9.331 72.372A8 8 0 0 1 5 65.263V13a8 8 0 0 1 8-8h64a8 8 0 0 1 8 8v52.263a8 8 0 0 1-4.331 7.11l-32 16.514a8 8 0 0 1-7.338 0l-32-16.515z" fill="#008CD1"/><path d="M9.331 72.372A8 8 0 0 1 5 65.263V13a8 8 0 0 1 8-8h32v79.214c0 2.996-3.172 4.929-5.834 3.555L9.33 72.372z" fill="#009FD9"/><path d="M11.225 69.05A4 4 0 0 1 9 65.464V13a4 4 0 0 1 4-4h64a4 4 0 0 1 4 4v52.465a4 4 0 0 1-2.225 3.584l-32 15.851a4 4 0 0 1-3.55 0l-32-15.85z" fill="#0B548C"/><path d="M13.125 66.279A2 2 0 0 1 12 64.48V14a2 2 0 0 1 2-2h62a2 2 0 0 1 2 2v50.48a2 2 0 0 1-1.125 1.799l-31 15.076a2 2 0 0 1-1.75 0l-31-15.076z" fill="#0069AB"/><path d="M13.125 66.279A2 2 0 0 1 12 64.48V14a2 2 0 0 1 2-2h31v69.78L13.125 66.279z" fill="#008CD1"/><path d="M72.8 26.126c.336-2.622-1.907-4.694-4.55-4.694h-7.686V18H29.43v3.443h-7.659c-2.653 0-4.903 2.089-4.57 4.721.94 7.416 5.197 13.964 13.515 14.08a15.637 15.637 0 0 0 9.967 8.794v5.234c-.075 4.751-3.922 8.58-8.691 8.58h-.536V68h27.04v-5.148h-.547c-4.79 0-8.681-3.893-8.681-8.687V49.07a15.62 15.62 0 0 0 10.053-8.816c8.327-.116 12.55-6.847 13.48-14.128zm-51.472-.383h8.102v8.312c0 .6.032 1.202.108 1.78-5.796-.66-7.451-4.21-8.21-10.091zm39.14 10.093a15.89 15.89 0 0 0 .107-1.78v-8.312h8.102c-.583 4.75-2.981 9.496-8.21 10.092z" fill="#4DC3EA"/><path fill-rule="evenodd" clip-rule="evenodd" d="M45.018 68h13.477v-5.148h-.546c-4.791 0-8.681-3.893-8.681-8.687V49.07a15.62 15.62 0 0 0 10.052-8.816c8.327-.116 12.55-6.847 13.48-14.128.335-2.622-1.907-4.694-4.55-4.694h-7.686V18H45.018v50zm15.556-33.945c0 .612-.042 1.212-.107 1.78 5.229-.595 7.627-5.342 8.21-10.091h-8.103v8.311z" fill="#009FD9"/><path d="M5 13a8 8 0 0 1 8-8h33L13.906 6.085a8 8 0 0 0-7.687 7.17L5 25V13z" fill="#4DC3EA"/></svg> Live Tournament</div>
+                        <a class="widget-card-link" href="https://lichess.org/broadcast" target="_blank" rel="noopener">All broadcasts ↗</a>
+                    </div>
+                    <div class="widget-frame-wrap wf-broadcast" id="broadcast-wrap">
+                        <div class="widget-loading" id="loading-broadcast"><span class="widget-spinner"></span>Finding a live event…</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- LEARN TAB (Game Review / Analysis Board lives here, off the front page) -->
+            <div class="home-tab-panel" data-panel="learn">
+
+                <div class="widget-card">
+                    <div class="widget-card-header">
+                        <div class="widget-card-title"><svg class="icon-svg" viewBox="0 0 90 90" width="18" height="18" aria-hidden="true"><path d="M41.33 16.44c-.27-4.43-3.93-7.94-8.43-7.94s-8.45 3.78-8.45 8.45 3.78 8.45 8.45 8.45c.39 0 .77-.04 1.14-.09l7.26 14.16v.06l.03-.03.03-.03-.03-23.04v.01zM48.67 16.44c.27-4.43 3.93-7.94 8.43-7.94 4.67 0 8.45 3.78 8.45 8.45s-3.78 8.45-8.45 8.45c-.39 0-.77-.04-1.14-.09L48.7 39.47v.06l-.03-.03-.03-.03.03-23.04v.01z" fill="#8B8987"/><path d="M40 28.17c-.24-7.66-5.19-13.81-12.91-13.81-4.85 0-9.13 2.42-11.7 6.12L1.46 55S27.374 58.056 40 62.503V28.17z" fill="#BEBDB9"/><path d="M27.09 14.36c3.824 0 6.967 1.51 9.196 3.963-1.865-1.858-4.361-2.963-7.46-2.963-4.599 0-8.658 2.428-11.095 6.14L5.63 52.727c.062.016 16.61 4.145 28.884 8.124C21.1 57.318 1.46 55 1.46 55l13.93-34.52c2.57-3.7 6.85-6.12 11.7-6.12z" fill="#DAD8D6"/><path d="M50 28.17c.24-7.66 5.19-13.81 12.91-13.81 4.85 0 9.13 2.42 11.7 6.12L88.54 55S62.626 58.056 50 62.503V28.17z" fill="#BEBDB9"/><path d="M62.91 14.36c-3.824 0-6.967 1.51-9.196 3.963 1.865-1.858 4.361-2.963 7.46-2.963 4.599 0 8.658 2.428 11.095 6.14l12.1 31.227c-.062.016-16.61 4.145-28.884 8.124C68.9 57.318 88.54 55 88.54 55L74.61 20.48c-2.57-3.7-6.85-6.12-11.7-6.12z" fill="#DAD8D6"/><path d="M44.94 17.51a5.464 5.464 0 0 0-5.436 4.914l-1.452 14.367a8.927 8.927 0 0 1-8.882 8.029v19H41v-6c2.6.657 5.322.663 7.925.019L49 57.82v6h11.75v-19a8.943 8.943 0 0 1-8.896-8.028l-1.48-14.377a5.464 5.464 0 0 0-5.434-4.905z" fill="#8B8987"/><path d="M44.95 52.26a3.9 3.9 0 1 0 0-7.8 3.9 3.9 0 0 0 0 7.8z" fill="#1E2533"/><path d="M20.5 83C31.822 83 41 73.822 41 62.5S31.822 42 20.5 42 0 51.178 0 62.5 9.178 83 20.5 83z" fill="#DAD8D6"/><path d="M20.5 42C31.822 42 41 51.178 41 62.5c0 .327-.01.652-.024.976-.51-10.869-9.482-19.524-20.476-19.524C9.502 43.952.528 52.613.023 63.486A20.84 20.84 0 0 1 0 62.5C0 51.178 9.178 42 20.5 42z" fill="#DAD8D6"/><path d="M20.451 77.046c8.06 0 14.595-6.535 14.595-14.595S28.512 47.857 20.45 47.857c-8.06 0-14.594 6.534-14.594 14.594 0 8.06 6.534 14.595 14.594 14.595z" fill="#8B8987"/><path d="M20.451 47.857c8.06 0 14.594 6.534 14.595 14.594 0 3.04-.931 5.861-2.52 8.198a14.527 14.527 0 0 1-8.196 2.518c-8.06 0-14.594-6.534-14.594-14.594 0-3.039.929-5.862 2.518-8.198a14.527 14.527 0 0 1 8.197-2.518z" fill="#008CD1"/><path d="M22.498 51.65c5.697 0 10.55 3.613 12.393 8.672.101.695.155 1.406.155 2.13 0 3.038-.931 5.86-2.52 8.197a14.528 14.528 0 0 1-8.196 2.518c-7.277 0-13.31-5.326-14.413-12.293 1.682-5.347 6.679-9.225 12.58-9.225z" fill="#4DC3EA"/><path d="M10.836 64.136c2.55 4.25 7.204 7.095 12.521 7.095 4.543 0 8.6-2.077 11.276-5.331a14.53 14.53 0 0 1-2.108 4.749 14.527 14.527 0 0 1-8.195 2.517c-6.09 0-11.307-3.73-13.494-9.03z" fill="#83DEFC"/><path d="M69.5 83C58.178 83 49 73.822 49 62.5S58.178 42 69.5 42 90 51.178 90 62.5 80.822 83 69.5 83z" fill="#DAD8D6"/><path d="M69.5 42C58.178 42 49 51.178 49 62.5c0 .327.01.652.024.976.51-10.869 9.482-19.524 20.476-19.524 10.998 0 19.972 8.661 20.477 19.534.015-.326.023-.655.023-.986C90 51.178 80.822 42 69.5 42z" fill="#DAD8D6"/><path d="M69.549 77.046c-8.06 0-14.595-6.535-14.595-14.595s6.534-14.594 14.595-14.594c8.06 0 14.594 6.534 14.594 14.594 0 8.06-6.534 14.595-14.594 14.595z" fill="#8B8987"/><path d="M69.549 47.857c-8.06 0-14.595 6.534-14.595 14.594 0 3.04.931 5.861 2.52 8.198a14.527 14.527 0 0 0 8.196 2.518c8.06 0 14.593-6.534 14.594-14.594a14.53 14.53 0 0 0-2.518-8.198 14.527 14.527 0 0 0-8.197-2.518z" fill="#008CD1"/><path d="M67.502 51.65c-5.697 0-10.55 3.613-12.392 8.672a14.71 14.71 0 0 0-.156 2.13c0 3.038.931 5.86 2.52 8.197a14.528 14.528 0 0 0 8.196 2.518c7.277 0 13.31-5.326 14.413-12.293-1.682-5.347-6.679-9.225-12.58-9.225z" fill="#4DC3EA"/><path d="M79.164 64.136c-2.55 4.25-7.204 7.095-12.521 7.095A14.563 14.563 0 0 1 55.367 65.9a14.53 14.53 0 0 0 2.108 4.749 14.527 14.527 0 0 0 8.195 2.517c6.09 0 11.307-3.73 13.494-9.03z" fill="#83DEFC"/></svg> Game Review &amp; Analysis</div>
+                        <a class="widget-card-link" href="https://lichess.org/analysis" target="_blank" rel="noopener">Open ↗</a>
+                    </div>
+                    <div class="widget-frame-wrap wf-analysis">
+                        <div class="widget-loading" id="loading-analysis"><span class="widget-spinner"></span>Loading…</div>
+                        <iframe class="widget-iframe" id="frame-analysis" src="https://lichess.org/embed/analysis?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- DAILY PUZZLE TAB -->
+            <div class="home-tab-panel" data-panel="puzzle">
+
+                <div class="widget-card">
+                    <div class="widget-card-header">
+                        <div class="widget-card-title"><svg class="icon-svg" viewBox="0 0 90 90" width="18" height="18" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M67.882 15.1v17.09h7.448c4.475 0 9.67-2.93 9.67-7.92V15.1H67.882zM29.5 20.09v9.17c0 2.797 2.626 3.4 4.83 3.4 5 0 10.91 3.398 10.91 8.95h1V20.09H29.5zM5 50.14v-9.17l39.965 10 39.965-10v9.07c0 1.48-.69 2.96-2.07 4.09l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 54.23C5.69 53.1 5 51.62 5 50.14z" fill="#A93616"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.995 40.006a6.786 6.786 0 0 0-3.34 1.84L52.36 69.14a16.743 16.743 0 0 0-4.844 13.278A7.366 7.366 0 0 0 49.9 81.13l32.96-27c1.38-1.13 2.07-2.61 2.07-4.09v-9.17s-.87-.476-1.935-.864z" fill="#DC501D"/><path d="M75.33 7.18c4.673 0 10.164 3.272 9.644 8.56-.523 5.314-6.14 7.24-10.734 7.24-2.432 0-4.824 2.79-2.41 4.75l11.02 9.03c1.385 1.134 2.07 2.57 2.07 4.21 0 1.64-.694 2.854-2.07 3.98l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 45.06c-1.3-1.065-2.063-2.498-2.063-4.09 0-1.592.604-2.905 2.063-4.1l8.51-6.98c3.3-2.71 8.01-.369 8.01 2.14 0 5.686 5.861 9.19 10.93 9.19 5.101 0 11.02-3.463 10.713-9.19-.29-5.377-6.03-8.55-10.903-8.55-2.172 0-4.802-1.497-4.83-3.48 0-.761.046-1.54 1.04-2.36l9.48-7.77c2.76-2.26 7.24-2.26 10 0l9.87 8.08c1.87 1.53 6.14.77 5.8-2.21-.52-5.293 4.957-8.57 9.64-8.57v.01z" fill="#FA742C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M77.794 49.091 49.89 71.95c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L21.834 57.157l18.333 10.336a10 10 0 0 0 10.436-.376L77.794 49.09z" fill="#FFA459"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="m74.943 30.28 7.907 6.48c1.385 1.134 2.07 2.57 2.07 4.21 0 1.64-.694 2.854-2.07 3.98l-32.96 27c-1.38 1.13-3.19 1.7-5 1.7s-3.62-.57-5-1.7L7.07 45.06c-1.3-1.065-2.063-2.498-2.063-4.09 0-.252.015-.498.046-.737l13.921 10.709c11.231 8.639 27.54 5.046 34.1-7.513a22.793 22.793 0 0 1 15.316-11.71l6.553-1.438zM57.074 15.644l-5.578-3.598a10 10 0 0 0-10.948.07l-11.026 7.311c.06-.579.272-1.171 1.018-1.787l9.48-7.77c2.76-2.26 7.24-2.26 10 0l7.054 5.774z" fill="#FFA459"/></svg> Puzzle of the Day</div>
+                        <a class="widget-card-link" href="https://lichess.org/training" target="_blank" rel="noopener">Open ↗</a>
+                    </div>
+                    <div class="widget-frame-wrap wf-puzzle">
+                        <div class="widget-loading" id="loading-puzzle"><span class="widget-spinner"></span>Loading…</div>
+                        <iframe class="widget-iframe" id="frame-puzzle" src="https://lichess.org/training/frame?theme=brown&amp;bg=dark" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- PRACTICE TAB -->
+            <div class="home-tab-panel" data-panel="practice">
+
+                <div class="widget-card">
+                    <div class="widget-card-header">
+                        <div class="widget-card-title"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><path d="M14.569 84.562c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m31.939 67.19-9.13-9.13L5.698 75.171l9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M7.009 54.9c-3.47 3.47 0 12.561 7.75 20.311s16.88 11.22 20.35 7.79l4.65-4.64-28.07-28.11-4.68 4.65z" fill="#666564"/><path d="M39.749 78.321c3.47-3.47 0-12.56-7.76-20.31-7.75-7.75-16.851-11.221-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.31 7.76z" fill="#4B4847"/><path d="M10.539 43c-4.51 4.51 0 16.33 10.08 26.411 10.08 10.08 21.9 14.59 26.39 10.06l6.001-6L16.57 36.94 10.529 43h.01z" fill="#666564"/><path d="M53.06 73.441c4.51-4.51 0-16.34-10.08-26.411-10.081-10.07-21.902-14.59-26.412-10.08-4.51 4.51 0 16.34 10.08 26.41C36.728 73.442 48.55 77.952 53.06 73.442z" fill="#8B8987"/><path d="M39.38 59.76c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m56.75 42.38-9.13-9.13-17.111 17.11 9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M39.08 14.419c-4.51 4.51 0 16.34 10.08 26.42C59.24 50.92 71.07 55.43 75.58 50.92l6-6L45.12 8.379l-6.04 6.04z" fill="#666564"/><path d="M81.621 44.88c4.51-4.51 0-16.34-10.08-26.411C61.46 8.389 49.64 3.879 45.13 8.389c-4.51 4.51 0 16.34 10.08 26.41 10.08 10.08 21.9 14.591 26.411 10.08z" fill="#8B8987"/><path d="M50.87 11.059c-3.47 3.47 0 12.56 7.76 20.31 7.76 7.75 16.841 11.231 20.311 7.76l4.64-4.65-28.06-28.05-4.65 4.64v-.01z" fill="#666564"/><path d="M83.582 34.49c3.47-3.47 0-12.56-7.76-20.311-7.75-7.75-16.851-11.22-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.311 7.76z" fill="#8B8987"/><path d="M74.11 25.02c1.13-1.13 0-4.091-2.52-6.611-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m84.561 14.579-9.13-9.13-10.44 10.44 9.13 9.13 10.44-10.44z" fill="#DAD8D6"/><path d="M84.562 14.569c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#F1F1F1"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="M62.771 26.222c.165.17.331.339.5.507 7.623 7.624 16.553 11.106 20.136 7.925l-4.466 4.476c-3.47 3.47-12.55-.01-20.31-7.76a45.798 45.798 0 0 1-.5-.508l4.64-4.64zM14.274 74.719c.16.165.321.329.485.492 7.75 7.75 16.88 11.22 20.35 7.79l2.512-2.505c4.04 1.21 7.437.97 9.419-1.013l6-6c-4.54 4.444-16.32-.07-26.37-10.12a57.636 57.636 0 0 1-.517-.523l-6.045 6.045c.168.173.339.346.51.518 4.79 4.788 9.972 8.32 14.578 10.224-4.343-.366-10.376-3.684-15.758-9.066a44.807 44.807 0 0 1-.5-.507l-4.664 4.665zm40.43-40.43-6.044 6.044c.165.17.331.339.5.507 10.08 10.08 21.91 14.59 26.42 10.08l6-6c-4.539 4.444-16.32-.07-26.37-10.12-.17-.17-.339-.34-.505-.512z" fill="#4B4847"/><path fill-rule="evenodd" clip-rule="evenodd" d="M57.948 5.196c-.974.184-1.8.586-2.437 1.223-3.451 3.451-.037 12.462 7.635 20.185-6.24-8.344-8.77-17.323-5.635-20.968a4.3 4.3 0 0 1 .437-.44zM19.041 35.523c-.966.283-1.8.755-2.473 1.427-3.701 3.701-1.327 12.333 5.215 20.876-5.232-9.421-6.61-18.126-2.777-22.264a6.43 6.43 0 0 1 .035-.039zM47.603 6.96c-.967.283-1.801.755-2.473 1.427-3.702 3.701-1.328 12.333 5.214 20.876-5.232-9.42-6.609-18.125-2.777-22.264l.036-.038z" fill="#BEBDB9"/></svg> Practice</div>
+                        <a class="widget-card-link" href="https://lichess.org/practice" target="_blank" rel="noopener">Open ↗</a>
+                    </div>
+                    <div class="widget-linkout">
+                        <div class="widget-linkout-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><path d="M14.569 84.562c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m31.939 67.19-9.13-9.13L5.698 75.171l9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M7.009 54.9c-3.47 3.47 0 12.561 7.75 20.311s16.88 11.22 20.35 7.79l4.65-4.64-28.07-28.11-4.68 4.65z" fill="#666564"/><path d="M39.749 78.321c3.47-3.47 0-12.56-7.76-20.31-7.75-7.75-16.851-11.221-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.31 7.76z" fill="#4B4847"/><path d="M10.539 43c-4.51 4.51 0 16.33 10.08 26.411 10.08 10.08 21.9 14.59 26.39 10.06l6.001-6L16.57 36.94 10.529 43h.01z" fill="#666564"/><path d="M53.06 73.441c4.51-4.51 0-16.34-10.08-26.411-10.081-10.07-21.902-14.59-26.412-10.08-4.51 4.51 0 16.34 10.08 26.41C36.728 73.442 48.55 77.952 53.06 73.442z" fill="#8B8987"/><path d="M39.38 59.76c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m56.75 42.38-9.13-9.13-17.111 17.11 9.13 9.13 17.11-17.11z" fill="#DAD8D6"/><path d="M39.08 14.419c-4.51 4.51 0 16.34 10.08 26.42C59.24 50.92 71.07 55.43 75.58 50.92l6-6L45.12 8.379l-6.04 6.04z" fill="#666564"/><path d="M81.621 44.88c4.51-4.51 0-16.34-10.08-26.411C61.46 8.389 49.64 3.879 45.13 8.389c-4.51 4.51 0 16.34 10.08 26.41 10.08 10.08 21.9 14.591 26.411 10.08z" fill="#8B8987"/><path d="M50.87 11.059c-3.47 3.47 0 12.56 7.76 20.31 7.76 7.75 16.841 11.231 20.311 7.76l4.64-4.65-28.06-28.05-4.65 4.64v-.01z" fill="#666564"/><path d="M83.582 34.49c3.47-3.47 0-12.56-7.76-20.311-7.75-7.75-16.851-11.22-20.311-7.76-3.47 3.47 0 12.56 7.76 20.31 7.75 7.75 16.85 11.22 20.311 7.76z" fill="#8B8987"/><path d="M74.11 25.02c1.13-1.13 0-4.091-2.52-6.611-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#DAD8D6"/><path d="m84.561 14.579-9.13-9.13-10.44 10.44 9.13 9.13 10.44-10.44z" fill="#DAD8D6"/><path d="M84.562 14.569c1.13-1.13 0-4.09-2.52-6.61-2.52-2.52-5.48-3.65-6.61-2.52s0 4.09 2.52 6.61c2.52 2.52 5.48 3.65 6.61 2.52z" fill="#F1F1F1"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="M62.771 26.222c.165.17.331.339.5.507 7.623 7.624 16.553 11.106 20.136 7.925l-4.466 4.476c-3.47 3.47-12.55-.01-20.31-7.76a45.798 45.798 0 0 1-.5-.508l4.64-4.64zM14.274 74.719c.16.165.321.329.485.492 7.75 7.75 16.88 11.22 20.35 7.79l2.512-2.505c4.04 1.21 7.437.97 9.419-1.013l6-6c-4.54 4.444-16.32-.07-26.37-10.12a57.636 57.636 0 0 1-.517-.523l-6.045 6.045c.168.173.339.346.51.518 4.79 4.788 9.972 8.32 14.578 10.224-4.343-.366-10.376-3.684-15.758-9.066a44.807 44.807 0 0 1-.5-.507l-4.664 4.665zm40.43-40.43-6.044 6.044c.165.17.331.339.5.507 10.08 10.08 21.91 14.59 26.42 10.08l6-6c-4.539 4.444-16.32-.07-26.37-10.12-.17-.17-.339-.34-.505-.512z" fill="#4B4847"/><path fill-rule="evenodd" clip-rule="evenodd" d="M57.948 5.196c-.974.184-1.8.586-2.437 1.223-3.451 3.451-.037 12.462 7.635 20.185-6.24-8.344-8.77-17.323-5.635-20.968a4.3 4.3 0 0 1 .437-.44zM19.041 35.523c-.966.283-1.8.755-2.473 1.427-3.701 3.701-1.327 12.333 5.215 20.876-5.232-9.421-6.61-18.126-2.777-22.264a6.43 6.43 0 0 1 .035-.039zM47.603 6.96c-.967.283-1.801.755-2.473 1.427-3.702 3.701-1.328 12.333 5.214 20.876-5.232-9.42-6.609-18.125-2.777-22.264l.036-.038z" fill="#BEBDB9"/></svg></div>
+                        <p>Work through guided practice positions for openings, endgames, and tactical motifs, with hints along the way.</p>
+                        <a class="chunky-btn ng-menu-btn" href="https://lichess.org/practice" target="_blank" rel="noopener">Start Practicing</a>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Iconic Play CTA -->
+        <div class="home-play-area">
+            <button class="home-play-btn" id="fab-play-btn">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Play
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 1: NEW GAME MENU 
+         ========================================== -->
+    <div id="view-new-game" class="view-section">
+        
+        <!-- Top Bar -->
+        <div class="ng-top-bar">
+            <div class="ng-back-btn" id="nav-home-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="ng-title-container">
+                <span class="ng-title-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="24" height="24" aria-hidden="true"><path d="M45.742 69.212c-7.198-4.556-8.57-10.054-9-13.024h4.873s1.802-2.416 1.802-5.078v-1.054l-5.508-3.594c2.222-2.222 3.594-5.294 3.594-8.57 0-6.563-5.396-11.856-11.959-11.856s-11.959 5.293-11.959 11.856c0 3.276 1.372 6.348 3.594 8.57l-5.508 3.594v1.054c0 2.54 1.802 5.078 1.802 5.078h4.873c-.317 2.96-1.802 8.468-9 13.024-4.125 2.642-6.46 7.515-6.46 13.443 0 1.055.707 1.813 1.905 1.905 1.198.092 9.644.44 20.743.44 11.099 0 19.638-.317 20.856-.44 1.208-.123 1.904-.85 1.904-1.905 0-5.928-2.436-10.791-6.563-13.443h.01z" fill="#DAD8D6"/><path d="M37.53 67.44c3.768 3.533 9.358 4.7 11.693 5.049a13.25 13.25 0 0 0-3.481-3.277c-7.198-4.556-8.57-10.054-9-13.023h4.873s1.802-2.417 1.802-5.079v-1.054l-5.508-3.594c2.222-2.222 3.594-5.293 3.594-8.57 0-4.965-3.092-9.204-7.434-10.965 4.055 2.467 6.911 9.45 3.195 14.723-2.775 3.931-8.201 4.863-8.201 4.863h6.645c.071.051 3.276 5.14-1.086 7.986l-18.081.031c.46.993.932 1.659.942 1.68h8.897s6.092 6.5 11.15 11.251v-.02z" fill="#BEBDB9"/><path d="M17.586 37.882c0-6.563 5.396-11.856 11.959-11.856-4.167.501-10.566 5.436-11.396 15.45a11.726 11.726 0 0 1-.563-3.594zM21.19 46.452l-.02.013a.098.098 0 0 1 .01-.023l.01.01zM21.17 46.465c-.074.222-.506 1.99-.738 3.632l-4.75-.031v-.02l5.488-3.581zM17.37 70.953c3.257-2.376 3.943-9.686 4.035-10.905-1.096 2.816-3.358 6.185-8.048 9.154-4.126 2.641-6.46 7.515-6.46 13.443 1.7-5.6 4.112-7.265 7.939-9.905.784-.541 1.626-1.123 2.535-1.787z" fill="#F1F1F1"/><path d="M36.837 47.641a6.534 6.534 0 0 0 8.217 1.698l13.108-7.05 22.99-9.028c8.453-3.93 8.79-27.061.924-28.601C69.466 2.217 54.65 1.134 41.546 1c-1.844-.019-3.683.21-5.419.836-7.855 2.829-20.614 9.63-24.734 14.743-2.655 3.282-6.334 13.053-7.342 17.642-.245 1.114.365 2.196 1.436 2.588 10.471 3.837 14.52-10.931 14.837-12.888a55.995 55.995 0 0 0 13.68-4.555l.602-.291a28.313 28.313 0 0 0 13.315.043l.27-.064 5.03 4.08a2.048 2.048 0 0 1 .065 3.126l-6.682 5.904-8.473 6.123a6.534 6.534 0 0 0-1.294 9.353z" fill="#D5A47D"/><path d="M45.054 49.339a6.534 6.534 0 0 1-8.294-1.796l-.231-.87a7.123 7.123 0 0 0 8.08.663l13.381-7.722 18.076-7.982a20.478 20.478 0 0 0 11.676-14.106c-.045 6.625-2.245 13.715-6.59 15.735l-22.99 9.028-13.108 7.05zM5.487 36.81c-.97-.355-1.56-1.274-1.483-2.271a6.68 6.68 0 0 0 4.028 1.094l.686-.037.756-1.718a7.498 7.498 0 0 0 7.336-5.949l1.512-7.158 1.78-.246a30.716 30.716 0 0 0 13.015-4.989l1.546-1.045 2.68.839a30.715 30.715 0 0 0 12.642 1.207l3.757-.426 1.253 3.53a6.143 6.143 0 0 1-1.741 6.675l-3.512 3.077 3.544-3.132a2.048 2.048 0 0 0-.066-3.125l-5.03-4.08-.269.064a28.313 28.313 0 0 1-13.315-.044l-.601.29a55.995 55.995 0 0 1-13.681 4.557c-.316 1.956-4.366 16.724-14.837 12.887z" fill="#8D694B"/><path d="m9.287 26.3 3.095-9.706.932-.705A100.784 100.784 0 0 1 35.938 3.014a14.11 14.11 0 0 1 5.836-1.04l11.607.412a85.212 85.212 0 0 1 33.5 8.166c-.9-3.134-2.5-5.44-4.805-5.892-12.61-2.443-27.426-3.525-40.53-3.659-1.845-.018-3.684.211-5.42.836-7.854 2.829-20.614 9.63-24.733 14.744-1.378 1.703-3.032 5.153-4.445 8.72.508.11 1 .289 1.461.534l.878.466z" fill="#E3C29C"/><path opacity=".5" d="M37.31 41.115c.039-.254.405-.299.518-.068a11.225 11.225 0 0 0 5.305 5.247.056.056 0 0 1-.01.105c-3.285.813-6.328-1.921-5.813-5.284z" fill="#FADAAE"/></svg></span>
+                New Game
+            </div>
+        </div>
+
+        <!-- Content -->
+
+        <div class="ng-content">
+            <!-- Time Control -->
+            <button class="chunky-btn ng-time-btn" id="time-control-btn">
+                <svg class="clock-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                <span id="time-control-label">10 min</span>
+                <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            
+            <button class="chunky-btn ng-start-btn" id="start-game-btn">Start Game</button>
+            
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><g clip-path="url(#clip-tournaments)"><path d="M38 26 53 0h23L63.886 20.997A10 10 0 0 1 55.224 26H38z" fill="#45753C"/><path d="M43 26 58 0h13L60.33 18.496A15 15 0 0 1 47.336 26H43z" fill="#305730"/><path fill-rule="evenodd" clip-rule="evenodd" d="M38.426 25.262a14.98 14.98 0 0 0 2.713.738h14.086c.844 0 1.674-.107 2.472-.31L47.979 8.703l-9.553 16.56z" fill="#204227"/><path fill-rule="evenodd" clip-rule="evenodd" d="M35 21a8 8 0 0 0-8 8v12h5V29a3 3 0 0 1 3-3h20a3 3 0 0 1 3 3v12h5V29a8 8 0 0 0-8-8H35z" fill="#CF8D1B"/><path d="m53 26-3-5h5a3.358 3.358 0 0 0-2.222 4.408L53 26z" fill="#99580E"/><path d="M53 26 38 0H15l12.114 20.997A10 10 0 0 0 35.776 26H53z" fill="#81B64C"/><path d="M48 26 33 0H20l15 26h13z" fill="#5D9948"/><path d="M45 90c16.569 0 30-13.126 30-29.318S61.569 31.364 45 31.364c-16.569 0-30 13.126-30 29.318S28.431 90 45 90z" fill="#CF8D1B"/><path d="M45 88c16.569 0 30-13.431 30-30 0-16.569-13.431-30-30-30-16.569 0-30 13.431-30 30 0 16.569 13.431 30 30 30z" fill="#FAD541"/><path fill-rule="evenodd" clip-rule="evenodd" d="M42 28.148v5.325c0 16.245-9.966 30.504-24.573 36.368A29.902 29.902 0 0 1 15 58c0-15.556 11.84-28.347 27-29.852z" fill="#FCE26A"/><path fill-rule="evenodd" clip-rule="evenodd" d="M43.316 28.046c-14.583.807-26.39 12.03-28.102 26.354a39.92 39.92 0 0 1 28.102-26.354zm6.92 59.498c11.698-2.059 21.06-10.895 23.886-22.31a39.928 39.928 0 0 1-23.886 22.31z" fill="#FFFFC7"/><path fill-rule="evenodd" clip-rule="evenodd" d="M69 58c0 13.255-10.745 24-24 24S21 71.255 21 58s10.745-24 24-24 24 10.745 24 24zm-4 0c0 11.045-8.954 20-20 20s-20-8.955-20-20c0-11.046 8.954-20 20-20s20 8.954 20 20z" fill="#E3AA24"/><path fill-rule="evenodd" clip-rule="evenodd" d="M55.465 75.047C61.185 71.527 65 65.209 65 58c0-.397-.012-.792-.034-1.183a57.118 57.118 0 0 1-9.501 18.23z" fill="#FCE26A"/></g><defs><clipPath id="clip-tournaments"><path fill="#fff" d="M0 0h90v90H0z"/></clipPath></defs></svg></span> Tournaments
+            </button>
+            <button class="chunky-btn ng-menu-btn" id="trigger-play-friend">
+                <span class="ng-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><path d="M46.813 46.825a45.819 45.819 0 0 0 32.091 0 2.434 2.434 0 0 0 1.582-2.28V18.742H45.23v25.803c0 1.016.63 1.925 1.582 2.28z" fill="#CA9350"/><path d="M47.957 34.925a3.173 3.173 0 0 0 3 2.14h25.425c1.353 0 2.558-.86 3-2.14l1.309-3.797c.947-2.747-1.094-5.61-4-5.61H50.648c-2.907 0-4.948 2.863-4 5.61l1.309 3.797z" fill="#E3C29C"/><path d="M37.108 64.72c0-4.614 2.99-8.695 7.39-10.086l7.667-2.424 3.428-1.625a10.577 10.577 0 0 1 4.53-1.02H66.981c1.567 0 3.115.349 4.53 1.02l3.429 1.625 7.667 2.424a10.578 10.578 0 0 1 7.39 10.085v4.992A5.289 5.289 0 0 1 84.707 75h-42.31a5.289 5.289 0 0 1-5.29-5.289V64.72z" fill="#4B4847"/><path opacity=".5" fill-rule="evenodd" clip-rule="evenodd" d="M37.142 70.32a5.364 5.364 0 0 1-.034-.609V65.56h52.889v4.15c0 .207-.012.41-.035.61h-52.82zm48.324-14.28a10.593 10.593 0 0 1 3.778 4.76H37.86a10.594 10.594 0 0 1 3.779-4.76h43.827z" fill="#312E2B"/><path d="M37.108 64.422c0-4.436 2.875-8.361 7.106-9.699l7.95-2.513 3.429-1.625a10.577 10.577 0 0 1 4.53-1.02H66.981c1.567 0 3.115.349 4.53 1.02l3.429 1.625 7.95 2.513a10.172 10.172 0 0 1 7.107 9.7l-.124-.497a10.578 10.578 0 0 0-7.243-7.572l-19.078-5.683-19.07 5.66a10.577 10.577 0 0 0-7.285 7.713l-.09.378z" fill="#666564"/><path d="M61.33 69.778c0-3.231-1.477-6.286-4.01-8.292l-8.314-6.584a4.295 4.295 0 0 1 3.723-3.917l9.449-1.239c.913-.12 1.838-.12 2.75 0l9.45 1.24a4.294 4.294 0 0 1 3.722 3.916l-8.313 6.584a10.578 10.578 0 0 0-4.01 8.292V75H61.33v-5.222z" fill="#4B4847"/><path d="M61.33 68.34c0-3.179-1.43-6.19-3.893-8.198l-8.43-6.875 1.09-1.17a10.578 10.578 0 0 1 5.758-3.18l5.718-1.09c1.308-.25 2.652-.25 3.961 0l5.717 1.09a10.578 10.578 0 0 1 5.759 3.18l1.09 1.17-8.43 6.875a10.578 10.578 0 0 0-3.894 8.198V75H61.33v-6.66z" fill="#666564"/><path opacity=".5" d="M55.727 52.863c0 1.792.934 3.432 2.333 4.55 4.642 3.71 5.493 6.953 5.493 6.953s.843-3.25 5.47-6.952c1.4-1.12 2.335-2.76 2.335-4.553v-14.09h-15.63v14.092z" fill="#4B4847"/><path d="M55.727 51.137c0 1.467.581 2.911 1.785 3.75 3.93 2.74 8.237 2.852 12.16-.011 1.146-.835 1.686-2.237 1.686-3.655V39.83h-15.63v11.308z" fill="#D5A47D"/><path opacity=".5" d="M55.21 42.944a8.342 8.342 0 1 0 16.685 0V30.807H55.211v12.137z" fill="#8D694B"/><path d="M51.378 37.15a10.578 10.578 0 0 0 3.73 7.725l2.5 2.121a8.462 8.462 0 0 0 5.474 2.01h.94a8.462 8.462 0 0 0 5.475-2.01l2.5-2.121a10.577 10.577 0 0 0 3.73-7.724l.822-25.384H50.556l.822 25.384z" fill="#E3C29C"/><path d="M45.231 18.742a9.113 9.113 0 0 1 7.637-8.993l1.84-.302 4.548-2.388a15.22 15.22 0 0 1 17.072 1.999c5.884 5.126 6.938 13.87 2.44 20.247l-1.316 1.866-.42 14.081a1.02 1.02 0 0 1-2.037-.06l.404-13.654a5.236 5.236 0 0 0-5.234-5.392h-7.883c-2.26 0-4.473-.659-6.365-1.896l-3.979-2.6-1.387 12.892-5.32-15.8z" fill="#CA9350"/><path d="M45.231 18.742a9.113 9.113 0 0 1 7.637-8.993l1.84-.302 4.548-2.388a15.22 15.22 0 0 1 17.072 1.999c5.884 5.126 6.938 13.87 2.44 20.247l-1.316 1.866 1.204-2.099A14.684 14.684 0 0 0 59.082 8.771l-4.375 2.302-2.01.204a8.356 8.356 0 0 0-7.466 7.465z" fill="#E2B664"/><path d="M.083 73.587c0-4.45 2.82-8.412 7.026-9.869l3.104-1.076a52.214 52.214 0 0 0 9.449-4.371l1.886-1.114a10.445 10.445 0 0 1 5.31-1.45h4.785c1.867 0 3.7.501 5.309 1.45l1.886 1.114a52.224 52.224 0 0 0 9.448 4.371l3.105 1.076a10.445 10.445 0 0 1 7.026 9.87v6.19A5.222 5.222 0 0 1 53.194 85H5.306a5.222 5.222 0 0 1-5.223-5.222v-6.19z" fill="#008CD1"/><path opacity=".5" d="M16.872 64.959a3.055 3.055 0 0 1-1.197-1.726 3.861 3.861 0 0 1 1.712-4.264l5.554-3.42c.4-.246.86-.376 1.329-.376h9.96c.47 0 .93.13 1.33.376l5.553 3.42a3.861 3.861 0 0 1 1.712 4.264 3.056 3.056 0 0 1-1.197 1.726l-6.571 4.627a10.086 10.086 0 0 1-11.614 0l-6.57-4.627z" fill="#0B548C"/><path fill-rule="evenodd" clip-rule="evenodd" d="m42.945 62.455 6.221 1.62a12.509 12.509 0 0 1 9.25 10.48v-.968c0-4.45-2.82-8.412-7.025-9.869l-3.105-1.076a52.22 52.22 0 0 1-5.957-2.486c.438.676.659 1.48.616 2.3zM16.17 60.156c-1.931.95-3.92 1.78-5.957 2.486L7.11 63.718a10.445 10.445 0 0 0-7.026 9.87v.967a12.509 12.509 0 0 1 9.25-10.48l6.221-1.62a3.864 3.864 0 0 1 .616-2.299z" fill="#4DC3EA"/><path d="M23.908 69.463h2.075V85h-2.075V69.463zM32.208 69.463h2.075V85h-2.075V69.463z" fill="#4DC3EA"/><path d="M19.17 65.565a4.723 4.723 0 0 1-.878-1.043 7.87 7.87 0 0 1 2.577-10.86l1.325-.81c.296-.182.636-.278.983-.278h12.146c.347 0 .687.096.983.277l1.325.811a7.87 7.87 0 0 1 2.577 10.86c-.24.388-.537.74-.878 1.043L34.78 69.6a8.333 8.333 0 0 1-11.06 0l-4.55-4.036z" fill="#4DC3EA"/><path d="M18.654 65.108c-2.933-3.846-1.75-9.4 2.494-11.717l1.096-.598c.263-.144.558-.22.859-.22h12.292c.3 0 .596.076.86.22l1.095.598c4.245 2.317 5.427 7.871 2.494 11.717a8.472 8.472 0 0 0-3.548-11.206l-.443-.24H22.645l-.314.178a8.793 8.793 0 0 0-3.677 11.268z" fill="#83DEFC"/><path d="M13.636 45.68a2.453 2.453 0 0 0 1.983 1.01h27.263c.785 0 1.522-.376 1.984-1.01 3.147-4.324.059-10.392-5.29-10.392H18.926c-5.348 0-8.437 6.068-5.289 10.392zM21.03 59.25c0 1.506.648 2.94 1.81 3.898 2.777 2.288 6.41 5.105 6.41 5.105s3.716-2.8 6.496-5.132c1.117-.936 1.722-2.33 1.722-3.787V48.182H21.03V59.25z" fill="#6B4D3A"/><path d="M21.03 53.396a8.219 8.219 0 0 0 16.438 0v-13.75H21.03v13.75z" fill="#543F34"/><path d="M16.197 48.034a8.355 8.355 0 0 0 2.981 5.832l3.419 2.854a8.356 8.356 0 0 0 5.354 1.94h2.597a8.356 8.356 0 0 0 5.354-1.94l3.42-2.854a8.355 8.355 0 0 0 2.98-5.832L44.13 21.89H14.37l1.827 26.144z" fill="#8D694B"/><path d="M29.487 10c22.567-.093 23.455 21.27 15.87 28.977-.556.565-1.29.902-2.063 1.08l-.64.147-.42-6.318c-.124-1.852-1.452-3.413-3.292-3.66-5.812-.783-13.521-.75-19.346.014-1.857.244-3.207 1.812-3.332 3.681l-.418 6.283-.323-.074c-.973-.225-1.88-.706-2.489-1.498C6.36 29.944 7.606 10.091 29.487 10z" fill="#312E2B"/><path d="M29.487 10c23.415-.096 23.491 21.981 14.98 29.786 6.37-7.497 7.455-27.51-14.98-27.51-22.436 0-21.33 20.234-15.454 27.51C6.287 31.866 6.572 10.096 29.487 10z" fill="#4B4847"/></svg></span> Play a Friend
+            </button>
+            
+            <!-- TRIGGERS BOT VIEW -->
+            <button class="chunky-btn ng-menu-btn" id="trigger-play-bots">
+                <span class="ng-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><path d="M52 62H38v16h14V62z" fill="#324660"/><path d="M38 72.5a20.812 20.812 0 0 1 14 0V83H38V72.5z" fill="#486688"/><path d="M84 22H6a6 6 0 0 0-6 6v13a6 6 0 0 0 6 6h78a6 6 0 0 0 6-6V28a6 6 0 0 0-6-6z" fill="#324660"/><path fill-rule="evenodd" clip-rule="evenodd" d="M5.387 22.031A6 6 0 0 0 0 28v13a5.994 5.994 0 0 0 2.64 4.971A16.977 16.977 0 0 0 8 33.591V22H6c-.207 0-.412.01-.613.031zM82 22v11.592c0 4.737 1.976 9.204 5.36 12.38A5.994 5.994 0 0 0 90 41V28a6 6 0 0 0-6-6h-2z" fill="#486688"/><path d="M0 40V28a6 6 0 0 1 6-6h1l-.073.038a10 10 0 0 0-5.217 7.27L0 40zM90 40V28a6 6 0 0 0-6-6h-1l.073.038a10 10 0 0 1 5.217 7.27L90 40z" fill="#749BBF"/><path d="M21.317 82.566a9.854 9.854 0 0 1 6.673-4.512 98.534 98.534 0 0 1 34.02 0 9.854 9.854 0 0 1 6.673 4.512L71 86.302l-6.03 1.229a100 100 0 0 1-39.94 0L19 86.302l2.317-3.736z" fill="#DAD8D6"/><path d="M21.317 82.566a9.853 9.853 0 0 1 6.673-4.512 98.534 98.534 0 0 1 34.02 0 9.853 9.853 0 0 1 6.673 4.512L71 86.302l-3.348-3.339a13.892 13.892 0 0 0-7.543-3.868 92.611 92.611 0 0 0-30.218 0 13.892 13.892 0 0 0-7.543 3.868L19 86.303l2.317-3.737z" fill="#F1F1F1"/><path d="M72 5H18a8 8 0 0 0-8 8v48a8 8 0 0 0 8 8h54a8 8 0 0 0 8-8V13a8 8 0 0 0-8-8z" fill="#E7E6E5"/><path d="M10 37V13a8 8 0 0 1 8-8h44L20.275 6.07a9 9 0 0 0-8.749 8.389L10 37zM80 37v24a8 8 0 0 1-8 8H28l42.636-1.093a8 8 0 0 0 7.776-7.457L80 37z" fill="#F8F8F8"/><path d="M68 13H22a4 4 0 0 0-4 4v40a4 4 0 0 0 4 4h46a4 4 0 0 0 4-4V17a4 4 0 0 0-4-4z" fill="#749BBF"/><path d="M67 16H23a2 2 0 0 0-2 2v38a2 2 0 0 0 2 2h44a2 2 0 0 0 2-2V18a2 2 0 0 0-2-2z" fill="#AED0F0"/><path opacity=".5" d="M21 50.591V18a2 2 0 0 1 2-2h43.312l-33.784 2.103a10 10 0 0 0-9.335 9.049L21 50.592z" fill="#D0E6FB"/><path fill-rule="evenodd" clip-rule="evenodd" d="m31.882 41.646 2.236 1.118a24.333 24.333 0 0 0 21.764 0l2.236-1.118 2.236 4.472-2.236 1.118a29.333 29.333 0 0 1-26.236 0l-2.236-1.118 2.236-4.472zM54.444 36C56.952 36 59 33.767 59 31.001c0-2.765-2.032-5.093-4.556-4.998C52.048 26.003 50 28.236 50 31 50 33.767 51.937 36 54.444 36zm-18.888 0C37.952 36 40 33.767 40 31.001c0-2.765-2.048-5.093-4.444-4.998C33.048 26.003 31 28.236 31 31 31 33.767 33.032 36 35.556 36z" fill="#486688"/></svg></span> Play Bots
+            </button>
+            
+            <button class="chunky-btn ng-menu-btn">
+                <span class="ng-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><g clip-path="url(#clip-play-coach)"><path d="M85 85V13a8 8 0 0 0-8-8H13a8 8 0 0 0-8 8v72h80z" fill="#81B64C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M13 5h32v37h40v35H45V42H5V13a8 8 0 0 1 8-8z" fill="#E7E6E5"/><path fill-rule="evenodd" clip-rule="evenodd" d="M73.319 42 60 25a4 4 0 0 0-4 4l9.184 13h8.135z" fill="#45753C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M73.319 42h-8.135L85 70.05V56.91L73.319 42z" fill="#BEBDB9"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12.948 5H45v1.343L15.25 7.675a8 8 0 0 0-7.631 7.572L6.21 42H5V13a8 8 0 0 1 7.948-8z" fill="#F8F8F8"/><path fill-rule="evenodd" clip-rule="evenodd" d="M75 5H45v1.343L75 5zM6.21 42H5v23l1.21-23z" fill="#B2E068"/><path d="M60.004 21A4.004 4.004 0 0 0 56 25.004v.246L90 62V45.767L60.004 21z" fill="#F1F1F1"/><path d="m60.004 21-.373 1.027L90 49.788v-4.02L60.004 21z" fill="#fff"/><path d="M5 77h80l5 9H0l5-9z" fill="#E2B664"/><path d="m5 77-2 7h84l-2-7 5 9H0l5-9z" fill="#F9D983"/><path d="M0 86h90v2a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2z" fill="#6A4632"/></g><defs><clipPath id="clip-play-coach"><path fill="#fff" d="M0 0h90v90H0z"/></clipPath></defs></svg></span> Play Coach
+            </button>
+            
+            <div class="ng-divider" id="ng-more-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+            </div>
+            
+            <div class="ng-more-options" id="ng-more-options">
+                <button class="chunky-btn ng-menu-btn" id="trigger-custom-game">
+                    <span class="ng-icon"><svg class="icon-svg" viewBox="0 0 90 90" width="20" height="20" aria-hidden="true"><path d="M5 13a8 8 0 0 1 8-8h32v80H13a8 8 0 0 1-8-8V13z" fill="#305730"/><path d="M85 13a8 8 0 0 0-8-8H45v80h32a8 8 0 0 0 8-8V13z" fill="#8B8987"/><path fill-rule="evenodd" clip-rule="evenodd" d="M13 5a8 8 0 0 0-8 8v30h40v38h32a8 8 0 0 0 8-8V43H45V5H13z" fill="#E7E6E5"/><path fill-rule="evenodd" clip-rule="evenodd" d="M77 5a8 8 0 0 1 8 8v30H45V5h32zM45 43H5v30a8 8 0 0 0 8 8h32V43z" fill="#81B64C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M12.948 5H45v1.343L15.25 7.675a8 8 0 0 0-7.631 7.572L6.158 43H5V13a8 8 0 0 1 7.948-8z" fill="#F8F8F8"/><path fill-rule="evenodd" clip-rule="evenodd" d="M75 5H45v1.343L75 5zM6.158 43H5v22l1.158-22z" fill="#B2E068"/><path fill-rule="evenodd" clip-rule="evenodd" d="m85 43-2.29 28.13a8 8 0 0 1-7.438 7.332L45 80.496V81h32a8 8 0 0 0 8-8V43z" fill="#F8F8F8"/><path fill-rule="evenodd" clip-rule="evenodd" d="M37.5 81H45v-.504L37.5 81z" fill="#B2E068"/><path fill-rule="evenodd" clip-rule="evenodd" d="m73.74 43 3.726-2.745a3 3 0 0 0 .64-4.19l-6.785-9.25L51.916 43H73.74zM45 48.768v15.41L34.383 72H17.146L45 48.768z" fill="#45753C"/><path fill-rule="evenodd" clip-rule="evenodd" d="M51.916 43 45 48.768v15.41L73.74 43H51.916z" fill="#BEBDB9"/><path d="m26.768 62.232-6.26-6.26L17 72l16.027-3.508-6.26-6.26z" fill="#FADAAE"/><path d="M26.768 62.232 17 72l16.027-3.508-6.26-6.26z" fill="#E3C29C"/><path d="M58.29 18.194 20.508 55.976l12.519 12.52 37.782-37.782-12.52-12.52z" fill="#F7C631"/><path d="M64.551 24.448 26.77 62.23l6.257 6.256 37.781-37.782-6.256-6.256z" fill="#CF8D1B"/><path d="M72.876 28.643a1743.86 1743.86 0 0 1 4.367-4.357 2.74 2.74 0 0 0 .43-.562 2.634 2.634 0 0 0-.04-2.608 2.781 2.781 0 0 0-.41-.522l-8.827-8.827a2.565 2.565 0 0 0-.665-.48c-.092-.042-.194-.093-.286-.123a2.635 2.635 0 0 0-.89-.164c-.44 0-.88.113-1.268.338a2.542 2.542 0 0 0-.573.43 1761.017 1761.017 0 0 1-4.368 4.356l12.52 12.52h.01z" fill="#FF8A75"/><path d="m66.616 22.384 6.26 6.26c1.452-1.453 2.904-2.905 4.367-4.358a2.74 2.74 0 0 0 .43-.562 2.636 2.636 0 0 0 .113-2.311 2.055 2.055 0 0 0-.154-.297 2.78 2.78 0 0 0-.41-.522l-4.397-4.398" fill="#FF6352"/><path d="m60.354 16.126-4.108 4.108 12.52 12.52 4.108-4.108-12.52-12.52z" fill="#fff"/><path d="m66.613 22.388-4.108 4.108 6.256 6.256 4.108-4.108-6.256-6.256z" fill="#E7E6E5"/></svg></span> Custom Game
+                </button>
+                <button class="chunky-btn ng-menu-btn" id="trigger-play-in-person">
+                    <span class="ng-icon">📱</span> Play in Person
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 2: BOT SELECTION (character.html code)
+         ========================================== -->
+    <div id="view-bots" class="view-section bot-selection-container">
+        
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="back-btn" id="trigger-back-bots">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="title-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v4"/><path d="M8 12h0"/><path d="M16 12h0"/><path d="M9 16h6"/></svg>
+                Bots
+            </div>
+        </div>
+
+        <!-- Scrollable content area -->
+        <div class="scroll-area">
+            
+            <div class="chat-section">
+                <div class="active-avatar-large" id="active-avatar"></div>
+                <div class="speech-bubble" id="active-speech">Loading...</div>
+            </div>
+
+            <div class="bot-details">
+                <h1 id="active-name">Bot Name</h1>
+                <span class="elo" id="active-elo">---</span>
+                <span class="flag" id="active-flag">🏳️</span>
+            </div>
+
+            <!-- Tier 1: Beginner -->
+            <div class="category-title">Beginner <span>5</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="1"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar selected" data-id="2"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="3"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="4"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="5"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 2: Advanced -->
+            <div class="category-title">Advanced <span>5</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="6"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="7"></div>
+                    <div class="status-container">
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                        <svg class="status-icon crown" viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="8"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="9"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="10"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tier 3: Engine -->
+            <div class="category-title">Engine <span>1</span></div>
+            <div class="bot-grid">
+                <div class="bot-card">
+                    <div class="bot-avatar" data-id="11"></div>
+                    <div class="status-container">
+                        <svg class="status-icon lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="bottom-area">
+            <div class="options-row">
+                <button class="options-btn" id="options-btn-bots">
+                    <div class="left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span id="options-btn-bots-label">Options</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="color-selector">
+                    <button class="color-btn active">
+                        <svg viewBox="0 0 24 24" fill="#ffffff" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                    </button>
+                    <button class="color-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </button>
+                    <button class="color-btn">
+                        <svg viewBox="0 0 24 24" fill="#262522" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                    </button>
+                </div>
+            </div>
+            <button class="play-btn">Play</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 3: PLAY IN PERSON (local two-player board)
+         ========================================== -->
+    <div id="view-play-in-person" class="view-section">
+
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="back-btn" id="trigger-back-play-in-person">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="title-container">
+                <span style="font-size: 20px;">📱</span>
+                Play in Person
+            </div>
+        </div>
+
+        <!-- Scrollable content area -->
+        <div class="scroll-area pip-scroll-area">
+
+            <div class="pip-status" id="pip-status">White to move</div>
+
+            <div class="pip-board-wrap">
+                <div id="board-play-in-person"></div>
+            </div>
+
+            <div class="pip-controls">
+                <button class="chunky-btn pip-control-btn" id="pip-flip-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    Flip Board
+                </button>
+                <button class="chunky-btn pip-control-btn" id="pip-new-game-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    New Game
+                </button>
+            </div>
+
+            <button class="pip-toggle-btn active" id="pip-face-to-face-toggle" aria-pressed="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                Rotate far side's pieces
+            </button>
+
+            <p class="pip-hint">Pass the phone or tablet back and forth — one board, two players, no account needed. Drag a piece, or tap it then tap a highlighted square to move.</p>
+
+        </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW 3b: CUSTOM GAME (board editor vs Stockfish)
+         ========================================== -->
+    <div id="view-custom-game" class="view-section">
+
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="back-btn" id="trigger-back-custom-game">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="title-container">
+                <span style="font-size: 20px;">🛠️</span>
+                Custom Game
+            </div>
+        </div>
+
+        <!-- Scrollable content area -->
+        <div class="scroll-area pip-scroll-area">
+
+            <div class="pip-status" id="cg-status">Set up your position</div>
+
+            <div class="pip-board-wrap">
+                <div id="board-custom-game"></div>
+            </div>
+
+            <!-- Setup phase controls -->
+            <div id="cg-setup-panel">
+
+                <div class="pip-controls">
+                    <button class="chunky-btn pip-control-btn" id="cg-start-position-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        Starting Position
+                    </button>
+                    <button class="chunky-btn pip-control-btn" id="cg-clear-board-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                        Clear Board
+                    </button>
+                </div>
+
+                <div class="cg-field-label">Turn to move</div>
+                <div class="cg-seg-group" id="cg-turn-group">
+                    <button class="cg-seg-btn active" data-turn="w">White to move</button>
+                    <button class="cg-seg-btn" data-turn="b">Black to move</button>
+                </div>
+
+                <div class="cg-field-label">You play as</div>
+                <div class="cg-seg-group" id="cg-side-group">
+                    <button class="cg-seg-btn active" data-side="w">White</button>
+                    <button class="cg-seg-btn" data-side="b">Black</button>
+                </div>
+
+                <div class="cg-field-label">Stockfish difficulty</div>
+                <select class="cg-select" id="cg-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="expert">Expert</option>
+                </select>
+
+                <button class="chunky-btn ng-start-btn cg-play-btn" id="cg-play-btn">Play vs Stockfish</button>
+                <div class="cg-setup-message" id="cg-setup-message"></div>
+
+                <p class="pip-hint">Drag pieces from the trays onto the board to build any position, or drag a piece off the board to remove it. Castling rights are granted automatically when a king and rook are still on their home squares. Promotions default to a queen.</p>
+            </div>
+
+            <!-- Play phase controls -->
+            <div id="cg-play-panel" class="cg-hidden">
+                <div class="pip-controls">
+                    <button class="chunky-btn pip-control-btn" id="cg-flip-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                        Flip Board
+                    </button>
+                    <button class="chunky-btn pip-control-btn" id="cg-new-setup-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        New Setup
+                    </button>
+                </div>
+                <p class="pip-hint">You're playing against Stockfish. Drag a piece, or tap it then tap a highlighted square to move.</p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ==========================================
+     LICHESS-POWERED: Options Modal (time control + variant)
+     ========================================== -->
+<div class="modal-overlay" id="options-modal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h2>Game Options</h2>
+            <div class="modal-close" id="options-modal-close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </div>
+        </div>
+
+        <div>
+            <div class="option-group-title">Time Control</div>
+            <div class="chip-grid" id="time-chip-grid">
+                <!-- populated by JS -->
+            </div>
+            <div class="custom-time-row">
+                <div class="custom-time-field">
+                    <label for="custom-minutes">Minutes</label>
+                    <input type="number" id="custom-minutes" min="0" max="60" step="1" placeholder="10">
+                </div>
+                <div class="custom-time-field">
+                    <label for="custom-increment">Increment (s)</label>
+                    <input type="number" id="custom-increment" min="0" max="60" step="1" placeholder="0">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="option-group-title">Variant</div>
+            <div class="chip-grid" id="variant-chip-grid">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
+        <button class="modal-done-btn" id="options-modal-done">Done</button>
+    </div>
+</div>
+
+<!-- Share link banner (shown after a Lichess game is created) -->
+<div class="share-banner" id="share-banner">
+    <div class="share-banner-close" id="share-banner-close">✕</div>
+    <div class="share-banner-title"><span class="dot"></span> <span id="share-banner-heading">Game created — invite a friend</span></div>
+    <div class="share-banner-row">
+        <div class="share-banner-link" id="share-banner-link">https://lichess.org/...</div>
+        <button class="share-banner-copy" id="share-banner-copy">Copy</button>
+    </div>
+</div>
+
+<!-- Polyfill script: Ensures UI works perfectly even without external players.js script imported -->
+<script>
+    if (typeof window.PLAYERS === 'undefined') {
+        window.PLAYERS = {
+            "1": { id: "1", name: "Beginner Bot", elo: "250", flag: "🇺🇸", speech: "I just learned how the horsey moves!" },
+            "2": { id: "2", name: "Clueless Colin", elo: "400", flag: "🇬🇧", speech: "I don't know what I'm doing." },
+            "3": { id: "3", name: "Novice Ned", elo: "600", flag: "🇨🇦", speech: "Let's have a good game." }
+        };
+        window.renderBotContent = function() {
+            return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>`;
+        }
+    }
+</script>
+
+<!-- Shared bot/player database -->
+<script src="players.js"></script>
+
+<!-- Play in Person: chessboard.js + chess.js (local two-player board) -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js" integrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<!-- Play in Person: local two-player game logic -->
+<script>
+    let pipGame = null;
+    let pipBoard = null;
+
+    function pipUpdateStatus() {
+        const statusEl = document.getElementById('pip-status');
+        if (!statusEl || !pipGame) return;
+
+        const turnColor = pipGame.turn() === 'w' ? 'White' : 'Black';
+        let status = '';
+        let over = false;
+
+        if (pipGame.in_checkmate()) {
+            status = `Checkmate — ${turnColor === 'White' ? 'Black' : 'White'} wins!`;
+            over = true;
+        } else if (pipGame.in_stalemate()) {
+            status = 'Stalemate — draw';
+            over = true;
+        } else if (pipGame.in_threefold_repetition()) {
+            status = 'Draw by repetition';
+            over = true;
+        } else if (pipGame.insufficient_material()) {
+            status = 'Draw — insufficient material';
+            over = true;
+        } else if (pipGame.in_draw()) {
+            status = 'Draw — 50-move rule';
+            over = true;
+        } else {
+            status = `${turnColor} to move`;
+            if (pipGame.in_check()) status += ' — check!';
+        }
+
+        statusEl.textContent = status;
+        statusEl.classList.toggle('pip-status-over', over);
+    }
+
+    function pipOnDragStart(source, piece) {
+        if (!pipGame || pipGame.game_over()) return false;
+        // only let the side whose turn it is pick up their own pieces
+        if ((pipGame.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (pipGame.turn() === 'b' && piece.search(/^w/) !== -1)) {
+            return false;
+        }
+        pipClearSelection(); // dragging supersedes any click-selection in progress
+    }
+
+    function pipOnDrop(source, target) {
+        const move = pipGame.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+        pipUpdateStatus();
+    }
+
+    function pipOnSnapEnd() {
+        pipBoard.position(pipGame.fen());
+    }
+
+    // --- Click-to-move (works alongside drag-and-drop) ---
+    let pipSelectedSquare = null;
+
+    function pipSquareEl(square) {
+        const boardEl = document.getElementById('board-play-in-person');
+        return boardEl ? boardEl.querySelector('[data-square="' + square + '"]') : null;
+    }
+
+    function pipClearSelection() {
+        const boardEl = document.getElementById('board-play-in-person');
+        if (boardEl) {
+            boardEl.querySelectorAll('.pip-selected, .pip-move-hint, .pip-capture-hint').forEach(el => {
+                el.classList.remove('pip-selected', 'pip-move-hint', 'pip-capture-hint');
+            });
+        }
+        pipSelectedSquare = null;
+    }
+
+    function pipSelectSquare(square) {
+        pipClearSelection();
+        const piece = pipGame.get(square);
+        if (!piece || piece.color !== pipGame.turn()) return;
+        pipSelectedSquare = square;
+        const selEl = pipSquareEl(square);
+        if (selEl) selEl.classList.add('pip-selected');
+        pipGame.moves({ square, verbose: true }).forEach(m => {
+            const targetEl = pipSquareEl(m.to);
+            if (!targetEl) return;
+            targetEl.classList.add(m.flags.indexOf('c') !== -1 || m.flags.indexOf('e') !== -1
+                ? 'pip-capture-hint' : 'pip-move-hint');
+        });
+    }
+
+    function pipOnSquareClick(square) {
+        if (!pipGame || pipGame.game_over()) return;
+
+        if (pipSelectedSquare) {
+            const from = pipSelectedSquare;
+            if (square === from) {
+                pipClearSelection();
+                return;
+            }
+            const move = pipGame.move({ from, to: square, promotion: 'q' });
+            pipClearSelection();
+            if (move) {
+                pipBoard.position(pipGame.fen());
+                pipUpdateStatus();
+                return;
+            }
+            // not a legal move from the selected piece — maybe they're
+            // switching selection to another one of their own pieces
+            pipSelectSquare(square);
+            return;
+        }
+
+        pipSelectSquare(square);
+    }
+
+    let pipFaceToFace = true; // rotate the far side's pieces by default
+
+    function pipApplyFaceToFace() {
+        if (!pipBoard) return;
+        if (!pipFaceToFace) {
+            document.body.classList.remove('pip-rotate-black', 'pip-rotate-white');
+            return;
+        }
+        // rotate whichever color sits at the top of the board (away from
+        // whoever last flipped it towards themselves).
+        // Applied on <body> (not the board element) so it also reaches the
+        // floating piece clone chessboard.js appends to <body> while a
+        // piece is being picked up — see the CSS comment for why.
+        const orientation = pipBoard.orientation(); // 'white' or 'black' = color at bottom
+        document.body.classList.toggle('pip-rotate-black', orientation === 'white');
+        document.body.classList.toggle('pip-rotate-white', orientation === 'black');
+    }
+
+    function initPlayInPersonBoard() {
+        if (pipBoard) {
+            // already initialized — just make sure sizing is correct after becoming visible
+            pipBoard.resize();
+            return;
+        }
+        pipGame = new Chess();
+        pipBoard = Chessboard('board-play-in-person', {
+            draggable: true,
+            position: 'start',
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            onDragStart: pipOnDragStart,
+            onDrop: pipOnDrop,
+            onSnapEnd: pipOnSnapEnd
+        });
+        pipUpdateStatus();
+        pipApplyFaceToFace();
+
+        // Click/tap-to-move: click (or tap) a piece to select it (and see
+        // legal moves highlighted), then click/tap a destination square to
+        // move — same interaction as chess.com.
+        //
+        // Mouse clicks are handled by the plain 'click' listener below.
+        // On touch devices, chessboard.js's own drag handling calls
+        // preventDefault() on 'touchstart' (so the board can be dragged
+        // instead of the page scrolling), and that suppresses the browser's
+        // synthetic 'click' event afterwards — so taps would otherwise do
+        // nothing. To make tapping work we track touchstart/touchend
+        // ourselves and treat a touch that didn't move much as a tap.
+        const pipBoardEl = document.getElementById('board-play-in-person');
+        let pipTouchStart = null; // { square, x, y }
+        let pipLastTapAt = 0;
+
+        pipBoardEl.addEventListener('touchstart', (e) => {
+            const squareEl = e.target.closest('[data-square]');
+            if (!squareEl || !e.touches[0]) { pipTouchStart = null; return; }
+            const t = e.touches[0];
+            pipTouchStart = { square: squareEl.getAttribute('data-square'), x: t.clientX, y: t.clientY };
+        }, { passive: true });
+
+        pipBoardEl.addEventListener('touchend', (e) => {
+            if (!pipTouchStart || !e.changedTouches[0]) { pipTouchStart = null; return; }
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - pipTouchStart.x);
+            const dy = Math.abs(t.clientY - pipTouchStart.y);
+            const square = pipTouchStart.square;
+            pipTouchStart = null;
+            // Small movement tolerance so a slightly shaky tap still counts
+            // as a tap, while an actual drag (handled separately by
+            // chessboard.js) doesn't also trigger a click-to-move.
+            if (dx < 10 && dy < 10) {
+                pipLastTapAt = Date.now();
+                pipOnSquareClick(square);
+            }
+        });
+
+        pipBoardEl.addEventListener('click', (e) => {
+            // Ignore synthetic/duplicate clicks that immediately follow a
+            // touch tap we already handled above.
+            if (Date.now() - pipLastTapAt < 500) return;
+            const squareEl = e.target.closest('[data-square]');
+            if (!squareEl) return;
+            pipOnSquareClick(squareEl.getAttribute('data-square'));
+        });
+
+        document.getElementById('pip-new-game-btn').addEventListener('click', () => {
+            pipClearSelection();
+            pipGame.reset();
+            pipBoard.start();
+            pipUpdateStatus();
+        });
+
+        document.getElementById('pip-flip-btn').addEventListener('click', () => {
+            pipClearSelection();
+            pipBoard.flip();
+            pipApplyFaceToFace();
+        });
+
+        document.getElementById('pip-face-to-face-toggle').addEventListener('click', (e) => {
+            pipFaceToFace = !pipFaceToFace;
+            e.currentTarget.classList.toggle('active', pipFaceToFace);
+            e.currentTarget.setAttribute('aria-pressed', String(pipFaceToFace));
+            pipApplyFaceToFace();
+        });
+
+        window.addEventListener('resize', () => pipBoard && pipBoard.resize());
+    }
+</script>
+
+<!-- Custom Game: chessboard.js board editor + chess.js + Stockfish engine -->
+<script>
+    // ---- Board editor / setup state ----
+    let cgSetupBoard = null;   // chessboard.js instance while editing the position
+    let cgBoard = null;        // chessboard.js instance while playing
+    let cgGame = null;         // chess.js game instance for the in-progress game
+    let cgThinking = false;    // true while waiting on a Stockfish reply
+    let cgSetupTurn = 'w';     // side to move, chosen during setup
+    let cgSetupSide = 'w';     // side the human will play, chosen during setup
+    let cgHumanColor = 'w';
+    let cgHumanColorName = 'White';
+    let cgSelectedSquare = null;
+
+    const cgDifficultySettings = {
+        easy:   { skill: 2,  movetime: 400 },
+        medium: { skill: 8,  movetime: 700 },
+        hard:   { skill: 14, movetime: 1200 },
+        expert: { skill: 20, movetime: 2200 }
+    };
+
+    function cgShowSetupMessage(msg, isError) {
+        const el = document.getElementById('cg-setup-message');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.classList.toggle('cg-message-error', !!isError);
+    }
+
+    // Works out castling rights from where kings/rooks currently sit —
+    // a right is granted only if the relevant king and rook are still on
+    // their standard home squares.
+    function cgComputeCastling(posObj) {
+        let rights = '';
+        if (posObj['e1'] === 'wK') {
+            if (posObj['h1'] === 'wR') rights += 'K';
+            if (posObj['a1'] === 'wR') rights += 'Q';
+        }
+        if (posObj['e8'] === 'bK') {
+            if (posObj['h8'] === 'bR') rights += 'k';
+            if (posObj['a8'] === 'bR') rights += 'q';
+        }
+        return rights || '-';
+    }
+
+    // ---- Stockfish engine (lazy-loaded web worker) ----
+    let cgEngine = null;
+    let cgEngineLoadingPromise = null;
+
+    function cgLoadEngine() {
+        if (cgEngineLoadingPromise) return cgEngineLoadingPromise;
+        cgEngineLoadingPromise = fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js')
+            .then(res => {
+                if (!res.ok) throw new Error('network');
+                return res.text();
+            })
+            .then(code => {
+                const blob = new Blob([code], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                cgEngine = new Worker(workerUrl);
+                return new Promise((resolve) => {
+                    function onReady(e) {
+                        const line = e.data;
+                        if (typeof line === 'string' && line.indexOf('uciok') !== -1) {
+                            cgEngine.removeEventListener('message', onReady);
+                            resolve(cgEngine);
+                        }
+                    }
+                    cgEngine.addEventListener('message', onReady);
+                    cgEngine.postMessage('uci');
+                });
+            })
+            .catch(err => {
+                cgEngineLoadingPromise = null;
+                throw err;
+            });
+        return cgEngineLoadingPromise;
+    }
+
+    function cgApplyEngineMove(uciMove) {
+        if (!uciMove || uciMove === '(none)') return;
+        const from = uciMove.slice(0, 2);
+        const to = uciMove.slice(2, 4);
+        const promotion = uciMove.length > 4 ? uciMove.slice(4, 5) : 'q';
+        const move = cgGame.move({ from, to, promotion });
+        if (move && cgBoard) {
+            cgBoard.position(cgGame.fen());
+        }
+    }
+
+    function cgRequestEngineMove() {
+        if (!cgGame || cgGame.game_over()) return;
+        cgThinking = true;
+        cgUpdateStatus();
+        const difficulty = document.getElementById('cg-difficulty').value;
+        const level = cgDifficultySettings[difficulty] || cgDifficultySettings.medium;
+        cgLoadEngine().then(engine => {
+            const fen = cgGame.fen();
+            function onMessage(e) {
+                const line = e.data;
+                if (typeof line === 'string' && line.indexOf('bestmove') === 0) {
+                    engine.removeEventListener('message', onMessage);
+                    const uciMove = line.split(' ')[1];
+                    cgApplyEngineMove(uciMove);
+                    cgThinking = false;
+                    cgUpdateStatus();
+                }
+            }
+            engine.addEventListener('message', onMessage);
+            engine.postMessage('setoption name Skill Level value ' + level.skill);
+            engine.postMessage('position fen ' + fen);
+            engine.postMessage('go movetime ' + level.movetime);
+        }).catch(() => {
+            cgThinking = false;
+            cgUpdateStatus();
+            cgShowSetupMessage('Could not load Stockfish — check your connection and try again.', true);
+        });
+    }
+
+    // ---- Status ----
+    function cgUpdateStatus() {
+        const statusEl = document.getElementById('cg-status');
+        if (!statusEl || !cgGame) return;
+        const turnColor = cgGame.turn() === 'w' ? 'White' : 'Black';
+        let status = '';
+        let over = false;
+
+        if (cgGame.in_checkmate()) {
+            status = `Checkmate — ${turnColor === 'White' ? 'Black' : 'White'} wins!`;
+            over = true;
+        } else if (cgGame.in_stalemate()) {
+            status = 'Stalemate — draw';
+            over = true;
+        } else if (cgGame.in_threefold_repetition()) {
+            status = 'Draw by repetition';
+            over = true;
+        } else if (cgGame.insufficient_material()) {
+            status = 'Draw — insufficient material';
+            over = true;
+        } else if (cgGame.in_draw()) {
+            status = 'Draw — 50-move rule';
+            over = true;
+        } else if (cgThinking) {
+            status = 'Stockfish is thinking…';
+        } else {
+            status = turnColor === cgHumanColorName ? 'Your move' : `${turnColor} to move`;
+            if (cgGame.in_check()) status += ' — check!';
+        }
+
+        statusEl.textContent = status;
+        statusEl.classList.toggle('pip-status-over', over);
+    }
+
+    // ---- Human interaction during play (drag + click-to-move) ----
+    function cgSquareEl(square) {
+        const boardEl = document.getElementById('board-custom-game');
+        return boardEl ? boardEl.querySelector('[data-square="' + square + '"]') : null;
+    }
+
+    function cgClearSelection() {
+        const boardEl = document.getElementById('board-custom-game');
+        if (boardEl) {
+            boardEl.querySelectorAll('.pip-selected, .pip-move-hint, .pip-capture-hint').forEach(el => {
+                el.classList.remove('pip-selected', 'pip-move-hint', 'pip-capture-hint');
+            });
+        }
+        cgSelectedSquare = null;
+    }
+
+    function cgSelectSquare(square) {
+        cgClearSelection();
+        const piece = cgGame.get(square);
+        if (!piece || piece.color !== cgGame.turn() || piece.color !== cgHumanColor) return;
+        cgSelectedSquare = square;
+        const selEl = cgSquareEl(square);
+        if (selEl) selEl.classList.add('pip-selected');
+        cgGame.moves({ square, verbose: true }).forEach(m => {
+            const targetEl = cgSquareEl(m.to);
+            if (!targetEl) return;
+            targetEl.classList.add(m.flags.indexOf('c') !== -1 || m.flags.indexOf('e') !== -1
+                ? 'pip-capture-hint' : 'pip-move-hint');
+        });
+    }
+
+    function cgAfterHumanMove() {
+        cgBoard.position(cgGame.fen());
+        cgUpdateStatus();
+        if (!cgGame.game_over()) cgRequestEngineMove();
+    }
+
+    function cgOnSquareClick(square) {
+        if (!cgGame || cgGame.game_over() || cgThinking) return;
+        if (cgGame.turn() !== cgHumanColor) return;
+
+        if (cgSelectedSquare) {
+            const from = cgSelectedSquare;
+            if (square === from) { cgClearSelection(); return; }
+            const move = cgGame.move({ from, to: square, promotion: 'q' });
+            cgClearSelection();
+            if (move) { cgAfterHumanMove(); return; }
+            cgSelectSquare(square);
+            return;
+        }
+        cgSelectSquare(square);
+    }
+
+    function cgOnDragStart(source, piece) {
+        if (!cgGame || cgGame.game_over() || cgThinking) return false;
+        if (cgGame.turn() !== cgHumanColor) return false;
+        if ((cgGame.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (cgGame.turn() === 'b' && piece.search(/^w/) !== -1)) {
+            return false;
+        }
+        cgClearSelection();
+    }
+
+    function cgOnDrop(source, target) {
+        const move = cgGame.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+        cgAfterHumanMove();
+    }
+
+    function cgOnSnapEnd() {
+        cgBoard.position(cgGame.fen());
+    }
+
+    function cgBindPlayBoardInteraction() {
+        const boardEl = document.getElementById('board-custom-game');
+        let touchStart = null;
+        let lastTapAt = 0;
+
+        boardEl.addEventListener('touchstart', (e) => {
+            const squareEl = e.target.closest('[data-square]');
+            if (!squareEl || !e.touches[0]) { touchStart = null; return; }
+            const t = e.touches[0];
+            touchStart = { square: squareEl.getAttribute('data-square'), x: t.clientX, y: t.clientY };
+        }, { passive: true });
+
+        boardEl.addEventListener('touchend', (e) => {
+            if (!touchStart || !e.changedTouches[0]) { touchStart = null; return; }
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - touchStart.x);
+            const dy = Math.abs(t.clientY - touchStart.y);
+            const square = touchStart.square;
+            touchStart = null;
+            if (dx < 10 && dy < 10) {
+                lastTapAt = Date.now();
+                cgOnSquareClick(square);
+            }
+        });
+
+        boardEl.addEventListener('click', (e) => {
+            if (Date.now() - lastTapAt < 500) return;
+            const squareEl = e.target.closest('[data-square]');
+            if (!squareEl) return;
+            cgOnSquareClick(squareEl.getAttribute('data-square'));
+        });
+    }
+
+    // ---- Phase switching ----
+    function initCustomGameSetup() {
+        if (cgBoard) { cgBoard.destroy(); cgBoard = null; }
+        cgGame = null;
+        cgThinking = false;
+        cgClearSelection();
+
+        document.getElementById('cg-setup-panel').classList.remove('cg-hidden');
+        document.getElementById('cg-play-panel').classList.add('cg-hidden');
+        document.getElementById('cg-status').textContent = 'Set up your position';
+        cgShowSetupMessage('');
+
+        if (cgSetupBoard) { cgSetupBoard.resize(); return; }
+
+        cgSetupBoard = Chessboard('board-custom-game', {
+            draggable: true,
+            dropOffBoard: 'trash',
+            sparePieces: true,
+            position: {},
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+        });
+
+        window.addEventListener('resize', () => cgSetupBoard && cgSetupBoard.resize());
+    }
+
+    function cgStartPlayPhase() {
+        if (cgSetupBoard) { cgSetupBoard.destroy(); cgSetupBoard = null; }
+
+        document.getElementById('cg-setup-panel').classList.add('cg-hidden');
+        document.getElementById('cg-play-panel').classList.remove('cg-hidden');
+
+        cgThinking = false;
+        cgClearSelection();
+
+        cgBoard = Chessboard('board-custom-game', {
+            draggable: true,
+            position: cgGame.fen(),
+            orientation: cgHumanColor === 'w' ? 'white' : 'black',
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            onDragStart: cgOnDragStart,
+            onDrop: cgOnDrop,
+            onSnapEnd: cgOnSnapEnd
+        });
+
+        cgUpdateStatus();
+        cgBindPlayBoardInteraction();
+        window.addEventListener('resize', () => cgBoard && cgBoard.resize());
+
+        if (cgGame.turn() !== cgHumanColor) cgRequestEngineMove();
+    }
+
+    // ---- Setup panel controls ----
+    document.getElementById('cg-start-position-btn').addEventListener('click', () => {
+        if (cgSetupBoard) cgSetupBoard.start();
+    });
+
+    document.getElementById('cg-clear-board-btn').addEventListener('click', () => {
+        if (cgSetupBoard) cgSetupBoard.clear();
+    });
+
+    document.getElementById('cg-turn-group').addEventListener('click', (e) => {
+        const btn = e.target.closest('.cg-seg-btn');
+        if (!btn) return;
+        cgSetupTurn = btn.getAttribute('data-turn');
+        btn.parentElement.querySelectorAll('.cg-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+
+    document.getElementById('cg-side-group').addEventListener('click', (e) => {
+        const btn = e.target.closest('.cg-seg-btn');
+        if (!btn) return;
+        cgSetupSide = btn.getAttribute('data-side');
+        btn.parentElement.querySelectorAll('.cg-seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+
+    document.getElementById('cg-play-btn').addEventListener('click', () => {
+        if (!cgSetupBoard) return;
+        const posObj = cgSetupBoard.position();
+        const placement = Chessboard.objToFen(posObj);
+        const castling = cgComputeCastling(posObj);
+        const fen = `${placement} ${cgSetupTurn} ${castling} - 0 1`;
+
+        const validator = new Chess();
+        const result = validator.validate_fen(fen);
+        if (!result.valid) {
+            cgShowSetupMessage(result.error || 'That position is not legal — check the board and try again.', true);
+            return;
+        }
+
+        cgGame = new Chess(fen);
+        cgHumanColor = cgSetupSide;
+        cgHumanColorName = cgHumanColor === 'w' ? 'White' : 'Black';
+        cgStartPlayPhase();
+    });
+
+    // ---- Play panel controls ----
+    document.getElementById('cg-flip-btn').addEventListener('click', () => {
+        cgClearSelection();
+        if (cgBoard) cgBoard.flip();
+    });
+
+    document.getElementById('cg-new-setup-btn').addEventListener('click', () => {
+        initCustomGameSetup();
+    });
+</script>
+
+<!-- Navigation Logic -->
+<script>
+    const viewHome = document.getElementById('view-home');
+    const viewNewGame = document.getElementById('view-new-game');
+    const viewBots = document.getElementById('view-bots');
+    const viewPlayInPerson = document.getElementById('view-play-in-person');
+    const viewCustomGame = document.getElementById('view-custom-game');
+
+    // Iconic Play button: Home -> New Game menu
+    document.getElementById('fab-play-btn').addEventListener('click', () => {
+        viewHome.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+
+    // Back arrow on New Game menu -> Home
+    document.getElementById('nav-home-btn').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewHome.classList.add('active');
+    });
+
+    // Switch to Bots view
+    document.getElementById('trigger-play-bots').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewBots.classList.add('active');
+    });
+
+    // Switch back to New Game view
+    document.getElementById('trigger-back-bots').addEventListener('click', () => {
+        viewBots.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+
+    // Switch to Play in Person view
+    document.getElementById('trigger-play-in-person').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewPlayInPerson.classList.add('active');
+        if (typeof initPlayInPersonBoard === 'function') initPlayInPersonBoard();
+    });
+
+    // Switch back to New Game view
+    document.getElementById('trigger-back-play-in-person').addEventListener('click', () => {
+        viewPlayInPerson.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+
+    // Switch to Custom Game view (board editor + Stockfish)
+    document.getElementById('trigger-custom-game').addEventListener('click', () => {
+        viewNewGame.classList.remove('active');
+        viewCustomGame.classList.add('active');
+        if (typeof initCustomGameSetup === 'function') initCustomGameSetup();
+    });
+
+    // Switch back to New Game view
+    document.getElementById('trigger-back-custom-game').addEventListener('click', () => {
+        viewCustomGame.classList.remove('active');
+        viewNewGame.classList.add('active');
+    });
+
+    // Home page tabs: Live / Learn / Daily Puzzle
+    const homeTabBtns = document.querySelectorAll('.home-tab-btn');
+    const homeTabPanels = document.querySelectorAll('.home-tab-panel');
+    homeTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-tab');
+            homeTabBtns.forEach(b => b.classList.toggle('active', b === btn));
+            homeTabPanels.forEach(p => p.classList.toggle('active', p.getAttribute('data-panel') === target));
+        });
+    });
+</script>
+
+<!-- ==========================================
+     HOME WIDGETS: loading states + live broadcast lookup
+     ========================================== -->
+<script>
+(() => {
+    // Fade out each widget's loading spinner once its iframe finishes loading
+    ['tv', 'puzzle', 'analysis'].forEach(key => {
+        const frame = document.getElementById(`frame-${key}`);
+        const loader = document.getElementById(`loading-${key}`);
+        if (!frame || !loader) return;
+        frame.addEventListener('load', () => loader.classList.add('hidden'));
+    });
+
+    function slugify(str) {
+        return (str || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    // Find a currently-active official broadcast and embed its latest round.
+    // https://lichess.org/api#tag/Broadcasts/operation/broadcastTop
+    async function loadLiveBroadcast() {
+        const wrap = document.getElementById('broadcast-wrap');
+        const loader = document.getElementById('loading-broadcast');
+
+        const showEmpty = () => {
+            wrap.innerHTML = `<div class="widget-empty">No live tournaments right now.<br><a href="https://lichess.org/broadcast" target="_blank" rel="noopener">Browse broadcasts on Lichess ↗</a></div>`;
+        };
+
+        try {
+            const res = await fetch('https://lichess.org/api/broadcast/top?nb=1');
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const data = await res.json();
+            const item = (data.active && data.active[0]) || null;
+
+            if (!item || !item.round || !item.round.id) {
+                showEmpty();
+                return;
+            }
+
+            const tourSlug = item.tour?.slug || slugify(item.tour?.name);
+            const roundSlug = item.round?.slug || slugify(item.round?.name);
+            const embedPath = `${tourSlug}--${roundSlug}`;
+            const src = `https://lichess.org/embed/broadcast/${embedPath}/${item.round.id}?theme=brown&bg=dark`;
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'widget-iframe';
+            iframe.loading = 'lazy';
+            iframe.src = src;
+            iframe.addEventListener('load', () => loader.classList.add('hidden'));
+            wrap.appendChild(iframe);
+        } catch (err) {
+            showEmpty();
+        }
+    }
+
+    loadLiveBroadcast();
+})();
+</script>
+
+<!-- Your Original JavaScript for Interactivity -->
+<script>
+    const botDatabase = PLAYERS;
+    const avatars = document.querySelectorAll('.bot-avatar');
+    const activeAvatar = document.getElementById('active-avatar');
+    const activeName = document.getElementById('active-name');
+    const activeElo = document.getElementById('active-elo');
+    const activeSpeech = document.getElementById('active-speech');
+    const activeFlag = document.getElementById('active-flag');
+
+    avatars.forEach(avatar => {
+        const botId = avatar.getAttribute('data-id');
+        if (botDatabase[botId]) {
+            avatar.innerHTML = renderBotContent(botDatabase[botId]);
+        }
+    });
+
+    let selectedBotId = "2";
+
+    const initDefaultBot = () => {
+        const defaultBot = botDatabase["2"] || botDatabase["1"];
+        if (!defaultBot) return;
+        activeAvatar.innerHTML = renderBotContent(defaultBot);
+        activeName.textContent = defaultBot.name;
+        activeElo.textContent = defaultBot.elo;
+        activeFlag.textContent = defaultBot.flag;
+        activeSpeech.textContent = defaultBot.speech;
+    };
+    initDefaultBot();
+
+    avatars.forEach(avatar => {
+        avatar.addEventListener('click', () => {
+            avatars.forEach(a => a.classList.remove('selected'));
+            avatar.classList.add('selected');
+
+            const botId = avatar.getAttribute('data-id');
+            const botData = botDatabase[botId];
+            if (!botData) return;
+            selectedBotId = botId;
+
+            activeAvatar.style.transform = 'scale(0.8)';
+            activeSpeech.style.opacity = '0';
+            
+            setTimeout(() => {
+                activeAvatar.innerHTML = renderBotContent(botData);
+                activeName.textContent = botData.name;
+                activeElo.textContent = botData.elo;
+                activeFlag.textContent = botData.flag;
+                activeSpeech.textContent = botData.speech;
+                
+                activeAvatar.style.transform = 'scale(1)';
+                activeSpeech.style.opacity = '1';
+            }, 150);
+        });
+    });
+
+    let selectedColor = 'white';
+
+    document.querySelector('.play-btn').addEventListener('click', () => {
+        const botData = botDatabase[selectedBotId];
+        if (!botData) return;
+
+        const color = selectedColor === 'random'
+            ? (Math.random() < 0.5 ? 'white' : 'black')
+            : selectedColor;
+
+        const params = new URLSearchParams({ id: botData.id, color: color });
+        window.location.href = `chess.html?${params.toString()}`;
+    });
+
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const colorValues = ['white', 'random', 'black'];
+    colorBtns.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            colorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedColor = colorValues[i];
+        });
+    });
+</script>
+
+<!-- ==========================================
+     LICHESS API INTEGRATION
+     Powers "Start Game" / "Play a Friend" with real
+     lichess.org games via the public, key-free
+     Open Challenge endpoint.
+     Docs: https://lichess.org/api#tag/Challenges/operation/challengeOpen
+     ========================================== -->
+<script>
+(() => {
+    const LICHESS_OPEN_CHALLENGE_URL = 'https://lichess.org/api/challenge/open';
+
+    // --- Time control presets: [label, limitSeconds, incrementSeconds] ---
+    const TIME_PRESETS = [
+        { label: '1 min',  limit: 60,   increment: 0 },
+        { label: '1 | 1',  limit: 60,   increment: 1 },
+        { label: '2 | 1',  limit: 120,  increment: 1 },
+        { label: '3 min',  limit: 180,  increment: 0 },
+        { label: '3 | 2',  limit: 180,  increment: 2 },
+        { label: '5 min',  limit: 300,  increment: 0 },
+        { label: '5 | 3',  limit: 300,  increment: 3 },
+        { label: '10 min', limit: 600,  increment: 0 },
+        { label: '10 | 5', limit: 600,  increment: 5 },
+        { label: '15 | 10',limit: 900,  increment: 10 },
+        { label: '30 min', limit: 1800, increment: 0 },
+        { label: '30 | 20',limit: 1800, increment: 20 },
+    ];
+
+    const VARIANTS = [
+        { key: 'standard',    label: 'Standard' },
+        { key: 'chess960',    label: 'Chess960' },
+        { key: 'crazyhouse',  label: 'Crazyhouse' },
+        { key: 'atomic',      label: 'Atomic' },
+        { key: 'kingOfTheHill', label: 'King of the Hill' },
+        { key: 'threeCheck',  label: '3-Check' },
+    ];
+
+    // Current selection, defaults match the original static markup (10 min, Standard)
+    const settings = {
+        limit: 600,
+        increment: 0,
+        label: '10 min',
+        variant: 'standard',
+        variantLabel: 'Standard',
+    };
+
+    const timeLabelEl = document.getElementById('time-control-label');
+    const timeChipGrid = document.getElementById('time-chip-grid');
+    const variantChipGrid = document.getElementById('variant-chip-grid');
+    const customMinutesInput = document.getElementById('custom-minutes');
+    const customIncrementInput = document.getElementById('custom-increment');
+    const optionsModal = document.getElementById('options-modal');
+    const optionsBotsLabel = document.getElementById('options-btn-bots-label');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const playFriendBtn = document.getElementById('trigger-play-friend');
+    const shareBanner = document.getElementById('share-banner');
+    const shareBannerLink = document.getElementById('share-banner-link');
+    const shareBannerHeading = document.getElementById('share-banner-heading');
+
+    function renderTimeChips() {
+        timeChipGrid.innerHTML = '';
+        TIME_PRESETS.forEach(preset => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-btn';
+            chip.textContent = preset.label;
+            if (preset.limit === settings.limit && preset.increment === settings.increment) {
+                chip.classList.add('active');
+            }
+            chip.addEventListener('click', () => {
+                settings.limit = preset.limit;
+                settings.increment = preset.increment;
+                settings.label = preset.label;
+                customMinutesInput.value = '';
+                customIncrementInput.value = '';
+                syncTimeLabel();
+                renderTimeChips();
+            });
+            timeChipGrid.appendChild(chip);
+        });
+    }
+
+    function renderVariantChips() {
+        variantChipGrid.innerHTML = '';
+        VARIANTS.forEach(v => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-btn';
+            chip.textContent = v.label;
+            if (v.key === settings.variant) chip.classList.add('active');
+            chip.addEventListener('click', () => {
+                settings.variant = v.key;
+                settings.variantLabel = v.label;
+                renderVariantChips();
+            });
+            variantChipGrid.appendChild(chip);
+        });
+    }
+
+    function syncTimeLabel() {
+        timeLabelEl.textContent = settings.label;
+        if (optionsBotsLabel) {
+            optionsBotsLabel.textContent = `Options · ${settings.label}`;
+        }
+    }
+
+    function applyCustomTime() {
+        const mins = parseFloat(customMinutesInput.value);
+        const inc = parseFloat(customIncrementInput.value);
+        if (!isNaN(mins) && mins >= 0) {
+            settings.limit = Math.round(mins * 60);
+            settings.increment = !isNaN(inc) && inc >= 0 ? Math.round(inc) : 0;
+            settings.label = `${mins} | ${settings.increment}`;
+            syncTimeLabel();
+        }
+    }
+
+    // --- Modal open/close ---
+    function openOptionsModal() {
+        renderTimeChips();
+        renderVariantChips();
+        optionsModal.classList.add('active');
+    }
+    function closeOptionsModal() {
+        applyCustomTime();
+        optionsModal.classList.remove('active');
+    }
+
+    document.getElementById('time-control-btn').addEventListener('click', openOptionsModal);
+    document.getElementById('options-btn-bots').addEventListener('click', openOptionsModal);
+    document.getElementById('options-modal-close').addEventListener('click', closeOptionsModal);
+    document.getElementById('options-modal-done').addEventListener('click', closeOptionsModal);
+    optionsModal.addEventListener('click', (e) => {
+        if (e.target === optionsModal) closeOptionsModal();
+    });
+
+    // --- More options toggle (Custom Game / Play in Person) ---
+    const moreToggle = document.getElementById('ng-more-toggle');
+    const moreOptions = document.getElementById('ng-more-options');
+    moreToggle.addEventListener('click', () => {
+        moreToggle.classList.toggle('collapsed');
+        moreOptions.classList.toggle('collapsed');
+    });
+
+    syncTimeLabel();
+
+    // --- Share banner ---
+    let shareBannerTimeout;
+    function showShareBanner(url, heading) {
+        shareBannerHeading.textContent = heading;
+        shareBannerLink.textContent = url;
+        shareBannerLink.dataset.url = url;
+        shareBanner.classList.add('active');
+        clearTimeout(shareBannerTimeout);
+        shareBannerTimeout = setTimeout(() => shareBanner.classList.remove('active'), 15000);
+    }
+    document.getElementById('share-banner-close').addEventListener('click', () => {
+        shareBanner.classList.remove('active');
+        clearTimeout(shareBannerTimeout);
+    });
+    document.getElementById('share-banner-copy').addEventListener('click', () => {
+        const url = shareBannerLink.dataset.url || '';
+        if (!url) return;
+        navigator.clipboard?.writeText(url).then(() => {
+            const btn = document.getElementById('share-banner-copy');
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }).catch(() => {});
+    });
+
+    // --- Button loading state helper ---
+    function setLoading(btn, isLoading, loadingText, originalHTML) {
+        if (isLoading) {
+            btn.dataset.originalHtml = originalHTML ?? btn.innerHTML;
+            btn.innerHTML = `<span class="btn-spinner"></span>${loadingText}`;
+            btn.disabled = true;
+        } else {
+            btn.innerHTML = btn.dataset.originalHtml || originalHTML || btn.innerHTML;
+            btn.disabled = false;
+        }
+    }
+
+    function showInlineError(message) {
+        // Lightweight inline error using the share banner surface so we don't need extra markup
+        shareBannerHeading.textContent = 'Could not reach Lichess';
+        shareBannerLink.textContent = message;
+        shareBannerLink.removeAttribute('data-url');
+        shareBanner.classList.add('active');
+        clearTimeout(shareBannerTimeout);
+        shareBannerTimeout = setTimeout(() => shareBanner.classList.remove('active'), 6000);
+    }
+
+    // --- Core: create a real Lichess game via the Open Challenge API ---
+    // https://lichess.org/api#tag/Challenges/operation/challengeOpen
+    // No auth required. Returns two join links (urlWhite / urlBlack); whoever
+    // opens a link takes that color. That's how we let a chosen color "reserve"
+    // a side for the person tapping Start Game, while the other link is free
+    // to share with a friend or left open for any Lichess player to join.
+    async function createLichessGame({ colorPref, openInNewTab, shareHeading }) {
+        const body = new URLSearchParams({
+            rated: 'false',
+            'clock.limit': String(settings.limit),
+            'clock.increment': String(settings.increment),
+            variant: settings.variant,
+        });
+
+        const response = await fetch(LICHESS_OPEN_CHALLENGE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        });
+
+        if (!response.ok) {
+            let detail = '';
+            try { detail = (await response.json()).error || ''; } catch (_) {}
+            throw new Error(detail || `Lichess responded with ${response.status}`);
+        }
+
+        const data = await response.json();
+        const urlWhite = data.urlWhite || data.challenge?.urlWhite;
+        const urlBlack = data.urlBlack || data.challenge?.urlBlack;
+        const fallbackUrl = data.url || data.challenge?.url ||
+            (data.id ? `https://lichess.org/${data.id}` : null);
+
+        let myUrl, friendUrl;
+        if (colorPref === 'white') {
+            myUrl = urlWhite || fallbackUrl;
+            friendUrl = urlBlack || fallbackUrl;
+        } else if (colorPref === 'black') {
+            myUrl = urlBlack || fallbackUrl;
+            friendUrl = urlWhite || fallbackUrl;
+        } else {
+            const whiteFirst = Math.random() < 0.5;
+            myUrl = (whiteFirst ? urlWhite : urlBlack) || fallbackUrl;
+            friendUrl = (whiteFirst ? urlBlack : urlWhite) || fallbackUrl;
+        }
+
+        if (openInNewTab && myUrl) {
+            window.open(myUrl, '_blank');
+        }
+        showShareBanner(friendUrl || myUrl, shareHeading);
+        return { myUrl, friendUrl };
+    }
+
+    startGameBtn.addEventListener('click', async () => {
+        setLoading(startGameBtn, true, 'Creating game…', 'Start Game');
+        try {
+            await createLichessGame({
+                colorPref: selectedColor,
+                openInNewTab: true,
+                shareHeading: 'Game created — send this to your opponent',
+            });
+        } catch (err) {
+            showInlineError(err.message || 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(startGameBtn, false, '', 'Start Game');
+        }
+    });
+
+    playFriendBtn.addEventListener('click', async () => {
+        setLoading(playFriendBtn, true, 'Creating link…', playFriendBtn.innerHTML);
+        try {
+            await createLichessGame({
+                colorPref: selectedColor,
+                openInNewTab: false,
+                shareHeading: 'Share this link with your friend',
+            });
+        } catch (err) {
+            showInlineError(err.message || 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(playFriendBtn, false, '');
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

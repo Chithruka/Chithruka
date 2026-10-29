@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHITHRUKA - Reader</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Martel+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+    <script defer src="https://kit.fontawesome.com/df13f08a1d.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.88/epub.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
+    <style>
+        /* --- NETFLIX-INSPIRED THEME --- */
+        :root { 
+            --bg: #141414; 
+            --card: #181818; 
+            --accent: #e50914; 
+            --text: #ffffff; 
+            --text-muted: #b3b3b3;
+            --nav-bg: #000000;
+        }
+        
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; 
+            font-family: 'Martel Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        /* --- TOP LOGO BAR --- */
+        .top-bar {
+            height: 70px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 4%;
+            z-index: 60;
+            flex-shrink: 0;
+        }
+
+        .logo { 
+            font-family: 'Bebas Neue', cursive; 
+            font-size: 44px; 
+            color: var(--accent); 
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .layout-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            width: 240px; 
+            background: transparent; 
+            display: flex; 
+            flex-direction: column; 
+            padding-top: 20px;
+            z-index: 50; 
+            flex-shrink: 0;
+        }
+        
+        .nav-btn { 
+            background: transparent; 
+            border: none; 
+            padding: 12px 25px; 
+            text-align: left; 
+            font-size: 16px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center;
+            gap: 15px; 
+            width: 100%; 
+            color: var(--text-muted); 
+            font-weight: 700; 
+            transition: color 0.3s;
+        }
+        
+        .nav-btn i { width: 25px; text-align: center; font-size: 18px; }
+        .nav-btn:hover { color: #fff; }
+        .nav-btn.active { color: #fff; border-left: 4px solid var(--accent); background: linear-gradient(90deg, rgba(229,9,20,0.2), transparent); }
+
+        /* --- MAIN AREA --- */
+        .main { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .view { width: 100%; height: 100%; padding: 0 4% 40px; overflow-y: auto; display: none; }
+        .view.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- HEADER & SEARCH --- */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 15px; flex-wrap: wrap; }
+        h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        
+        .header-actions { display: flex; gap: 10px; }
+
+        .search-group { display: flex; gap: 10px; flex: 1; max-width: 700px; background: rgba(0,0,0,0.75); padding: 5px; border-radius: 4px; border: 1px solid #333; }
+        .search-bar { flex: 1; padding: 10px 15px; background: transparent; border: none; color: white; font-family: inherit; font-size: 14px; }
+        
+        select { 
+            padding: 10px; 
+            border-radius: 2px; 
+            border: none; 
+            background: #222; 
+            color: white; 
+            cursor: pointer; 
+            font-family: inherit;
+        }
+
+        .btn { 
+            background: var(--accent); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 2px; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 700; 
+            transition: 0.2s; 
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+        }
+        .btn:hover { background: #f40612; transform: scale(1.05); }
+        .btn-secondary { background: #333; }
+        .btn-secondary:hover { background: #444; }
+
+        /* --- GRID --- */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 15px; 
+        }
+        
+        .book-card { 
+            background: var(--card); 
+            border-radius: 4px; 
+            overflow: hidden;
+            cursor: pointer; 
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .book-card:hover { 
+            transform: scale(1.08); 
+            z-index: 10; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        }
+
+        .cover { width: 100%; aspect-ratio: 2/3; background: #222; object-fit: cover; }
+        .info { padding: 12px; flex: 1; display: flex; flex-direction: column; background: var(--card); }
+        .title { font-weight: 700; font-size: 14px; margin-bottom: 4px; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .author { font-size: 12px; color: #888; margin-top: auto; }
+        
+        .badge { 
+            position: absolute; top: 8px; left: 8px; 
+            padding: 3px 6px; border-radius: 2px; 
+            font-size: 10px; color: white; text-transform: uppercase; font-weight: bold; 
+            background: var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+
+        .delete-btn {
+            position: absolute; top: 8px; right: 8px;
+            width: 24px; height: 24px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 5;
+            transition: 0.2s;
+            border: 1px solid #555;
+        }
+        .delete-btn:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+
+        /* --- READER --- */
+        #reader { position: fixed; inset: 0; background: #000; z-index: 100; display: none; flex-direction: column; }
+        .toolbar { height: 60px; border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: #141414; }
+        .stage { flex: 1; background: #000; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        #book-stage { width: 100%; height: 100%; background: #fff; }
+        
+        .arrow { 
+            position: absolute; top: 0; bottom: 0; width: 80px; 
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.3); font-size: 50px; cursor: pointer; 
+            user-select: none; z-index: 50; transition: 0.3s;
+        }
+        .arrow:hover { color: white; background: rgba(0,0,0,0.4); }
+        #prev { left: 0; } #next { right: 0; }
+        
+        /* --- MOBILE --- */
+        @media (max-width: 768px) {
+            .top-bar { height: 60px; justify-content: center; padding: 0; background: #000; position: relative; }
+            .logo { font-size: 36px; }
+            .settings-icon { position: absolute; right: 6px; top: 0; height: 60px; }
+            .sidebar { 
+                position: fixed; bottom: 0; left: 0; right: 0; 
+                width: 100%; height: 65px; 
+                flex-direction: row; padding: 0;
+                border-top: 1px solid #333; background: #000;
+                justify-content: space-around;
+            }
+            .nav-btn { 
+                flex-direction: column; justify-content: center; align-items: center;
+                padding: 0; font-size: 11px; gap: 4px;
+                text-align: center; border: none !important;
+            }
+            .nav-btn i { font-size: 18px; width: auto; }
+            .nav-btn.active { background: transparent; color: var(--accent); }
+            .main { padding-bottom: 70px; }
+            .view { padding: 0 15px 30px; }
+            h1 { font-size: 22px; margin-bottom: 15px; }
+            .search-group { max-width: 100%; flex-direction: column; background: transparent; border: none; padding: 0; }
+            .search-bar { background: #222; border-radius: 4px; margin-bottom: 8px; }
+            .book-card:hover { transform: none; }
+        }
+
+        #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ============ HOME / HERO / ROWS ============ */
+        #view-home { padding: 0 !important; }
+
+        .hero { position: relative; height: 64vh; min-height: 440px; max-height: 640px; margin: 0 0 36px 0; overflow: hidden; background: #000; }
+        .hero-slide {
+            position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease;
+            background-size: cover; background-position: center 20%;
+            display: flex; align-items: flex-end;
+        }
+        .hero-slide.active { opacity: 1; z-index: 2; }
+        .hero-slide::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                linear-gradient(180deg, rgba(20,20,20,0) 35%, var(--bg) 96%),
+                linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.05) 75%);
+        }
+        .hero-content { position: relative; z-index: 3; padding: 0 4% 60px; max-width: 680px; }
+        .hero-type { display: inline-flex; align-items: center; gap: 6px; background: rgba(229,9,20,0.9); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 3px; text-transform: uppercase; margin-bottom: 14px; }
+        .hero-title { font-family: 'Bebas Neue', cursive; font-size: 58px; line-height: 1.02; letter-spacing: 1px; margin: 0 0 14px; text-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+        .hero-meta { color: var(--text-muted); font-size: 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .hero-meta b { color: #4ce085; }
+        .hero-desc { font-size: 15px; line-height: 1.5; color: #e5e5e5; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .hero-actions { display: flex; gap: 12px; }
+        .hero-indicators { position: absolute; bottom: 18px; right: 4%; z-index: 4; display: flex; gap: 8px; }
+        .hero-dot { width: 28px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.35); cursor: pointer; transition: 0.3s; }
+        .hero-dot.active { background: var(--accent); }
+
+        .type-pills { display: flex; gap: 10px; padding: 0 4% 28px; flex-wrap: wrap; }
+        .pill { padding: 9px 20px; border-radius: 20px; background: #232323; color: #ccc; cursor: pointer; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; border: 1px solid #2e2e2e; transition: 0.2s; }
+        .pill:hover { background: #2c2c2c; color: #fff; }
+        .pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .row { margin: 0 0 38px; padding: 0 4%; }
+        .row[data-empty="true"] { display: none; }
+        .row-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+        .row-title { font-size: 19px; font-weight: 700; margin: 0; }
+        .row-sub { font-size: 12px; color: var(--text-muted); }
+        .row-track { display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 12px; scrollbar-width: none; }
+        .row-track::-webkit-scrollbar { display: none; }
+        .row-card { flex: 0 0 165px; cursor: pointer; transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); position: relative; }
+        .row-card:hover { transform: scale(1.07); z-index: 5; }
+        .row-card .cover { width: 100%; aspect-ratio: 2/3; border-radius: 4px; background: #222; object-fit: cover; box-shadow: 0 6px 16px rgba(0,0,0,0.6); }
+        .row-card .rc-title { font-size: 13px; font-weight: 700; margin-top: 8px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .row-card .rc-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .row-card .progress-bar { position: absolute; bottom: 0; left: 0; height: 4px; background: rgba(255,255,255,0.2); width: 100%; border-radius: 0 0 4px 4px; overflow: hidden; }
+        .row-card .progress-fill { height: 100%; background: var(--accent); }
+        .row-empty-cta { padding: 30px; text-align: center; color: #888; background: var(--card); border-radius: 6px; }
+        .row-empty-cta a { color: var(--accent); font-weight: 700; }
+        .row-track.loading { color: #555; padding: 20px 0; }
+
+        /* ============ TYPE BADGES ============ */
+        .badge.type-manga { background: #ff6b35; }
+        .badge.type-comic { background: #3b82f6; }
+        .badge.type-book { background: #e50914; }
+
+        /* ============ COMIC / MANGA DETAIL MODAL ============ */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 150; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #181818; border-radius: 8px; max-width: 760px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.7); }
+        .modal-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.6); border: none; color: #fff; cursor: pointer; font-size: 16px; z-index: 5; }
+        .modal-banner { width: 100%; aspect-ratio: 16/7; object-fit: cover; background: #000; }
+        .modal-body { padding: 24px 32px 32px; }
+        .modal-title { font-family: 'Bebas Neue', cursive; font-size: 32px; letter-spacing: 1px; margin: 0 0 6px; }
+        .modal-meta { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+        .modal-desc { font-size: 14px; line-height: 1.6; color: #ddd; margin-bottom: 24px; }
+        .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+        .chapter-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+        .chapter-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #222; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .chapter-row:hover { background: #2c2c2c; }
+        .chapter-row.read { opacity: 0.55; }
+        .chapter-row .ch-name { font-size: 14px; font-weight: 700; }
+        .chapter-row .ch-date { font-size: 12px; color: var(--text-muted); }
+
+        /* ============ SETTINGS MODAL ============ */
+        .settings-icon { margin-left: auto; background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0 16px; }
+        .settings-icon:hover { color: #fff; }
+        .field-group { margin-bottom: 16px; }
+        .field-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field-group input { width: 100%; padding: 12px; background: #222; border: 1px solid #333; border-radius: 4px; color: #fff; font-family: inherit; font-size: 14px; }
+        .help-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
+        .help-text a { color: var(--accent); }
+
+        /* ============ MANGA READER (image pager) ============ */
+        #manga-reader { position: fixed; inset: 0; background: #000; z-index: 110; display: none; flex-direction: column; }
+        #manga-reader .toolbar { height: 60px; border-bottom: 1px solid #333; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: #141414; flex-shrink: 0; }
+        #manga-stage { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #000; }
+        #manga-stage img { max-width: min(100%, 780px); width: 100%; display: block; }
+        .manga-nav-bottom { flex-shrink: 0; height: 64px; display: flex; align-items: center; justify-content: center; gap: 16px; background: #141414; border-top: 1px solid #333; }
+        .manga-page-info { font-size: 13px; color: var(--text-muted); min-width: 70px; text-align: center; }
+
+        @media (max-width: 768px) {
+            .hero { height: 78vh; min-height: 380px; }
+            .hero-title { font-size: 38px; }
+            .hero-desc { -webkit-line-clamp: 2; font-size: 13px; }
+            .hero-content { padding: 0 20px 40px; }
+            .type-pills { padding: 0 15px 20px; }
+            .row { padding: 0 15px; }
+            .row-card { flex: 0 0 120px; }
+            .modal-body { padding: 18px 18px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="top-bar">
+        <a class="logo" href="https://chithruka.github.io/Chithruka/">CHITHRUKA</a>
+
+    </div>
+
+    <div class="layout-container">
+        <div class="sidebar">
+            <button class="nav-btn active" data-tab="home" onclick="app.tab('home')">
+                <i class="fas fa-house"></i> Home
+            </button>
+            <button class="nav-btn" data-tab="library" onclick="app.tab('library')">
+                <i class="fas fa-bookmark"></i> My List
+            </button>
+            <button class="nav-btn" data-tab="discover" onclick="app.tab('discover')">
+                <i class="fas fa-book"></i> Books
+            </button>
+            <button class="nav-btn" data-tab="manga" onclick="app.tab('manga')">
+                <i class="fas fa-dragon"></i> Manga
+            </button>
+
+        </div>
+
+        <div class="main">
+            <div id="view-home" class="view active">
+                <div class="hero" id="hero">
+                    <div id="hero-slides"></div>
+                    <div class="hero-indicators" id="hero-indicators"></div>
+                </div>
+
+                <div class="type-pills" id="type-pills">
+                    <button class="pill active" data-filter="all" onclick="ui.filterHome('all')">All</button>
+                    <button class="pill" data-filter="book" onclick="ui.filterHome('book')">Books</button>
+                    <button class="pill" data-filter="manga" onclick="ui.filterHome('manga')">Manga</button>
+                </div>
+
+                <div class="row" data-type="continue" id="row-continue">
+                    <div class="row-head"><h2 class="row-title">Continue Reading</h2></div>
+                    <div class="row-track" id="track-continue"></div>
+                </div>
+
+                <div class="row" data-type="book" id="row-trending-books">
+                    <div class="row-head"><h2 class="row-title">Trending Books</h2><span class="row-sub">Open Library</span></div>
+                    <div class="row-track loading" id="track-trending-books">Loading…</div>
+                </div>
+
+                <div class="row" data-type="manga" id="row-popular-manga">
+                    <div class="row-head"><h2 class="row-title">Popular Manga</h2><span class="row-sub">MangaDex</span></div>
+                    <div class="row-track loading" id="track-popular-manga">Loading…</div>
+                </div>
+
+                <div class="row" data-type="manga" id="row-latest-manga">
+                    <div class="row-head"><h2 class="row-title">Recently Updated Manga</h2><span class="row-sub">MangaDex</span></div>
+                    <div class="row-track loading" id="track-latest-manga">Loading…</div>
+                </div>
+
+
+            </div>
+
+            <div id="view-library" class="view">
+                <div class="header">
+                    <h1>My List</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="app.clearLibrary()"><i class="fas fa-trash"></i> Clear</button>
+                        <button class="btn" onclick="document.getElementById('upload').click()"><i class="fas fa-upload"></i> Upload</button>
+                    </div>
+                    <input type="file" id="upload" style="display:none" accept=".epub,.pdf,.txt" onchange="app.handleUpload(event)">
+                </div>
+                <div id="lib-grid" class="grid"></div>
+                <div id="empty-msg" style="text-align:center; color:#555; margin-top:60px; display:none;">
+                    <h3>Your list is empty</h3>
+                    <p>Upload a book or explore Books, Manga, or Comics</p>
+                </div>
+            </div>
+
+            <div id="view-discover" class="view">
+                <div class="header">
+                    <h1>Books</h1>
+                    <div class="search-group">
+                        <select id="source-select">
+                            <option value="openlibrary">Open Library</option>
+                            <option value="google">Google Books</option>
+                            <option value="gutendex">Project Gutenberg</option>
+                            <option value="poetry">PoetryDB</option>
+                        </select>
+                        <input type="text" id="search-input" class="search-bar" placeholder="Titles, authors, or genres..." onkeydown="if(event.key==='Enter') app.search()">
+                        <button class="btn" onclick="app.search()"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div id="discover-grid" class="grid"></div>
+            </div>
+
+            <div id="view-manga" class="view">
+                <div class="header">
+                    <h1>Manga</h1>
+                    <div class="search-group">
+                        <input type="text" id="manga-search-input" class="search-bar" placeholder="Search manga titles..." onkeydown="if(event.key==='Enter') mangaUI.search()">
+                        <button class="btn" onclick="mangaUI.search()"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div id="manga-grid" class="grid"></div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Comic / Manga detail modal -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="ui.closeModal()"><i class="fas fa-times"></i></button>
+            <img id="modal-banner" class="modal-banner" src="">
+            <div class="modal-body">
+                <h2 class="modal-title" id="modal-title"></h2>
+                <div class="modal-meta" id="modal-meta"></div>
+                <div class="modal-desc" id="modal-desc"></div>
+                <div class="modal-actions" id="modal-actions"></div>
+                <div id="modal-extra"></div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Manga page reader -->
+    <div id="manga-reader">
+        <div class="toolbar">
+            <button class="btn" style="background:transparent; border:1px solid #444;" onclick="mangaReader.close()">
+                <i class="fas fa-arrow-left"></i> Close
+            </button>
+            <span id="manga-reader-title" style="font-weight:700; color:#fff; text-align:center; flex:1; padding: 0 10px;">Chapter</span>
+            <div style="width:90px"></div>
+        </div>
+        <div id="manga-stage"><img id="manga-page-img" src=""></div>
+        <div class="manga-nav-bottom">
+            <button class="btn btn-secondary" onclick="mangaReader.prevPage()"><i class="fas fa-chevron-left"></i> Prev</button>
+            <span class="manga-page-info" id="manga-page-info">1 / 1</span>
+            <button class="btn" onclick="mangaReader.nextPage()">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <div id="reader">
+        <div class="toolbar">
+            <button class="btn" style="background:transparent; border:1px solid #444;" onclick="reader.close()">
+                <i class="fas fa-arrow-left"></i> Close
+            </button>
+            <span id="book-title" style="font-weight:700; color:#fff;">Title</span>
+            <div style="width:70px"></div>
+        </div>
+        <div class="stage">
+            <div id="prev" class="arrow" onclick="reader.turn('prev')"><i class="fas fa-chevron-left"></i></div>
+            <div id="next" class="arrow" onclick="reader.turn('next')"><i class="fas fa-chevron-right"></i></div>
+            <div id="book-stage">
+                <div id="epub-view" style="width:100%;height:100%;"></div>
+                <canvas id="pdf-view" style="display:none; margin:auto; max-width:100%; max-height:100%;"></canvas>
+                <iframe id="web-view" style="width:100%;height:100%;border:none;display:none;"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        localforage.config({ name: 'chithruka-v1' });
+
+        const app = {
+            init: async () => {
+                app.renderLib();
+                home.render();
+            },
+
+            tab: (name) => {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(`view-${name}`).classList.add('active');
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                const target = document.querySelector(`.nav-btn[data-tab="${name}"]`);
+                if (target) target.classList.add('active');
+
+                if (name === 'manga' && !mangaUI.loaded) { mangaUI.loaded = true; mangaUI.showPopular(); }
+                if (name === 'library') app.renderLib();
+            },
+
+            renderLib: async () => {
+                const grid = document.getElementById('lib-grid');
+                grid.innerHTML = '';
+                const keys = await localforage.keys();
+                const bookKeys = keys.filter(k => k !== 'settings');
+                document.getElementById('empty-msg').style.display = bookKeys.length === 0 ? 'block' : 'none';
+
+                for (const key of bookKeys) {
+                    const book = await localforage.getItem(key);
+                    if(book) app.addCard(book, grid, true);
+                }
+            },
+
+            addCard: (book, container, isLocal) => {
+                const div = document.createElement('div');
+                div.className = 'book-card';
+                
+                const isGutenberg = book.id && book.id.startsWith('gd-');
+                let badgeText = isGutenberg ? 'Download' : book.format;
+                let badgeClass = '';
+                if (book.type === 'manga') { badgeText = 'Manga'; badgeClass = 'type-manga'; }
+                if (book.type === 'comic') { badgeText = 'Comic'; badgeClass = 'type-comic'; }
+
+                let html = `
+                    <span class="badge ${badgeClass}" style="${isGutenberg ? 'background:#2ecc71;' : ''}">${badgeText}</span>
+                    <img src="${book.cover || 'https://via.placeholder.com/300x450?text=No+Cover'}" class="cover" onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
+                    <div class="info">
+                        <div class="title">${book.title}</div>
+                        <div class="author">${book.author || ''}</div>
+                    </div>
+                `;
+
+                if (isLocal) {
+                    html += `<div class="delete-btn" onclick="app.deleteBook('${book.id}', event)"><i class="fas fa-times"></i></div>`;
+                }
+
+                div.innerHTML = html;
+                
+                if (isLocal) {
+                    div.onclick = (e) => {
+                        if(e.target.closest('.delete-btn')) return;
+                        if (book.type === 'manga') mangaReader.resume(book);
+                        else if (book.type === 'comic') window.open(book.link, '_blank');
+                        else reader.open(book.id);
+                    };
+                } else {
+                    div.onclick = () => {
+                        if (isGutenberg) {
+                            if(confirm(`Download "${book.title}" from Project Gutenberg?`)) {
+                                window.open(book.downloadUrl, '_blank');
+                            }
+                        } else if (book.format === 'web' || book.format === 'poetry') {
+                            app.saveBook(book);
+                        } else {
+                            app.downloadBook(book, div);
+                        }
+                    };
+                }
+                container.appendChild(div);
+            },
+
+            deleteBook: async (id, event) => {
+                event.stopPropagation();
+                if(confirm("Remove this book from your library?")) {
+                    await localforage.removeItem(id);
+                    app.renderLib();
+                }
+            },
+
+            clearLibrary: async () => {
+                const keys = await localforage.keys();
+                if(keys.length === 0) return;
+                
+                if(confirm("Are you sure you want to delete ALL books?")) {
+                    await localforage.clear();
+                    app.renderLib();
+                }
+            },
+
+            handleUpload: (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                document.getElementById('loading-overlay').style.display = 'flex';
+
+                const isPdf = file.name.toLowerCase().endsWith('.pdf');
+                const isTxt = file.name.toLowerCase().endsWith('.txt'); // Check for TXT
+
+                // We need separate logic for TXT (readAsText) vs Binary (readAsArrayBuffer)
+                if (isTxt) {
+                    const tr = new FileReader();
+                    tr.onload = async (evt) => {
+                        const textContent = evt.target.result;
+                        const meta = {
+                            id: 'local-' + Date.now(),
+                            title: file.name.replace(/\.[^/.]+$/, ""),
+                            author: 'Local Upload',
+                            format: 'txt',
+                            data: textContent,
+                            cover: 'https://via.placeholder.com/300x450?text=Text+File'
+                        };
+                        await localforage.setItem(meta.id, meta);
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        app.renderLib();
+                    };
+                    tr.readAsText(file);
+                } else {
+                    // Binary handling for PDF/EPUB
+                    const fr = new FileReader();
+                    fr.onload = async (evt) => {
+                        const data = evt.target.result;
+                        const meta = {
+                            id: 'local-' + Date.now(),
+                            title: file.name.replace(/\.[^/.]+$/, ""),
+                            author: 'Local Upload',
+                            format: isPdf ? 'pdf' : 'epub',
+                            data: data
+                        };
+
+                        try {
+                            if (isPdf) {
+                                const pdf = await pdfjsLib.getDocument({data: data}).promise;
+                                const page = await pdf.getPage(1);
+                                const cvs = document.createElement('canvas');
+                                const vp = page.getViewport({scale: 0.5});
+                                cvs.width = vp.width; cvs.height = vp.height;
+                                await page.render({canvasContext: cvs.getContext('2d'), viewport: vp}).promise;
+                                meta.cover = cvs.toDataURL();
+                            } else {
+                                const book = ePub(data);
+                                await book.ready;
+                                meta.cover = await book.coverUrl();
+                                const m = await book.loaded.metadata;
+                                if(m.title) meta.title = m.title;
+                                if(m.creator) meta.author = m.creator;
+                            }
+                        } catch (e) {}
+
+                        await localforage.setItem(meta.id, meta);
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        app.renderLib();
+                    };
+                    fr.readAsArrayBuffer(file);
+                }
+            },
+
+            search: async () => {
+                const q = document.getElementById('search-input').value;
+                const source = document.getElementById('source-select').value;
+                const grid = document.getElementById('discover-grid');
+                if(!q) return;
+
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding:50px; color:#aaa;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+
+                try {
+                    // --- OPEN LIBRARY ---
+                    if (source === 'openlibrary') {
+                        const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12`);
+                        const data = await res.json();
+                        grid.innerHTML = '';
+                        data.docs.forEach(item => {
+                            if (!item.title) return;
+                            app.addCard({
+                                id: 'ol-' + item.key.split('/').pop(),
+                                title: item.title,
+                                author: item.author_name ? item.author_name[0] : 'Unknown',
+                                cover: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-L.jpg` : null,
+                                format: 'web',
+                                data: item.key
+                            }, grid, false);
+                        });
+                    }
+                    // --- POETRY DB ---
+                    else if (source === 'poetry') {
+                        const res = await fetch(`https://poetrydb.org/title/${encodeURIComponent(q)}`);
+                        const data = await res.json();
+                        grid.innerHTML = '';
+                        if(data.status === 404) { grid.innerHTML = '<p>No poems found.</p>'; return; }
+                        data.slice(0, 12).forEach((item, i) => {
+                            app.addCard({
+                                id: 'poem-' + i + Date.now(),
+                                title: item.title,
+                                author: item.author,
+                                cover: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400',
+                                format: 'poetry',
+                                data: item.lines.join('\n')
+                            }, grid, false);
+                        });
+                    }
+                    // --- GOOGLE BOOKS ---
+                    else if (source === 'google') {
+                        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12`);
+                        const data = await res.json();
+                        grid.innerHTML = '';
+                        data.items?.forEach(item => {
+                            app.addCard({
+                                id: 'gb-' + item.id,
+                                title: item.volumeInfo.title,
+                                author: item.volumeInfo.authors?.[0] || 'Unknown',
+                                cover: item.volumeInfo.imageLinks?.thumbnail?.replace('http:','https:'),
+                                format: 'web',
+                                data: item.id
+                            }, grid, false);
+                        });
+                    }
+                    // --- GUTENDEX ---
+                    else {
+                        const res = await fetch(`https://gutendex.com/books?search=${encodeURIComponent(q)}`);
+                        const data = await res.json();
+                        grid.innerHTML = '';
+                        data.results.forEach(item => {
+                            const epub = item.formats['application/epub+zip'] || item.formats['text/html'];
+                            if(epub) {
+                                app.addCard({
+                                    id: 'gd-' + item.id,
+                                    title: item.title,
+                                    author: item.authors[0]?.name || 'Unknown',
+                                    cover: item.formats['image/jpeg'],
+                                    format: 'epub', 
+                                    downloadUrl: epub 
+                                }, grid, false);
+                            }
+                        });
+                    }
+                } catch(e) { grid.innerHTML = '<p>Search failed. Try again.</p>'; }
+            },
+
+            downloadBook: async (book, card) => {
+                card.style.opacity = '0.5';
+                try {
+                    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(book.downloadUrl));
+                    const blob = await res.blob();
+                    book.data = await blob.arrayBuffer();
+                    book.id = 'saved-' + Date.now();
+                    await app.saveBook(book);
+                } catch(e) { 
+                    alert("Download blocked. Opening link instead."); 
+                    window.open(book.downloadUrl, '_blank'); 
+                }
+                card.style.opacity = '1';
+            },
+
+            saveBook: async (book) => {
+                await localforage.setItem(book.id, book);
+                alert('Added to library!');
+                app.tab('library');
+            }
+        };
+
+        const reader = {
+            instance: null,
+            open: async (id) => {
+                const book = await localforage.getItem(id);
+                document.getElementById('reader').style.display = 'flex';
+                document.getElementById('book-title').textContent = book.title;
+                
+                ['epub-view', 'pdf-view', 'web-view'].forEach(v => document.getElementById(v).style.display = 'none');
+                reader.type = book.format;
+
+                if (book.format === 'epub') {
+                    document.getElementById('epub-view').style.display = 'block';
+                    if(reader.instance) reader.instance.destroy();
+                    if (book.data instanceof ArrayBuffer) {
+                         reader.instance = ePub(book.data);
+                         reader.instance.renderTo('epub-view', {width:'100%', height:'100%', flow:'paginated'}).display();
+                    } else {
+                        alert("Error: Book data corrupted or invalid format.");
+                        reader.close();
+                    }
+                } 
+                else if (book.format === 'pdf') {
+                    document.getElementById('pdf-view').style.display = 'block';
+                    reader.pdfDoc = await pdfjsLib.getDocument({data: book.data}).promise;
+                    reader.pdfPage = 1;
+                    reader.renderPdf(1);
+                } 
+                else if (book.format === 'web') {
+                    document.getElementById('web-view').style.display = 'block';
+                    const src = book.id.startsWith('ol-') ? 
+                        `https://openlibrary.org${book.data}?mode=embed` : 
+                        `https://books.google.com/books?id=${book.data}&printsec=frontcover&output=embed`;
+                    document.getElementById('web-view').src = src;
+                }
+                else if (book.format === 'poetry' || book.format === 'txt') { // ADDED TXT SUPPORT HERE
+                    document.getElementById('web-view').style.display = 'block';
+                    const doc = document.getElementById('web-view').contentWindow.document;
+                    doc.open();
+                    doc.write(`<body style="background:#fff; font-family:serif; padding:40px; line-height:1.6;"><h2 style="color:#e50914">${book.title}</h2><h4>By ${book.author}</h4><pre style="font-family:serif; font-size:18px; white-space: pre-wrap; word-wrap: break-word;">${book.data}</pre></body>`);
+                    doc.close();
+                }
+            },
+
+            renderPdf: async (num) => {
+                const page = await reader.pdfDoc.getPage(num);
+                const cvs = document.getElementById('pdf-view');
+                const vp = page.getViewport({scale: 1.5});
+                cvs.width = vp.width; cvs.height = vp.height;
+                page.render({canvasContext: cvs.getContext('2d'), viewport: vp});
+            },
+
+            turn: (dir) => {
+                if (reader.type === 'epub') dir === 'next' ? reader.instance.next() : reader.instance.prev();
+                else if (reader.type === 'pdf') {
+                    if (dir === 'next' && reader.pdfPage < reader.pdfDoc.numPages) reader.pdfPage++;
+                    else if (dir === 'prev' && reader.pdfPage > 1) reader.pdfPage--;
+                    reader.renderPdf(reader.pdfPage);
+                }
+            },
+
+            close: () => {
+                document.getElementById('reader').style.display = 'none';
+                document.getElementById('web-view').src = '';
+            }
+        };
+
+        // ============================================================
+        // MANGA — MangaDex API (no key required)
+        // ============================================================
+        const MANGADEX = 'https://api.mangadex.org';
+
+        // MangaDex blocks direct requests from hosted pages (CORS).
+        // Use a proxy when not running on localhost.
+        const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const mangaFetch = async (path) => {
+            const url = MANGADEX + path;
+            if (isLocal) return fetch(url);
+            return fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+        };
+
+        const mangaApi = {
+            coverUrl: (manga, size = '256') => {
+                const rel = manga.relationships?.find(r => r.type === 'cover_art');
+                if (!rel || !rel.attributes?.fileName) return null;
+                return `https://uploads.mangadex.org/covers/${manga.id}/${rel.attributes.fileName}.${size}.jpg`;
+            },
+            title: (manga) => {
+                const t = manga.attributes?.title || {};
+                return t.en || Object.values(t)[0] || 'Untitled';
+            },
+            popular: async () => {
+                const res = await mangaFetch(`/manga?limit=18&order[followedCount]=desc&includes[]=cover_art&contentRating[]=safe&contentRating[]=suggestive`);
+                const data = await res.json();
+                return data.data || [];
+            },
+            latest: async () => {
+                const res = await mangaFetch(`/manga?limit=18&order[latestUploadedChapter]=desc&includes[]=cover_art&contentRating[]=safe&contentRating[]=suggestive`);
+                const data = await res.json();
+                return data.data || [];
+            },
+            search: async (q) => {
+                const res = await mangaFetch(`/manga?title=${encodeURIComponent(q)}&limit=24&includes[]=cover_art&contentRating[]=safe&contentRating[]=suggestive`);
+                const data = await res.json();
+                return data.data || [];
+            },
+            getOne: async (id) => {
+                const res = await mangaFetch(`/manga/${id}?includes[]=cover_art`);
+                const data = await res.json();
+                return data.data;
+            },
+            chapters: async (mangaId) => {
+                const res = await mangaFetch(`/manga/${mangaId}/feed?translatedLanguage[]=en&order[chapter]=asc&limit=500&contentRating[]=safe&contentRating[]=suggestive`);
+                const data = await res.json();
+                return (data.data || []).filter(c => c.attributes.pages > 0);
+            },
+            pages: async (chapterId) => {
+                const res = await mangaFetch(`/at-home/server/${chapterId}`);
+                const data = await res.json();
+                return data.chapter.data.map(fn => `${data.baseUrl}/data/${data.chapter.hash}/${fn}`);
+            }
+        };
+
+        const mangaUI = {
+            loaded: false,
+            renderGrid: (items, gridId) => {
+                const grid = document.getElementById(gridId);
+                grid.innerHTML = '';
+                if (!items.length) { grid.innerHTML = '<p style="color:#888;">No results.</p>'; return; }
+                items.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'book-card';
+                    div.innerHTML = `
+                        <span class="badge type-manga">Manga</span>
+                        <img src="${mangaApi.coverUrl(m) || 'https://via.placeholder.com/300x450?text=No+Cover'}" class="cover" onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
+                        <div class="info"><div class="title">${mangaApi.title(m)}</div><div class="author">${m.attributes?.status || ''}</div></div>
+                    `;
+                    div.onclick = () => mangaUI.openDetail(m);
+                    grid.appendChild(div);
+                });
+            },
+            showPopular: async () => {
+                const items = await mangaApi.popular();
+                mangaUI.renderGrid(items, 'manga-grid');
+            },
+            search: async () => {
+                const q = document.getElementById('manga-search-input').value.trim();
+                if (!q) return mangaUI.showPopular();
+                document.getElementById('manga-grid').innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Searching…</p>';
+                const items = await mangaApi.search(q);
+                mangaUI.renderGrid(items, 'manga-grid');
+            },
+            openDetail: async (manga) => {
+                ui.showModal({
+                    banner: mangaApi.coverUrl(manga, '512') || mangaApi.coverUrl(manga),
+                    title: mangaApi.title(manga),
+                    meta: `${manga.attributes?.status || ''} · ${(manga.attributes?.tags || []).slice(0, 4).map(t => t.attributes.name.en).join(', ')}`,
+                    desc: manga.attributes?.description?.en || 'No description available.',
+                    actionsHtml: `<button class="btn" id="manga-start-btn"><i class="fas fa-book-open"></i> Read</button>`,
+                    extraHtml: `<div id="manga-chapter-list" style="margin-top:10px;"><p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading chapters…</p></div>`
+                });
+                const chapters = await mangaApi.chapters(manga.id);
+                const listEl = document.getElementById('manga-chapter-list');
+                if (!chapters.length) {
+                    listEl.innerHTML = '<p style="color:#888;">No English chapters available yet.</p>';
+                    return;
+                }
+                const mTitle = mangaApi.title(manga);
+                const mCover = mangaApi.coverUrl(manga) || '';
+                listEl.innerHTML = `<h3 style="font-size:14px; color:#aaa; margin-bottom:10px;">CHAPTERS</h3><div class="chapter-list" id="chapter-list-inner"></div>`;
+                const listInner = document.getElementById('chapter-list-inner');
+                chapters.forEach(c => {
+                    const row = document.createElement('div');
+                    row.className = 'chapter-row';
+                    row.innerHTML = `
+                        <span class="ch-name">Ch. ${c.attributes.chapter || '?'} ${c.attributes.title ? '— ' + c.attributes.title : ''}</span>
+                        <span class="ch-date">${new Date(c.attributes.publishAt).toLocaleDateString()}</span>
+                    `;
+                    row.onclick = () => mangaReader.openChapter(manga.id, mTitle, mCover, chapters, c.id);
+                    listInner.appendChild(row);
+                });
+                document.getElementById('manga-start-btn').onclick = () => {
+                    mangaReader.openChapter(manga.id, mTitle, mCover, chapters, chapters[0].id);
+                };
+            }
+        };
+
+        const mangaReader = {
+            chapters: [], chapterIdx: 0, pages: [], pageIdx: 0,
+            mangaId: '', mangaTitle: '', mangaCover: '',
+
+            openChapter: async (mangaId, title, cover, chapters, chapterId) => {
+                ui.closeModal();
+                mangaReader.mangaId = mangaId;
+                mangaReader.mangaTitle = title;
+                mangaReader.mangaCover = cover;
+                mangaReader.chapters = chapters;
+                mangaReader.chapterIdx = chapters.findIndex(c => c.id === chapterId);
+                if (mangaReader.chapterIdx < 0) mangaReader.chapterIdx = 0;
+                await mangaReader.loadChapter();
+            },
+
+            loadChapter: async () => {
+                document.getElementById('loading-overlay').style.display = 'flex';
+                const chapter = mangaReader.chapters[mangaReader.chapterIdx];
+                mangaReader.pages = await mangaApi.pages(chapter.id);
+                mangaReader.pageIdx = 0;
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('manga-reader').style.display = 'flex';
+                document.getElementById('manga-reader-title').textContent = `${mangaReader.mangaTitle} — Ch. ${chapter.attributes.chapter || '?'}`;
+                mangaReader.renderPage();
+                mangaReader.saveProgress();
+            },
+
+            renderPage: () => {
+                document.getElementById('manga-page-img').src = mangaReader.pages[mangaReader.pageIdx];
+                document.getElementById('manga-page-info').textContent = `${mangaReader.pageIdx + 1} / ${mangaReader.pages.length}`;
+                document.getElementById('manga-stage').scrollTop = 0;
+            },
+
+            nextPage: async () => {
+                if (mangaReader.pageIdx < mangaReader.pages.length - 1) {
+                    mangaReader.pageIdx++;
+                    mangaReader.renderPage();
+                    mangaReader.saveProgress();
+                } else if (mangaReader.chapterIdx < mangaReader.chapters.length - 1) {
+                    mangaReader.chapterIdx++;
+                    await mangaReader.loadChapter();
+                } else {
+                    alert("You've reached the latest available chapter.");
+                }
+            },
+
+            prevPage: async () => {
+                if (mangaReader.pageIdx > 0) {
+                    mangaReader.pageIdx--;
+                    mangaReader.renderPage();
+                } else if (mangaReader.chapterIdx > 0) {
+                    mangaReader.chapterIdx--;
+                    await mangaReader.loadChapter();
+                    mangaReader.pageIdx = mangaReader.pages.length - 1;
+                    mangaReader.renderPage();
+                }
+            },
+
+            saveProgress: async () => {
+                const chapter = mangaReader.chapters[mangaReader.chapterIdx];
+                await localforage.setItem('manga-' + mangaReader.mangaId, {
+                    id: 'manga-' + mangaReader.mangaId,
+                    type: 'manga', format: 'manga',
+                    title: mangaReader.mangaTitle,
+                    author: `Ch. ${chapter.attributes.chapter || '?'} · ${mangaReader.pageIdx + 1}/${mangaReader.pages.length}`,
+                    cover: mangaReader.mangaCover,
+                    mangaId: mangaReader.mangaId,
+                    chapterIdx: mangaReader.chapterIdx,
+                    pageIdx: mangaReader.pageIdx,
+                    updatedAt: Date.now()
+                });
+            },
+
+            resume: async (saved) => {
+                const chapters = await mangaApi.chapters(saved.mangaId);
+                if (!chapters.length) return alert('Chapters unavailable right now.');
+                mangaReader.mangaId = saved.mangaId;
+                mangaReader.mangaTitle = saved.title;
+                mangaReader.mangaCover = saved.cover;
+                mangaReader.chapters = chapters;
+                mangaReader.chapterIdx = Math.min(saved.chapterIdx || 0, chapters.length - 1);
+                await mangaReader.loadChapter();
+                mangaReader.pageIdx = saved.pageIdx || 0;
+                mangaReader.renderPage();
+            },
+
+            close: () => { document.getElementById('manga-reader').style.display = 'none'; }
+        };
+
+        // ============================================================
+        // SHARED MODAL / HOME-FILTER UI
+        // ============================================================
+        const ui = {
+            showModal: ({ banner, title, meta, desc, actionsHtml, extraHtml }) => {
+                document.getElementById('modal-banner').src = banner || 'https://via.placeholder.com/800x350?text=No+Image';
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-meta').textContent = meta || '';
+                document.getElementById('modal-desc').innerHTML = desc || '';
+                document.getElementById('modal-actions').innerHTML = actionsHtml || '';
+                document.getElementById('modal-extra').innerHTML = extraHtml || '';
+                document.getElementById('detail-modal').classList.add('active');
+            },
+            closeModal: () => document.getElementById('detail-modal').classList.remove('active'),
+
+            filterHome: (type) => {
+                document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.filter === type));
+                document.querySelectorAll('.row').forEach(r => {
+                    const t = r.dataset.type;
+                    r.style.display = (type === 'all' || t === type || t === 'continue') ? '' : 'none';
+                });
+            }
+        };
+
+        // ============================================================
+        // HOME PAGE — hero + curated rows
+        // ============================================================
+        const home = {
+            heroItems: [], heroIdx: 0, heroTimer: null,
+
+            render: async () => {
+                home.renderContinue();
+                home.renderTrendingBooks();
+                home.renderPopularManga();
+                home.renderLatestManga();
+            },
+
+            buildRowCard: (cover, title, sub, badgeClass, badgeText, onClick, progressPct) => {
+                const div = document.createElement('div');
+                div.className = 'row-card';
+                div.innerHTML = `
+                    <span class="badge ${badgeClass}" style="top:8px;left:8px;">${badgeText}</span>
+                    <img class="cover" src="${cover || 'https://via.placeholder.com/300x450?text=No+Cover'}" onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
+                    ${progressPct != null ? `<div class="progress-bar"><div class="progress-fill" style="width:${progressPct}%"></div></div>` : ''}
+                    <div class="rc-title">${title}</div>
+                    <div class="rc-sub">${sub || ''}</div>
+                `;
+                div.onclick = onClick;
+                return div;
+            },
+
+            renderContinue: async () => {
+                const keys = await localforage.keys();
+                const items = [];
+                for (const k of keys) {
+                    if (k.startsWith('manga-')) {
+                        const it = await localforage.getItem(k);
+                        if (it) items.push(it);
+                    }
+                }
+                items.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                const track = document.getElementById('track-continue');
+                track.innerHTML = '';
+                const row = document.getElementById('row-continue');
+                if (!items.length) { row.style.display = 'none'; return; }
+                row.style.display = '';
+                items.slice(0, 12).forEach(it => {
+                    const onClick = it.type === 'manga' ? () => mangaReader.resume(it) : () => reader.open(it.id);
+                    track.appendChild(home.buildRowCard(it.cover, it.title, it.author, it.type === 'manga' ? 'type-manga' : 'type-book', it.type === 'manga' ? 'Manga' : 'Book', onClick));
+                });
+            },
+
+            renderTrendingBooks: async () => {
+                const track = document.getElementById('track-trending-books');
+                try {
+                    const res = await fetch('https://openlibrary.org/trending/daily.json?limit=18');
+                    const data = await res.json();
+                    track.classList.remove('loading'); track.innerHTML = '';
+                    (data.works || []).forEach(w => {
+                        const cover = w.cover_i ? `https://covers.openlibrary.org/b/id/${w.cover_i}-M.jpg` : null;
+                        const card = home.buildRowCard(cover, w.title, w.author_name?.[0], 'type-book', 'Book', () => {
+                            app.saveBook({
+                                id: 'ol-' + w.key.split('/').pop(),
+                                title: w.title, author: w.author_name?.[0] || 'Unknown',
+                                cover, format: 'web', data: w.key
+                            });
+                        });
+                        track.appendChild(card);
+                        home.heroItems.push({ type: 'book', title: w.title, sub: w.author_name?.[0] || '', desc: '', cover: w.cover_i ? `https://covers.openlibrary.org/b/id/${w.cover_i}-L.jpg` : null, onClick: card.onclick });
+                    });
+                    home.refreshHero();
+                } catch (e) { track.innerHTML = '<p style="color:#888;">Could not load trending books.</p>'; }
+            },
+
+            renderPopularManga: async () => {
+                const track = document.getElementById('track-popular-manga');
+                try {
+                    const items = await mangaApi.popular();
+                    track.classList.remove('loading'); track.innerHTML = '';
+                    items.forEach(m => {
+                        const cover = mangaApi.coverUrl(m);
+                        const card = home.buildRowCard(cover, mangaApi.title(m), m.attributes?.status, 'type-manga', 'Manga', () => mangaUI.openDetail(m));
+                        track.appendChild(card);
+                        home.heroItems.push({ type: 'manga', title: mangaApi.title(m), sub: m.attributes?.status || '', desc: m.attributes?.description?.en || '', cover: mangaApi.coverUrl(m, '512') || cover, onClick: card.onclick });
+                    });
+                    home.refreshHero();
+                } catch (e) { track.innerHTML = '<p style="color:#888;">Could not load manga.</p>'; }
+            },
+
+            renderLatestManga: async () => {
+                const track = document.getElementById('track-latest-manga');
+                try {
+                    const items = await mangaApi.latest();
+                    track.classList.remove('loading'); track.innerHTML = '';
+                    items.forEach(m => {
+                        track.appendChild(home.buildRowCard(mangaApi.coverUrl(m), mangaApi.title(m), 'Updated recently', 'type-manga', 'Manga', () => mangaUI.openDetail(m)));
+                    });
+                } catch (e) { track.innerHTML = '<p style="color:#888;">Could not load manga.</p>'; }
+            },
+
+            refreshHero: () => {
+                if (home.heroItems.length < 3) return;
+                if (home.heroTimer) return; // only build once
+                // pick a balanced sample: up to 2 per type, shuffled
+                const byType = { book: [], manga: [] };
+                home.heroItems.forEach(i => byType[i.type]?.push(i));
+                const picks = [...byType.book.slice(0, 3), ...byType.manga.slice(0, 3)]
+                    .sort(() => Math.random() - 0.5).slice(0, 6);
+                if (!picks.length) return;
+
+                const slidesEl = document.getElementById('hero-slides');
+                const indEl = document.getElementById('hero-indicators');
+                slidesEl.innerHTML = '';
+                indEl.innerHTML = '';
+                picks.forEach((item, i) => {
+                    const slide = document.createElement('div');
+                    slide.className = 'hero-slide' + (i === 0 ? ' active' : '');
+                    slide.style.backgroundImage = `url('${item.cover || ''}')`;
+                    slide.innerHTML = `
+                        <div class="hero-content">
+                            <span class="hero-type">${item.type === 'book' ? 'Book' : 'Manga'}</span>
+                            <h1 class="hero-title">${item.title}</h1>
+                            <div class="hero-meta"><span>${item.sub}</span></div>
+                            <p class="hero-desc">${(item.desc || '').replace(/<[^>]*>/g,'').slice(0, 220) || 'Discover this pick on CHITHRUKA.'}</p>
+                            <div class="hero-actions">
+                                <button class="btn" data-hero-action="${i}"><i class="fas fa-play"></i> Open</button>
+                            </div>
+                        </div>
+                    `;
+                    slidesEl.appendChild(slide);
+                    const dot = document.createElement('div');
+                    dot.className = 'hero-dot' + (i === 0 ? ' active' : '');
+                    dot.onclick = () => home.goToHero(i);
+                    indEl.appendChild(dot);
+                });
+                slidesEl.querySelectorAll('[data-hero-action]').forEach((btn, i) => {
+                    btn.onclick = () => picks[i].onClick();
+                });
+                home.heroPicks = picks;
+                home.heroIdx = 0;
+                if (home.heroTimer) clearInterval(home.heroTimer);
+                home.heroTimer = setInterval(() => home.goToHero((home.heroIdx + 1) % picks.length), 6500);
+            },
+
+            goToHero: (i) => {
+                document.querySelectorAll('.hero-slide').forEach((s, idx) => s.classList.toggle('active', idx === i));
+                document.querySelectorAll('.hero-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+                home.heroIdx = i;
+            }
+        };
+
+        window.onload = app.init;
+    </script>
+</body>
+</html>

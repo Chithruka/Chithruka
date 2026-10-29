@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chithruka Server</title>
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css" />
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css" />
+    <script type="module" src="https://cdn.vidstack.io/player"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+body, html { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; font-family:'Poppins',sans-serif; }
+#player-container { width:100%; height:100%; position:relative; }
+media-player { width:100% !important; height:100% !important; }
+.ext-iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; }
+#iframe-container { display:none; position:absolute; top:0; left:0; width:100%; height:100%; }
+.iframe-wrapper   { position:relative; width:100%; height:100%; }
+
+
+
+/* ── Server-select overlay ───────────────────────────────────────────────── */
+/* Full-panel overlay, shown by JS when needed */
+#control-bar {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 45% at 50% 38%, rgba(255,255,255,0.05) 0%, transparent 70%),
+        rgba(0,0,0,0.94);
+    display: none;
+    flex-direction: column;
+    z-index: 120;
+    font-family: 'Poppins', sans-serif;
+    animation: barFadeIn .25s ease;
+}
+#control-bar.visible { display: flex; }
+@keyframes barFadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* Row 1: pill mode-dropdowns + collapse chevron */
+#bar-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 22px 16px 0;
+    flex-wrap: wrap;
+}
+
+.mode-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: #d6d6d6;
+    cursor: pointer;
+    letter-spacing: .2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.mode-tab .chev { font-size: 11px; opacity: .8; transform: translateY(1px); }
+.mode-tab.active { color: #fff; border-color: rgba(255,255,255,0.55); }
+.mode-tab:hover  { background: rgba(255,255,255,0.08); color: #fff; }
+
+#bar-collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: #d6d6d6;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+#bar-collapse:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+/* Row 2: back arrow + list/refresh icon */
+#bar-icons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 0;
+}
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: #9a9a9a;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color .2s, transform .15s;
+}
+.icon-btn:hover  { color: #fff; }
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn svg { width: 26px; height: 26px; }
+
+/* Source label, retained for accessibility / debugging, visually tucked away */
+#source-label {
+    position: absolute;
+    left: -9999px;
+}
+
+/* Server list */
+#server-list-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    overflow: hidden;
+}
+#server-list {
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+}
+
+.server-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity .3s ease, background .2s ease;
+    background: transparent;
+    border: 1px solid transparent;
+}
+.server-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+.server-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+.server-status {
+    font-size: 15px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.server-row.status-error   .server-name,
+.server-row.status-error   .server-status { color: #e6231e; }
+
+.server-row.status-fetching {
+    padding: 18px 20px;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.02);
+}
+.server-row.status-fetching .server-name   { color: #cbd3df; font-size: 24px; }
+.server-row.status-fetching .server-status { color: #8b93a1; }
+
+.server-row.status-playing {
+    padding: 18px 20px;
+    border: 1px solid rgba(216,0,39,0.55);
+    border-radius: 14px;
+    background: rgba(216,0,39,0.06);
+}
+.server-row.status-playing .server-name   { color: #fff; font-size: 24px; }
+.server-row.status-playing .server-status { color: #d80027; }
+
+.server-row.status-available { opacity: .55; }
+.server-row.status-available:hover { opacity: .85; }
+
+.progress-track {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.09);
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    width: 30%;
+    border-radius: 999px;
+    background: #8199c9;
+    animation: fetchSweep 1.4s ease-in-out infinite;
+}
+.server-row.status-playing .progress-fill { background: #d80027; width: 100%; animation: none; }
+@keyframes fetchSweep {
+    0%   { width: 8%;  margin-left: 0%; }
+    50%  { width: 55%; margin-left: 20%; }
+    100% { width: 8%;  margin-left: 92%; }
+}
+
+/* Footer note */
+#bar-footnote {
+    text-align: center;
+    color: #7a7a7a;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0 24px 22px;
+}
+
+/* Small persistent trigger to reopen the server-select overlay while a
+   direct source is already playing (keeps the video visible by default,
+   matching how the reference screenshot is a distinct, on-demand screen). */
+#server-trigger {
+    position: absolute;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 118;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.45);
+    color: #d6d6d6;
+    cursor: pointer;
+    letter-spacing: .3px;
+}
+#server-trigger.visible { display: inline-flex; }
+#server-trigger:hover { background: rgba(0,0,0,0.7); color: #fff; }
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+#spinner {
+    display: none;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    z-index: 115;
+    pointer-events: none;
+}
+#spinner.visible { display: flex; }
+.spin-ring {
+    width: 42px; height: 42px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: #d80027;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.spin-label { color:#777; font-size:12px; }
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+#error-msg {
+    display: none;
+    color: #fff;
+    font-size: 15px;
+    text-align: center;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.75);
+    padding: 20px 28px;
+    border-radius: 8px;
+    border-left: 4px solid #d80027;
+    z-index: 130;
+    max-width: 80%;
+}
+
+/* ── Vidstack skin ───────────────────────────────────────────────────────── */
+media-player {
+    font-family:'Poppins',sans-serif !important;
+    --media-brand: #d80027;
+    --media-focus-ring-color: #d80027;
+}
+
+</style>
+</head>
+<body>
+<div id="player-container">
+
+    <!-- Spinner -->
+    <div id="spinner">
+        <div class="spin-ring"></div>
+        <span class="spin-label" id="spin-label">Loading…</span>
+    </div>
+
+    <!-- Vidstack direct player -->
+    <media-player id="media-player-el" style="display:none;" crossorigin playsinline>
+        <media-provider></media-provider>
+        <media-video-layout></media-video-layout>
+    </media-player>
+
+    <!-- Iframe embed container -->
+    <div id="iframe-container"></div>
+
+    <!-- Error -->
+    <div id="error-msg"></div>
+
+    <!-- ── Server-select overlay ── -->
+    <div id="control-bar">
+        <!-- Row 1: mode pills + collapse -->
+        <div id="bar-top">
+            <button id="tab-direct" class="mode-tab active" onclick="switchMode('direct')">Direct <span class="chev">▾</span></button>
+            <button id="tab-embed"  class="mode-tab"        onclick="switchMode('embed')">Servers <span class="chev">▾</span></button>
+            <button id="tab-links"  class="mode-tab"        onclick="switchMode('links')">Links <span class="chev">▾</span></button>
+            <button id="bar-collapse" onclick="hideBar()" title="Collapse">▲</button>
+        </div>
+
+        <!-- Row 2: back + retry icons -->
+        <div id="bar-icons">
+            <button class="icon-btn" onclick="barBack()" title="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+            </button>
+            <button class="icon-btn" onclick="retryAllServers()" title="Retry servers">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><circle cx="7" cy="7" r=".6" fill="currentColor"/><circle cx="7" cy="17" r=".6" fill="currentColor"/></svg>
+            </button>
+        </div>
+
+        <span id="source-label"></span>
+
+        <!-- Server list -->
+        <div id="server-list-wrap">
+            <div id="server-list"><!-- populated by JS --></div>
+        </div>
+
+        <!-- kept for direct/links wiring, hidden visually -->
+        <div id="provider-row" style="display:none"></div>
+        <div id="links-provider-row" style="display:none"></div>
+
+        <div id="bar-footnote"></div>
+    </div>
+
+    <!-- ── Reopen trigger (shown once a direct source is already playing) ── -->
+    <button id="server-trigger" onclick="showBar(); renderServerList();" title="Choose a server">Servers ▾</button>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIG  — edit here only
+// ═══════════════════════════════════════════════════════════════════════════
+
+const VIDEOS_JSON_PATH = 'videos.json';
+
+// Embed providers — tried in order when in embed mode.
+// [ID] = TMDB id, [S] = season, [E] = episode
+const EMBED_PROVIDERS = [
+    { name: 'RiveStream',  movie: 'https://www.rivestream.ru/embed?type=movie&id=[ID]',  tv: 'https://www.rivestream.ru/embed?type=tv&id=[ID]&season=[S]&episode=[E]' },
+];
+
+// ── Generated Links (Baiscope) ───────────────────────────────────────────────
+// Mirrors link.html: fetches the title/year (movies) or name (TV) from TMDB,
+// then builds two candidate direct-file URLs (dots-format and
+// underscores-format filenames). Each is probed in a hidden <video> element;
+// the first that loads wins. Supports both movies and TV episodes.
+const TMDB_API_KEY            = '92850a79e50917b8cc19623455ae2240'; // set your TMDB v3 API key here to enable this step
+const BAISCOPE_MOVIE_BASE_URL = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/movies/';
+const BAISCOPE_TV_BASE_URL    = 'https://media.baiscopewatch.com/file/Movies01-Baiscopelk/';
+
+function baiscopeDotsName(title) {
+    return title
+        .replace(/[^a-zA-Z0-9]/g, '.')
+        .replace(/\.+/g, '.')
+        .replace(/(^\.|\.$)/g, '');
+}
+function baiscopeUnderscoresName(title) {
+    return title
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/(^_|_$)/g, '');
+}
+function pad2(n) {
+    return String(n).padStart(2, '0');
+}
+
+// build(ctx) receives { title, year, sn, ep } — movie formats use title/year,
+// tv formats use title/sn/ep.
+const GENERATED_LINK_FORMATS = {
+    movie: [
+        { name: 'Format 1 (Dots)',        build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeDotsName(title)}.${year}.mp4` },
+        { name: 'Format 2 (Underscores)', build: ({title, year}) => `${BAISCOPE_MOVIE_BASE_URL}${baiscopeUnderscoresName(title)}_${year}.mp4` },
+    ],
+    tv: [
+        { name: 'Format 1 (Dots)',        build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeDotsName(title)}.S${pad2(sn)}E${pad2(ep)}.mp4` },
+        { name: 'Format 2 (Underscores)', build: ({title, sn, ep}) => `${BAISCOPE_TV_BASE_URL}${baiscopeUnderscoresName(title)}_S${pad2(sn)}E${pad2(ep)}.mp4` },
+    ],
+};
+
+// How long to wait for each candidate link to prove it's playable
+const LINK_PROBE_MS = 10000;
+
+// If an iframe hasn't fired onload after this many ms, mark it as "slow"
+const SLOW_MS   = 8000;
+// Auto-advance to next embed after this many ms of silence (0 = never auto-advance)
+const AUTO_MS   = 0;
+
+// ── OpenSubtitles auto-fetch ─────────────────────────────────────────────
+// Get a free API key at https://www.opensubtitles.com/en/consumers, then
+// paste it below to enable automatic subtitle lookup for direct sources
+// that don't already carry a `subtitles` array in videos.json.
+// NOTE: this key lives in client-side JS, so anyone viewing page source can
+// read it and use up its quota. If this page is public, put this fetch
+// behind a small server-side proxy (e.g. a Cloudflare Worker) that holds
+// the real key instead, and point OPENSUBTITLES_PROXY_URL at that worker.
+const OPENSUBTITLES_API_KEY_B64 = 'a2ZQY1hXN0dKbllPUVlZMFk5ak5FZklPT2szUmM1RWw=';
+const OPENSUBTITLES_API_KEY   = atob(OPENSUBTITLES_API_KEY_B64);
+const OPENSUBTITLES_PROXY_URL = '';           // optional: proxy that forwards to api.opensubtitles.com with the key attached server-side
+const OPENSUBTITLES_LANGS     = 'en,si';      // comma-separated ISO 639-1 codes, in priority order
+const OPENSUBTITLES_DEFAULT_LANG = 'en';      // which of the above gets `default: true` / shows automatically
+const OPENSUBTITLES_MAX_PER_LANG = 2;         // how many different releases to offer per language (viewer picks via the subtitles menu)
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  URL PARAMS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _p   = new URLSearchParams(window.location.search);
+const TMDB = _p.get('id')   || '';
+const TYPE = _p.get('type') || 'movie';
+const SN   = _p.get('s')    || '1';
+const EP   = _p.get('e')    || '1';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+let mode          = 'direct';  // 'direct' | 'links' | 'embed'
+let directSources = null;      // array from videos.json, or null
+let directList    = [];        // [{ source, type, kind, label }] — one per direct source
+let directStatus  = [];        // parallel status array: 'idle' | 'fetching' | 'error' | 'playing'
+let directActiveIdx = -1;      // index into directList currently loading/playing
+let workingLink   = null;      // { name, url } of the generated link that proved playable, or null
+let lastLookup    = null;      // { title, year } from the last successful TMDB lookup, or null
+let linkIdx       = 0;         // current GENERATED_LINK_FORMATS index being tried
+let provIdx       = 0;         // current EMBED_PROVIDERS index
+let slowTimer     = null;
+let autoTimer     = null;
+let mediaPlayer     = null;      // active Vidstack player element
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function spin(msg)  { document.getElementById('spin-label').textContent = msg || 'Loading…'; document.getElementById('spinner').classList.add('visible'); }
+function unspin()   { document.getElementById('spinner').classList.remove('visible'); }
+
+function setLabel(txt) { document.getElementById('source-label').textContent = txt; }
+
+function showError(msg) {
+    unspin();
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function showBar()  {
+    document.getElementById('control-bar').classList.add('visible');
+    document.getElementById('server-trigger').classList.remove('visible');
+}
+function hideBar()  {
+    document.getElementById('control-bar').classList.remove('visible');
+    // Offer a way back in only once something is actually playing.
+    if (mediaPlayer || document.getElementById('iframe-container').style.display === 'block') {
+        document.getElementById('server-trigger').classList.add('visible');
+    }
+}
+
+function barBack() {
+    if (mode !== 'direct' && directSources) {
+        switchMode('direct');
+    }
+    hideBar();
+}
+
+function retryAllServers() {
+    if (mode === 'links') {
+        linkStatus = linkStatus.map(() => 'idle');
+        startGeneratedLinks();
+    } else {
+        embedStatus = embedStatus.map(() => 'idle');
+        provIdx = 0;
+        loadEmbed(0);
+    }
+}
+
+// ── Mode tabs ───────────────────────────────────────────────────────────────
+function setActiveTab(m) {
+    document.getElementById('tab-direct').classList.toggle('active', m === 'direct');
+    document.getElementById('tab-links').classList.toggle('active',  m === 'links');
+    document.getElementById('tab-embed').classList.toggle('active',  m === 'embed');
+    renderServerList();
+}
+
+// ── Server list (styled to match the reference "server select" screen) ────
+let embedStatus = EMBED_PROVIDERS.map(() => 'idle'); // 'idle' | 'fetching' | 'error' | 'playing'
+let linkStatus  = [];                                 // populated per TYPE by renderServerList
+
+const FOOTNOTES = {
+    direct: 'Playing from the direct library. Tap Servers if this source stalls or fails.',
+    embed:  'If a server errors out, the next one in the list is tried automatically.',
+    links:  'Checking generated links. If none are playable, we fall back to Servers.'
+};
+
+function renderServerList() {
+    const list = document.getElementById('server-list');
+    const foot = document.getElementById('bar-footnote');
+    list.innerHTML = '';
+    foot.textContent = FOOTNOTES[mode] || '';
+
+    if (mode === 'direct') {
+        if (!directList.length) {
+            const row = document.createElement('div');
+            row.className = 'server-row status-error';
+            row.innerHTML = `
+                <div class="server-row-top">
+                    <span class="server-name">My Server</span>
+                    <span class="server-status">unavailable</span>
+                </div>`;
+            list.appendChild(row);
+            return;
+        }
+        directList.forEach((item, i) => list.appendChild(
+            buildServerRow(item.label, directStatus[i], () => playDirectSourceAt(i))
+        ));
+        return;
+    }
+
+    if (mode === 'links') {
+        const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
+        if (linkStatus.length !== formats.length) linkStatus = formats.map(() => 'idle');
+        formats.forEach((f, i) => list.appendChild(buildServerRow(f.name, linkStatus[i], () => {
+            if (!lastLookup) return;
+            linkStatus[i] = 'fetching';
+            renderServerList();
+            const url = f.build(lastLookup);
+            testVideoUrl(url).then(ok => {
+                linkStatus[i] = ok ? 'playing' : 'error';
+                renderServerList();
+                if (ok) {
+                    linkIdx = i;
+                    workingLink = { name: f.name, url };
+                    setLabel(`Links · ${f.name}`);
+                    playDirectNative([{ src: url, type: 'mp4', label: f.name }], 'mp4');
+                }
+            });
+        })));
+        return;
+    }
+
+    // embed mode
+    EMBED_PROVIDERS.forEach((p, i) => list.appendChild(buildServerRow(p.name, embedStatus[i], () => loadEmbed(i))));
+}
+
+function buildServerRow(name, status, onClick) {
+    const row = document.createElement('div');
+    const cls = status === 'idle' ? 'available' : status;
+    row.className = `server-row status-${cls}`;
+    row.onclick = onClick;
+
+    const statusLabel = { idle: 'available', fetching: 'fetching', error: 'error', playing: 'playing' }[status] || status;
+    row.innerHTML = `
+        <div class="server-row-top">
+            <span class="server-name">${name}</span>
+            <span class="server-status">${statusLabel}</span>
+        </div>`;
+    if (status === 'fetching' || status === 'playing') {
+        row.innerHTML += `<div class="progress-track"><div class="progress-fill"></div></div>`;
+    }
+    return row;
+}
+
+// Legacy no-ops kept so any stray calls elsewhere don't break.
+function renderProviderButtons() { renderServerList(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DIRECT MODE  (videos.json → Vidstack / source iframes)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function startDirect() {
+    if (!TMDB) { showError('No content ID provided.'); return; }
+
+    spin('Looking up your library…');
+
+    const db = await fetchDB();
+    if (!db) {
+        // Can't even reach the DB — try generated links next
+        unspin();
+        autoFallbackToLinks('Library unavailable');
+        return;
+    }
+
+    const sources = TYPE === 'movie'
+        ? db.movies?.[TMDB]
+        : db.tv?.[TMDB]?.[SN]?.[EP];
+
+    if (!sources || sources.length === 0) {
+        unspin();
+        autoFallbackToLinks('Not in local library');
+        return;
+    }
+
+    directSources = sources;
+    unspin();
+    playDirect(sources);
+}
+
+async function fetchDB() {
+    try {
+        const res = await fetch(VIDEOS_JSON_PATH);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch { return null; }
+}
+
+function playDirect(sources) {
+    mode = 'direct';
+    setActiveTab('direct');
+
+    // Clear any running embed
+    clearEmbed();
+
+    // Types that must be rendered as an iframe rather than fed to Vidstack
+    const IFRAME_TYPES = ['dailymotion', 'google-drive',
+                           'mega', 'vk', 'telegram', 'facebook', 'iframe'];
+    const TYPE_LABELS = {
+        mp4: 'My Server', hls: 'My Server', iframe: 'My Server',
+        youtube: 'YouTube', vimeo: 'Vimeo', dailymotion: 'Dailymotion',
+        'google-drive': 'Google Drive', mega: 'Mega', vk: 'VK',
+        telegram: 'Telegram', facebook: 'Facebook'
+    };
+
+    // Build one list entry per source in videos.json, each independently
+    // selectable from the Servers panel.
+    directList = sources.map(s => {
+        const type = s.type || detectType(s.src);
+        const kind = IFRAME_TYPES.includes(type) ? 'iframe' : 'video';
+        const base = TYPE_LABELS[type] || type;
+        return { source: s, type, kind, base };
+    });
+    // Number duplicate labels (e.g. two "Google Drive" sources → "Google Drive 1/2")
+    const counts = {};
+    directList.forEach(item => { counts[item.base] = (counts[item.base] || 0) + 1; });
+    const seenSoFar = {};
+    directList.forEach(item => {
+        seenSoFar[item.base] = (seenSoFar[item.base] || 0) + 1;
+        item.label = counts[item.base] > 1 ? `${item.base} ${seenSoFar[item.base]}` : item.base;
+    });
+
+    directStatus    = directList.map(() => 'idle');
+    directActiveIdx = -1;
+
+    if (!directList.length) { autoFallbackToLinks('No direct sources'); return; }
+    playDirectSourceAt(0);
+}
+
+// Play a single source from directList by index, and chain to the next one
+// on failure. Same underlying renderers (Vidstack / iframe) as before, just
+// scoped to one source at a time so each can be listed as its own "server".
+function playDirectSourceAt(idx) {
+    if (idx >= directList.length) { autoFallbackToLinks('All direct sources failed'); return; }
+
+    directActiveIdx   = idx;
+    directStatus[idx] = 'fetching';
+    renderServerList();
+
+    const item = directList[idx];
+
+    if (item.kind === 'iframe') {
+        const url = buildDirectIframeUrl(item.source, item.type);
+        if (!url) {
+            directStatus[idx] = 'error';
+            renderServerList();
+            playDirectSourceAt(idx + 1);
+            return;
+        }
+        renderDirectSourceIframe(url, idx);
+    } else {
+        renderDirectSourceNative(item.source, item.type, idx);
+    }
+
+    setLabel('Direct · ' + item.label);
+    hideBar();
+}
+
+function renderDirectSourceIframe(url, idx) {
+    document.getElementById('media-player-el').style.display = 'none';
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'iframe-wrapper';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.className = 'ext-iframe';
+    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
+    iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    iframe.onload = () => {
+        unspin();
+        if (directActiveIdx === idx) {
+            directStatus[idx] = 'playing';
+            renderServerList();
+        }
+    };
+    iframe.onerror = () => {
+        directStatus[idx] = 'error';
+        renderServerList();
+        playDirectSourceAt(idx + 1);
+    };
+    wrapper.appendChild(iframe);
+    container.appendChild(wrapper);
+}
+
+// Adds one or more subtitle/caption tracks to a Vidstack player from a
+// source's `subtitles` array in videos.json, e.g.:
+//   "subtitles": [
+//     { "src": "https://example.com/en.vtt", "lang": "en", "label": "English", "default": true },
+//     { "src": "https://example.com/si.vtt", "lang": "si", "label": "Sinhala" }
+//   ]
+// `src` must point to a .vtt (WebVTT) file. `lang` and `label` are optional
+// (default to "en" / "Subtitle N"); `default: true` marks the track that
+// should be shown automatically when playback starts.
+//
+// If the source has no `subtitles` array (or an empty one) and OpenSubtitles
+// auto-fetch is configured, this falls back to looking subtitles up there.
+async function addSubtitleTracks(player, source) {
+    const list = Array.isArray(source && source.subtitles) ? source.subtitles : [];
+    if (list.length) {
+        list.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+        return;
+    }
+    if (!OPENSUBTITLES_API_KEY && !OPENSUBTITLES_PROXY_URL) return;
+    try {
+        const fetched = await fetchOpenSubtitles(TMDB, TYPE, SN, EP);
+        fetched.forEach((sub, i) => addOneSubtitleTrack(player, sub, i));
+    } catch (err) {
+        console.warn('[auto-server] OpenSubtitles fetch failed:', err);
+    }
+}
+
+function addOneSubtitleTrack(player, sub, i) {
+    if (!sub || !sub.src) return;
+    player.textTracks.add({
+        kind:     'subtitles',
+        src:      sub.src,
+        language: sub.lang || sub.srclang || 'en',
+        label:    sub.label || sub.lang || `Subtitle ${i + 1}`,
+        default:  !!sub.default,
+        type:     'vtt'
+    });
+}
+
+// Looks subtitles up on OpenSubtitles for the given TMDB id, converts each
+// result from SRT to WebVTT client-side, and returns them in the same
+// { src, lang, label, default } shape as a videos.json `subtitles` entry.
+// `src` on the returned objects is a blob: URL valid for this page load only.
+//
+// OpenSubtitles is user-uploaded, and files are sometimes tagged with the
+// wrong language (e.g. a Danish subtitle mislabeled "si"). For languages
+// with a distinctive script we can catch that automatically: after
+// converting a candidate to text we check it actually contains characters
+// from that script, and skip + try the next candidate if it doesn't. Latin
+// -script languages (en, da, fr, ...) can't be verified this way, so those
+// are trusted as-is.
+const SCRIPT_RANGES = {
+    si: /[\u0D80-\u0DFF]/,   // Sinhala
+    ta: /[\u0B80-\u0BFF]/,   // Tamil
+    hi: /[\u0900-\u097F]/,   // Devanagari (Hindi)
+    ar: /[\u0600-\u06FF]/,   // Arabic
+    th: /[\u0E00-\u0E7F]/,   // Thai
+    ko: /[\uAC00-\uD7AF]/,   // Hangul (Korean)
+    ja: /[\u3040-\u30FF\u4E00-\u9FFF]/, // Kana + Kanji (Japanese)
+    zh: /[\u4E00-\u9FFF]/,   // Han (Chinese)
+    ru: /[\u0400-\u04FF]/,   // Cyrillic (Russian)
+    he: /[\u0590-\u05FF]/,   // Hebrew
+};
+
+const _osCache = {};
+async function fetchOpenSubtitles(tmdbId, type, season, episode) {
+    if (!tmdbId) return [];
+    const cacheKey = `${tmdbId}:${type}:${season}:${episode}`;
+    if (_osCache[cacheKey]) return _osCache[cacheKey];
+
+    const base = OPENSUBTITLES_PROXY_URL || 'https://api.opensubtitles.com/api/v1';
+    const headers = { 'Accept': 'application/json' };
+    if (!OPENSUBTITLES_PROXY_URL) headers['Api-Key'] = OPENSUBTITLES_API_KEY;
+
+    const qs = new URLSearchParams({
+        tmdb_id: tmdbId,
+        type: type === 'movie' ? 'movie' : 'episode',
+        languages: OPENSUBTITLES_LANGS
+    });
+    if (type !== 'movie') {
+        qs.set('season_number', season);
+        qs.set('episode_number', episode);
+    }
+
+    const searchRes = await fetch(`${base}/subtitles?${qs.toString()}`, { headers });
+    if (!searchRes.ok) throw new Error('OpenSubtitles search failed: ' + searchRes.status);
+    const searchData = await searchRes.json();
+
+    // Group every candidate (not just the top one) per requested language,
+    // ranked by download_count, so we have fallbacks if the top result
+    // turns out to be mislabeled.
+    const wanted = OPENSUBTITLES_LANGS.split(',').map(l => l.trim());
+    const byLang = {};
+    for (const item of (searchData.data || [])) {
+        const attrs = item.attributes || {};
+        const lang = attrs.language;
+        if (!wanted.includes(lang)) continue;
+        const file = (attrs.files || [])[0];
+        if (!file) continue;
+        (byLang[lang] = byLang[lang] || []).push({
+            file_id: file.file_id,
+            label: attrs.release || lang,
+            downloads: attrs.download_count || 0
+        });
+    }
+    Object.values(byLang).forEach(list => list.sort((a, b) => b.downloads - a.downloads));
+
+    // Per language, keep up to OPENSUBTITLES_MAX_PER_LANG validated
+    // candidates (not just the top one) so the viewer can pick between
+    // different releases of the same language via the subtitles menu —
+    // useful since OpenSubtitles sync/accuracy varies release to release.
+    const results = [];
+    for (const lang of wanted) {
+        const candidates = (byLang[lang] || []).slice(0, 3); // try up to 3 before giving up
+        let keptForLang = 0;
+        for (const hit of candidates) {
+            if (keptForLang >= OPENSUBTITLES_MAX_PER_LANG) break;
+            try {
+                const dlRes = await fetch(`${base}/download`, {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_id: hit.file_id })
+                });
+                if (!dlRes.ok) continue;
+                const dlData = await dlRes.json();
+                const fileRes = await fetch(dlData.link);
+                const srtText = await fileRes.text();
+
+                const scriptCheck = SCRIPT_RANGES[lang];
+                if (scriptCheck && !scriptCheck.test(srtText)) {
+                    console.warn(`[auto-server] OpenSubtitles result for "${lang}" (${hit.label}) doesn't contain ${lang} script text — likely mislabeled, skipping`);
+                    continue;
+                }
+
+                const vttBlob = new Blob([srtToVtt(srtText)], { type: 'text/vtt' });
+                results.push({
+                    src:     URL.createObjectURL(vttBlob),
+                    lang:    lang,
+                    // First kept variant per language keeps the plain
+                    // "EN (OpenSubtitles)" label + default flag; extra
+                    // variants are labeled with their release name so
+                    // they're distinguishable in the subtitles menu.
+                    label:   keptForLang === 0
+                        ? `${lang.toUpperCase()} (OpenSubtitles)`
+                        : `${lang.toUpperCase()} — ${hit.label}`,
+                    default: keptForLang === 0 && lang === OPENSUBTITLES_DEFAULT_LANG
+                });
+                keptForLang++;
+            } catch (err) {
+                console.warn('[auto-server] OpenSubtitles download failed for', lang, err);
+            }
+        }
+    }
+
+    _osCache[cacheKey] = results;
+    return results;
+}
+
+// Minimal SRT → WebVTT converter: swaps the comma decimal separator for a
+// period in timestamps and prepends the required "WEBVTT" header.
+function srtToVtt(srt) {
+    const body = srt
+        .replace(/\r+/g, '')
+        .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+    return 'WEBVTT\n\n' + body;
+}
+
+function renderDirectSourceNative(source, srcType, idx) {
+    disposePlayer();
+    document.getElementById('iframe-container').style.display = 'none';
+    document.getElementById('iframe-container').innerHTML = '';
+
+    const el = document.getElementById('media-player-el');
+    el.style.display = 'block';
+
+    // Vidstack has built-in YouTube/Vimeo providers, so those are handed
+    // their normalized watch-page URLs with a matching `type`, rather than
+    // being sent to the iframe-embed path.
+    if (srcType === 'youtube') {
+        const vid = extractYouTubeId(source.src) || source.src;
+        el.src = { src: `https://www.youtube.com/watch?v=${vid}`, type: 'video/youtube' };
+    } else if (srcType === 'vimeo') {
+        const vid = extractVimeoId(source.src) || source.src;
+        el.src = { src: `https://vimeo.com/${vid}`, type: 'video/vimeo' };
+    } else {
+        const isHLS = srcType === 'hls' || source.src.includes('.m3u8');
+        el.src = { src: source.src, type: isHLS ? 'application/x-mpegurl' : 'video/mp4' };
+    }
+    mediaPlayer = el;
+
+    const onLoadedData = () => {
+        if (directActiveIdx === idx) {
+            directStatus[idx] = 'playing';
+            renderServerList();
+        }
+        el.removeEventListener('loaded-data', onLoadedData);
+    };
+    el.addEventListener('loaded-data', onLoadedData);
+
+    const onError = () => {
+        console.warn('[auto-server] Vidstack: source failed (idx=' + idx + ')');
+        el.removeEventListener('error', onError);
+        disposePlayer();
+        el.style.display = 'none';
+        directStatus[idx] = 'error';
+        renderServerList();
+        playDirectSourceAt(idx + 1);
+    };
+    el.addEventListener('error', onError);
+
+    addSubtitleTracks(el, source);
+}
+
+// Kept for generated-links playback and restoring a previously-working
+// link — plays a self-contained source list in one Vidstack instance.
+function playDirectNative(sources, srcType) {
+    disposePlayer();
+    const el = document.getElementById('media-player-el');
+    el.style.display = 'block';
+
+    // Vidstack picks the first playable source itself when given an array,
+    // so the srcType/HLS detection just needs to tag each entry correctly.
+    el.src = sources.map(s => ({
+        src:  s.src,
+        type: (s.type === 'hls' || s.src.includes('.m3u8')) ? 'application/x-mpegurl' : 'video/mp4'
+    }));
+    mediaPlayer = el;
+
+    const subSource = sources.find(s => s.subtitles && s.subtitles.length) || sources[0];
+    addSubtitleTracks(el, subSource);
+
+    // All sources failed → fall to next tier
+    const onError = () => {
+        console.warn('[auto-server] Vidstack: all sources failed (mode=' + mode + ')');
+        el.removeEventListener('error', onError);
+        disposePlayer();
+        el.style.display = 'none';
+        if (mode === 'direct') {
+            autoFallbackToLinks('Direct sources failed');
+        } else {
+            autoFallbackToEmbed('Playback failed');
+        }
+    };
+    el.addEventListener('error', onError);
+
+    setLabel('Direct · ' + (sources.length > 1 ? sources.length + ' sources' : 'My Server'));
+    hideBar();
+}
+
+function buildDirectIframeUrl(s, srcType) {
+    switch (srcType) {
+        case 'youtube': {
+            const vid = extractYouTubeId(s.src);
+            return vid ? `https://www.youtube.com/embed/${vid}?modestbranding=1&rel=0&autoplay=1` : null;
+        }
+        case 'dailymotion': {
+            let url = s.src.replace(/\/embed\/(?!video\/|playlist\/)/, '/embed/video/');
+            return appendParam(url, 'autoplay', '0');
+        }
+        case 'google-drive': {
+            const m = s.src.match(/\/d\/(.+?)\//);
+            return m ? `https://drive.google.com/file/d/${m[1]}/preview` : null;
+        }
+        case 'mega':     return s.src.replace('/file/', '/embed/');
+        case 'vimeo': {
+            const vid = extractVimeoId(s.src);
+            return vid ? `https://player.vimeo.com/video/${vid}?autoplay=1&dnt=1` : null;
+        }
+        case 'vk':       return appendParam(s.src, 'autoplay', '1');
+        case 'telegram': return appendParam(appendParam(s.src, 'embed', '1'), 'autoplay', '1');
+        case 'facebook': {
+            const base = s.src.includes('plugins/video.php')
+                ? s.src
+                : `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(s.src)}&show_text=false`;
+            return appendParam(base, 'autoplay', '1');
+        }
+        default:         return s.src;
+    }
+}
+
+// Silent auto-fallback: direct sources failed/unavailable, try generated links next
+function autoFallbackToLinks(reason) {
+    console.info(`[auto-server] Direct failed (${reason}) — trying generated links`);
+    startGeneratedLinks();
+}
+
+// Silent auto-fallback: generated links exhausted/unsupported, go straight to embed
+function autoFallbackToEmbed(reason) {
+    console.info(`[auto-server] Falling back to embed (${reason})`);
+    mode = 'embed';
+    setActiveTab('embed');
+    provIdx = 0;
+    showBar();
+    loadEmbed(0);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GENERATED LINKS MODE  (direct-file URLs built from TMDB title/year)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Probe a candidate URL using a hidden <video> element rather than fetch().
+// media.baiscopewatch.com sends no Access-Control-Allow-Origin header, so a
+// fetch() from the browser is blocked by CORS entirely (even for files that
+// exist) — the browser refuses to let JS read the response. Loading media via
+// a <video> element isn't subject to that restriction (CORS only gates JS
+// reading response bytes, not playback), so we listen for its native
+// loadedmetadata/error events instead.
+// Resolves true if the file exists and is playable, false otherwise.
+function testVideoUrl(url, timeoutMs = LINK_PROBE_MS) {
+    return new Promise(resolve => {
+        const probe = document.createElement('video');
+        probe.preload = 'metadata';
+        probe.muted = true;
+        probe.style.display = 'none';
+
+        let settled = false;
+        const finish = (ok, reason) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            probe.removeAttribute('src');
+            probe.load();
+            probe.remove();
+            if (!ok) console.info(`[auto-server] Link unavailable: ${reason}`);
+            resolve(ok);
+        };
+
+        const timer = setTimeout(() => finish(false, 'timed out'), timeoutMs);
+
+        probe.addEventListener('loadedmetadata', () => finish(true), { once: true });
+        probe.addEventListener('error', () => {
+            // MediaError codes: 1=ABORTED 2=NETWORK 3=DECODE 4=SRC_NOT_SUPPORTED
+            const code = probe.error ? probe.error.code : 0;
+            finish(false, `media error ${code}`);
+        }, { once: true });
+
+        document.body.appendChild(probe);
+        probe.src = url;
+        probe.load();
+    });
+}
+
+async function startGeneratedLinks() {
+    mode = 'links';
+    setActiveTab('links');
+    const formats = GENERATED_LINK_FORMATS[TYPE === 'movie' ? 'movie' : 'tv'];
+    linkStatus = formats.map(() => 'idle');
+    renderServerList();
+    showBar();
+
+    if (!TMDB_API_KEY) {
+        autoFallbackToEmbed('No TMDB API key configured');
+        return;
+    }
+
+    const isMovie = TYPE === 'movie';
+
+    spin(isMovie ? 'Looking up movie info…' : 'Looking up show info…');
+    let title, year;
+    try {
+        const endpoint = isMovie
+            ? `https://api.themoviedb.org/3/movie/${TMDB}?api_key=${TMDB_API_KEY}`
+            : `https://api.themoviedb.org/3/tv/${TMDB}?api_key=${TMDB_API_KEY}`;
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error('TMDB lookup failed');
+        const data = await res.json();
+        title = isMovie ? data.title : data.name;
+        year  = isMovie
+            ? (data.release_date ? data.release_date.split('-')[0] : '')
+            : (data.first_air_date ? data.first_air_date.split('-')[0] : '');
+        if (!title) throw new Error('No title returned');
+        lastLookup = { title, year, sn: SN, ep: EP };
+    } catch (err) {
+        console.warn('[auto-server] Generated links: TMDB lookup failed', err);
+        autoFallbackToEmbed('TMDB lookup failed');
+        return;
+    }
+
+    for (let i = 0; i < formats.length; i++) {
+        linkIdx = i;
+        const fmt = formats[i];
+        const url = fmt.build(lastLookup);
+        linkStatus[i] = 'fetching';
+        renderServerList();
+        spin(`Checking ${fmt.name}…`);
+
+        const ok = await testVideoUrl(url);
+        if (ok) {
+            workingLink = { name: fmt.name, url };
+            linkStatus[i] = 'playing';
+            unspin();
+            renderServerList();
+            setLabel(`Links · ${fmt.name}`);
+            playDirectNative([{ src: url, type: 'mp4', label: fmt.name }], 'mp4');
+            return;
+        }
+
+        linkStatus[i] = 'error';
+        renderServerList();
+        console.info(`[auto-server] Generated link failed: ${fmt.name}`);
+    }
+
+    unspin();
+    autoFallbackToEmbed('All generated links failed');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EMBED MODE  (third-party provider iframes)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function switchMode(m) {
+    if (m === mode && m === 'direct' && directSources) return;
+
+    clearTimers();
+
+    if (m === 'direct') {
+        if (directSources) {
+            clearEmbed();
+            playDirect(directSources);
+        } else {
+            flashTab('tab-direct');
+        }
+    } else if (m === 'links') {
+        disposePlayer();
+        document.getElementById('media-player-el').style.display = 'none';
+        clearEmbed();
+        if (workingLink) {
+            mode = 'links';
+            setActiveTab('links');
+            showBar();
+            setLabel(`Links · ${workingLink.name}`);
+            playDirectNative([{ src: workingLink.url, type: 'mp4', label: workingLink.name }], 'mp4');
+        } else {
+            startGeneratedLinks();
+        }
+    } else {
+        mode = 'embed';
+        disposePlayer();
+        document.getElementById('media-player-el').style.display = 'none';
+        clearEmbed();
+        setActiveTab('embed');
+        showBar();
+        loadEmbed(provIdx);
+    }
+}
+
+function flashTab(id) {
+    const el = document.getElementById(id);
+    el.style.opacity = '0.4';
+    setTimeout(() => el.style.opacity = '', 600);
+}
+
+function loadEmbed(idx) {
+    clearTimers();
+    if (idx < 0 || idx >= EMBED_PROVIDERS.length) return;
+
+    provIdx = idx;
+    const prov = EMBED_PROVIDERS[idx];
+    const url  = buildEmbedUrl(TYPE === 'movie' ? prov.movie : prov.tv);
+
+    spin(`Connecting to ${prov.name}…`);
+    embedStatus[idx] = 'fetching';
+    renderServerList();
+    setLabel(`Embed · ${prov.name}`);
+
+    const container = document.getElementById('iframe-container');
+    container.style.display = 'block';
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'iframe-wrapper';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.className = 'ext-iframe';
+    iframe.setAttribute('allow', 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *');
+    iframe.setAttribute('allowfullscreen', 'true');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+
+    iframe.onload = () => {
+        clearTimers();
+        unspin();
+        embedStatus[idx] = 'playing';
+        renderServerList();
+        hideBar();
+    };
+
+    iframe.onerror = () => {
+        // Hard network failure — skip immediately
+        clearTimers();
+        embedStatus[idx] = 'error';
+        renderServerList();
+        console.warn(`[auto-server] Network error: ${prov.name}`);
+        tryNextEmbed();
+    };
+
+    // After SLOW_MS with no load, update label but don't auto-advance
+    slowTimer = setTimeout(() => {
+        unspin();
+        setLabel(`Embed · ${prov.name} (slow…)`);
+        renderServerList();
+    }, SLOW_MS);
+
+    wrapper.appendChild(iframe);
+    container.appendChild(wrapper);
+}
+
+function tryNextEmbed() {
+    const next = provIdx + 1;
+    if (next >= EMBED_PROVIDERS.length) {
+        unspin();
+        showError('All embed sources failed. Please try again later.');
+        return;
+    }
+    loadEmbed(next);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CLEANUP HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function clearEmbed() {
+    clearTimers();
+    const c = document.getElementById('iframe-container');
+    c.style.display = 'none';
+    c.innerHTML = '';
+}
+
+function disposePlayer() {
+    if (mediaPlayer) {
+        const oldEl = document.getElementById('media-player-el');
+        try { oldEl.src = null; } catch {}
+        mediaPlayer = null;
+        // Recreate the element fresh so no stale sources/tracks/listeners linger
+        const container = document.getElementById('player-container');
+        const newEl = document.createElement('media-player');
+        newEl.id = 'media-player-el';
+        newEl.style.display = 'none';
+        newEl.setAttribute('crossorigin', '');
+        newEl.setAttribute('playsinline', '');
+        newEl.innerHTML = '<media-provider></media-provider><media-video-layout></media-video-layout>';
+        // Insert before iframe-container
+        container.insertBefore(newEl, document.getElementById('iframe-container'));
+        oldEl.remove();
+    }
+}
+
+function clearTimers() {
+    clearTimeout(slowTimer);
+    clearTimeout(autoTimer);
+    slowTimer = null;
+    autoTimer = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UTILITY
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildEmbedUrl(t) {
+    return t.replace(/\[ID\]/g, TMDB).replace(/\[S\]/g, SN).replace(/\[E\]/g, EP);
+}
+
+function detectType(src) {
+    if (!src) return 'mp4';
+    if (src.includes('.m3u8'))                                    return 'hls';
+    if (src.includes('youtube.com') || src.includes('youtu.be')) return 'youtube';
+    if (src.includes('vimeo.com'))                               return 'vimeo';
+    if (src.includes('dailymotion.com'))                         return 'dailymotion';
+    if (src.includes('drive.google.com'))                        return 'google-drive';
+    if (src.includes('mega.nz'))                                 return 'mega';
+    if (src.includes('vk.com'))                                  return 'vk';
+    if (src.includes('t.me') || src.includes('telegram'))        return 'telegram';
+    if (src.includes('facebook.com'))                            return 'facebook';
+    return 'mp4';
+}
+
+function appendParam(url, key, val) {
+    if (url.includes(`${key}=`)) return url;
+    return url + (url.includes('?') ? '&' : '?') + `${key}=${val}`;
+}
+
+function extractYouTubeId(url) {
+    const m = url.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]{11})/);
+    return m ? m[1] : null;
+}
+
+function extractVimeoId(url) {
+    const m = url.match(/vimeo\.com\/(?:video\/|channels\/(?:\w+\/)?|groups\/(?:[^\/]+)\/videos\/)?(\d+)/);
+    return m ? m[1] : null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function init() {
+    if (!TMDB) { showError('No content ID provided.'); return; }
+    await startDirect(); // always starts in direct mode
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix - Games</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&family=Albert+Sans:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css?v=1">
+    
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-dark: #141414;
+            --netflix-black: #000000;
+            --text-white: #ffffff;
+            --text-gray: #b3b3b3;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+
+        body {
+            background-color: var(--netflix-dark);
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            max-width: 100%;
+            padding-bottom: 50px;
+        }
+
+        /* Override pref-patch.css's negative offsets on .scroll-btn, which push
+           the row scroll arrows 10px past the viewport edge and cause the page
+           to gain horizontal scroll. This rule loads after pref-patch.css and
+           matches its specificity, so it wins without editing the shared file. */
+        .row-scroll-wrapper .scroll-btn.left-0 {
+            left: 0;
+        }
+
+        .row-scroll-wrapper .scroll-btn.right-0 {
+            right: 0;
+        }
+
+        /* --- Header / Navbar --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 4%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            transition: background-color 0.3s;
+        }
+
+        header.scrolled {
+            background-color: var(--netflix-dark);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            height: 34px;
+            width: auto;
+            display: block;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .logo-games {
+            font-family: 'Albert Sans', sans-serif;
+            font-weight: 600;
+            color: var(--text-white);
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--text-gray);
+            padding: 5px 10px;
+            border-radius: 4px; /* Netflix uses square buttons mostly, but slight radius handles mobile better */
+        }
+
+        .search-container input {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 5px;
+            font-size: 1rem;
+            outline: none;
+            width: 0;
+            transition: width 0.4s ease;
+            cursor: pointer;
+        }
+
+        .search-container:hover input, .search-container input:focus, .search-container input:not(:placeholder-shown) {
+            width: 200px;
+            cursor: text;
+        }
+
+        .search-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 70vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding-left: 4%;
+            background-color: var(--netflix-black);
+            overflow: hidden;
+        }
+
+        .hero-bg-layer {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+            z-index: 0;
+        }
+
+        .hero-bg-layer.active {
+            opacity: 1;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to right, rgba(20,20,20,1) 10%, rgba(20,20,20,0.15) 55%, rgba(20,20,20,0.55) 100%);
+            z-index: 1;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 15%;
+            background: linear-gradient(to top, var(--netflix-dark) 0%, rgba(20,20,20,0) 100%);
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 500px;
+            position: relative;
+            z-index: 2;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-dots {
+            position: absolute;
+            left: 4%;
+            bottom: 24px;
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .hero-dot {
+            width: 26px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.35);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .hero-dot.active {
+            background-color: var(--netflix-red);
+        }
+
+        .hero-tag {
+            color: var(--netflix-red);
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 3px black;
+        }
+
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4.5rem;
+            line-height: 1;
+            letter-spacing: 1px;
+            color: var(--text-white);
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.7);
+            margin-bottom: 16px;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px black;
+            max-width: 460px;
+        }
+
+        .btn-play {
+            background-color: white;
+            color: black;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-play:hover {
+            opacity: 0.8;
+        }
+
+        /* --- Game Rows --- */
+        .category-title {
+            margin: 40px 4% 12px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #e5e5e5;
+            letter-spacing: 0.3px;
+        }
+
+        .row-container {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 16px 4%;
+            gap: 14px;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .row-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
+
+        /* Positioning context for the scroll-btn pair from pref-patch.css */
+        .row-scroll-wrapper {
+            position: relative;
+        }
+
+        .game-card {
+            flex: 0 0 auto;
+            width: 250px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            background-color: #181818;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-poster {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        .game-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+
+        .card-poster::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 45%);
+        }
+
+        .card-play-badge {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .card-play-badge svg {
+            width: 42px;
+            height: 42px;
+            fill: rgba(255,255,255,0.95);
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+        }
+
+        .game-card:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            z-index: 10;
+        }
+
+        .game-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .game-card:hover .card-play-badge {
+            opacity: 1;
+        }
+
+        .card-info {
+            padding: 10px 12px;
+            border-top: 2px solid transparent;
+            transition: border-color 0.25s ease;
+        }
+
+        .game-card:hover .card-info {
+            border-color: var(--netflix-red);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-category {
+            font-size: 0.72rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* --- Search Results Area --- */
+        #search-results {
+            display: none;
+            padding: 80px 4%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        #search-results.active {
+            display: grid;
+        }
+        
+        #main-view.hidden {
+            display: none;
+        }
+
+        /* --- Game Modal / Player --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            width: 90%;
+            height: 80%;
+            max-width: 1000px;
+            background: #000;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2001;
+        }
+
+        .modal-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Helper for the raw script games */
+        .script-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white; /* Some script games need white bg */
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 768px) {
+            .game-card { width: 160px; }
+            .card-title { font-size: 0.8rem; }
+            .card-category { font-size: 0.65rem; }
+            .hero-title { font-size: 2.6rem; }
+            .hero-desc { font-size: 0.95rem; }
+            .search-container input:focus { width: 120px; }
+            .logo-icon { height: 24px; }
+            .logo-games { font-size: 1.15rem; }
+        }
+        /* --- DESKTOP SIDEBAR --- */
+.sidebar {
+    position: fixed; left: 0; top: 0; height: 100%;
+    background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 9999; transition: width 0.3s ease;
+    width: 64px; overflow: hidden; display: none; flex-direction: column;
+}
+.sidebar:hover { width: 240px; }
+.sidebar-header { height: 70px; display: flex; align-items: center; padding-left: 18px; }
+.sidebar-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 0 8px; width: 240px; list-style: none; }
+.nav-link { 
+    display: flex; align-items: center; padding: 12px; border-radius: 12px;
+    color: #9ca3af; text-decoration: none; transition: 0.3s;
+}
+.nav-link i { font-size: 1.2rem; min-width: 30px; text-align: center; }
+.nav-link .nav-text { margin-left: 15px; opacity: 0; white-space: nowrap; }
+.sidebar:hover .nav-text { opacity: 1; }
+.nav-link:hover, .nav-link.active { background: rgba(229, 9, 20, 0.1); color: #e50914; }
+
+/* --- REDESIGNED MOBILE NAVIGATION --- */
+.mobile-nav {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+    background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+}
+.nav-wrapper { display: flex; width: 100%; justify-content: space-around; padding: 0; margin: 0; }
+.mobile-item { list-style: none; flex: 1; padding: 0 4px; }
+.mobile-item a, .mobile-item button { 
+    height: 58px; width: 100%; margin: 6px 0; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; 
+    color: #9ca3af; transition: all 0.3s ease; background: transparent; border: none; cursor: pointer;
+}
+.mobile-item.active a, .mobile-item.active button,
+.mobile-item a:hover, .mobile-item button:hover { color: #e50914; background: rgba(229, 9, 20, 0.1); }
+.mobile-item.active a i, .mobile-item.active button i { transform: scale(1.15); }
+.mobile-item span { font-size: 0; opacity: 0; transition: all 0.3s ease; }
+.mobile-item.active span, .mobile-item:hover span { font-size: 12px; opacity: 1; margin-top: 4px; }
+
+/* --- MOBILE MORE DRAWER --- */
+#mobile-more-drawer {
+    position: fixed; bottom: 70px; left: 0; width: 100%;
+    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 0 0;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9998; padding: 25px 20px 35px 20px; visibility: hidden;
+}
+#mobile-more-drawer.open { transform: translateY(0); visibility: visible; }
+.drawer-link {
+    display: flex; align-items: center; padding: 14px 18px; border-radius: 12px; gap: 12px;
+    color: #e5e7eb; text-decoration: none; font-weight: 600; background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;
+}
+.drawer-link:hover, .drawer-link:active { background: rgba(229, 9, 20, 0.15); border-color: rgba(229, 9, 20, 0.3); color: #fff; }
+
+/* SVG Icons */
+.nav-svg { width: 24px; height: 24px; display: block; fill: currentColor; transition: transform 0.2s ease; }
+
+/* --- LAYOUT ADJUSTMENTS FOR GAMES.HTML --- */
+@media (min-width: 768px) { 
+    .sidebar { display: flex; } 
+    .mobile-nav, #mobile-more-drawer { display: none; } 
+    body { padding-left: 64px; }
+    /* Shifts the existing top header so it doesn't hide behind the sidebar */
+    header#navbar { padding-left: calc(4% + 64px); } 
+
+    /* The sidebar overlays content (it's position:fixed) and expands to 240px
+       wide on hover, which can cover the hero/category/row content that only
+       clears its collapsed 64px width. Rather than permanently reserving the
+       expanded width (which shifts content right all the time), only apply
+       the extra clearance while the sidebar is actually expanded - toggled by
+       JS via the .sidebar-expanded class on <body>. */
+    .hero, .category-title, .row-container {
+        transition: padding-left 0.3s ease, margin-left 0.3s ease;
+    }
+    body.sidebar-expanded .hero { padding-left: clamp(4%, 4% + 25vw, 240px); }
+    body.sidebar-expanded .category-title { margin-left: clamp(4%, 4% + 25vw, 240px); margin-right: 4%; }
+    body.sidebar-expanded .row-container { padding-left: clamp(4%, 4% + 25vw, 240px); }
+
+    /* .hero is height:70vh and vertically centers its content; on short/narrow
+       windows that box gets short enough that the centered title renders
+       underneath the fixed header. Guarantee a minimum height and top
+       clearance so that never happens. */
+    .hero {
+        min-height: 480px;
+        padding-top: 90px;
+    }
+}
+@media (max-width: 767px) { 
+    body { padding-bottom: 70px; } 
+}
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="menu-icon">
+            <svg stroke="#e50914" fill="#e50914" stroke-width="0" viewBox="0 0 24 24" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path>
+            </svg>
+        </div>
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li><a href="../index.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span class="nav-text">Home</span></a></li>
+        <li><a href="../Anime/anime.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span class="nav-text">Anime</span></a></li>
+        <li><a href="../download.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg><span class="nav-text">Dubbings</span></a></li>
+        <li><a href="../TV/tv.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span class="nav-text">Live TV</span></a></li>
+        <li><a href="../Sports/sports.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span class="nav-text">Sports</span></a></li>
+        <li><a href="#" class="nav-link active"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
+    <path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/>
+</svg><span class="nav-text">Games</span></a></li>
+        <li><a href="../Radio/radio.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span class="nav-text">Radio</span></a></li>
+        <li><a href="../Books/Books.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span class="nav-text">Books</span></a></li>
+    </ul>
+</aside>
+
+<nav class="mobile-nav">
+    <ul class="nav-wrapper">
+        <li class="mobile-item"><a href="../index.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span>Home</span></a></li>
+        <li class="mobile-item"><a href="../Anime/anime.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span>Anime</span></a></li>
+        <li class="mobile-item"><a href="../TV/tv.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span>Live TV</span></a></li>
+        <li class="mobile-item active"><a href="#"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
+    <path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/>
+</svg><span>Games</span></a></li>
+        <li class="mobile-item" id="more-menu-btn">
+            <button onclick="toggleMoreMenu()">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path></svg><span>More</span>
+            </button>
+        </li>
+    </ul>
+</nav>
+
+<div id="mobile-more-drawer">
+    <div class="drawer-header">
+        <h3 style="color:white; font-weight:bold; padding: 0 8px; border-left: 4px solid #e50914; margin-bottom: 16px;">EXPLORE MORE</h3>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="../download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
+        <a href="../Sports/sports.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span>Sports</span></a>
+        <a href="../Radio/radio.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg> <span>Radio</span></a>
+        <a href="../Books/Books.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg> <span>Books</span></a>
+    </div>
+</div>
+    <header id="navbar">
+        <a href="#" class="logo" onclick="resetHome()">
+            <svg class="logo-icon" viewBox="0 0 551.11109 999.99998" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <linearGradient id="chLogoGrad1">
+                        <stop style="stop-color:#b1060f;stop-opacity:1;" offset="0" />
+                        <stop style="stop-color:#7b010c;stop-opacity:1" offset="0.62500739" />
+                        <stop style="stop-color:#b1060f;stop-opacity:0;" offset="1" />
+                    </linearGradient>
+                    <linearGradient id="chLogoGrad2">
+                        <stop style="stop-color:#b1060f;stop-opacity:1" offset="0" />
+                        <stop style="stop-color:#7b010c;stop-opacity:1" offset="0.54607224" />
+                        <stop style="stop-color:#e50914;stop-opacity:0;" offset="1" />
+                    </linearGradient>
+                    <linearGradient xlink:href="#chLogoGrad2" id="chLogoGrad1Pos" x1="78.23394" y1="423.76712" x2="221.66281" y2="365.09167" gradientUnits="userSpaceOnUse" />
+                    <linearGradient xlink:href="#chLogoGrad1" id="chLogoGrad2Pos" x1="456.36462" y1="521.55957" x2="309.67599" y2="583.49475" gradientUnits="userSpaceOnUse" />
+                </defs>
+                <path style="fill:url(#chLogoGrad1Pos);stroke:none;fill-opacity:1" d="M -1.1524947,-1.1524946 2.3049893,1002.6704 C 75.577724,988.55904 133.19716,990.10098 198.22908,984.23044 V 0 Z" />
+                <path style="fill:url(#chLogoGrad2Pos);stroke:none;fill-opacity:1" d="m 353.81586,0 h 199.38158 l 2.30498,1000.3654 -202.83905,-33.42238 z" />
+                <path style="fill:#e50914;fill-opacity:1;stroke:none" d="M 1.1524964,-3.6590427e-7 C 5.7624764,11.524946 346.90086,981.92546 346.90086,981.92546 c 56.0558,-0.40033 131.2191,8.75315 205.1441,17.28745 L 197.07656,-3.6590427e-7 Z" />
+            </svg>
+            <span class="logo-games">GAMES</span>
+        </a>
+        <div class="search-container">
+            <button class="search-btn"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18.031 16.6168L22.3137 20.8995L20.8995 22.3137L16.6168 18.031C15.0769 19.263 13.124 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2C15.968 2 20 6.032 20 11C20 13.124 19.263 15.0769 18.031 16.6168ZM16.0247 15.8748C17.2475 14.6146 18 12.8956 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18C12.8956 18 14.6146 17.2475 15.8748 16.0247L16.0247 15.8748Z"></path></svg></button>
+            <input type="text" id="searchInput" placeholder="Titles, people, genres">
+        </div>
+    </header>
+
+    <div id="main-view">
+        <div class="hero" id="heroSection">
+            <div class="hero-bg-layer" id="heroBgA"></div>
+            <div class="hero-bg-layer" id="heroBgB"></div>
+            <div class="hero-content" id="heroContent">
+                <div class="hero-tag">Featured Game</div>
+                <h1 class="hero-title" id="heroTitle"></h1>
+                <p class="hero-desc" id="heroDesc"></p>
+                <button class="btn-play" id="heroPlayBtn">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align:-2px; margin-right:6px;"><path d="M4.5 3.5V20.5L20.5 12L4.5 3.5Z"></path></svg>Play
+                </button>
+            </div>
+            <div class="hero-dots" id="heroDots"></div>
+        </div>
+
+        <h3 class="category-title">Trending Now</h3>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-trending">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
+        <h3 class="category-title">Action & Adventure</h3>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-action">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
+
+        <h3 class="category-title">Strategy & Puzzle</h3>
+        <div class="row-scroll-wrapper">
+            <button class="scroll-btn left-0 hidden" aria-label="Scroll left">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+            </button>
+            <div class="row-container overflow-x-auto scrollbar-hide" id="row-strategy">
+                </div>
+            <button class="scroll-btn right-0" aria-label="Scroll right">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="search-results">
+        </div>
+
+    <div id="gameModal" class="modal">
+        <span class="close-modal" onclick="closeGame()">&times;</span>
+        <div class="modal-content" id="modalBody">
+            </div>
+    </div>
+
+    <script>
+        // Game Database
+        const games = [
+            {
+                id: 1,
+                title: "Netflix Puzzled",
+                category: "trending",
+                poster: "https://tudumext.com/projects/puzzled/thumbnail/generic-seo.png",
+                type: "iframe",
+                url: "https://www.netflix.com/tudum/puzzled",
+                description: "Your daily dose of word, logic, and visual puzzle games."
+            },
+            {
+                id: 4,
+                title: "Sri Lankan Political Mario",
+                category: "trending",
+                poster: "https://i.ytimg.com/vi/uaJ1pFVaXw0/hq720.jpg",
+                type: "iframe",
+                url: "https://chithruka.github.io/Mahi-Run/",
+                description: "Run, jump, and dodge through a wacky Sri Lankan-themed platformer adventure."
+            },
+            {
+                id: 7,
+                title: "Stickman Kombat 2D",
+                category: "action",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/0c888413-a125-4ef5-56cd-89a6a329e900/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/stickman-kombat-2d",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Face off in fast-paced stickman brawls packed with combos and knockouts."
+            },
+            {
+                id: 8,
+                title: "Deadly Descent",
+                category: "action",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/79d71efd-42d5-48c6-4e91-532faf999f00/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/deadly-descent",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Survive a perilous freefall through danger-filled depths in this tense action game."
+            },
+            {
+                id: 9,
+                title: "Hazmob FPS",
+                category: "trending",
+                poster: "https://playgama.com/cdn-cgi/imagedelivery/LN2S-4p3-GgZvEx3IPaKUA/c1f0c7c3-3611-4f93-49ae-3b779e216c00/enlarged",
+                type: "iframe",
+                url: "https://playgama.com/export/game/hazmob-fps-online-shooter",
+                attributes: "allow=fullscreen; accelerometer; camera; clipboard-read; clipboard-write; screen-wake-lock; speaker-selection; web-share; geolocation; gyroscope; microphone; xr-spatial-tracking; autoplay; encrypted-media; picture-in-picture",
+                description: "Experience intense tactical combat in this high-octane online shooter. Dominate the battlefield now."
+            },
+            {
+                id: 10,
+                title: "Chess 3D",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/1x1/chess-1x1-300.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/chess/index.html",
+                description: "Sharpen your strategy in a fully rendered 3D chess board with smooth animations."
+            },
+            {
+                id: 11,
+                title: "Checkers",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/checkers/Checkers-1x1-300.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/checkers/index.html",
+                description: "Outmaneuver your opponent in this classic board game of checkers."
+            },
+            {
+                id: 12,
+                title: "Solitaire",
+                category: "strategy",
+                poster: "https://playpager.com/app-images/scorpion/scorpion-solitaire-300-1x1.avif",
+                type: "iframe",
+                url: "https://playpager.com/embed/solitaire/index.html",
+                description: "Unwind with a timeless game of solitaire, perfect for a quick mental break."
+            },
+            {
+                id: 13,
+                title: "Chess LK",
+                category: "strategy",
+                poster: "https://roskomsvoboda.org/uploads/images/block_chesscom.jpg",
+                type: "iframe",
+                url: "https://chithruka.github.io/Chithruka/Games/Chess/home.html",
+                description: "Take on a locally hosted chess experience built for quick, casual matches."
+            }
+        ];
+
+        // --- Render Functions ---
+
+        let heroSlides = [];
+        let heroIndex = 0;
+        let heroTimer = null;
+        let heroLayerToggle = false; // false -> layer A is next to receive the image, true -> layer B
+
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function renderHero() {
+            const slideCount = Math.min(5, games.length);
+            heroSlides = shuffleArray(games).slice(0, slideCount);
+            if (heroSlides.length === 0) return;
+
+            const dotsContainer = document.getElementById('heroDots');
+            dotsContainer.innerHTML = heroSlides.map((g, i) =>
+                `<button class="hero-dot" onclick="goToHeroSlide(${i})" aria-label="${g.title}"></button>`
+            ).join('');
+
+            showHeroSlide(0, true);
+            startHeroTimer();
+        }
+
+        function showHeroSlide(index, isFirst) {
+            const game = heroSlides[index];
+            if (!game) return;
+            heroIndex = index;
+
+            const layerA = document.getElementById('heroBgA');
+            const layerB = document.getElementById('heroBgB');
+            const incoming = heroLayerToggle ? layerA : layerB;
+            const outgoing = heroLayerToggle ? layerB : layerA;
+            heroLayerToggle = !heroLayerToggle;
+
+            incoming.style.backgroundImage = `url('${game.poster}')`;
+
+            const applyFade = () => {
+                incoming.classList.add('active');
+                outgoing.classList.remove('active');
+            };
+            isFirst ? applyFade() : requestAnimationFrame(applyFade);
+
+            const heroContent = document.getElementById('heroContent');
+            const updateText = () => {
+                document.getElementById('heroTitle').textContent = game.title;
+                document.getElementById('heroDesc').textContent = game.description || '';
+                document.getElementById('heroPlayBtn').onclick = () => playGame(game.id);
+            };
+
+            if (isFirst) {
+                updateText();
+            } else {
+                heroContent.style.opacity = 0;
+                setTimeout(() => {
+                    updateText();
+                    heroContent.style.opacity = 1;
+                }, 250);
+            }
+
+            document.querySelectorAll('.hero-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+
+        function goToHeroSlide(index) {
+            showHeroSlide(index, false);
+            startHeroTimer();
+        }
+
+        function startHeroTimer() {
+            if (heroTimer) clearInterval(heroTimer);
+            if (heroSlides.length > 1) {
+                heroTimer = setInterval(() => {
+                    showHeroSlide((heroIndex + 1) % heroSlides.length, false);
+                }, 6000);
+            }
+        }
+
+        function createGameCard(game) {
+            return `
+                <div class="game-card" onclick="playGame(${game.id})">
+                    <div class="card-poster">
+                        <img src="${game.poster}" alt="${game.title}" loading="lazy">
+                        <div class="card-play-badge">
+                            <svg viewBox="0 0 24 24"><path d="M4.5 3.5V20.5L20.5 12L4.5 3.5Z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="card-info">
+                        <div class="card-title">${game.title}</div>
+                        <div class="card-category">${game.category}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRows() {
+            const trendingContainer = document.getElementById('row-trending');
+            const actionContainer = document.getElementById('row-action');
+            const strategyContainer = document.getElementById('row-strategy');
+
+            games.forEach(game => {
+                const cardHtml = createGameCard(game);
+                
+                // Logic to distribute games (simplified for demo)
+                if(game.category === 'trending') trendingContainer.innerHTML += cardHtml;
+                if(game.category === 'action') actionContainer.innerHTML += cardHtml;
+                if(game.category === 'strategy' || game.category === 'classic') strategyContainer.innerHTML += cardHtml;
+                
+                // Add everything to trending if the row is empty (fallback)
+                if (game.category !== 'trending' && trendingContainer.children.length < 3) {
+                     trendingContainer.innerHTML += cardHtml;
+                }
+            });
+        }
+
+        // --- Search Logic ---
+
+        const searchInput = document.getElementById('searchInput');
+        const mainView = document.getElementById('main-view');
+        const searchResults = document.getElementById('search-results');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            if (query.length > 0) {
+                mainView.classList.add('hidden');
+                searchResults.classList.add('active');
+                
+                const filteredGames = games.filter(game => game.title.toLowerCase().includes(query));
+                
+                if (filteredGames.length > 0) {
+                    searchResults.innerHTML = filteredGames.map(game => createGameCard(game)).join('');
+                    // Fix styling for grid items to look good in search view
+                    document.querySelectorAll('#search-results .game-card').forEach(el => {
+                        el.style.width = '100%'; 
+                    });
+                } else {
+                    searchResults.innerHTML = '<p style="text-align:center; width:100%; color: gray;">No games found matching "' + query + '"</p>';
+                }
+            } else {
+                resetHome();
+            }
+        });
+
+        function resetHome() {
+            searchInput.value = '';
+            mainView.classList.remove('hidden');
+            searchResults.classList.remove('active');
+        }
+
+        // --- Game Player Logic ---
+
+        function playGame(id) {
+            const game = games.find(g => g.id === id);
+            const modal = document.getElementById('gameModal');
+            const body = document.getElementById('modalBody');
+            
+            modal.style.display = "flex";
+            body.innerHTML = ''; // Clear previous
+
+            if (game.type === 'iframe') {
+                const attr = game.attributes ? game.attributes : '';
+                body.innerHTML = `<iframe src="${game.url}" ${attr} width="100%" height="100%" frameborder="0"></iframe>`;
+            } else if (game.type === 'script') {
+                // For script embeds, we inject the iframe code derived in the data object
+                body.innerHTML = game.code;
+            }
+        }
+
+        function closeGame() {
+            const modal = document.getElementById('gameModal');
+            const body = document.getElementById('modalBody');
+            
+            modal.style.display = "none";
+            body.innerHTML = ''; // Stop the game audio/video
+        }
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Sync main content clearance with the sidebar's hover-expanded state,
+        // so content only shifts over while the sidebar is actually wide (see
+        // the body.sidebar-expanded rules in the stylesheet), instead of
+        // permanently.
+        (function initSidebarExpandSync() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+            sidebar.addEventListener('mouseenter', () => document.body.classList.add('sidebar-expanded'));
+            sidebar.addEventListener('mouseleave', () => document.body.classList.remove('sidebar-expanded'));
+        })();
+// Initialize
+renderHero();
+renderRows();
+initRowScrollers();
+
+// --- Row Scroll Buttons (wired to pref-patch.css .scroll-btn styles) ---
+function initRowScrollers() {
+    document.querySelectorAll('.row-scroll-wrapper').forEach(wrapper => {
+        const track = wrapper.querySelector('.row-container');
+        const leftBtn = wrapper.querySelector('.scroll-btn.left-0');
+        const rightBtn = wrapper.querySelector('.scroll-btn.right-0');
+        if (!track || !leftBtn || !rightBtn) return;
+
+        const updateState = () => {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            const atStart = track.scrollLeft <= 4;
+            const atEnd = maxScroll <= 4 || track.scrollLeft >= maxScroll - 4;
+
+            leftBtn.classList.toggle('hidden', atStart);
+            rightBtn.classList.toggle('hidden', atEnd);
+            track.classList.toggle('at-left', atStart);
+            track.classList.toggle('at-right', atEnd);
+        };
+
+        leftBtn.addEventListener('click', () => {
+            track.scrollBy({ left: -track.clientWidth * 0.8, behavior: 'smooth' });
+        });
+        rightBtn.addEventListener('click', () => {
+            track.scrollBy({ left: track.clientWidth * 0.8, behavior: 'smooth' });
+        });
+
+        track.addEventListener('scroll', updateState, { passive: true });
+        window.addEventListener('resize', updateState);
+
+        updateState();
+    });
+}
+
+// --- MOBILE MORE DRAWER LOGIC ---
+function toggleMoreMenu() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+}
+
+// Close drawer when clicking anywhere outside
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    if (drawer && drawer.classList.contains('open')) {
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            moreBtn.classList.remove('active'); 
+        }
+    }
+}); </script>
+</body>
+</html>

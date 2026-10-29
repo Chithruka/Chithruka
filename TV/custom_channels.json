@@ -1,0 +1,58 @@
+[
+  {
+    "name": "The Buddhist TV",
+    "logo": "https://i.imgur.com/DUzOKWM.png",
+    "group": "Religion",
+    "country": "LK",
+    "url": "https://www.youtube.com/watch?v=uU36MCXGlrI",
+    "type": "embed"
+  },
+  {
+    "name": "Shraddha TV",
+    "logo": "https://www.shraddha.lk/wp-content/uploads/2024/10/shradaha-live-logo.webp",
+    "group": "Religion",
+    "country": "LK",
+    "url": "https://www.youtube.com/watch?v=WTcobTJIwv0",
+    "type": "embed"
+  },
+   {
+    "name": "Haritha TV",
+    "logo": "https://lakfreedom.info/images/tv/harithatv.jpg",
+    "group": "Religion",
+    "country": "LK",
+    "url": "https://www.youtube.com/watch?v=-0RAbVO0N9Q",
+    "type": "embed"
+  },
+  {
+    "name": "Supreme TV",
+    "logo": "https://tvsupreme.lk/wp-content/uploads/2025/10/Tv-Supreme-Logo-RGB-1536x1536.png",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://tvsupreme.lk/live/",
+    "type": "embed"
+  },
+  {
+    "name": "ITN TV",
+    "logo": "https://itn.lk/wp-content/uploads/2022/03/ITN-Logo.svg",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://itn.lk/live/",
+    "type": "embed"
+  },
+  {
+    "name": "TV Derana",
+    "logo": "https://derana.lk/storage/uploads/imgs/header/1/20240614084224.gif",
+    "group": "entertainment",
+    "country": "INT",
+    "url": "https://dyp5fjwik91fw.cloudfront.net/videos/210/hls/master.m3u8",
+    "type": "hls"
+  },
+  {
+    "name": "TNL TV",
+    "logo": "https://tnltv.lk/images/logos/logo/tnltv.png",
+    "group": "Sports",
+    "country": "INT",
+    "url": "https://tnltv.lk/live.html",
+    "type": "embed"
+  }
+]

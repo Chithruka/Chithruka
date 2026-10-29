@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Netflix - Live TV</title>
+    
+    <link href='https://chithruka.blogspot.com/favicon.ico' rel='shortcut icon' type='image/x-icon'/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/theme.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/player/styles/default/layouts/video.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/vidstack@^1.0.0/cdn/with-layouts/vidstack.js" type="module"></script>
+    
+    <link rel="stylesheet" href="../style.css?v=1">
+
+    <style>
+        /* --- DESKTOP SIDEBAR --- */
+        .sidebar { position: fixed; left: 0; top: 0; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; transition: width 0.3s ease; width: 64px; overflow: hidden; display: none; flex-direction: column; }
+        .sidebar:hover { width: 240px; }
+        .sidebar-header { height: 70px; display: flex; align-items: center; padding-left: 18px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 0 8px; width: 240px; }
+        .nav-link { display: flex; align-items: center; padding: 12px; border-radius: 12px; color: #9ca3af; text-decoration: none; transition: 0.3s; }
+        .nav-link i { font-size: 1.2rem; min-width: 30px; text-align: center; }
+        .nav-link .nav-text { margin-left: 15px; opacity: 0; white-space: nowrap; }
+        .sidebar:hover .nav-text { opacity: 1; }
+        .nav-link:hover, .nav-link.active { background: rgba(229, 9, 20, 0.1); color: #e50914; }
+
+        /* --- MOBILE NAVIGATION --- */
+        .mobile-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-wrapper { display: flex; width: 100%; justify-content: space-around; padding: 0; margin: 0; }
+        .mobile-item { list-style: none; flex: 1; padding: 0 4px; }
+        .mobile-item a, .mobile-item button { height: 58px; width: 100%; margin: 6px 0; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #9ca3af; transition: all 0.3s ease; background: transparent; border: none; cursor: pointer; }
+        .mobile-item.active a, .mobile-item.active button, .mobile-item a:hover, .mobile-item button:hover { color: #e50914; background: rgba(229, 9, 20, 0.1); }
+        .mobile-item.active a i, .mobile-item.active button i { transform: scale(1.15); }
+        .mobile-item span { font-size: 0; opacity: 0; transition: all 0.3s ease; }
+        .mobile-item.active span, .mobile-item:hover span { font-size: 12px; opacity: 1; margin-top: 4px; }
+
+        .nav-svg { width: 24px; height: 24px; display: block; fill: currentColor; transition: transform 0.2s ease; }
+        .sidebar-nav a, .mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .sidebar-nav a:hover .nav-svg, .mobile-nav a.active .nav-svg { transform: scale(1.1); }
+
+        @media (min-width: 768px) { .sidebar { display: flex; } .mobile-nav { display: none; } body { padding-left: 64px; } }
+        @media (max-width: 767px) { body { padding-bottom: 70px; } }
+
+        /* --- VCR VFX & Player Overrides --- */
+        media-player { width: 100% !important; height: 100% !important; border-radius: 0.75rem; overflow: hidden; background-color: #000; --media-brand: #e50914; --media-focus-ring-color: #e50914; }
+        
+        .scanlines, .noise, .vignette { display: none; pointer-events: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; border-radius: 0.75rem; }
+        .retro-mode .scanlines { display: block; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scrollLines 10s linear infinite; }
+        .retro-mode .noise { display: block; opacity: 0.05; background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAABMTExERERmZmYzMzPMzMxmoqmdAAAACHRSTlMAMwA3M2YzMzNmIzM3AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAiklEQVQ4jWNgwA0YzQgAPQMmrkG0kQ5B0QYSQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BBEG0kM0QYyQ0cQ6BAAAM+uD63F1W5iAAAAAElFTkSuQmCC'); animation: noiseAnim 0.2s steps(4) infinite; }
+        .retro-mode .vignette { display: block; box-shadow: inset 0 0 150px rgba(0,0,0,0.9); }
+        .retro-mode #screen-wrapper video, .retro-mode #screen-wrapper iframe { filter: contrast(1.2) brightness(1.1) saturate(1.1) sepia(0.2); }
+        @keyframes scrollLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
+        @keyframes noiseAnim { 0% { transform: translate(0,0); } 100% { transform: translate(5%,0); } }
+
+        .recording-pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Custom scrollbar hides */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        #mobile-more-drawer {
+    position: fixed; bottom: 70px; left: 0; width: 100%;
+    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 0 0;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9998; padding: 25px 20px 35px 20px; visibility: hidden;
+}
+#mobile-more-drawer.open { transform: translateY(0); visibility: visible; }
+.drawer-link {
+    display: flex; align-items: center; padding: 14px 18px; gap: 12px; border-radius: 12px;
+    color: #e5e7eb; text-decoration: none; font-weight: 600; background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s;
+}
+.drawer-link:hover, .drawer-link:active { background: rgba(229, 9, 20, 0.15); border-color: rgba(229, 9, 20, 0.3); color: #fff; }
+
+@media (min-width: 768px) { #mobile-more-drawer { display: none; } }
+
+        /* --- Horizontal channel posters (scoped to this page only) --- */
+        .tv-card { position: relative; flex-shrink: 0; cursor: pointer; width: 200px; }
+        @media (min-width: 768px) { .tv-card { width: 240px; } }
+        .tv-poster {
+            aspect-ratio: 16 / 9;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0) 60%),
+                linear-gradient(160deg, #2b2f3a 0%, #1c1e26 55%, #131419 100%);
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.45);
+            backdrop-filter: blur(12px) saturate(140%);
+            -webkit-backdrop-filter: blur(12px) saturate(140%);
+            transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+        }
+        .tv-card:hover .tv-poster { border-color: rgba(255,255,255,0.22); transform: translateY(-3px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(0,0,0,0.2), 0 18px 32px rgba(0,0,0,0.6); }
+        .tv-poster img { transition: transform .3s ease; position: relative; z-index: 1; }
+        .tv-card:hover .tv-poster img { transform: scale(1.08); }
+        .tv-play-overlay { opacity: 0; transition: opacity .3s ease; }
+        .tv-card:hover .tv-play-overlay { opacity: 1; }
+
+        /* Beta-style corner badge (matches Hulu "BETA" tag) */
+        .tv-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+            background: rgba(210, 213, 219, 0.95);
+            color: #1a1a1a;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            padding: 4px 7px 3px;
+            border-radius: 0 0.9rem 0 0.6rem;
+            text-transform: uppercase;
+        }
+
+        /* --- Now Streaming hero --- */
+        #tv-hero { margin: 8px 0 28px; }
+        .tv-hero-panel { background: hsl(0 0% 8% / .85); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; cursor: pointer; transition: border-color .3s ease; }
+        .tv-hero-panel:hover { border-color: rgba(229,9,20,0.4); }
+        .tv-hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #9ca3af; }
+        .tv-hero-row { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+        .tv-hero-channel { display: flex; align-items: center; justify-content: center; height: 60px; max-width: 220px; }
+        .tv-hero-channel img { max-height: 60px; max-width: 220px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+        .tv-hero-channel-name { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: 0.02em; line-height: 1.2; }
+        .tv-hero-on { font-size: 1.05rem; font-style: italic; color: #6b7280; font-weight: 600; }
+        .tv-hero-streamer img { height: 36px; object-fit: contain; }
+        @media (min-width: 768px) {
+            .tv-hero-panel { padding: 34px 24px; }
+            .tv-hero-channel { height: 80px; max-width: 300px; }
+            .tv-hero-channel img { max-height: 80px; max-width: 300px; }
+            .tv-hero-channel-name { font-size: 2.25rem; }
+            .tv-hero-on { font-size: 1.35rem; }
+            .tv-hero-streamer img { height: 52px; }
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-200 font-sans overflow-x-hidden">
+<svg style="width:0;height:0;position:absolute" aria-hidden="true"><filter id="footer-noise"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="2" seed="1" stitchTiles="stitch" result="turbulence"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="turbulence" scale="30" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></svg>
+
+<div id="page-background" class="fixed inset-0 bg-black z-[-1]"></div>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="menu-icon">
+            <svg stroke="#e50914" fill="#e50914" stroke-width="0" viewBox="0 0 24 24" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path>
+            </svg>
+        </div>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="../index.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span class="nav-text">Home</span></a></li>
+        <li><a href="../Anime/anime.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span class="nav-text">Anime</span></a></li>
+        <li><a href="../download.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg><span class="nav-text">Dubbings</span></a></li>
+        <li><a href="#" class="nav-link active"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span class="nav-text">Live TV</span></a></li>
+        <li><a href="../Sports/sports.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span class="nav-text">Sports</span></a></li>
+        <li><a href="../Games/Games.html" class="nav-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
+    <path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/>
+</svg><span class="nav-text">Games</span></a></li>
+        <li><a href="../Radio/radio.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span class="nav-text">Radio</span></a></li>
+        <li><a href="../Books/Books.html" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span class="nav-text">Books</span></a></li>
+        <li style="cursor: pointer;"><a onclick="openFilterModal()" class="nav-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg><span class="nav-text">Search Filters</span></a></li>
+        </ul>
+</aside>
+
+<nav class="mobile-nav">
+    <ul class="nav-wrapper">
+        <li class="mobile-item"><a href="../index.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg><span>Home</span></a></li>
+        <li class="mobile-item"><a href="../Anime/anime.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg><span>Anime</span></a></li>
+        <li class="mobile-item active"><a href="tv.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg><span>Live TV</span></a></li>
+        <li class="mobile-item"><a href="../Sports/sports.html"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg><span>Sports</span></a></li>
+        <li class="mobile-item" id="more-menu-btn">
+            <button onclick="toggleMoreMenu()">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M16 18V20H5V18H16ZM21 11V13H3V11H21ZM19 4V6H8V4H19Z"></path></svg><span>More</span>
+            </button>
+        </li>
+    </ul>
+</nav>
+<div id="mobile-more-drawer">
+    <div class="drawer-header">
+        <h3 class="text-white font-bold px-2 border-l-4 border-[#e50914] pl-3 text-lg">EXPLORE MORE</h3>
+    </div>
+    <div class="flex flex-col mt-4 gap-2">
+        <a href="../download.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M12 20H20V22H12C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 14.2512 21.2561 16.3287 20.0007 18H17.2916C18.9525 16.5341 20 14.3894 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10C10.8954 10 10 9.10457 10 8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8C14 9.10457 13.1046 10 12 10ZM8 14C6.89543 14 6 13.1046 6 12C6 10.8954 6.89543 10 8 10C9.10457 10 10 10.8954 10 12C10 13.1046 9.10457 14 8 14ZM16 14C14.8954 14 14 13.1046 14 12C14 10.8954 14.8954 10 16 10C17.1046 10 18 10.8954 18 12C18 13.1046 17.1046 14 16 14ZM12 18C10.8954 18 10 17.1046 10 16C10 14.8954 10.8954 14 12 14C13.1046 14 14 14.8954 14 16C14 17.1046 13.1046 18 12 18Z"></path></svg> <span>Dubbings</span></a>
+        <a href="../Games/Games.html" class="drawer-link"><svg viewBox="0 0 512 512" fill="currentColor" class="nav-svg" xmlns="http://www.w3.org/2000/svg">
+    <path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/>
+</svg> <span>Games</span></a>
+        <a href="../Radio/radio.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg> <span>Radio</span></a>
+        <a href="../Books/Books.html" class="drawer-link"><svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg> <span>Books</span></a>
+    </div>
+</div>
+<div class="container mx-auto px-4">
+    
+    <nav class="navbar relative flex items-center justify-between py-4 mb-4 z-50">
+        <img oncontextmenu="return false;" ondragstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer" class="logo-img h-[40px] md:h-[50px] cursor-pointer" onclick="location.href='tv.html';">
+
+        <div class="search-group flex items-center flex-grow max-w-xl mx-4 gap-2">
+            <button onclick="openFilterModal()" class="filter-btn bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#e50914] text-gray-400 hover:text-white rounded-full p-2.5 transition flex-shrink-0" title="Filter Content">
+                <svg class="svg-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            </button>
+            <div class="relative w-full">
+                <input type="text" id="search-input" class="glass-input w-full bg-black/40 border border-white/10 rounded-full px-5 py-2.5 text-white focus:outline-none focus:border-[#e50914] transition-all" placeholder="Search Channels..." onkeyup="applyFilters()">
+                <button id="search-submit-btn" title="Search" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:0 0;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;transition:color .2s" onmouseenter='this.style.color="#fff"' onmouseleave='this.style.color="#9ca3af"'>
+                    <svg id="search-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #c0b9c0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+            </div>
+        </div>
+        <div id="user-section" class="relative">
+            <img id="user-avatar" src="" class="user-avatar" onclick="toggleUserMenu()">
+            <div id="user-menu" class="user-menu">
+                <div class="user-menu-item" onclick="openAvatarModal()">
+                    <svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;display:inline-block;vertical-align:-2px"><path fill="currentColor" d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"></path></svg>
+                    Change Avatar
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="tv-hero">
+        <div class="tv-hero-panel" id="tv-hero-panel" onclick="tuneHeroChannel()" title="Click to watch this channel">
+            <div class="tv-hero-eyebrow">Now Streaming</div>
+            <div class="tv-hero-row">
+                <div class="tv-hero-channel">
+                    <img id="hero-channel-logo" src="" alt="" class="hidden" onerror="handleHeroLogoError()">
+                    <span id="hero-channel-name" class="tv-hero-channel-name hidden"></span>
+                </div>
+                <span class="tv-hero-on">on</span>
+                <div class="tv-hero-streamer">
+                    <img oncontextmenu="return false;" ondragstart="return false;" src="../Attachments/Chithruka%20Streamer%20Logo.svg" alt="Chithruka Streamer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="player-section" class="mb-8 mt-2 hidden animate-fade-in">
+        <div class="glass-panel p-4 md:p-6 rounded-2xl border border-white/10 shadow-2xl relative">
+            <h2 id="current-channel-display" class="text-xl md:text-2xl font-bold mb-4 text-white border-l-4 border-[#e50914] pl-3 tracking-wide">NO SIGNAL</h2>
+            
+            <div id="screen-wrapper" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+                <div id="rec-overlay" class="blink hidden absolute top-4 right-6 text-red-500 font-bold text-xl drop-shadow-md z-20">● REC</div>
+                <div class="scanlines"></div>
+                <div class="noise"></div>
+                <div class="vignette"></div>
+                
+                <media-player id="tv-player" class="w-full h-full" autoplay muted playsinline crossorigin>
+                    <media-provider></media-provider>
+                    <media-video-layout></media-video-layout>
+                </media-player>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
+                <button id="vfx-btn" onclick="toggleVFX()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg> <span>VCR FX: OFF</span>
+                </button>
+                <button id="rec-btn" onclick="toggleRecording()" class="flex items-center gap-2 bg-white/5 hover:bg-red-900/40 border border-white/10 hover:border-red-500 text-gray-300 hover:text-white font-semibold py-2 px-5 rounded-lg transition-all">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg text-red-500" style="width:16px;height:16px"><circle cx="12" cy="12" r="8"></circle></svg> <span id="rec-text">Record</span>
+                </button>
+                <button id="fs-btn" onclick="toggleFullscreen()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold py-2 px-5 rounded-lg transition-all ml-auto">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M4 4H10V6H6V10H4V4ZM20 4V10H18V6H14V4H20ZM4 20V14H6V18H10V20H4ZM20 20H14V18H18V14H20V20Z"></path></svg> <span>Fullscreen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-results-section" class="mb-12 relative hidden">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Search Results
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('search-results-container', -300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <div id="search-results-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4"></div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('search-results-container', 300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="m3u8-section" class="mb-12 relative">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-[#e50914] pl-3">
+            Global Channels (M3U8)
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('m3u8-container', -300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <div id="m3u8-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4">
+                <div class="text-gray-500 text-sm p-4">Scanning frequencies...</div>
+            </div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('m3u8-container', 300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="embed-section" class="mb-12 relative">
+        <h2 class="text-xl md:text-2xl font-bold mb-6 text-white flex items-center px-2 section-title border-l-4 border-blue-500 pl-3">
+            Premium Networks (Embedded)
+        </h2>
+        <div class="relative group px-2">
+            <button class="scroll-btn left-0 -ml-4" onclick="scrollContainer('embed-container', -300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <div id="embed-container" class="flex flex-nowrap gap-4 md:gap-5 overflow-x-auto pb-8 scrollbar-hide scroll-smooth py-4">
+                <div class="text-gray-500 text-sm p-4">Scanning frequencies...</div>
+            </div>
+            <button class="scroll-btn right-0 -mr-4" onclick="scrollContainer('embed-container', 300)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<footer class="relative backdrop-blur-xl border-t border-white/5 mt-1 pt-16 pb-8 z-10" style="overflow:hidden;background-color:#0a0a0a"><div class="footer-noise-bg" style="position:absolute;inset:-5%;width:110%;height:110%;filter:url(#footer-noise);background:radial-gradient(circle at 50% 100%, #e50914 0%, #4a0409 45% 65%, #000000 85%) no-repeat center / auto;pointer-events:none;z-index:0"></div><div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/50 to-transparent" style="z-index:1"></div><div class="container mx-auto px-6 max-w-7xl relative" style="z-index:1"><div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12"><div class="flex flex-col items-center md:items-start text-center md:text-left"><img loading="lazy" src="../Attachments/Chithruka%20Signature.svg" alt="Netflix Signature" class="h-12 mb-4"><p class="text-white text-sm mb-6 max-w-xs leading-relaxed">A full world of entertainment in one place – series, movies, live events, games, and podcasts.</p></div><div class="flex flex-col items-center md:items-start"><h3 class="text-white font-bold mb-6 tracking-widest uppercase text-xs border-b-2 border-red-600 pb-1">Discover</h3><ul class="space-y-3 text-sm text-white w-full text-center md:text-left"><li><a href="https://help.netflix.com/en/node/2064" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Maturity ratings</a></li><li><a href="../credits.html" class="hover:text-red-500 transition-colors flex items-center justify-center md:justify-start gap-2">Disclaimer</a></li></ul></div></div><div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6"><p class="text-xs text-white font-medium">&copy;<span id="footer-year"></span> Netflix<span id="footer-country"></span>. All Rights Reserved.</p><div class="flex gap-4"><a onclick='window.scrollTo({top:0,behavior:"smooth"})' class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-[#e50914] hover:text-white hover:border-[#e50914] transition-all duration-300"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160zm160 352l-160-160c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 329.4 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3z"/></svg></a></div></div></div></footer>
+
+<div id="filter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-sm w-full relative border border-white/10 shadow-2xl bg-[#111]">
+        <button onclick="closeFilterModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-xl"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true" style="width:1em;height:1em"><path fill="currentColor" d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192.5 301.3 329.9 438.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256 375.1 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7 55.1 73.4z"/></svg></button>
+        <h3 class="text-xl font-bold mb-4 text-center text-white border-b border-white/10 pb-2">Filter Channels</h3>
+        
+        <div class="flex flex-col gap-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-bold tracking-wider uppercase">Country</label>
+                <select id="country-filter" class="glass-select w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white" onchange="applyFilters(); closeFilterModal();">
+                    <option value="all">All Countries</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 font-bold tracking-wider uppercase">Category</label>
+                <select id="category-filter" class="glass-select w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white" onchange="applyFilters(); closeFilterModal();">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+            
+            <div class="flex gap-3 mt-4">
+                <button onclick="resetFilters()" class="flex-1 p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-bold transition">
+                    Reset
+                </button> 
+                <button onclick="closeFilterModal()" class="flex-1 p-3 bg-[#E50914] hover:bg-[#B20710] rounded-lg text-white font-bold transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- UI HELPERS & LAZY LOADING STATE ---
+    const CHUNK_SIZE = 10; // Load 30 channels per batch to prevent browser freezing
+    let channelLists = { m3u8: [], embed: [], search: [] };
+    let renderIndices = { m3u8: 0, embed: 0, search: 0 };
+
+    window.scrollContainer = function(id, amount) {
+        document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
+    }
+
+    function renderChunk(listKey, container) {
+        const list = channelLists[listKey];
+        if (!list || !container) return;
+
+        const startIndex = renderIndices[listKey];
+        const endIndex = Math.min(startIndex + CHUNK_SIZE, list.length);
+
+        if (startIndex >= endIndex) return; // No more items to render
+
+        const chunkHTML = list.slice(startIndex, endIndex).map(generateCardHTML).join('');
+        container.insertAdjacentHTML('beforeend', chunkHTML);
+        renderIndices[listKey] = endIndex;
+        
+        updateScrollButtons(container);
+    }
+
+    function updateScrollButtons(container) {
+        if (!container) return;
+        const leftBtn = container.previousElementSibling;
+        const rightBtn = container.nextElementSibling;
+        const tolerance = 5;
+        const scrollThreshold = 500; // pixels from the end before loading the next chunk
+
+        // Map container ID to listKey
+        let listKey = null;
+        if (container.id === 'm3u8-container') listKey = 'm3u8';
+        else if (container.id === 'embed-container') listKey = 'embed';
+        else if (container.id === 'search-results-container') listKey = 'search';
+
+        // Lazy Loading Trigger (Infinite Scroll)
+        if (listKey && (container.scrollWidth - (container.scrollLeft + container.clientWidth) <= scrollThreshold)) {
+            renderChunk(listKey, container);
+        }
+
+        if (leftBtn && leftBtn.classList.contains('scroll-btn')) {
+            if (container.scrollLeft <= tolerance) leftBtn.classList.add('hidden');
+            else leftBtn.classList.remove('hidden');
+        }
+
+        if (rightBtn && rightBtn.classList.contains('scroll-btn')) {
+            let isFullyRendered = listKey ? (renderIndices[listKey] >= channelLists[listKey].length) : true;
+            
+            if (container.scrollWidth <= container.clientWidth) rightBtn.classList.add('hidden');
+            else if (isFullyRendered && (container.scrollLeft + container.clientWidth >= container.scrollWidth - tolerance)) {
+                rightBtn.classList.add('hidden');
+            }
+            else rightBtn.classList.remove('hidden');
+        }
+
+        // Toggle fade-mask state classes (see .overflow-x-auto.scrollbar-hide in perf-patch.css)
+        const atLeft = container.scrollLeft <= tolerance;
+        const atRight = container.scrollWidth <= container.clientWidth ||
+            container.scrollLeft + container.clientWidth >= container.scrollWidth - tolerance;
+        container.classList.toggle('at-left', atLeft);
+        container.classList.toggle('at-right', atRight);
+    }
+
+    // Attach scroll listeners to all containers
+    document.querySelectorAll('.overflow-x-auto').forEach(container => {
+        container.addEventListener('scroll', () => updateScrollButtons(container));
+    });
+
+    // Mobile Nav & Modal Logic
+    const filterModal = document.getElementById('filter-modal');
+    window.openFilterModal = () => { filterModal.classList.remove('hidden'); toggleMobileNav(true); };
+    window.closeFilterModal = () => { filterModal.classList.add('hidden'); toggleMobileNav(false); };
+    window.toggleMobileNav = function(hide) {
+        const nav = document.querySelector('.mobile-nav');
+        if (nav) {
+            if (hide) nav.classList.add('nav-hidden-down');
+            else nav.classList.remove('nav-hidden-down');
+        }
+    };
+
+    // --- IPTV LOGIC ---
+    const player = document.getElementById('tv-player');
+
+    const PLAYLIST_SOURCES = [
+        'https://chithruka.github.io/Chithruka/TV/playlist.m3u8'
+    ];
+    const API_SOURCES = [
+        'https://api.cdn-live.tv/api/v1/channels/?user=cdnlivetv&plan=free',
+        'custom_channels.json'
+    ];
+
+    const screenWrapper = document.getElementById('screen-wrapper');
+    const playerSection = document.getElementById('player-section');
+    const channelDisplay = document.getElementById('current-channel-display');
+    const searchResultsSection = document.getElementById('search-results-section');
+
+    let allChannels = [];
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isRecording = false;
+    let currentChannelName = "";
+    let heroChannel = null;
+
+    // Bootstrap
+    Promise.allSettled([
+        ...PLAYLIST_SOURCES.map(url => fetch(url).then(res => res.text()).then(parseM3U)),
+        ...API_SOURCES.map(url => fetch(url).then(res => res.json()).then(parseJSONAPI))
+    ]).then(results => {
+        let combined = [];
+        results.forEach(r => { if (r.status === 'fulfilled') combined = [...combined, ...r.value]; });
+        allChannels = combined.map((ch, idx) => ({ ...ch, id: `ch-${idx}` })); // Assign unique IDs
+
+        populateDropdowns();
+        renderMainSections();
+        renderHeroChannel();
+    });
+
+    // "Now Streaming" hero — shows a random channel logo only (channels without a logo are skipped)
+    function renderHeroChannel(attemptsLeft = 5) {
+        const heroEl = document.getElementById('tv-hero');
+        const logoImg = document.getElementById('hero-channel-logo');
+        const nameSpan = document.getElementById('hero-channel-name');
+        if (!heroEl || !logoImg || !nameSpan) return;
+
+        const withLogo = allChannels.filter(c => c.logo);
+        if (!withLogo.length) {
+            heroEl.classList.add('hidden');
+            return;
+        }
+
+        heroChannel = withLogo[Math.floor(Math.random() * withLogo.length)];
+        nameSpan.classList.add('hidden');
+        logoImg.dataset.retriesLeft = attemptsLeft;
+        logoImg.src = heroChannel.logo;
+        logoImg.classList.remove('hidden');
+        heroEl.classList.remove('hidden');
+    }
+
+    window.handleHeroLogoError = function() {
+        const logoImg = document.getElementById('hero-channel-logo');
+        const retriesLeft = parseInt(logoImg.dataset.retriesLeft || '0', 10) - 1;
+        if (retriesLeft > 0) {
+            renderHeroChannel(retriesLeft); // this channel's logo is broken — try another logo-having channel
+        } else {
+            document.getElementById('tv-hero').classList.add('hidden');
+        }
+    };
+
+    window.tuneHeroChannel = function() {
+        if (heroChannel) playStream(heroChannel.id);
+    };
+
+    // Parsers
+    function parseM3U(content) {
+        const lines = content.split('\n');
+        const channels = [];
+        let curr = { name: "Unknown Channel", group: "General", country: "INT" };
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const logo = line.match(/tvg-logo="([^"]*)"/);
+                const group = line.match(/group-title="([^"]*)"/);
+                const country = line.match(/tvg-country="([^"]*)"/);
+                const parts = line.split(',');
+                
+                curr = {
+                    name: parts[parts.length - 1]?.trim() || "Unknown Channel",
+                    logo: logo ? logo[1] : null,
+                    group: group ? group[1] : 'General',
+                    country: country ? country[1] : 'INT',
+                };
+            } else if (line.startsWith('http')) {
+                curr.url = line;
+                curr.type = line.includes('youtube.com') ? 'embed' : 'm3u8';
+                channels.push(curr);
+                curr = { name: "Unknown Channel", group: "General", country: "INT" };
+            }
+        });
+        return channels;
+    }
+
+    function parseJSONAPI(data) {
+        const channels = [];
+        let list = Array.isArray(data) ? data : (data.channels || data.data || data.results || []);
+        
+        list.forEach(item => {
+            let streamUrl = item.url || item.stream_url || item.link || item.hls || item.stream;
+            if (!streamUrl) return; 
+            let type = item.type || ((streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) ? 'm3u8' : 'embed');
+            
+            // Comprehensive check for various logo/image keys used by different APIs
+            let logoUrl = item.logo || item.icon || item.tvg_logo || item.picture || item.image || item.thumbnail || item.logo_url || (item.tvg && item.tvg.logo) || null;
+
+            channels.push({
+                name: item.name || item.title || "Unknown Channel",
+                logo: logoUrl,
+                group: item.group || item.category || 'General',
+                country: item.country || 'INT',
+                url: streamUrl,
+                type: type
+            });
+        });
+        return channels;
+    }
+
+    function extractYouTubeId(url) {
+        // Standard video links: watch?v=, youtu.be/, /v/, /e/, /embed/
+        const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+        if (ytMatch && ytMatch[1]) return ytMatch[1];
+
+        // NOTE: handle-based links (youtube.com/@name or youtube.com/@name/live), bare
+        // channel homepages, and youtube.com/channel/UCxxxx "live" pages can't be resolved
+        // to a single playable video ID client-side without a server-side YouTube Data API
+        // call, so these are left unresolved and caught by the fallback UI in playStream().
+        return null;
+    }
+
+    // Rendering Cards
+    function generateCardHTML(channel) {
+        const isHLS = channel.type === 'm3u8';
+        const badgeText = isHLS ? 'HLS' : 'EMBED';
+        const logo = channel.logo || '../Attachments/TV-logo.png';
+
+        return `
+            <div class="tv-card" onclick="playStream('${channel.id}')">
+                <div class="tv-poster">
+                    <div class="tv-badge">${badgeText}</div>
+                    
+                    <img src="${logo}" class="max-w-full max-h-full object-contain filter drop-shadow-md" loading="lazy" onerror="this.src='../Attachments/TV-logo.png'">
+                    
+                    <div class="tv-play-overlay absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="text-white drop-shadow-lg" style="width:2.5rem;height:2.5rem"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM10 8.64L15.27 12L10 15.36V8.64Z"></path></svg>
+                    </div>
+                </div>
+                <div class="card-body mt-2 px-1">
+                    <div class="card-title text-white font-bold text-sm truncate" title="${channel.name}">${channel.name}</div>
+                    <div class="card-meta text-[11px] text-gray-400 mt-0.5 truncate uppercase tracking-wide">${channel.group} • ${channel.country}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMainSections() {
+        const m3u8Container = document.getElementById('m3u8-container');
+        const embedContainer = document.getElementById('embed-container');
+        
+        channelLists.m3u8 = allChannels.filter(c => c.type === 'm3u8');
+        channelLists.embed = allChannels.filter(c => c.type === 'embed');
+
+        // Clear containers and reset indices
+        m3u8Container.innerHTML = '';
+        embedContainer.innerHTML = '';
+        renderIndices.m3u8 = 0;
+        renderIndices.embed = 0;
+
+        // Render Initial Chunks
+        renderChunk('m3u8', m3u8Container);
+        renderChunk('embed', embedContainer);
+    }
+
+    // Search and Filters
+    function populateDropdowns() {
+        const countrySelect = document.getElementById('country-filter');
+        const categorySelect = document.getElementById('category-filter');
+        
+        const countries = [...new Set(allChannels.map(c => c.country))].filter(Boolean).sort();
+        const categories = [...new Set(allChannels.map(c => c.group))].filter(Boolean).sort();
+        
+        countries.forEach(c => countrySelect.innerHTML += `<option value="${c}">${c.toUpperCase()}</option>`);
+        categories.forEach(c => categorySelect.innerHTML += `<option value="${c}">${c}</option>`);
+    }
+
+    window.applyFilters = function() {
+        const sVal = document.getElementById('search-input').value.toLowerCase();
+        const cVal = document.getElementById('country-filter').value;
+        const gVal = document.getElementById('category-filter').value;
+
+        if (sVal === '' && cVal === 'all' && gVal === 'all') {
+            searchResultsSection.classList.add('hidden');
+            return;
+        }
+
+        channelLists.search = allChannels.filter(ch => {
+            const country = ch.country || 'INT';
+            const group = ch.group || 'General';
+            const name = ch.name || '';
+            return (cVal === 'all' || country === cVal) &&
+                   (gVal === 'all' || group === gVal) &&
+                   (name.toLowerCase().includes(sVal));
+        });
+
+        const container = document.getElementById('search-results-container');
+        
+        if (channelLists.search.length === 0) {
+            container.innerHTML = '<div class="text-gray-400 p-4 w-full text-center">No channels found matching your criteria.</div>';
+        } else {
+            container.innerHTML = ''; // Clear prior results
+            renderIndices.search = 0; // Reset index
+            renderChunk('search', container);
+        }
+        
+        searchResultsSection.classList.remove('hidden');
+        updateScrollButtons(container);
+        
+        if (sVal === '') {
+            searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    window.resetFilters = function() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('country-filter').value = 'all';
+        document.getElementById('category-filter').value = 'all';
+        applyFilters();
+        closeFilterModal();
+    }
+
+    // Playback
+    window.playStream = function(id) {
+        const channel = allChannels.find(c => c.id === id);
+        if (!channel) return;
+
+        currentChannelName = channel.name;
+        channelDisplay.innerText = "Tuned: " + channel.name;
+        
+        if(isRecording) stopRecording();
+
+        playerSection.classList.remove('hidden');
+        playerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (channel.type === 'embed') {
+            const ytId = extractYouTubeId(channel.url);
+
+            // If we can't resolve a single video ID (e.g. a channel handle/live page),
+            // Vidstack's YouTube provider has nothing playable to load.
+            if (!ytId) {
+                console.warn('Cannot embed this channel (no video ID resolvable):', channel.url);
+                player.src = '';
+                channelDisplay.innerHTML = `Tuned: ${channel.name} — <span class="text-red-400">can't embed this channel directly.</span> <a href="${channel.url}" target="_blank" rel="noopener" class="underline text-blue-400">Open on YouTube</a>`;
+                return;
+            }
+
+            // Vidstack plays YouTube natively inside the same player — no separate iframe needed.
+            player.src = `youtube/${ytId}`;
+        } else {
+            player.src = { src: channel.url, type: 'application/x-mpegurl' };
+        }
+
+        player.play().catch(e => console.log("Stream blocked or requires interaction."));
+    };
+
+    // VFX & Controls
+    window.toggleVFX = function() {
+        screenWrapper.classList.toggle('retro-mode');
+        const btn = document.getElementById('vfx-btn');
+        const isOn = screenWrapper.classList.contains('retro-mode');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" class="nav-svg" style="width:16px;height:16px"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg> <span>VCR FX: ${isOn ? 'ON' : 'OFF'}</span>`;
+        if(isOn) {
+            btn.classList.add('border-red-500', 'text-white');
+        } else {
+            btn.classList.remove('border-red-500', 'text-white');
+        }
+    };
+
+    window.toggleFullscreen = function() {
+        const container = document.getElementById('screen-wrapper');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => console.error(err));
+        } else {
+            document.exitFullscreen();
+        }
+    };
+
+    // Recording (Video.js only)
+    window.toggleRecording = function() {
+        if (!document.querySelector('#screen-wrapper video')) {
+            alert("Recording is not supported for YouTube channels due to browser security restrictions.");
+            return;
+        }
+        if (!isRecording) startRecording();
+        else stopRecording();
+    };
+
+    function startRecording() {
+        const rawVideo = document.querySelector('#screen-wrapper video');
+        if (!rawVideo || rawVideo.paused) { alert("No active video stream to record!"); return; }
+        
+        let stream;
+        try { stream = rawVideo.captureStream ? rawVideo.captureStream() : rawVideo.mozCaptureStream(); } 
+        catch (e) { alert("CORS restriction: This stream cannot be recorded locally."); return; }
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = saveRecording;
+        mediaRecorder.start();
+        
+        isRecording = true;
+        document.getElementById('rec-text').innerText = "Stop REC";
+        document.getElementById('rec-btn').classList.add('recording-pulse');
+        document.getElementById('rec-overlay').classList.remove('hidden');
+    }
+
+    function stopRecording() {
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('rec-text').innerText = "Record";
+        document.getElementById('rec-btn').classList.remove('recording-pulse');
+        document.getElementById('rec-overlay').classList.add('hidden');
+    }
+
+    function saveRecording() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        let safeName = currentChannelName.replace(/[^a-zA-Z0-9]/g, "_") || "Live_TV";
+        a.href = url;
+        a.download = `${safeName}_${new Date().getTime()}.webm`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    }
+    // Function to toggle the drawer
+window.toggleMoreMenu = function() {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    
+    drawer.classList.toggle('open');
+    moreBtn.classList.toggle('active');
+};
+
+document.addEventListener('click', function(e) {
+    const drawer = document.getElementById('mobile-more-drawer');
+    const moreBtn = document.getElementById('more-menu-btn');
+    if (drawer && drawer.classList.contains('open')) {
+        if (!drawer.contains(e.target) && !moreBtn.contains(e.target)) {
+            drawer.classList.remove('open');
+            moreBtn.classList.remove('active'); 
+        }
+    }
+});
+</script>
+
+<script>document.addEventListener("DOMContentLoaded",()=>{const y=document.getElementById("footer-year");if(y)y.textContent=new Date().getFullYear();});</script>
+
+<style>
+  #avatarModalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:100000}
+  #avatarModalOverlay.active{display:flex}
+  @media (min-width:640px){#avatarModalOverlay{align-items:center}}
+  #avatarModalOverlay .modal-panel{background:#181b1e;width:100%;max-width:640px;max-height:90vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:amSlideUp .25s ease}
+  @media (min-width:640px){#avatarModalOverlay .modal-panel{border-radius:16px;max-height:85vh}}
+  @keyframes amSlideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+  #avatarModalOverlay .modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #2b2f33;flex-shrink:0}
+  #avatarModalOverlay .modal-header h2{margin:0;font-size:22px;font-weight:700;color:#eef0f2}
+  #avatarModalOverlay .back-btn{background:none;border:none;color:#eef0f2;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%}
+  #avatarModalOverlay .back-btn:hover{background:#1f2226}
+  #avatarModalOverlay .back-btn.visible{display:flex}
+  #avatarModalOverlay .close-btn{background:none;border:none;color:#9aa1a8;font-size:22px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  #avatarModalOverlay .close-btn:hover{background:#1f2226;color:#eef0f2}
+  #avatarModalOverlay .modal-body{overflow-y:auto;padding:20px 24px 32px}
+  #avatarModalOverlay .am-section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:#9aa1a8;text-transform:uppercase;margin:24px 0 14px}
+  #avatarModalOverlay .am-section-title:first-child{margin-top:0}
+  #avatarModalOverlay .am-avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  #avatarModalOverlay .am-avatar-item{aspect-ratio:1/1;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#1f2226;transition:border-color .15s ease,transform .15s ease}
+  #avatarModalOverlay .am-avatar-item img{width:100%;height:100%;object-fit:cover;display:block}
+  #avatarModalOverlay .am-avatar-item:hover{transform:scale(1.05)}
+  #avatarModalOverlay .am-avatar-item.selected{border-color:#e50914}
+  #avatarModalOverlay .am-see-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:18px;padding:10px;background:none;border:none;color:#9aa1a8;font-size:14px;font-weight:600;cursor:pointer}
+  #avatarModalOverlay .am-see-more-btn:hover{color:#eef0f2}
+  #avatarModalOverlay .am-see-more-btn svg{transition:transform .2s ease}
+  #avatarModalOverlay .am-see-more-btn.expanded svg{transform:rotate(180deg)}
+  #avatarModalOverlay .am-poster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:14px 14px}
+  #avatarModalOverlay .am-poster-item{cursor:pointer;text-align:left;width:100%;min-width:0;display:flex;flex-direction:column}
+  #avatarModalOverlay .am-poster-item .am-poster-thumb{width:100%;aspect-ratio:2/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#1f2226;transition:transform .15s ease;display:flex;align-items:center;justify-content:center}
+  #avatarModalOverlay .am-poster-item:hover .am-poster-thumb{transform:scale(1.03)}
+  #avatarModalOverlay .am-poster-item .am-poster-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+  #avatarModalOverlay .am-poster-item .am-poster-title{display:block;margin-top:8px;font-size:13px;color:#eef0f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #avatarModalOverlay .am-loading,#avatarModalOverlay .am-empty-state{color:#9aa1a8;font-size:14px;padding:20px 0;text-align:center}
+  #avatarModalOverlay .modal-body::-webkit-scrollbar{width:8px}
+  #avatarModalOverlay .modal-body::-webkit-scrollbar-thumb{background:#3a3f45;border-radius:4px}
+</style>
+<div class="modal-overlay" id="avatarModalOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <button class="back-btn" id="amBackBtn" aria-label="Back">&#8592;</button>
+      <h2 id="amModalTitle">Change avatar</h2>
+      <button class="close-btn" id="amCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="amModalBody">
+      <!-- content injected by JS -->
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const AVATAR_SETS_RAW = [
+    { path: "Classics", count: 21, previewCount: 12 },
+  { path: "movie-194", count: 10 },
+  { path: "tv-110316", count: 12 },
+  { path: "tv-82452", count: 12 },
+  { path: "tv-94605", count: 12 },
+  { path: "tv-249522", count: 6 },
+  { path: "tv-246246", count: 12 },
+  { path: "tv-42009", count: 7 },
+  { path: "tv-61222", count: 5 },
+  { path: "movie-740985", count: 3 },
+  { path: "tv-60585", count: 5 },
+  { path: "tv-91239", count: 16 },
+  { path: "tv-77169", count: 22 },
+  { path: "movie-484718", count: 13 },
+  { path: "tv-70523", count: 11 },
+  { path: "tv-254420", count: 9 },
+  { path: "tv-260592", count: 6 },
+  { path: "tv-106379", count: 27 },
+  { path: "tv-67070", count: 4 },
+  { path: "tv-94954", count: 13 },
+  { path: "tv-12998", count: 19 },
+  { path: "tv-95557", count: 10 },
+  { path: "tv-73375", count: 5 },
+  { path: "movie-803796", count: 11 },
+  { path: "tv-283304", count: 10 },
+  { path: "tv-63174", count: 7 },
+  { path: "tv-96677", count: 13 },
+  { path: "tv-71446", count: 10 },
+  { path: "tv-273240", count: 7 },
+  { path: "tv-76747", count: 7 },
+  { path: "tv-111110", count: 17 },
+  { path: "tv-12513", count: 15 },
+  { path: "tv-1424", count: 10 },
+  { path: "tv-100757", count: 7 },
+  { path: "tv-81356", count: 16 },
+  { path: "tv-93405", count: 20 },
+  { path: "tv-66732", count: 21 },
+  { path: "tv-76479", count: 14 },
+  { path: "tv-65494", count: 14 },
+  { path: "tv-135934", count: 7 },
+  { path: "tv-70796", count: 5 },
+  { path: "tv-219080", count: 9 },
+  { path: "tv-84773", count: 22 },
+  { path: "tv-90802", count: 7 },
+  { path: "tv-194766", count: 5 },
+  { path: "tv-71914", count: 7 },
+  { path: "tv-71912", count: 8 },
+  { path: "tv-86248", count: 6 },
+  { path: "tv-119051", count: 13 },
+  { path: "tv-126914", count: 12 },
+  { path: "movie-567189", count: 9 },
+  { path: "movie-1156593", count: 10 }
+  ];
+
+  function deriveSetMeta(raw){
+    const match = /^(movie|tv)-(\d+)$/.exec(raw.path);
+    if (match){
+      const [, mediaType, id] = match;
+      return { ...raw, key: raw.path, type: "title", tmdb: { id: Number(id), mediaType }, label: raw.label || raw.path };
+    }
+    return { ...raw, key: raw.path, type: "grid", label: raw.label || raw.path };
+  }
+
+  const AVATAR_SETS = AVATAR_SETS_RAW.map(deriveSetMeta);
+  const AM_TMDB_API_KEY = "3a73619bbb8fc6d47742d1b5b2b707b5";
+  const AM_TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w300";
+  const AVATAR_BASE_PATH = "../Attachments/Avatars";
+  const CUSTOM_AVATAR_KEY = "custom_avatar_path";
+
+  const overlay = document.getElementById("avatarModalOverlay");
+  const modalBody = document.getElementById("amModalBody");
+  const modalTitle = document.getElementById("amModalTitle");
+  const backBtn = document.getElementById("amBackBtn");
+  const closeBtn = document.getElementById("amCloseBtn");
+
+  let selectedAvatar = localStorage.getItem(CUSTOM_AVATAR_KEY) || null;
+
+  function buildImagePath(set, index){
+    return `${AVATAR_BASE_PATH}/${set.path}/${index}.png`;
+  }
+
+  function renderMainView(){
+    modalTitle.textContent = "Change avatar";
+    backBtn.classList.remove("visible");
+    modalBody.innerHTML = "";
+
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    const titleSets = AVATAR_SETS.filter(s => s.type === "title");
+
+    gridSets.forEach(set => {
+      const section = document.createElement("div");
+      const heading = document.createElement("div");
+      heading.className = "am-section-title";
+      heading.textContent = set.label;
+      section.appendChild(heading);
+      section.appendChild(buildAvatarGrid(set));
+      modalBody.appendChild(section);
+    });
+
+    if (titleSets.length){
+      const heading = document.createElement("div");
+      heading.className = "am-section-title";
+      heading.textContent = "From Shows & Movies";
+      modalBody.appendChild(heading);
+
+      const posterGrid = document.createElement("div");
+      posterGrid.className = "am-poster-grid";
+      modalBody.appendChild(posterGrid);
+
+      titleSets.forEach(set => {
+        const item = document.createElement("div");
+        item.className = "am-poster-item";
+        item.innerHTML = `
+          <div class="am-poster-thumb"><div class="am-loading">\u00b7\u00b7\u00b7</div></div>
+          <span class="am-poster-title">${set.label}</span>
+        `;
+        item.addEventListener("click", () => renderTitleView(set));
+        posterGrid.appendChild(item);
+
+        resolvePosterAndTitle(set).then(({ posterUrl, title }) => {
+          const thumb = item.querySelector(".am-poster-thumb");
+          thumb.innerHTML = posterUrl
+            ? `<img src="${posterUrl}" alt="${title}">`
+            : `<div class="am-loading">No image</div>`;
+          if (title) {
+            set.label = title;
+            item.querySelector(".am-poster-title").textContent = title;
+          }
+        });
+      });
+    }
+  }
+
+  function buildAvatarGrid(set, expanded){
+    const grid = document.createElement("div");
+    grid.className = "am-avatar-grid";
+
+    const previewCount = set.previewCount || set.count;
+    const showCount = expanded ? set.count : Math.min(previewCount, set.count);
+
+    for (let i = 1; i <= showCount; i++){
+      const item = document.createElement("div");
+      item.className = "am-avatar-item";
+      if (selectedAvatar === buildImagePath(set, i)) item.classList.add("selected");
+
+      const img = document.createElement("img");
+      img.src = buildImagePath(set, i);
+      img.alt = `${set.label} avatar ${i}`;
+      img.loading = "lazy";
+      item.appendChild(img);
+
+      item.addEventListener("click", () => selectAvatar(set, i, item));
+      grid.appendChild(item);
+    }
+
+    if (!expanded && set.count > previewCount){
+      const wrapper = document.createElement("div");
+      wrapper.appendChild(grid);
+
+      const seeMoreBtn = document.createElement("button");
+      seeMoreBtn.className = "am-see-more-btn";
+      seeMoreBtn.innerHTML = `See more
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>`;
+      seeMoreBtn.addEventListener("click", () => {
+        const newGrid = buildAvatarGrid(set, true);
+        wrapper.replaceWith(newGrid);
+      });
+      wrapper.appendChild(seeMoreBtn);
+      return wrapper;
+    }
+
+    return grid;
+  }
+
+  function applyAvatarToProfile(path){
+    const avatarImg = document.getElementById("user-avatar");
+    if (avatarImg){
+      avatarImg.src = path;
+      avatarImg.classList.remove("hidden");
+    }
+  }
+
+  function selectAvatar(set, index, el){
+    selectedAvatar = buildImagePath(set, index);
+    localStorage.setItem(CUSTOM_AVATAR_KEY, selectedAvatar);
+    document.querySelectorAll(".am-avatar-item.selected").forEach(n => n.classList.remove("selected"));
+    el.classList.add("selected");
+    applyAvatarToProfile(selectedAvatar);
+    if (typeof showMessage === "function") showMessage("Avatar updated!");
+  }
+
+  function renderTitleView(set){
+    modalTitle.textContent = set.label;
+    backBtn.classList.add("visible");
+    modalBody.innerHTML = "";
+
+    const heading = document.createElement("div");
+    heading.className = "am-section-title";
+    heading.textContent = "Choose an avatar";
+    modalBody.appendChild(heading);
+
+    modalBody.appendChild(buildAvatarGrid(set, false));
+
+    backBtn.onclick = renderMainView;
+  }
+
+  const tmdbCache = {};
+  async function resolvePosterAndTitle(set){
+    if (set.poster || set.title){
+      return { posterUrl: set.poster || null, title: set.title || set.label };
+    }
+    if (!set.tmdb) return { posterUrl: null, title: set.label };
+
+    const cacheKey = `${set.tmdb.mediaType}-${set.tmdb.id}`;
+    if (tmdbCache[cacheKey]) return tmdbCache[cacheKey];
+
+    try {
+      const url = `https://api.themoviedb.org/3/${set.tmdb.mediaType}/${set.tmdb.id}?api_key=${AM_TMDB_API_KEY}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("TMDB fetch failed");
+      const data = await res.json();
+      const title = data.title || data.name || set.label;
+      const posterUrl = data.poster_path ? `${AM_TMDB_IMG_BASE}${data.poster_path}` : null;
+      const result = { posterUrl, title };
+      tmdbCache[cacheKey] = result;
+      return result;
+    } catch (err){
+      console.warn("TMDB lookup failed for", set.key, err);
+      return { posterUrl: null, title: set.label };
+    }
+  }
+
+  window.openAvatarModal = function(){
+    const userMenu = document.getElementById("user-menu");
+    if (userMenu) userMenu.classList.remove("show");
+    overlay.classList.add("active");
+    renderMainView();
+    document.body.style.overflow = "hidden";
+  };
+  window.closeAvatarModal = function(){
+    overlay.classList.remove("active");
+    document.body.style.overflow = "";
+  };
+
+  closeBtn.addEventListener("click", window.closeAvatarModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) window.closeAvatarModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("active")) window.closeAvatarModal();
+  });
+
+  // Dropdown toggle (no shared script file on this page defines this)
+  window.toggleUserMenu = function(){
+    const menu = document.getElementById("user-menu");
+    if (menu) menu.classList.toggle("show");
+  };
+  document.addEventListener("click", (e) => {
+    const menu = document.getElementById("user-menu");
+    const avatarImg = document.getElementById("user-avatar");
+    if (!menu || !avatarImg) return;
+    if (menu.classList.contains("show") && !menu.contains(e.target) && e.target !== avatarImg){
+      menu.classList.remove("show");
+    }
+  });
+
+  // No login system on this page: always show the avatar, and if the
+  // user never picked one, randomly assign one on every page load.
+  // NOTE: only pick within `previewCount` (the images guaranteed to be
+  // shown/available by default) — `count` can include extra slots for
+  // avatars that aren't uploaded yet, which produced broken images.
+  function pickRandomAvatar(excludePath){
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    if (!gridSets.length) return null;
+    const set = gridSets[Math.floor(Math.random() * gridSets.length)];
+    const count = Math.min(set.previewCount || set.count, set.count) || 1;
+    const index = Math.floor(Math.random() * count) + 1;
+    const path = buildImagePath(set, index);
+    if (path === excludePath && count > 1) return pickRandomAvatar(excludePath);
+    return path;
+  }
+
+  function fallbackAvatar(){
+    const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+    if (!gridSets.length) return null;
+    return buildImagePath(gridSets[0], 1);
+  }
+
+  function initAvatar(){
+    const avatarImg = document.getElementById("user-avatar");
+    if (!avatarImg) return;
+    let saved = localStorage.getItem(CUSTOM_AVATAR_KEY);
+    if (!saved){
+      saved = pickRandomAvatar();
+      if (saved) selectedAvatar = saved;
+    }
+    if (saved){
+      let retries = 2;
+      avatarImg.onerror = () => {
+        if (retries > 0){
+          retries--;
+          avatarImg.src = pickRandomAvatar(avatarImg.src);
+        } else {
+          avatarImg.onerror = null;
+          avatarImg.src = fallbackAvatar();
+        }
+      };
+      avatarImg.src = saved;
+      avatarImg.classList.remove("hidden");
+    }
+  }
+  document.addEventListener("DOMContentLoaded", initAvatar);
+})();
+</script>
+</body>
+</html>
