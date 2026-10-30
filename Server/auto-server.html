@@ -14,13 +14,13 @@ window.addEventListener('unhandledrejection', (e) => {
 const VIDEOS_JSON_PATH = 'videos.json';
 
 const EMBED_PROVIDERS = [
-{ name: 'PStream', movie: 'https://pstream.cfd/media/tmdb-movie-[ID]',             tv: null },
+{ name: 'PStream', movie: 'https://cinecat.eu/media/tmdb-movie-[ID]',             tv: null },
     { name: 'FrameX',  movie: 'https://framextv.tech/embed/[ID]?autoplay=1&muted=0',  tv: 'https://framextv.tech/embed/[ID]/[S]/[E]?autoplay=1&muted=0' }
 ];
 
 // TMDB API key used to resolve PStream TV URLs (season.id + episode.id)
 const PSTREAM_TMDB_API_KEY = '3a73619bbb8fc6d47742d1b5b2b707b5';
-const PSTREAM_BASE = 'https://pstream.cfd';
+const PSTREAM_BASE = 'https://cinecat.eu';
 
 const SLOW_MS   = 8000;
 const AUTO_MS   = 0;
