@@ -17,3 +17,6 @@ body>.container{padding-top:86px;max-width:none;width:100%}
 button[onclick^="close"],button[onclick*="Close"],button[aria-label="Close"]{cursor:pointer}
 .detail-hero-poster-pin.poster-centered:has(#detail-poster[src^="data:image/svg+xml"]),#detail-hero.no-backdrop .detail-hero-poster-pin:has(#detail-poster[src^="data:image/svg+xml"]){background:transparent!important;border:none!important;box-shadow:none!important}
 .detail-hero-poster-pin.poster-centered #detail-poster[src^="data:image/svg+xml"],#detail-hero.no-backdrop #detail-poster[src^="data:image/svg+xml"]{background-color:transparent!important}
+
+/* Sinhala glyph fallback */
+html[lang="si"] body,html[lang="si"] .section-title{font-family:"Netflix Sans","Noto Sans Sinhala",sans-serif!important}
