@@ -73,7 +73,8 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
 #desktop-search-slot .filter-btn{display:none!important}
 #desktop-search-slot .relative.w-full.max-w-\[300px\]{flex:1;min-width:0;max-width:none;opacity:0;transition:opacity .2s ease}
 #desktop-navbar.search-open #desktop-search-slot .relative.w-full.max-w-\[300px\]{opacity:1;transition:opacity .25s ease .15s}
-#desktop-search-slot .glass-input{background:none!important;border:none!important;box-shadow:none!important;padding:8px 6px!important;color:#fff;font-size:14px;width:100%}
+#desktop-search-slot .glass-input{background:none!important;border:none!important;box-shadow:none!important;outline:none!important;padding:8px 6px!important;color:#fff;font-size:14px;width:100%}
+#desktop-search-slot .glass-input:focus{outline:none!important;box-shadow:none!important;border:none!important;background:none!important}
 #desktop-search-slot #search-results{left:-40px;right:auto;width:300px}
 #desktop-search-slot #search-submit-btn{display:none!important}
 #desktop-user-slot{display:flex;align-items:center;flex-shrink:0;margin-left:-14px}
@@ -88,7 +89,10 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
 #mobile-search-slot .search-group{display:flex;align-items:center;width:100%;gap:2px;margin:0}
 #mobile-search-slot .filter-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
 #mobile-search-slot .relative.w-full.max-w-\[300px\]{max-width:none;width:100%}
-#mobile-search-slot .glass-input{background:none;border:none;padding:8px 4px;box-shadow:none}
+#mobile-search-slot .glass-input{background:none!important;border:none!important;box-shadow:none!important;outline:none!important;padding:8px 4px}
+#mobile-search-slot .glass-input:focus{outline:none!important;box-shadow:none!important;border:none!important;background:none!important}
+.glass-input:focus,.glass-select:focus{outline:none!important;box-shadow:none!important}
+#search-input,#search-input:focus{outline:none!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
 #pill-clear-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:18px;cursor:pointer;color:#fff;flex-shrink:0}
 #pill-clear-btn:hover{background-color:rgba(255,255,255,.12)}
 #pill-nav.search-open .pill-group{width:min(92vw,400px);justify-content:flex-start;padding:6px}
@@ -110,7 +114,7 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
 <style>
 
   :root{
-    --bg:#0a0a0a;
+    --bg:#000;
     --bg-raised:#151515;
     --card:#1c1c1e;
     --card-hi:#252527;
@@ -211,6 +215,17 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     padding:11px 18px;border-radius:8px;flex-shrink:0;
     backdrop-filter:blur(2px);
   }
+  .btn-white svg{width:16px;height:16px;flex-shrink:0;}
+  .btn-more-info svg{width:18px;height:18px;flex-shrink:0;}
+  .btn-icon-square svg{width:18px;height:18px;display:block;}
+  .top10-add svg, .wl-add-btn svg{width:14px;height:14px;display:block;}
+  .poster-plus svg{width:13px;height:13px;display:block;}
+  .poster-play svg{width:12px;height:12px;display:block;margin-left:1px;}
+  .play-circle svg{width:20px;height:20px;display:block;margin-left:2px;}
+  .cw-close svg{width:12px;height:12px;display:block;}
+  .cw-io-btn svg{width:16px;height:16px;display:block;}
+  .ia-circle svg{width:18px;height:18px;display:block;}
+  .pm-close svg{width:18px;height:18px;display:block;}
 
   /* ---------- Hero (Home) ---------- */
   .hero{position:relative;width:100%;aspect-ratio:3/4;max-height:480px;overflow:hidden;}
@@ -245,10 +260,46 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .genre-chip-text{position:relative;z-index:2;}
 
   /* ---------- Section titles ---------- */
-  .section-title{font-size:18px;font-weight:800;padding:20px 18px 12px;border-left:4px solid #e50914;padding-left:14px;margin-left:18px;line-height:1.1;display:flex;align-items:center;letter-spacing:.5px;}
-  .section-title.caps{text-transform:uppercase;font-size:13px;letter-spacing:.5px;color:var(--text-dim);padding-bottom:10px;border-left:none;margin-left:0;padding-left:18px;}
-  .cw-header .section-title{margin-left:0;padding:0;padding-left:14px;}
-  #top10-header-title{border-left:none !important;margin-left:0 !important;padding-left:0 !important;}
+  .section-title,
+  .section-title.caps{
+    align-items:center;
+    border-left:5px solid #e50914 !important;
+    color:#fff !important;
+    display:flex;
+    font-family:'Netflix Sans',Montserrat,sans-serif !important;
+    font-weight:800 !important;
+    letter-spacing:1px !important;
+    line-height:1.1;
+    text-transform:uppercase !important;
+    padding:0 0 0 15px !important;
+    margin:20px 0 12px 18px;
+    font-size:18px;
+  }
+  .cw-header .section-title,
+  .search-results-header .section-title,
+  #top10-header-title{
+    margin:0 !important;
+    padding:0 0 0 15px !important;
+  }
+  #top10-section > .flex{
+    padding:20px 18px 12px;
+    margin-bottom:0 !important;
+  }
+  #top10-header-title{
+    align-items:center;
+    border-left:5px solid #e50914 !important;
+    color:#fff !important;
+    display:flex !important;
+    font-family:'Netflix Sans',Montserrat,sans-serif !important;
+    font-weight:800 !important;
+    letter-spacing:1px !important;
+    line-height:1.1;
+    margin:0 !important;
+    padding:0 0 0 15px !important;
+  }
+  html[lang="si"] body, html[lang="si"] .section-title{
+    font-family:'Netflix Sans','Noto Sans Sinhala',sans-serif !important;
+  }
 
   /* ---------- Continue watching ---------- */
   .cw-header{display:flex;align-items:center;justify-content:space-between;padding:20px 18px 12px;}
@@ -281,11 +332,6 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .cw-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
 
   /* ---------- Top 10 row (Identical to index.html TOP 10) ---------- */
-  #top10-header-title {
-    border-left: none !important;
-    margin-left: 0 !important;
-    padding-left: 0 !important;
-  }
   .top10-row {
     display: flex;
     overflow-x: auto;
@@ -531,12 +577,26 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     .btn-icon-square{width:48px;height:48px;font-size:20px;}
     .poster-wrap:hover, .cw-thumb:hover, .top10-poster:hover{transform:scale(1.12);}
 
-    .section-title{padding:28px 48px 14px 14px;margin-left:48px;font-size:20px;}
+    .section-title,
+    .section-title.caps{
+      font-size:20px;
+      padding:0 0 0 15px !important;
+      margin:28px 0 14px 48px;
+    }
     .cw-header{padding:28px 48px 14px;}
-    .cw-header .section-title{margin-left:0;padding:0;padding-left:14px;}
+    .cw-header .section-title{margin:0 !important;padding:0 0 0 15px !important;}
+    .search-results-header{padding:28px 48px 14px;}
+    .search-results-header .section-title{margin:0 !important;padding:0 0 0 15px !important;}
     .cw-io-btn{width:38px;height:38px;font-size:16px;}
-    .section-title.caps{font-size:14px;padding-left:48px;margin-left:0;}
-    #top10-header-title{border-left:none !important;margin-left:0 !important;padding-left:0 !important;}
+    #top10-section > .flex{
+      padding:28px 48px 14px !important;
+      margin-bottom:0 !important;
+    }
+    #top10-header-title{
+      border-left:5px solid #e50914 !important;
+      padding:0 0 0 15px !important;
+      margin:0 !important;
+    }
 
     .genre-row{padding:20px 48px 4px;gap:16px;}
     .genre-chip{min-width:190px;height:88px;font-size:17px;padding-left:20px;}
@@ -685,7 +745,7 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     <div class="is-panel active" data-is-panel="upload">
       <div id="isPreviewWrap" style="display:none;" class="is-preview-wrap">
         <img id="isPreviewImg" src="" alt="">
-        <div class="is-preview-clear" onclick="isClearFile()">✕</div>
+        <div class="is-preview-clear" onclick="isClearFile()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="2" x2="22" y1="2" y2="22" style="fill:none;stroke:#fff;stroke-miterlimit:10;stroke-width:2.5px"></line><line x1="2" x2="22" y1="22" y2="2" style="fill:none;stroke:#fff;stroke-miterlimit:10;stroke-width:2.5px"></line></svg></div>
       </div>
       <div class="is-dropzone" id="isDropzone" onclick="document.getElementById('isFileInput').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -751,6 +811,13 @@ const GENRE_COLORS = {
 };
 const QUICK_GENRES = ['Action','Adventure','Comedy','Drama','Romance','Fantasy'];
 const DOWNLOAD_ICON = `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path clip-rule="evenodd" fill-rule="evenodd" d="M8.752 2v7.189l1.718-1.72 1.06 1.061-2.998 3a.75.75 0 0 1-1.06 0l-3.002-3 1.06-1.06 1.722 1.72V2zM.756 14.509a61 61 0 0 1 7.246-.423c2.507 0 4.936.147 7.245.423l.178-1.49a63 63 0 0 0-7.423-.433c-2.566 0-5.055.15-7.424.434z"></path></svg>`;
+const UPLOAD_ICON = `<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path clip-rule="evenodd" fill-rule="evenodd" d="M7.248 12.189V5l-1.722 1.72-1.06-1.06 3.002-3a.75.75 0 0 1 1.06 0l2.998 3-1.06 1.061-1.718-1.72v7.189zM.756 14.509a61 61 0 0 1 7.246-.423c2.507 0 4.936.147 7.245.423l.178-1.49a63 63 0 0 0-7.423-.433c-2.566 0-5.055.15-7.424.434z"></path></svg>`;
+const WL_ICON_OUTLINE = `<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/></svg>`;
+const WL_ICON_SOLID = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="m21.3 4.3 1.4 1.4-14 14a1 1 0 0 1-1.4 0l-7-7 1.4-1.4L8 17.58z" clip-rule="evenodd"></path></svg>`;
+const PLAY_ICON_SVG = `<svg class="svg-icon play-svg-icon" viewBox="0 0 67 67" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M20.28 9.65c-2.205-1.268-4.026-.228-4.026 2.307v43.805c0 2.535 1.82 3.574 4.027 2.307l38.471-21.903a2.556 2.556 0 0 0 1.094-.935 2.514 2.514 0 0 0 0-2.743 2.556 2.556 0 0 0-1.093-.936L20.28 9.65z" fill="currentColor"></path></svg>`;
+const INFO_ICON_SVG = `<svg class="svg-icon" viewBox="256 256 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="0.01024" aria-hidden="true"><path d="M512 717a205 205 0 1 0 0-410 205 205 0 0 0 0 410zm0 51a256 256 0 1 1 0-512 256 256 0 0 1 0 512z"></path><path d="M485 364c7-7 16-11 27-11s20 4 27 11c8 8 11 17 11 28 0 10-3 19-11 27-7 7-16 11-27 11s-20-4-27-11c-8-8-11-17-11-27 0-11 3-20 11-28zM479 469h66v192h-66z"></path></svg>`;
+const CLOSE_ICON_SVG = `<svg viewBox="0 0 24 24" class="svg-icon" aria-hidden="true"><title>close-medium</title><line x1="1" x2="23" y1="1" y2="23" style="fill:none;stroke:currentColor;stroke-miterlimit:10;stroke-width:2px"></line><line x1="1" x2="23" y1="23" y2="1" style="fill:none;stroke:currentColor;stroke-miterlimit:10;stroke-width:2px"></line></svg>`;
+const SHARE_ICON_SVG = `<svg viewBox="0 0 24 24" class="svg-icon" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M17.423 2.041 C 16.823 2.136,16.237 2.369,15.725 2.716 C 14.735 3.389,14.086 4.536,14.013 5.743 L 13.989 6.145 11.344 7.588 C 9.182 8.768,8.688 9.022,8.636 8.985 C 8.600 8.960,8.483 8.873,8.376 8.791 C 8.098 8.579,7.556 8.306,7.175 8.186 C 5.790 7.752,4.219 8.136,3.197 9.157 C 2.770 9.585,2.518 9.962,2.302 10.500 C 2.075 11.062,2.020 11.355,2.020 12.000 C 2.020 12.645,2.075 12.938,2.302 13.500 C 2.518 14.038,2.770 14.415,3.197 14.843 C 4.219 15.864,5.790 16.248,7.175 15.814 C 7.556 15.694,8.098 15.421,8.376 15.209 C 8.483 15.127,8.600 15.040,8.636 15.015 C 8.688 14.978,9.182 15.232,11.344 16.412 L 13.989 17.855 14.013 18.257 C 14.086 19.464,14.735 20.611,15.725 21.284 C 16.592 21.874,17.653 22.091,18.667 21.889 C 19.866 21.650,20.887 20.825,21.439 19.650 C 22.128 18.182,21.821 16.413,20.697 15.374 C 19.789 14.536,18.476 14.216,17.275 14.538 L 16.855 14.650 14.210 13.207 C 12.755 12.413,11.530 11.734,11.488 11.700 C 11.411 11.637,11.411 11.442,11.488 11.379 C 11.530 11.345,12.755 10.666,14.210 9.872 L 16.855 8.429 17.275 8.541 C 18.476 8.863,19.789 8.543,20.697 7.705 C 21.821 6.666,22.128 4.897,21.439 3.429 C 20.730 1.921,19.167 1.002,17.423 2.041" fill="currentColor" fill-rule="evenodd" stroke="none"></path></svg>`;
 
 /* ---- Persistent My List (localStorage) ---- */
 const ML_KEY = 'fliq_my_list';
@@ -934,9 +1001,9 @@ async function loadHome(){
           </div>
           <div class="hero-title">${displayTitle(hero)}</div>
           <div class="hero-actions">
-            <button class="btn-white" onclick="openPlayerModal(${hero.id}, ${hero.episodes||1})">▶ &nbsp;Play</button>
-            <button class="btn-more-info" onclick="openDetail(${hero.id})">ⓘ &nbsp;More Info</button>
-            <button class="btn-icon-square" onclick="toggleAdd(${hero.id}, this)">${addedSet.has(hero.id)?'✓':'+'}</button>
+            <button class="btn-white" onclick="openPlayerModal(${hero.id}, ${hero.episodes||1})">${PLAY_ICON_SVG}<span>Play</span></button>
+            <button class="btn-more-info" onclick="openDetail(${hero.id})">${INFO_ICON_SVG}<span>More Info</span></button>
+            <button class="btn-icon-square ${addedSet.has(hero.id)?'added':''}" onclick="toggleAdd(${hero.id}, this)">${addedSet.has(hero.id)?WL_ICON_SOLID:WL_ICON_OUTLINE}</button>
           </div>
         </div>
       </div>
@@ -953,10 +1020,10 @@ async function loadHome(){
 
       <div id="cw-section" style="display:none;">
         <div class="cw-header">
-          <div class="section-title" style="padding:0;">Continue Watching</div>
+          <div class="section-title">Continue Watching</div>
           <div class="cw-header-actions">
             <button class="cw-io-btn" onclick="exportHistory()" title="Export watch history">${DOWNLOAD_ICON}</button>
-            <button class="cw-io-btn" onclick="document.getElementById('importHistoryInput').click()" title="Import watch history">⬆</button>
+            <button class="cw-io-btn" onclick="document.getElementById('importHistoryInput').click()" title="Import watch history">${UPLOAD_ICON}</button>
           </div>
         </div>
         <input type="file" id="importHistoryInput" accept="application/json" style="display:none" onchange="importHistory(event)">
@@ -964,7 +1031,7 @@ async function loadHome(){
       </div>
 
       <div class="relative mb-12" id="top10-section">
-        <div class="flex items-center px-2 justify-between flex-wrap gap-3 mb-6">
+        <div class="flex items-center justify-between flex-wrap gap-3">
           <h2 class="flex items-center text-white font-bold md:text-2xl section-title text-xl" id="top10-header-title">
             <span class="top10-logo-en" style="display:flex;align-items:center">
               <span style="font-family:'Netflix Sans',Montserrat,sans-serif;font-weight:900;font-size:1.5em;letter-spacing:1px;color:transparent;-webkit-text-stroke:1.5px #e5e7eb">TOP10</span>
@@ -996,7 +1063,7 @@ async function loadHome(){
       <div class="top-10-card top10-item" onclick="openDetail(${m.id})">
         <div class="rank-number top10-num">${i+1}</div>
         <img src="${m.coverImage.large}" class="top-poster" loading="lazy" alt="${displayTitle(m)}">
-        <button type="button" class="wl-add-btn top10-add ${added ? 'active added' : ''}" title="${added ? 'Remove from My List' : 'Add to My List'}" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added ? '✓' : '+'}</button>
+        <button type="button" class="wl-add-btn top10-add ${added ? 'active added' : ''}" title="${added ? 'Remove from My List' : 'Add to My List'}" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added ? WL_ICON_SOLID : WL_ICON_OUTLINE}</button>
       </div>`;
     }).join('');
     if (localStorage.getItem("app_language") === "si") {
@@ -1061,8 +1128,8 @@ function renderContinueWatching(){
       <div class="cw-card" onclick="cwResume(${idx})">
         <div class="cw-thumb">
           <img src="${cw.media.bannerImage || cw.media.coverImage.large}" alt="">
-          <div class="cw-close" onclick="event.stopPropagation(); removeContinueWatching(${idx})">✕</div>
-          <div class="play-circle">▶</div>
+          <div class="cw-close" onclick="event.stopPropagation(); removeContinueWatching(${idx})">${CLOSE_ICON_SVG}</div>
+          <div class="play-circle">${PLAY_ICON_SVG}</div>
           <div class="ep-badge">Ep ${cw.ep}</div>
           <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
         </div>
@@ -1189,7 +1256,7 @@ function posterCardHTML(m){
     <div class="poster-card">
       <div class="poster-wrap" onclick="openDetail(${m.id})">
         <img src="${m.coverImage.large}" alt="">
-        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?'✓':'+'}</div>
+        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</div>
       </div>
       <div class="poster-name">${displayTitle(m)}</div>
     </div>`;
@@ -1198,15 +1265,19 @@ function posterCardHTML(m){
 function toggleAdd(id, el){
   if(addedSet.has(id)){
     addedSet.delete(id);
-    el.textContent='+';
-    el.classList.remove('added', 'active');
-    if(el.hasAttribute('title')) el.setAttribute('title', 'Add to My List');
+    if(el){
+      el.innerHTML = WL_ICON_OUTLINE;
+      el.classList.remove('added', 'active');
+      if(el.hasAttribute('title')) el.setAttribute('title', 'Add to My List');
+    }
     showToast('Removed from My List');
   } else {
     addedSet.add(id);
-    el.textContent='✓';
-    el.classList.add('added', 'active');
-    if(el.hasAttribute('title')) el.setAttribute('title', 'Remove from My List');
+    if(el){
+      el.innerHTML = WL_ICON_SOLID;
+      el.classList.add('added', 'active');
+      if(el.hasAttribute('title')) el.setAttribute('title', 'Remove from My List');
+    }
     showToast('Added to My List');
   }
   mlSave();
@@ -1225,7 +1296,7 @@ async function openMyList(options){
 
   if(!ids.length){
     page.innerHTML = `
-      <div class="section-title caps" style="padding-top:16px;">My List</div>
+      <div class="section-title">My List</div>
       <div class="loading">Your list is empty. Tap + on any title to add it here.</div>
     `;
     return;
@@ -1248,14 +1319,14 @@ async function openMyList(options){
 
     if(!list.length){
       page.innerHTML = `
-        <div class="section-title caps" style="padding-top:16px;">My List</div>
+        <div class="section-title">My List</div>
         <div class="loading">Your list is empty. Tap + on any title to add it here.</div>
       `;
       return;
     }
 
     page.innerHTML = `
-      <div class="section-title caps" style="padding-top:16px;">My List</div>
+      <div class="section-title">My List</div>
       <div class="poster-row" id="mylist-row" style="flex-wrap:wrap;overflow:visible;"></div>
     `;
     document.getElementById('mylist-row').innerHTML = list.map(m => posterCardHTML(m)).join('');
@@ -1447,23 +1518,23 @@ function renderTopResultLayout(list, customLabel){
   const page = document.getElementById('search-page');
   const added = addedSet.has(top.id);
   page.innerHTML = `
-    <div class="section-title caps" style="padding-bottom:0;padding-top:16px;">${customLabel || 'Top Result'}</div>
+    <div class="section-title">${customLabel || 'Top Result'}</div>
     <div class="top-result-banner" onclick="openDetail(${top.id})">
       <img src="${top.bannerImage || top.coverImage.extraLarge}" alt="">
     </div>
     <div class="tr-body">
       <div class="tr-title" onclick="openDetail(${top.id})">${displayTitle(top)}</div>
       <div class="tr-actions">
-        <button class="btn-white" onclick="event.stopPropagation();openPlayerModal(${top.id}, ${top.episodes||1})">▶ &nbsp;Watch Now</button>
-        <button class="btn-more-info" onclick="event.stopPropagation();openDetail(${top.id})">ⓘ &nbsp;More Info</button>
-        <button class="btn-icon-square ${added?'added':''}" onclick="event.stopPropagation();toggleAdd(${top.id}, this)">${added?'✓':'+'}</button>
+        <button class="btn-white" onclick="event.stopPropagation();openPlayerModal(${top.id}, ${top.episodes||1})">${PLAY_ICON_SVG}<span>Watch Now</span></button>
+        <button class="btn-more-info" onclick="event.stopPropagation();openDetail(${top.id})">${INFO_ICON_SVG}<span>More Info</span></button>
+        <button class="btn-icon-square ${added?'added':''}" onclick="event.stopPropagation();toggleAdd(${top.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</button>
       </div>
       <div class="tr-meta">${top.seasonYear || '—'} &nbsp;•&nbsp; ${fmtStatus(top.status)} &nbsp;•&nbsp; ${top.episodes ? top.episodes+' Episodes' : fmtFormat(top.format)} &nbsp;•&nbsp; ${top.genres[0]||''}</div>
       <div class="tr-desc">${cleanDesc(top.description).slice(0,220)}${cleanDesc(top.description).length>220?'…':''}</div>
     </div>
     ${rest.length ? `
     <div class="search-results-header">
-      <div class="section-title" style="padding:0;">Other Results</div>
+      <div class="section-title">Other Results</div>
       <div class="search-results-count">${rest.length} more match${rest.length===1?'':'es'}</div>
     </div>
     <div class="search-grid" id="mlt-row"></div>` : ''}
@@ -1477,8 +1548,8 @@ function searchResultCardHTML(m){
     <div class="poster-card">
       <div class="poster-wrap" onclick="openDetail(${m.id})">
         <img src="${m.coverImage.large}" alt="">
-        <div class="poster-play" onclick="event.stopPropagation(); openPlayerModal(${m.id}, ${m.episodes||1})" title="Play">▶</div>
-        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?'✓':'+'}</div>
+        <div class="poster-play" onclick="event.stopPropagation(); openPlayerModal(${m.id}, ${m.episodes||1})" title="Play">${PLAY_ICON_SVG}</div>
+        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</div>
       </div>
       <div class="poster-name">${displayTitle(m)}</div>
     </div>`;
@@ -1730,15 +1801,15 @@ function renderDetail(m){
       </div>
     </div>
     <div class="detail-actions">
-      <button class="btn-white" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">▶ &nbsp;Watch Now</button>
-      <button class="btn-icon-square ${added?'added':''}" onclick="toggleAdd(${m.id}, this)">${added?'✓':'+'}</button>
+      <button class="btn-white" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">${PLAY_ICON_SVG}<span>Watch Now</span></button>
+      <button class="btn-icon-square ${added?'added':''}" onclick="toggleAdd(${m.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</button>
     </div>
     <div class="tagline">${m.genres.slice(0,4).join(' • ')}</div>
     <div class="desc-block" id="descBlock">${shortDesc}</div>
     ${desc.length>140 ? `<button class="read-more-btn" id="readMoreBtn" onclick="expandDesc()">Read More</button>` : ''}
 
     <div class="icon-actions">
-      <div class="icon-action"><div class="ia-circle" onclick="shareTitle('${displayTitle(m).replace(/'/g,"\\'")}')">↗</div>Share</div>
+      <div class="icon-action"><div class="ia-circle" onclick="shareTitle('${displayTitle(m).replace(/'/g,"\\'")}')">${SHARE_ICON_SVG}</div>Share</div>
       <div class="icon-action">
         <div class="score-ring" style="background:conic-gradient(var(--accent) ${scorePct*3.6}deg, #2a2a2c 0deg)">
           <div style="width:32px;height:32px;border-radius:50%;background:#111;display:flex;align-items:center;justify-content:center;font-size:10.5px;">${scorePct?scorePct+'%':'N/A'}</div>
@@ -1746,7 +1817,7 @@ function renderDetail(m){
         User Score
       </div>
       <div class="icon-action"><div class="ia-circle" onclick="window.open('https://nyaa.si/?f=0&c=1_2&q=${encodeURIComponent(displayTitle(m))}','_blank')">${DOWNLOAD_ICON}</div>Download</div>
-      <div class="icon-action"><div class="ia-circle" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">▶</div>Watch</div>
+      <div class="icon-action"><div class="ia-circle" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">${PLAY_ICON_SVG}</div>Watch</div>
     </div>
 
     <div class="section-title">Cast &amp; Characters</div>
@@ -2020,7 +2091,7 @@ function isOpenResult(anilistId){
 
 <div id="player-modal">
   <div class="pm-topbar">
-    <button class="pm-close" onclick="closePlayerModal()">✕</button>
+    <button class="pm-close" onclick="closePlayerModal()"><svg viewBox="0 0 24 24" style="width:1.2em;height:1.2em" aria-hidden="true"><title>close-medium</title><line x1="1" x2="23" y1="1" y2="23" style="fill:none;stroke:currentColor;stroke-miterlimit:10;stroke-width:2px"></line><line x1="1" x2="23" y1="23" y2="1" style="fill:none;stroke:currentColor;stroke-miterlimit:10;stroke-width:2px"></line></svg></button>
     <div class="pm-title">Now Streaming</div>
   </div>
   <div class="pm-controls">
@@ -2032,9 +2103,9 @@ function isOpenResult(anilistId){
     <button class="pm-btn pm-lang-btn active" data-lang="sub" onclick="pmSetLang('sub')">Sub</button>
     <button class="pm-btn pm-lang-btn" data-lang="dub" onclick="pmSetLang('dub')">Dub</button>
     <div class="pm-ep-nav">
-      <button id="pm-prev-ep" onclick="pmPrevEp()" title="Previous episode">‹</button>
+      <button id="pm-prev-ep" onclick="pmPrevEp()" title="Previous episode"><svg viewBox="0 0 48 48" style="width:16px;height:16px;" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m15.414 24 15.293 15.293-1.414 1.414-16-16a1 1 0 0 1 0-1.414l16-16 1.414 1.414z"/></svg></button>
       <span id="pm-ep-label">Ep 1</span>
-      <button id="pm-next-ep" onclick="pmNextEp()" title="Next episode">›</button>
+      <button id="pm-next-ep" onclick="pmNextEp()" title="Next episode"><svg viewBox="0 0 48 48" style="width:16px;height:16px;" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M32.586 24 17.293 8.707l1.414-1.414 16 16a1 1 0 0 1 0 1.414l-16 16-1.414-1.414z"/></svg></button>
     </div>
   </div>
   <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0;">
