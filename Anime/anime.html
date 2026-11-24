@@ -581,6 +581,22 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .detail-age-badge{border:1px solid #6b7280;padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;line-height:1.2;}
   .detail-age-badge,#detail-age-badge,.detail-age-badge span,#detail-age-badge span{font-family:'MPAARatings',sans-serif;font-size:.75rem;letter-spacing:0;color:#fff;}
   .meta-item{display:inline-flex;align-items:center;}
+  .meta-clickable{cursor:pointer;transition:color .2s ease,text-decoration .2s ease;}
+  .meta-clickable:hover{color:#fff;text-decoration:underline;}
+
+  /* ============ FILTER VIEW (TAGS, GENRES, YEARS) ============ */
+  .filter-header-wrap{padding:24px 18px 14px;position:relative;z-index:2;}
+  @media (min-width:768px){.filter-header-wrap{padding:36px 48px 18px;}}
+  .filter-title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .filter-bar{width:4px;height:32px;background:#e50914;border-radius:2px;flex-shrink:0;box-shadow:0 0 10px rgba(229,9,20,.6);}
+  .filter-chip{display:inline-flex;align-items:center;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 14px;font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:-.01em;box-shadow:0 4px 12px rgba(0,0,0,.25);backdrop-filter:blur(8px);}
+  .filter-meta-count{font-size:.85rem;color:#9ca3af;font-weight:600;background:rgba(255,255,255,.06);padding:3px 10px;border-radius:12px;margin-left:2px;}
+  .filter-view-switcher{margin-left:auto;display:inline-flex;gap:4px;background:rgba(255,255,255,.06);padding:3px;border-radius:6px;border:1px solid rgba(255,255,255,.1);}
+  .filter-view-btn{background:transparent;border:none;color:#9ca3af;padding:6px 8px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+  .filter-view-btn:hover{color:#fff;background:rgba(255,255,255,.1);}
+  .filter-view-btn.active{color:#fff;background:#e50914;}
+  .filter-description{font-size:1.15rem;line-height:1.6;color:#f3f4f6;margin:12px 0 24px 16px;max-width:950px;font-weight:400;letter-spacing:-.01em;text-shadow:0 1px 3px rgba(0,0,0,.6);}
+  @media (max-width:768px){.filter-description{font-size:1rem;margin:10px 0 18px 0;}}
 
   /* 2. Tags Row */
   .detail-keywords-wrap{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;}
@@ -867,6 +883,8 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
 
     <section class="page" id="search-page"></section>
 
+    <section class="page" id="filter-page"></section>
+
     <section class="page" id="mylist-page"></section>
 
     <section class="page" id="favorites-page"></section>
@@ -1036,14 +1054,21 @@ function setUrlState(params, replace){
 
 function renderFromUrl(){
   const id = getUrlParam('id');
-  const genre = getUrlParam('genre');
+  const filter = getUrlParam('filter');
+  const genre = getUrlParam('genre') || (filter === 'genre' ? (getUrlParam('name') || getUrlParam('id')) : null);
+  const tag = getUrlParam('tag') || getUrlParam('keyword') || ((filter === 'keyword' || filter === 'tag') ? (getUrlParam('name') || getUrlParam('id')) : null);
+  const year = getUrlParam('year') || (filter === 'year' ? (getUrlParam('name') || getUrlParam('id')) : null);
   const q = getUrlParam('q');
   const mylist = getUrlParam('mylist');
   const favs = getUrlParam('favorites');
   if(id){
     openDetail(Number(id), {skipHistory:true});
+  }else if(tag){
+    browseTag(tag, '', {skipHistory:true});
   }else if(genre){
     browseGenre(genre, {skipHistory:true});
+  }else if(year){
+    browseYear(year, {skipHistory:true});
   }else if(q){
     runSearch(q, {skipHistory:true});
   }else if(mylist){
@@ -1093,7 +1118,7 @@ const MEDIA_FIELDS = `
   endDate { year month day }
   nextAiringEpisode { episode airingAt timeUntilAiring }
   trailer { id site }
-  tags { id name rank isMediaSpoiler }
+  tags { id name description rank isMediaSpoiler }
   characters(sort:[ROLE, RELEVANCE, ID], perPage:24){
     edges{
       role
@@ -1705,26 +1730,249 @@ async function openFavorites(options){
   }
 }
 
-async function browseGenre(genre, options){
-  options = options || {};
-  switchPage('search-page');
-  if(!options.skipHistory) setUrlState({genre}, !!options.replace);
-  const page = document.getElementById('search-page');
-  page.innerHTML = `<div class="loading"><span class="loading-spinner"><svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" viewBox="0 0 130 130"><path fill="#E50914" d="M65 127C30.758 127 3 99.241 3 65S30.758 3 65 3V0C29.102 0 0 29.102 0 65s29.102 65 65 65v-3z"/><linearGradient id="sg2" gradientUnits="userSpaceOnUse" x1="97.5" y1="130" x2="97.5"><stop offset="0" stop-color="#E50914"/><stop offset=".841" stop-color="#E50914" stop-opacity="0"/></linearGradient><path fill="url(#sg2)" d="M65 127c34.242 0 62-27.759 62-62S99.242 3 65 3V0c35.898 0 65 29.102 65 65s-29.102 65-65 65v-3z"/><circle fill="#E50914" cx="65" cy="1.5" r="1.5"/></svg></span></div>`;
-  try{
-    const query = `
-      query($g:String){
-        Page(page:1, perPage:12){
-          media(genre:$g, sort:POPULARITY_DESC, type:ANIME){ ${MEDIA_FIELDS} }
-        }
-      }`;
-    const data = await anilistQuery(query, {g:genre});
-    const list = data.Page.media;
-    renderTopResultLayout(list, `Top in ${genre}`);
-  }catch(err){
-    page.innerHTML = `<div class="loading">${err.message}</div>`;
+/* ============ FILTER VIEW (TAGS, GENRES, YEARS) ============ */
+const GENRE_DESCRIPTIONS = {
+  Action: 'High-energy stories centered around physical conflict, intense combat, martial arts, and fast-paced heroics.',
+  Adventure: 'Epic journeys across vast worlds, exploration of uncharted territories, and thrilling character quests.',
+  Comedy: 'Humorous, lighthearted, and witty narratives designed to entertain, amuse, and bring laughter.',
+  Drama: 'Emotionally driven narratives emphasizing realistic characters, deep conflicts, relationships, and human experiences.',
+  Ecchi: 'Lively stories featuring playful themes, provocative humor, and fan service.',
+  Fantasy: 'Wondrous realms filled with magic, mythical creatures, supernatural powers, and enchanting lore.',
+  Horror: 'Suspenseful and eerie tales crafted to evoke fear, dread, psychological tension, and shocking thrills.',
+  'Mahou Shoujo': 'Stories featuring magical girls who transform to fight evil forces, uphold justice, and protect loved ones.',
+  Mecha: 'Futuristic narratives centered on giant robotic machines, armored suits, cybernetic warfare, and sci-fi combat.',
+  Music: 'Passionate journeys following musicians, idol groups, bands, and the power of song and performance.',
+  Mystery: 'Intriguing puzzles, enigmatic crimes, detective investigations, and uncovering hidden truths.',
+  Psychological: 'Mind-bending stories exploring the inner workings of the human psyche, mental strain, and moral dilemmas.',
+  Romance: 'Heartfelt tales focusing on romantic love, emotional bonding, relationships, and interpersonal passion.',
+  'Sci-Fi': 'Futuristic visions of advanced technology, space exploration, cybernetics, time travel, and parallel dimensions.',
+  'Slice of Life': 'Charming, grounded stories depicting the warmth, humor, and subtle beauty of everyday daily life.',
+  Sports: 'Competitive athletics, team camaraderie, rigorous training, and the pursuit of athletic triumph.',
+  Supernatural: 'Phenomena beyond natural law, including spirits, ghosts, curses, occult mysteries, and extraordinary powers.',
+  Thriller: 'Gripping, high-stakes narratives full of danger, sudden twists, adrenaline-fueled pacing, and constant suspense.'
+};
+
+const tagDescCache = {};
+let isTagCollectionLoaded = false;
+
+async function fetchTagDescription(tagName) {
+  if (tagDescCache[tagName]) return tagDescCache[tagName];
+  if (!isTagCollectionLoaded) {
+    try {
+      const data = await anilistQuery(`query { MediaTagCollection { name description } }`);
+      if (data && data.MediaTagCollection) {
+        data.MediaTagCollection.forEach(t => {
+          if (t && t.name) tagDescCache[t.name] = t.description || '';
+        });
+        isTagCollectionLoaded = true;
+      }
+    } catch (e) {}
+  }
+  return tagDescCache[tagName] || '';
+}
+
+let filterViewMode = localStorage.getItem('anime_filter_view') || 'row';
+
+function setFilterView(mode) {
+  filterViewMode = mode;
+  localStorage.setItem('anime_filter_view', mode);
+  const rowBtn = document.getElementById('btn-view-row');
+  const gridBtn = document.getElementById('btn-view-grid');
+  if (rowBtn) rowBtn.classList.toggle('active', mode === 'row');
+  if (gridBtn) gridBtn.classList.toggle('active', mode === 'grid');
+  if (window._currentFilterList) {
+    renderFilterCards(window._currentFilterList);
   }
 }
+
+function renderFilterCards(list) {
+  const container = document.getElementById('filter-results-container');
+  if (!container) return;
+  if (filterViewMode === 'grid') {
+    container.innerHTML = `
+      <div class="search-grid" id="filter-cards-grid" style="padding-top:10px;">
+        ${list.map(m => posterCardHTML(m)).join('')}
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="poster-row filter-row-scroll" id="filter-cards-row" style="padding-top:10px;">
+        ${list.map(m => posterCardHTML(m)).join('')}
+      </div>
+    `;
+  }
+}
+
+function renderFilterPage({ type, label, description, list }) {
+  window._currentFilterList = list;
+  const page = document.getElementById('filter-page');
+  const chipPrefix = type === 'tag' ? '# ' : '';
+  const chipText = `${chipPrefix}${label}`;
+
+  if (!list.length) {
+    page.innerHTML = `
+      <div class="filter-header-wrap">
+        <div class="filter-title-row">
+          <div class="filter-bar"></div>
+          <div class="filter-chip">${escapeHtml(chipText)}</div>
+        </div>
+        ${description ? `<div class="filter-description">&ldquo;${escapeHtml(description)}&rdquo;</div>` : ''}
+      </div>
+      <div class="loading">No anime found matching this filter.</div>
+    `;
+    return;
+  }
+
+  page.innerHTML = `
+    <div class="filter-header-wrap">
+      <div class="filter-title-row">
+        <div class="filter-bar"></div>
+        <div class="filter-chip">${escapeHtml(chipText)}</div>
+        <span class="filter-meta-count">${list.length} Titles</span>
+        <div class="filter-view-switcher">
+          <button class="filter-view-btn ${filterViewMode === 'row' ? 'active' : ''}" id="btn-view-row" onclick="setFilterView('row')" title="Carousel Row View" aria-label="Row View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="7" x2="21" y2="7"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="17" x2="21" y2="17"></line></svg>
+          </button>
+          <button class="filter-view-btn ${filterViewMode === 'grid' ? 'active' : ''}" id="btn-view-grid" onclick="setFilterView('grid')" title="Full Grid View" aria-label="Grid View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </button>
+        </div>
+      </div>
+      ${description ? `<div class="filter-description">&ldquo;${escapeHtml(description)}&rdquo;</div>` : ''}
+    </div>
+    <div id="filter-results-container"></div>
+  `;
+
+  renderFilterCards(list);
+}
+
+async function browseTag(tagName, tagDesc, options) {
+  options = options || {};
+  const userMenu = document.getElementById('user-menu');
+  if (userMenu) userMenu.classList.remove('show');
+  lastPage = document.querySelector('.page.active')?.id || 'home-page';
+  switchPage('filter-page');
+  if (!options.skipHistory) setUrlState({ tag: tagName }, !!options.replace);
+
+  const page = document.getElementById('filter-page');
+  page.innerHTML = `<div class="loading"><span class="loading-spinner"><svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" viewBox="0 0 130 130"><path fill="#E50914" d="M65 127C30.758 127 3 99.241 3 65S30.758 3 65 3V0C29.102 0 0 29.102 0 65s29.102 65 65 65v-3z"/><linearGradient id="sgFlt" gradientUnits="userSpaceOnUse" x1="97.5" y1="130" x2="97.5"><stop offset="0" stop-color="#E50914"/><stop offset=".841" stop-color="#E50914" stop-opacity="0"/></linearGradient><path fill="url(#sgFlt)" d="M65 127c34.242 0 62-27.759 62-62S99.242 3 65 3V0c35.898 0 65 29.102 65 65s-29.102 65-65 65v-3z"/><circle fill="#E50914" cx="65" cy="1.5" r="1.5"/></svg></span></div>`;
+
+  try {
+    const descPromise = tagDesc ? Promise.resolve(tagDesc) : fetchTagDescription(tagName);
+    const query = `
+      query($tag: String, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          media(tag: $tag, sort: POPULARITY_DESC, type: ANIME) {
+            ${MEDIA_FIELDS}
+          }
+        }
+      }
+    `;
+    const [desc, data] = await Promise.all([
+      descPromise,
+      anilistQuery(query, { tag: tagName, page: 1, perPage: 30 })
+    ]);
+
+    const list = (data && data.Page && data.Page.media) ? data.Page.media : [];
+    list.forEach(cacheMedia);
+    renderFilterPage({
+      type: 'tag',
+      label: tagName,
+      description: desc || `Anime featuring the ${tagName} tag.`,
+      list
+    });
+  } catch (err) {
+    page.innerHTML = `<div class="loading">Couldn't load anime for #${escapeHtml(tagName)}.<br>${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function browseGenre(genreName, options) {
+  options = options || {};
+  const userMenu = document.getElementById('user-menu');
+  if (userMenu) userMenu.classList.remove('show');
+  lastPage = document.querySelector('.page.active')?.id || 'home-page';
+  switchPage('filter-page');
+  if (!options.skipHistory) setUrlState({ genre: genreName }, !!options.replace);
+
+  const page = document.getElementById('filter-page');
+  page.innerHTML = `<div class="loading"><span class="loading-spinner"><svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" viewBox="0 0 130 130"><path fill="#E50914" d="M65 127C30.758 127 3 99.241 3 65S30.758 3 65 3V0C29.102 0 0 29.102 0 65s29.102 65 65 65v-3z"/><linearGradient id="sgFlt2" gradientUnits="userSpaceOnUse" x1="97.5" y1="130" x2="97.5"><stop offset="0" stop-color="#E50914"/><stop offset=".841" stop-color="#E50914" stop-opacity="0"/></linearGradient><path fill="url(#sgFlt2)" d="M65 127c34.242 0 62-27.759 62-62S99.242 3 65 3V0c35.898 0 65 29.102 65 65s-29.102 65-65 65v-3z"/><circle fill="#E50914" cx="65" cy="1.5" r="1.5"/></svg></span></div>`;
+
+  try {
+    const query = `
+      query($genre: String, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          media(genre: $genre, sort: POPULARITY_DESC, type: ANIME) {
+            ${MEDIA_FIELDS}
+          }
+        }
+      }
+    `;
+    const data = await anilistQuery(query, { genre: genreName, page: 1, perPage: 30 });
+    const list = (data && data.Page && data.Page.media) ? data.Page.media : [];
+    list.forEach(cacheMedia);
+    const desc = GENRE_DESCRIPTIONS[genreName] || `Explore popular and acclaimed ${genreName} anime releases.`;
+    renderFilterPage({
+      type: 'genre',
+      label: genreName,
+      description: desc,
+      list
+    });
+  } catch (err) {
+    page.innerHTML = `<div class="loading">Couldn't load anime for ${escapeHtml(genreName)}.<br>${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function browseYear(yearNum, options) {
+  yearNum = parseInt(yearNum, 10);
+  if (!yearNum) return;
+  options = options || {};
+  const userMenu = document.getElementById('user-menu');
+  if (userMenu) userMenu.classList.remove('show');
+  lastPage = document.querySelector('.page.active')?.id || 'home-page';
+  switchPage('filter-page');
+  if (!options.skipHistory) setUrlState({ year: yearNum }, !!options.replace);
+
+  const page = document.getElementById('filter-page');
+  page.innerHTML = `<div class="loading"><span class="loading-spinner"><svg xmlns="http://www.w3.org/2000/svg" width="65" height="65" viewBox="0 0 130 130"><path fill="#E50914" d="M65 127C30.758 127 3 99.241 3 65S30.758 3 65 3V0C29.102 0 0 29.102 0 65s29.102 65 65 65v-3z"/><linearGradient id="sgFlt3" gradientUnits="userSpaceOnUse" x1="97.5" y1="130" x2="97.5"><stop offset="0" stop-color="#E50914"/><stop offset=".841" stop-color="#E50914" stop-opacity="0"/></linearGradient><path fill="url(#sgFlt3)" d="M65 127c34.242 0 62-27.759 62-62S99.242 3 65 3V0c35.898 0 65 29.102 65 65s-29.102 65-65 65v-3z"/><circle fill="#E50914" cx="65" cy="1.5" r="1.5"/></svg></span></div>`;
+
+  try {
+    const query = `
+      query($year: Int, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          media(seasonYear: $year, sort: POPULARITY_DESC, type: ANIME) {
+            ${MEDIA_FIELDS}
+          }
+        }
+      }
+    `;
+    const data = await anilistQuery(query, { year: yearNum, page: 1, perPage: 30 });
+    const list = (data && data.Page && data.Page.media) ? data.Page.media : [];
+    list.forEach(cacheMedia);
+    renderFilterPage({
+      type: 'year',
+      label: String(yearNum),
+      description: `Anime series, films, and releases that originally premiered or aired in ${yearNum}.`,
+      list
+    });
+  } catch (err) {
+    page.innerHTML = `<div class="loading">Couldn't load anime for year ${yearNum}.<br>${escapeHtml(err.message)}</div>`;
+  }
+}
+
+window.quickFilter = function(type, idOrVal, name) {
+  if (type === 'keyword' || type === 'tag') {
+    browseTag(name || idOrVal);
+  } else if (type === 'genre') {
+    browseGenre(name || idOrVal);
+  } else if (type === 'year') {
+    browseYear(name || idOrVal);
+  } else {
+    browseTag(name || idOrVal);
+  }
+};
+window.quickFilterTag = function(tagName, desc) {
+  browseTag(tagName, desc);
+};
 
 /* ============ SEARCH ============ */
 
@@ -2709,11 +2957,8 @@ function submitDetailRating(id) {
   showToast('Rated ' + val + '/10');
 }
 
-function quickFilterTag(tagName) {
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) searchInput.value = tagName;
-  runSearch(tagName);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function quickFilterTag(tagName, desc) {
+  browseTag(tagName, desc);
 }
 
 window.onCastLangChange = function(newLang) {
@@ -2770,12 +3015,19 @@ function renderDetail(m){
     statusText = 'On Hiatus';
   }
 
+  // Cache any tag descriptions from current media
+  if (m.tags && Array.isArray(m.tags)) {
+    m.tags.forEach(t => {
+      if (t && t.name && t.description) tagDescCache[t.name] = t.description;
+    });
+  }
+
   const metaItems = [];
   if (score) {
     metaItems.push(`<span class="meta-item font-semibold" style="color:#46d369;font-weight:700;">${score}% Match</span>`);
   }
   if (year) {
-    metaItems.push(`<span class="meta-item">${year}</span>`);
+    metaItems.push(`<span class="meta-item meta-clickable" onclick="browseYear(${year})" title="Browse ${year} anime">${year}</span>`);
   }
   if (fmtInfo.typeLabel) {
     metaItems.push(`<span class="meta-item">${fmtInfo.typeLabel}</span>`);
@@ -2790,7 +3042,10 @@ function renderDetail(m){
   metaItems.push(`<span class="meta-item">${flagHtml} ${countryName}</span>`);
   metaItems.push(`<span class="meta-item" style="color:#e50914;font-weight:600;">${statusText}</span>`);
   if (m.genres && m.genres.length > 0) {
-    metaItems.push(`<span class="meta-item">${m.genres.slice(0, 2).join(' • ')}</span>`);
+    const genreSpans = m.genres.slice(0, 2).map(g =>
+      `<span class="meta-clickable" onclick="browseGenre('${g.replace(/'/g, "\\'")}')" title="Browse ${g}">${g}</span>`
+    ).join(' <span class="meta-row-dot">•</span> ');
+    metaItems.push(`<span class="meta-item">${genreSpans}</span>`);
   }
 
   // 2. Tags
@@ -2798,11 +3053,14 @@ function renderDetail(m){
     .filter(t => !t.isMediaSpoiler)
     .sort((a, b) => (b.rank || 0) - (a.rank || 0))
     .slice(0, 8);
-  const tagsHtml = nonSpoilerTags.map(t => `
-    <span class="keyword-tag" onclick="quickFilterTag('${t.name.replace(/'/g, "\\'")}')">
-      <svg class="svg-icon mr-1" width="10" height="10" viewBox="0 0 512 512" fill="currentColor"><path d="M214.7 .7c17.3 3.7 28.3 20.7 24.6 38l-19.1 89.3 126.5 0 22-102.7C372.4 8 389.4-3 406.7 .7s28.3 20.7 24.6 38L412.2 128 480 128c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-27.4 128 67.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38l19.1-89.3-126.5 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38L99.8 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 27.4-128-67.8 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 22-102.7C180.4 8 197.4-3 214.7 .7zM206.4 192l-27.4 128 126.5 0 27.4-128-126.5 0z"/></svg>${t.name.toLowerCase()}
-    </span>
-  `).join('');
+  const tagsHtml = nonSpoilerTags.map(t => {
+    const safeDesc = (t.description || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `
+      <span class="keyword-tag" onclick="browseTag('${t.name.replace(/'/g, "\\'")}', '${safeDesc}')" title="${escapeHtml(t.name)}">
+        <svg class="svg-icon mr-1" width="10" height="10" viewBox="0 0 512 512" fill="currentColor"><path d="M214.7 .7c17.3 3.7 28.3 20.7 24.6 38l-19.1 89.3 126.5 0 22-102.7C372.4 8 389.4-3 406.7 .7s28.3 20.7 24.6 38L412.2 128 480 128c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-27.4 128 67.8 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-81.6 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38l19.1-89.3-126.5 0-22 102.7c-3.7 17.3-20.7 28.3-38 24.6s-28.3-20.7-24.6-38L99.8 384 32 384c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 27.4-128-67.8 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l81.6 0 22-102.7C180.4 8 197.4-3 214.7 .7zM206.4 192l-27.4 128 126.5 0 27.4-128-126.5 0z"/></svg>${t.name.toLowerCase()}
+      </span>
+    `;
+  }).join('');
 
   // 3. Cast languages & Audio options
   window._currentCastEdges = (m.characters && m.characters.edges) ? m.characters.edges : [];
