@@ -531,12 +531,43 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     display:flex;align-items:center;justify-content:center;
     font-size:11px;font-weight:800;color:#fff;
   }
-  .cast-row{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding:4px 18px 10px;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;}
-  .cast-card{flex-shrink:0;width:78px;text-align:center;}
-  .cast-img{width:78px;height:78px;border-radius:50%;overflow:hidden;background:var(--card);margin-bottom:8px;}
-  .cast-img img{width:100%;height:100%;object-fit:cover;}
-  .cast-name{font-size:11.5px;font-weight:700;line-height:1.25;}
-  .cast-va{font-size:10.5px;color:var(--text-faint);margin-top:2px;}
+  /* ---------- Cast & Characters Rich Section ---------- */
+  .cast-section-wrap{margin-top:24px;}
+  .cast-header-wrap{display:flex;align-items:center;justify-content:space-between;padding:0 18px 12px;gap:12px;}
+  .cast-header-wrap .section-title{padding:0!important;margin:0!important;font-size:16px;font-weight:700;color:#fff;}
+  .cast-lang-picker{position:relative;display:inline-flex;align-items:center;}
+  .cast-lang-select{appearance:none;-webkit-appearance:none;background:#111a26;color:#c7d2e0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 30px 6px 12px;font-size:13px;font-weight:500;cursor:pointer;outline:none;transition:border-color .2s,background .2s;font-family:inherit;}
+  .cast-lang-select:hover,.cast-lang-select:focus{background:#162232;border-color:rgba(255,255,255,0.25);}
+  .cast-lang-chevron{position:absolute;right:10px;pointer-events:none;width:12px;height:12px;color:#8b9bb0;}
+
+  /* Grid: Mobile single column */
+  .cast-grid{display:grid;grid-template-columns:1fr;gap:10px;padding:0 18px 24px;box-sizing:border-box;}
+
+  /* Rich Card (Matching Screenshot) */
+  .cast-card-rich{display:flex;justify-content:space-between;align-items:stretch;background:#111a26;border-radius:4px;overflow:hidden;height:74px;min-height:74px;box-shadow:0 2px 8px rgba(0,0,0,0.25);transition:background .15s ease;}
+  .cast-card-rich:hover{background:#152130;}
+  .char-side{display:flex;align-items:stretch;flex:1;min-width:0;overflow:hidden;}
+  .char-thumb,.va-thumb{
+    width:54px;height:100%;object-fit:cover;flex-shrink:0;
+    background-color:#141f2d;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2355677c' opacity='0.4'%3E%3Cpath d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:center;background-size:24px 24px;
+    transition:opacity .15s ease;
+  }
+  .char-thumb-fallback,.va-thumb-fallback{
+    width:54px;height:100%;flex-shrink:0;
+    background-color:#141f2d;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2355677c' opacity='0.4'%3E%3Cpath d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:center;background-size:24px 24px;
+  }
+  .char-info{display:flex;flex-direction:column;justify-content:space-between;padding:9px 12px;min-width:0;overflow:hidden;}
+  .char-name{font-size:13px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+  .char-role{font-size:11px;font-weight:500;color:#7b8b9f;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .va-side{display:flex;align-items:stretch;justify-content:flex-end;flex:1;min-width:0;overflow:hidden;}
+  .va-side.empty{visibility:hidden;}
+  .va-info{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;text-align:right;padding:9px 12px;min-width:0;overflow:hidden;}
+  .va-name{font-size:13px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+  .va-lang{font-size:11px;font-weight:500;color:#7b8b9f;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* ---------- misc ---------- */
   .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;text-align:center;color:var(--text-dim);font-size:14px;}
@@ -626,10 +657,15 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     .rank-number, .top10-num{font-size:120px;left:-12px;bottom:-10px;}
     .top-poster, .top10-poster{width:100%;}
 
-    .cast-row{padding:4px 48px 10px;gap:20px;}
-    .cast-card{width:100px;}
-    .cast-img{width:100px;height:100px;}
-    .cast-name{font-size:13px;}
+    /* Cast & Characters Desktop (2 columns) */
+    .cast-header-wrap{padding:0 48px 14px;}
+    .cast-header-wrap .section-title{font-size:18px;}
+    .cast-grid{grid-template-columns:repeat(2,1fr);gap:12px 14px;padding:0 48px 32px;}
+    .cast-card-rich{height:76px;min-height:76px;}
+    .char-thumb,.va-thumb,.char-thumb-fallback,.va-thumb-fallback{width:58px;}
+    .char-info,.va-info{padding:10px 14px;}
+    .char-name,.va-name{font-size:13.5px;}
+    .char-role,.va-lang{font-size:11.5px;}
 
     /* Search / Top Result page */
     .tr-body{padding:18px 48px 6px;max-width:760px;}
@@ -940,11 +976,11 @@ const MEDIA_FIELDS = `
   status
   format
   trailer { id site }
-  characters(sort:ROLE, perPage:8){
+  characters(sort:[ROLE, RELEVANCE, ID], perPage:24){
     edges{
       role
       node{ id name{ full } image{ large } }
-      voiceActors(language:JAPANESE){ name{ full } }
+      voiceActors{ id name{ full } languageV2 image{ large } }
     }
   }
 `;
@@ -2042,15 +2078,123 @@ async function openDetail(id, options){
   }
 }
 
+function fmtRole(role) {
+  if (!role) return '';
+  const r = String(role).toUpperCase();
+  if (r === 'MAIN') return 'Main';
+  if (r === 'SUPPORTING') return 'Supporting';
+  if (r === 'BACKGROUND') return 'Supporting';
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+}
+
+function getAvailableCastLanguages(characters) {
+  if (!characters || !characters.edges) return [];
+  const langSet = new Set();
+  characters.edges.forEach(edge => {
+    if (edge.voiceActors && Array.isArray(edge.voiceActors)) {
+      edge.voiceActors.forEach(va => {
+        const lang = va.languageV2 || va.language;
+        if (lang) langSet.add(lang.trim());
+      });
+    }
+  });
+
+  const priority = ['English', 'Japanese', 'Korean', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'];
+  return Array.from(langSet).sort((a, b) => {
+    const idxA = priority.indexOf(a);
+    const idxB = priority.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+function renderCastCards(edges, selectedLang) {
+  const grid = document.getElementById('cast-grid');
+  if (!grid) return;
+  if (!edges || !edges.length) {
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;">No character info available.</div>';
+    return;
+  }
+
+  grid.innerHTML = edges.map(edge => {
+    const char = edge.node;
+    if (!char) return '';
+    const charName = (char.name && char.name.full) ? char.name.full : 'Unknown';
+    const charImg = (char.image && char.image.large) ? char.image.large : '';
+    const charRole = fmtRole(edge.role);
+
+    let matchedVA = null;
+    if (edge.voiceActors && Array.isArray(edge.voiceActors)) {
+      matchedVA = edge.voiceActors.find(va => {
+        const lang = va.languageV2 || va.language;
+        return lang && lang.toLowerCase() === (selectedLang || '').toLowerCase();
+      });
+    }
+
+    const vaName = matchedVA && matchedVA.name && matchedVA.name.full ? matchedVA.name.full : '';
+    const vaLang = matchedVA ? (matchedVA.languageV2 || matchedVA.language || selectedLang) : '';
+    const vaImg = matchedVA && matchedVA.image && matchedVA.image.large ? matchedVA.image.large : '';
+
+    const safeCharName = escapeHtml(charName);
+    const safeCharRole = escapeHtml(charRole);
+    const safeVaName = escapeHtml(vaName);
+    const safeVaLang = escapeHtml(vaLang);
+
+    return `
+      <div class="cast-card-rich">
+        <div class="char-side">
+          ${charImg ? `<img class="char-thumb" src="${charImg}" alt="${safeCharName}" loading="lazy" onerror="this.style.opacity=0">` : `<div class="char-thumb-fallback"></div>`}
+          <div class="char-info">
+            <span class="char-name" title="${safeCharName}">${safeCharName}</span>
+            <span class="char-role">${safeCharRole}</span>
+          </div>
+        </div>
+        <div class="va-side ${matchedVA ? '' : 'empty'}">
+          ${matchedVA ? `
+            <div class="va-info">
+              <span class="va-name" title="${safeVaName}">${safeVaName}</span>
+              <span class="va-lang">${safeVaLang}</span>
+            </div>
+            ${vaImg ? `<img class="va-thumb" src="${vaImg}" alt="${safeVaName}" loading="lazy" onerror="this.style.opacity=0">` : `<div class="va-thumb-fallback"></div>`}
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.onCastLangChange = function(newLang) {
+  localStorage.setItem('cast_selected_lang', newLang);
+  if (window._currentCastEdges) {
+    renderCastCards(window._currentCastEdges, newLang);
+  }
+};
+
 function renderDetail(m){
   const page = document.getElementById('detail-page');
   const added = addedSet.has(m.id);
   const desc = cleanDesc(m.description);
   const shortDesc = desc.slice(0,140) + (desc.length>140 ? '…' : '');
   const scorePct = m.averageScore || 0;
-  const va = (edge)=> (edge.voiceActors && edge.voiceActors[0]) ? edge.voiceActors[0].name.full : '';
 
   const backdropUrl = m.bannerImage || m.coverImage.extraLarge || '';
+
+  window._currentCastEdges = (m.characters && m.characters.edges) ? m.characters.edges : [];
+  const availableLangs = getAvailableCastLanguages(m.characters);
+  
+  let userPref = localStorage.getItem('cast_selected_lang');
+  let activeLang = 'English';
+  if (userPref && availableLangs.includes(userPref)) {
+    activeLang = userPref;
+  } else if (availableLangs.includes('English')) {
+    activeLang = 'English';
+  } else if (availableLangs.includes('Japanese')) {
+    activeLang = 'Japanese';
+  } else if (availableLangs.length > 0) {
+    activeLang = availableLangs[0];
+  }
 
   page.innerHTML = `
     <div class="detail-banner" id="detail-hero">
@@ -2091,15 +2235,21 @@ function renderDetail(m){
       <div class="icon-action"><div class="ia-circle" onclick="openPlayerModal(${m.id}, ${m.episodes||1})">${PLAY_ICON_SVG}</div>Watch</div>
     </div>
 
-    <div class="section-title">Cast &amp; Characters</div>
-    <div class="cast-row">
-      ${m.characters.edges.map(e=>`
-        <div class="cast-card">
-          <div class="cast-img"><img src="${e.node.image.large}" alt=""></div>
-          <div class="cast-name">${e.node.name.full}</div>
-          ${va(e) ? `<div class="cast-va">${va(e)}</div>` : ''}
-        </div>
-      `).join('')}
+    <div class="cast-section-wrap">
+      <div class="cast-header-wrap">
+        <div class="section-title">Cast &amp; Characters</div>
+        ${availableLangs.length > 0 ? `
+          <div class="cast-lang-picker">
+            <select class="cast-lang-select" id="cast-lang-select" onchange="onCastLangChange(this.value)" aria-label="Select dubbing language">
+              ${availableLangs.map(l => `<option value="${l}" ${l === activeLang ? 'selected' : ''}>${l}</option>`).join('')}
+            </select>
+            <svg class="cast-lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        ` : ''}
+      </div>
+      <div class="cast-grid" id="cast-grid"></div>
     </div>
 
     <div class="section-title">More Like This</div>
@@ -2107,6 +2257,7 @@ function renderDetail(m){
   `;
 
   window._fullDesc = desc;
+  renderCastCards(window._currentCastEdges, activeLang);
   loadSimilar(m.genres[0], m.id);
   launchHeroTrailerForMedia(m, backdropUrl);
 }
