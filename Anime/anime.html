@@ -499,9 +499,20 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .poster-play:hover{background:var(--accent);}
 
   /* ---------- Detail page ---------- */
-  .detail-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;}
+  .detail-banner{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;background:#000;}
   .detail-banner img{width:100%;height:100%;object-fit:cover;}
-  .detail-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 55%,#000 96%);}
+  .detail-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 55%,#000 96%);pointer-events:none;z-index:3;}
+  .detail-hero-media{position:absolute;inset:0;overflow:hidden;border-radius:inherit;}
+  .detail-hero-backdrop{position:absolute;inset:0;background-size:cover;background-position:center 20%;transition:opacity 1s ease;will-change:opacity;z-index:1;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 25%,rgba(0,0,0,.4) 66.25%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 25%,rgba(0,0,0,.4) 66.25%,transparent 100%);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;}
+  .detail-hero-backdrop.kenburns{animation:heroKenBurns 18s ease-in-out infinite alternate;}
+  @keyframes heroKenBurns{from{transform:scale(1) translate(0,0)}to{transform:scale(1.07) translate(-1.5%,-1%)}}
+  .detail-hero-trailer{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease;will-change:opacity;z-index:2;pointer-events:none;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 25%,rgba(0,0,0,.4) 66.25%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 25%,rgba(0,0,0,.4) 66.25%,transparent 100%);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;}
+  .detail-hero-trailer.visible{opacity:1;}
+  .detail-hero-trailer iframe{position:absolute;top:-30%;left:-30%;width:160%!important;height:160%!important;border:none!important;pointer-events:none;}
+  .detail-hero-mute-btn{position:absolute;bottom:20px;right:20px;z-index:10;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:background .2s,opacity .3s,transform .2s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  .detail-hero-mute-btn:hover{background:rgba(229,9,20,.85);border-color:#e50914;transform:scale(1.08);}
+  .detail-hero-mute-btn.hidden{display:none!important;}
+  .detail-hero-mute-btn svg{width:14px;height:14px;}
   .detail-header{display:flex;gap:14px;padding:0 18px;margin-top:-56px;position:relative;z-index:2;}
   .detail-poster{width:96px;height:136px;border-radius:8px;overflow:hidden;flex-shrink:0;box-shadow:0 8px 20px rgba(0,0,0,.6);background:var(--card);}
   .detail-poster img{width:100%;height:100%;object-fit:cover;}
@@ -632,6 +643,8 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
 
     /* Detail page */
     .detail-banner{aspect-ratio:21/7;max-height:460px;}
+    .detail-hero-mute-btn{bottom:28px;right:32px;width:40px;height:40px;}
+    .detail-hero-mute-btn svg{width:16px;height:16px;}
     .detail-header{padding:0 48px;gap:22px;}
     .detail-poster{width:150px;height:214px;}
     .detail-headings{padding-top:70px;}
@@ -802,6 +815,8 @@ init();
 
 /* ============ CONFIG ============ */
 const API_URL = 'https://graphql.anilist.co';
+const HERO_PAUSE_ICON = `<svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M48 32C21.5 32 0 53.5 0 80L0 432c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48L48 32zm224 0c-26.5 0-48 21.5-48 48l0 352c0 26.5 21.5 48 48 48l64 0c26.5 0 48-21.5 48-48l0-352c0-26.5-21.5-48-48-48l-64 0z"/></svg>`;
+const HERO_PLAY_ICON = `<svg class="svg-icon play-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 67 67" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M20.28 9.65c-2.205-1.268-4.026-.228-4.026 2.307v43.805c0 2.535 1.82 3.574 4.027 2.307l38.471-21.903a2.556 2.556 0 0 0 1.094-.935 2.514 2.514 0 0 0 0-2.743 2.556 2.556 0 0 0-1.093-.936L20.28 9.65z"/></svg>`;
 const GENRE_COLORS = {
   Action:'#b8501f', Adventure:'#1c7a55', Comedy:'#c98a1e', Drama:'#4d3f8a',
   Mystery:'#245b78', Psychological:'#7a2457', Supernatural:'#3a2c8a',
@@ -957,6 +972,7 @@ function showToast(msg){
 }
 
 function switchPage(id){
+  destroyHeroTrailer();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
@@ -1568,6 +1584,13 @@ function playTrailer(id, site, key){
 let _pmMedia = null;   // full media object currently playing
 
 function openPlayerModal(aniId, totalEps, startEp){
+  try {
+    if (heroPlayer && typeof heroPlayer.pauseVideo === 'function') {
+      heroPlayer.pauseVideo();
+      const muteBtn = document.getElementById('hero-mute-btn');
+      if (muteBtn) muteBtn.innerHTML = HERO_PLAY_ICON;
+    }
+  } catch(e) {}
   if(!aniId){ showToast('No streaming data available for this title'); return; }
   const cachedMedia = mediaCache[aniId];
   if(cachedMedia) recordView(cachedMedia);
@@ -1762,9 +1785,248 @@ function pmNextEp(){
   if(ep < total){ modal.dataset.currentEp = ep + 1; updatePlayerIframe(); }
 }
 
+/* ============ HERO BACKGROUND TRAILER (MATCHING INDEX.HTML) ============ */
+let ytApiLoaded = false;
+let heroPlayer = null;
+let heroTrailerTimeout = null;
+let heroSessionToken = 0;
+
+function loadYouTubeAPI() {
+  return ytApiLoaded ? Promise.resolve() : new Promise(resolve => {
+    if (window.YT && window.YT.Player) {
+      ytApiLoaded = true;
+      return resolve();
+    }
+    const existing = document.querySelector('script[src*="youtube.com/iframe_api"]');
+    if (existing) {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        ytApiLoaded = true;
+        if (typeof prev === 'function') prev();
+        resolve();
+      };
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    const firstScript = document.getElementsByTagName('script')[0];
+    if (firstScript && firstScript.parentNode) {
+      firstScript.parentNode.insertBefore(script, firstScript);
+    } else {
+      document.head.appendChild(script);
+    }
+    window.onYouTubeIframeAPIReady = () => {
+      ytApiLoaded = true;
+      resolve();
+    };
+  });
+}
+
+function destroyHeroTrailer() {
+  heroSessionToken++;
+  clearTimeout(heroTrailerTimeout);
+  const backdropEl = document.getElementById('detail-backdrop');
+  const trailerEl = document.getElementById('detail-hero-trailer');
+  const muteBtn = document.getElementById('hero-mute-btn');
+  if (backdropEl) {
+    backdropEl.classList.remove('kenburns');
+    backdropEl.style.opacity = '0';
+  }
+  if (trailerEl) {
+    trailerEl.classList.remove('visible');
+    trailerEl.innerHTML = '';
+  }
+  if (heroPlayer) {
+    try { heroPlayer.destroy(); } catch (e) {}
+    heroPlayer = null;
+  }
+  if (muteBtn) {
+    muteBtn.classList.add('hidden');
+    muteBtn.onclick = null;
+  }
+}
+
+async function getAniListTrailer(m) {
+  if (!m) return null;
+  if (m.trailer && m.trailer.id) {
+    const site = (m.trailer.site || 'youtube').toLowerCase();
+    const id = String(m.trailer.id).trim();
+    if (id) return { id, site };
+  }
+  // If trailer was not already present on m, query AniList API directly for it
+  if (m.id) {
+    try {
+      const q = `query($id:Int){ Media(id:$id, type:ANIME){ trailer { id site } } }`;
+      const res = await anilistQuery(q, { id: m.id });
+      if (res && res.Media && res.Media.trailer && res.Media.trailer.id) {
+        const t = res.Media.trailer;
+        const site = (t.site || 'youtube').toLowerCase();
+        const id = String(t.id).trim();
+        if (id) return { id, site };
+      }
+    } catch (e) {
+      console.warn('Failed to query AniList trailer:', e);
+    }
+  }
+  return null;
+}
+
+async function launchHeroTrailerForMedia(m, initialBackdrop) {
+  destroyHeroTrailer();
+  const sessionToken = ++heroSessionToken;
+  const backdropEl = document.getElementById('detail-backdrop');
+  const trailerEl = document.getElementById('detail-hero-trailer');
+  const muteBtn = document.getElementById('hero-mute-btn');
+
+  if (initialBackdrop && backdropEl) {
+    backdropEl.style.backgroundImage = `url('${initialBackdrop}')`;
+    backdropEl.style.opacity = '1';
+    backdropEl.classList.add('kenburns');
+  }
+
+  if (initialBackdrop) {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.fetchPriority = 'high';
+    link.href = initialBackdrop;
+    document.head.appendChild(link);
+  }
+
+  // Fetch trailer directly from AniList API
+  const trailer = await getAniListTrailer(m);
+  if (heroSessionToken !== sessionToken || !trailer || !trailer.id) return;
+
+  function onPlaying() {
+    if (heroSessionToken === sessionToken) {
+      if (trailerEl) trailerEl.classList.add('visible');
+      if (backdropEl) backdropEl.style.opacity = '0';
+      if (muteBtn) {
+        muteBtn.classList.remove('hidden');
+        muteBtn.innerHTML = HERO_PAUSE_ICON;
+      }
+    }
+  }
+
+  function onEnded() {
+    if (heroSessionToken === sessionToken) {
+      if (heroPlayer) {
+        try { heroPlayer.destroy(); } catch (e) {}
+        heroPlayer = null;
+      }
+      if (trailerEl) {
+        trailerEl.classList.remove('visible');
+        trailerEl.innerHTML = '';
+      }
+      if (muteBtn) {
+        muteBtn.classList.add('hidden');
+        muteBtn.onclick = null;
+      }
+      if (backdropEl) {
+        backdropEl.style.opacity = '1';
+        backdropEl.classList.add('kenburns');
+      }
+    }
+  }
+
+  async function startTrailer() {
+    if (heroSessionToken !== sessionToken || !trailerEl) return;
+
+    if (trailer.site === 'dailymotion') {
+      const dmUrl = `https://www.dailymotion.com/embed/video/${encodeURIComponent(trailer.id)}?autoplay=1&mute=1&controls=0&ui-logo=0&sharing-enable=0`;
+      trailerEl.innerHTML = `<iframe
+        src="${dmUrl}"
+        frameborder="0"
+        allow="autoplay; fullscreen"
+        allowfullscreen
+        style="position:absolute;top:-30%;left:-30%;width:160%!important;height:160%!important;border:none!important;pointer-events:none;"
+      ></iframe>`;
+      setTimeout(() => {
+        if (heroSessionToken === sessionToken) onPlaying();
+      }, 1000);
+      return;
+    }
+
+    // YouTube
+    await loadYouTubeAPI();
+    if (heroSessionToken !== sessionToken || !trailerEl) return;
+    trailerEl.innerHTML = '<div id="yt-player-container"></div>';
+    let isPlaying = false;
+    const playerVars = {
+      autoplay: 1,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      modestbranding: 1,
+      rel: 0,
+      showinfo: 0,
+      mute: 1,
+      playsinline: 1
+    };
+    if (window.location.origin && window.location.origin !== 'null') {
+      playerVars.origin = window.location.origin;
+    }
+    try {
+      heroPlayer = new YT.Player('yt-player-container', {
+        videoId: trailer.id,
+        playerVars: playerVars,
+        events: {
+          onReady: e => {
+            try { e.target.mute(); } catch (err) {}
+            try { e.target.playVideo(); } catch (err) {}
+          },
+          onStateChange: e => {
+            if (heroSessionToken !== sessionToken) return;
+            if (e.data === YT.PlayerState.PLAYING && !isPlaying) {
+              isPlaying = true;
+              onPlaying();
+              let isPaused = false;
+              if (muteBtn) {
+                muteBtn.onclick = () => {
+                  if (heroSessionToken === sessionToken && heroPlayer) {
+                    if (isPaused) {
+                      heroPlayer.playVideo();
+                      muteBtn.innerHTML = HERO_PAUSE_ICON;
+                    } else {
+                      heroPlayer.pauseVideo();
+                      muteBtn.innerHTML = HERO_PLAY_ICON;
+                    }
+                    isPaused = !isPaused;
+                  }
+                };
+              }
+            } else if (e.data === YT.PlayerState.ENDED) {
+              onEnded();
+            }
+          },
+          onError: () => {
+            if (heroSessionToken === sessionToken) {
+              if (heroPlayer) {
+                try { heroPlayer.destroy(); } catch (e) {}
+                heroPlayer = null;
+              }
+              if (trailerEl) trailerEl.innerHTML = '';
+            }
+          }
+        }
+      });
+    } catch (err) {
+      console.warn('YouTube hero player init error:', err);
+    }
+  }
+
+  // 2s timeout matching index.html before starting the trailer
+  heroTrailerTimeout = setTimeout(async () => {
+    if (heroSessionToken === sessionToken) {
+      await startTrailer();
+    }
+  }, 2000);
+}
+
 /* ============ DETAIL PAGE ============ */
 async function openDetail(id, options){
   options = options || {};
+  destroyHeroTrailer();
   lastPage = document.querySelector('.page.active').id;
   switchPage('detail-page');
   if(!options.skipHistory) setUrlState({id}, !!options.replace);
@@ -1789,9 +2051,19 @@ function renderDetail(m){
   const scorePct = m.averageScore || 0;
   const va = (edge)=> (edge.voiceActors && edge.voiceActors[0]) ? edge.voiceActors[0].name.full : '';
 
+  const backdropUrl = m.bannerImage || m.coverImage.extraLarge || '';
+
   page.innerHTML = `
-    <div class="detail-banner">
-      <img src="${m.bannerImage || m.coverImage.extraLarge}" alt="">
+    <div class="detail-banner" id="detail-hero">
+      <div class="detail-hero-media">
+        <div class="detail-hero-backdrop kenburns" id="detail-backdrop" style="background-image: url('${backdropUrl}');"></div>
+        <div class="detail-hero-trailer" id="detail-hero-trailer">
+          <div id="yt-player-container"></div>
+        </div>
+      </div>
+      <button class="detail-hero-mute-btn hidden" id="hero-mute-btn" title="Pause/Play" aria-label="Pause or play background trailer">
+        ${HERO_PAUSE_ICON}
+      </button>
     </div>
     <div class="detail-header">
       <div class="detail-poster"><img src="${m.coverImage.large}" alt=""></div>
@@ -1837,6 +2109,7 @@ function renderDetail(m){
 
   window._fullDesc = desc;
   loadSimilar(m.genres[0], m.id);
+  launchHeroTrailerForMedia(m, backdropUrl);
 }
 
 function expandDesc(){
