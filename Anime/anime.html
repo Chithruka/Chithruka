@@ -3021,13 +3021,23 @@ function updatePlayerIframe(){
   const aniId  = modal.dataset.aniId;
   const ep     = modal.dataset.currentEp;
   const lang   = modal.dataset.currentLang;
-  const player = modal.dataset.currentPlayer;
+  const player = modal.dataset.currentPlayer || '1';
 
   let src;
   if(player === '1'){
-    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}?autoplay=1&muted=0`;
+    // Server 1: MegaPlay (Standard Stream)
+    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}?${lang === 'dub' ? 's=tcdn&' : ''}autostart=true`;
+  } else if(player === '2'){
+    // Server 2: VidTube Stream
+    src = `https://vidtube.site/stream/ani/${aniId}/${ep}/${lang}?s=tcdn&autostart=true`;
+  } else if(player === '3'){
+    // Server 3: MegaPlay (Video.js Stream)
+    src = `https://megaplay.buzz/videojs/stream/ani/${aniId}/${ep}/${lang}?${lang === 'dub' ? 's=tcdn&' : ''}autostart=true`;
+  } else if(player === '4'){
+    // Server 4: MegaPlay (TCDN Stream)
+    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}?s=tcdn&autostart=true`;
   } else {
-    src = `https://vidlink.pro/anime/${aniId}/${ep}/${lang}?fallback=true&autoplay=true&muted=false`;
+    src = `https://megaplay.buzz/stream/ani/${aniId}/${ep}/${lang}?${lang === 'dub' ? 's=tcdn&' : ''}autostart=true`;
   }
   document.getElementById('player-iframe').src = src;
 
@@ -3076,11 +3086,12 @@ function pmSyncCW(watchedTime, duration){
   renderContinueWatching();
 }
 
-/* postMessage listener for MegaPlay events */
+/* postMessage listener for MegaPlay / VidTube events */
 window.addEventListener('message', function(event){
-  // Only trust messages from megaplay.buzz
-  if(event.origin && event.origin !== 'https://megaplay.buzz' &&
-     !event.origin.includes('megaplay.buzz')) return;
+  // Only trust messages from megaplay.buzz and vidtube.site
+  if(event.origin &&
+     !event.origin.includes('megaplay.buzz') &&
+     !event.origin.includes('vidtube.site')) return;
 
   let data = event.data;
   if(typeof data === 'string'){
@@ -4265,9 +4276,11 @@ function isOpenResult(anilistId){
     <div class="pm-title">Now Streaming</div>
   </div>
   <div class="pm-controls">
-    <span class="pm-group-label">Player</span>
-    <button class="pm-btn pm-player-btn active" data-player="1" onclick="pmSetPlayer('1')">Player 1</button>
-    <button class="pm-btn pm-player-btn" data-player="2" onclick="pmSetPlayer('2')">Player 2</button>
+    <span class="pm-group-label">Server</span>
+    <button class="pm-btn pm-player-btn active" data-player="1" onclick="pmSetPlayer('1')">Server 1</button>
+    <button class="pm-btn pm-player-btn" data-player="2" onclick="pmSetPlayer('2')">Server 2</button>
+    <button class="pm-btn pm-player-btn" data-player="3" onclick="pmSetPlayer('3')">Server 3</button>
+    <button class="pm-btn pm-player-btn" data-player="4" onclick="pmSetPlayer('4')">Server 4</button>
     <div class="pm-sep"></div>
     <span class="pm-group-label">Language</span>
     <button class="pm-btn pm-lang-btn active" data-lang="sub" onclick="pmSetLang('sub')">Sub</button>
@@ -4279,7 +4292,7 @@ function isOpenResult(anilistId){
     </div>
   </div>
   <div style="position:relative;flex:1;display:flex;flex-direction:column;min-height:0;">
-    <iframe id="player-iframe" allowfullscreen allow="autoplay; fullscreen" src="about:blank"></iframe>
+    <iframe id="player-iframe" allow="autoplay; fullscreen; screen-wake-lock" allowfullscreen="yes" frameborder="no" scrolling="no" style="width: 100%; height: 100%; overflow: hidden;" src="about:blank"></iframe>
     <div id="pm-autonext-banner">
       <span>Next episode in <strong id="pm-autonext-counter">5</strong>s</span>
       <button class="pm-autonext-cancel" onclick="pmCancelAutoNext()">Cancel</button>
