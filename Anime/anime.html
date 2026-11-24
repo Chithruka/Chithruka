@@ -431,14 +431,59 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   /* ---------- Generic poster grid rows (More Like This / genre results) ---------- */
   .poster-row{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:0 18px;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;}
   .poster-card{flex-shrink:0;width:110px;cursor:pointer;}
-  .poster-wrap{position:relative;width:110px;height:156px;border-radius:8px;overflow:hidden;background:var(--card);transition:transform .25s ease, box-shadow .25s ease;}
-  .poster-wrap:hover{transform:scale(1.08);box-shadow:0 10px 24px rgba(0,0,0,.7);z-index:3;}
-  .poster-wrap img{width:100%;height:100%;object-fit:cover;}
+  .poster-wrap{position:relative;width:110px;height:156px;border-radius:8px;overflow:hidden;background:var(--card);transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;border:2px solid transparent;box-sizing:border-box;}
+  .poster-wrap:hover{transform:scale(1.08);box-shadow:0 12px 24px rgba(0,0,0,.7);border-color:rgba(255,255,255,0.4);z-index:3;}
+  .poster-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
   .poster-plus{
     position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
     background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:13px;
+    z-index:12;transition:background .2s ease;
   }
-  .poster-name{font-size:12px;margin-top:6px;font-weight:600;color:var(--text-dim);line-height:1.3;}
+  .poster-plus:hover{background:var(--accent);}
+
+  /* Status Badges (matching index.html) */
+  .media-status-badge-group{
+    position:absolute;left:50%!important;right:auto!important;transform:translateX(-50%);bottom:0;z-index:11;
+    display:flex;align-items:stretch;max-width:100%;border-radius:6px 6px 0 0;overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none;
+  }
+  .media-status-badge{
+    display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:800;
+    letter-spacing:.02em;text-transform:none;padding:4px 8px;white-space:nowrap;line-height:1.2;
+  }
+  .poster-wrap>.media-status-badge{
+    position:absolute;left:50%!important;right:auto!important;transform:translateX(-50%);bottom:0;z-index:11;
+    border-radius:6px 6px 0 0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none;
+  }
+  .media-status-badge.status-new-episode{background:#e50914;color:#fff;}
+  .media-status-badge.status-watch-now{background:#fff;color:#111;}
+  .media-status-badge.status-new-season{background:#e50914;color:#fff;}
+  .media-status-badge.status-recently-added{background:#e50914;color:#fff;}
+  .media-status-badge.status-new{background:#10b981;color:#fff;}
+  .media-status-badge.status-coming-soon{background:#f1c40f;color:#111;}
+  .media-status-badge.status-upcoming{background:#fff;color:#e50914;}
+
+  /* Card Typography & Meta Line (matching index.html) */
+  .poster-card .card-body{padding:6px 0 2px;}
+  .card-title, .poster-name{
+    color:#eee;font-size:13px;font-weight:600;margin:6px 0 3px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25;
+  }
+  .card-meta{color:#999;display:flex;font-size:11px;align-items:center;}
+  .card-meta-3{justify-content:flex-start!important;align-items:center;gap:4px;flex-wrap:wrap;line-height:1.2;}
+  .card-meta-3 .card-meta-dot{color:#666;font-size:9px;line-height:1;}
+  .card-meta .rating-star-icon{color:#e50914;width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:2px;flex-shrink:0;}
+  .card-meta .font-bold{font-weight:700;color:#fff;display:inline-flex;align-items:center;}
+  .card-meta .card-date-label{font-size:11px;font-weight:600;}
+  .card-meta .card-type-label{font-size:11px;color:#999;}
+
+  @media (max-width:768px){
+    .media-status-badge{font-size:.52rem;padding:3px 6px;}
+    .card-title, .poster-name{font-size:12px;margin:5px 0 2px;}
+    .card-meta{font-size:10px;}
+    .card-meta .card-date-label, .card-meta .card-type-label{font-size:10px;}
+    .card-meta .rating-star-icon{width:9px;height:9px;}
+  }
 
   /* ---------- Row scroll arrow buttons ---------- */
   .row-wrap{position:relative;}
@@ -495,7 +540,7 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .search-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px 12px;padding:4px 18px 8px;}
   .search-grid .poster-card{width:100%;}
   .search-grid .poster-wrap{width:100%;height:auto;aspect-ratio:110/156;}
-  .poster-play{position:absolute;left:6px;bottom:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;backdrop-filter:blur(4px);}
+  .poster-play{position:absolute;left:6px;top:6px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:12;backdrop-filter:blur(4px);transition:background .2s ease;}
   .poster-play:hover{background:var(--accent);}
 
   /* ---------- Detail page ---------- */
@@ -650,7 +695,10 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     .poster-row{padding:0 48px;gap:18px;}
     .poster-card{width:160px;}
     .poster-wrap{width:160px;height:226px;}
-    .poster-name{font-size:13px;}
+    .card-title, .poster-name{font-size:13.5px;}
+    .card-meta{font-size:11.5px;}
+    .card-meta .card-date-label, .card-meta .card-type-label{font-size:11.5px;}
+    .card-meta .rating-star-icon{width:11px;height:11px;}
 
     .top10-row{padding:6px 48px 40px !important;}
     .top-10-card, .top10-item{min-width:180px;width:180px;margin-left:14px;}
@@ -971,10 +1019,15 @@ const MEDIA_FIELDS = `
   bannerImage
   genres
   averageScore
+  meanScore
+  weightedScore
   episodes
   seasonYear
   status
   format
+  startDate { year month day }
+  endDate { year month day }
+  nextAiringEpisode { episode airingAt timeUntilAiring }
   trailer { id site }
   characters(sort:[ROLE, RELEVANCE, ID], perPage:24){
     edges{
@@ -994,7 +1047,7 @@ function fmtStatus(s){
   return ({FINISHED:'Completed', RELEASING:'Ongoing', NOT_YET_RELEASED:'Upcoming', CANCELLED:'Cancelled'})[s] || s;
 }
 function fmtFormat(f){
-  return ({TV:'Series', MOVIE:'Movie', OVA:'OVA', ONA:'ONA', SPECIAL:'Special', TV_SHORT:'Series'})[f] || f;
+  return ({TV:'TV Show', MOVIE:'Movie', OVA:'OVA', ONA:'ONA', SPECIAL:'Special', TV_SHORT:'TV Show'})[f] || f || 'Anime';
 }
 function genreColor(g){ return GENRE_COLORS[g] || GENRE_COLORS.default; }
 
@@ -1301,15 +1354,145 @@ async function importHistory(event){
   event.target.value = '';
 }
 
+const RATING_STAR_ICON = `<svg class="svg-icon mr-1 rating-star-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z"/></svg>`;
+
+function buildStatusBadgeHtml(m){
+  if (!m) return '';
+  const now = Date.now();
+  const next = m.nextAiringEpisode;
+
+  // 1. Airing / Releasing series
+  if (m.status === 'RELEASING') {
+    if (next) {
+      if (next.episode > 1) {
+        const timeUntil = next.timeUntilAiring || 0;
+        const daysSinceLast = Math.max(0, Math.floor((7 * 86400 - timeUntil) / 86400));
+        if (daysSinceLast <= 10) {
+          const isNewSeason = next.episode === 2 && /Season\s*[2-9]|\b[2-9](?:nd|rd|th)\s*Season\b/i.test(displayTitle(m));
+          if (isNewSeason) {
+            return '<div class="media-status-badge status-new-season"><span>New season</span></div>';
+          }
+          return '<div class="media-status-badge-group"><div class="media-status-badge status-new-episode"><span>New episode</span></div><div class="media-status-badge status-watch-now"><span>Watch now</span></div></div>';
+        } else {
+          const daysUntil = Math.ceil(timeUntil / 86400);
+          if (daysUntil >= 0 && daysUntil <= 7) {
+            const txt = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil}d`;
+            return `<div class="media-status-badge status-coming-soon"><span>New episode ${txt}</span></div>`;
+          }
+        }
+      } else if (next.episode === 1) {
+        const daysUntil = Math.ceil((next.timeUntilAiring || 0) / 86400);
+        if (daysUntil >= 0 && daysUntil <= 7) {
+          const txt = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil}d`;
+          return `<div class="media-status-badge status-coming-soon"><span>New episode ${txt}</span></div>`;
+        }
+        return '<div class="media-status-badge status-upcoming"><span>Upcoming</span></div>';
+      }
+    }
+    return '<div class="media-status-badge-group"><div class="media-status-badge status-new-episode"><span>New episode</span></div><div class="media-status-badge status-watch-now"><span>Watch now</span></div></div>';
+  }
+
+  // 2. Upcoming / Not yet released
+  if (m.status === 'NOT_YET_RELEASED') {
+    return '<div class="media-status-badge status-upcoming"><span>Upcoming</span></div>';
+  }
+
+  // 3. Finished or Check start/end dates
+  if (m.endDate && m.endDate.year) {
+    const end = new Date(m.endDate.year, (m.endDate.month || 1) - 1, m.endDate.day || 1);
+    const diffDays = Math.floor((now - end.getTime()) / 864e5);
+    if (diffDays >= 0 && diffDays <= 14) {
+      return '<div class="media-status-badge status-recently-added"><span>Recently added</span></div>';
+    } else if (diffDays >= 0 && diffDays <= 30) {
+      return '<div class="media-status-badge status-new"><span>New</span></div>';
+    }
+  }
+
+  if (m.startDate && m.startDate.year) {
+    const start = new Date(m.startDate.year, (m.startDate.month || 1) - 1, m.startDate.day || 1);
+    const diffDays = Math.floor((now - start.getTime()) / 864e5);
+    if (diffDays >= 0 && diffDays <= 14) {
+      return '<div class="media-status-badge status-recently-added"><span>Recently added</span></div>';
+    } else if (diffDays >= 0 && diffDays <= 30) {
+      return '<div class="media-status-badge status-new"><span>New</span></div>';
+    } else if (diffDays < 0) {
+      return '<div class="media-status-badge status-upcoming"><span>Upcoming</span></div>';
+    }
+  }
+
+  return '';
+}
+
+function buildCardMetaHtml(m){
+  if (!m) return '';
+
+  const rawScore = m.weightedScore || m.averageScore || m.meanScore;
+  const score = rawScore ? (rawScore / 10).toFixed(1) : null;
+  const ratingHtml = score
+    ? `<span class="font-bold">${RATING_STAR_ICON}${score}</span>`
+    : '';
+
+  const dot = '<span class="card-meta-dot">•</span>';
+  const next = m.nextAiringEpisode;
+
+  // If ongoing series with next episode info
+  if (m.status === 'RELEASING' && next) {
+    if (next.episode > 1) {
+      const epNum = next.episode - 1;
+      const sMatch = displayTitle(m).match(/Season\s*(\d+)|(\d+)(?:nd|rd|th|st)\s*Season/i);
+      const sNum = sMatch ? (sMatch[1] || sMatch[2]) : 1;
+      const epLabel = `S${sNum}.E${epNum}`;
+
+      const lastAiredMs = (next.airingAt - 7 * 86400) * 1000;
+      const dateLabel = new Date(lastAiredMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      const parts = [];
+      if (ratingHtml) parts.push(ratingHtml);
+      parts.push(`<span class="card-date-label" style="color:#e50914;">${epLabel}</span>`);
+      parts.push(`<span class="card-type-label">${dateLabel}</span>`);
+      return parts.join(` ${dot} `);
+    } else if (next.episode === 1) {
+      const epLabel = 'Ep. 1';
+      const nextAiredMs = next.airingAt * 1000;
+      const dateLabel = new Date(nextAiredMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+      const parts = [];
+      if (ratingHtml) parts.push(ratingHtml);
+      parts.push(`<span class="card-date-label" style="color:#e50914;">${epLabel}</span>`);
+      parts.push(`<span class="card-type-label">${dateLabel}</span>`);
+      return parts.join(` ${dot} `);
+    }
+  }
+
+  // Not releasing or no airing schedule: show Year and Format (Movie, TV Show, etc.)
+  const year = m.seasonYear || (m.startDate && m.startDate.year) || '';
+  const fmt = fmtFormat(m.format);
+
+  const parts = [];
+  if (ratingHtml) parts.push(ratingHtml);
+  if (year) parts.push(`<span class="card-date-label">${year}</span>`);
+  if (fmt) parts.push(`<span class="card-type-label" data-media-type="${m.format}">${fmt}</span>`);
+  return parts.join(` ${dot} `);
+}
+
 function posterCardHTML(m){
   const added = addedSet.has(m.id);
+  const title = displayTitle(m);
+  const safeTitle = escapeHtml(title);
+  const badgeHtml = buildStatusBadgeHtml(m);
+  const metaHtml = buildCardMetaHtml(m);
+
   return `
     <div class="poster-card">
       <div class="poster-wrap" onclick="openDetail(${m.id})">
-        <img src="${m.coverImage.large}" alt="">
-        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</div>
+        ${badgeHtml}
+        <img src="${m.coverImage.large}" alt="${safeTitle}" loading="lazy">
+        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)" title="${added ? 'Remove from My List' : 'Add to My List'}">${added ? WL_ICON_SOLID : WL_ICON_OUTLINE}</div>
       </div>
-      <div class="poster-name">${displayTitle(m)}</div>
+      <div class="card-body">
+        <div class="poster-name card-title" title="${safeTitle}">${safeTitle}</div>
+        <div class="card-meta card-meta-3">${metaHtml}</div>
+      </div>
     </div>`;
 }
 
@@ -1595,14 +1778,23 @@ function renderTopResultLayout(list, customLabel){
 
 function searchResultCardHTML(m){
   const added = addedSet.has(m.id);
+  const title = displayTitle(m);
+  const safeTitle = escapeHtml(title);
+  const badgeHtml = buildStatusBadgeHtml(m);
+  const metaHtml = buildCardMetaHtml(m);
+
   return `
     <div class="poster-card">
       <div class="poster-wrap" onclick="openDetail(${m.id})">
-        <img src="${m.coverImage.large}" alt="">
+        ${badgeHtml}
+        <img src="${m.coverImage.large}" alt="${safeTitle}" loading="lazy">
         <div class="poster-play" onclick="event.stopPropagation(); openPlayerModal(${m.id}, ${m.episodes||1})" title="Play">${PLAY_ICON_SVG}</div>
-        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)">${added?WL_ICON_SOLID:WL_ICON_OUTLINE}</div>
+        <div class="poster-plus" onclick="event.stopPropagation(); toggleAdd(${m.id}, this)" title="${added ? 'Remove from My List' : 'Add to My List'}">${added ? WL_ICON_SOLID : WL_ICON_OUTLINE}</div>
       </div>
-      <div class="poster-name">${displayTitle(m)}</div>
+      <div class="card-body">
+        <div class="poster-name card-title" title="${safeTitle}">${safeTitle}</div>
+        <div class="card-meta card-meta-3">${metaHtml}</div>
+      </div>
     </div>`;
 }
 
