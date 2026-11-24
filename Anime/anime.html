@@ -144,13 +144,6 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;border:none;cursor:pointer;background:none;color:inherit;}
 
-  /* Page vertical scrollbar */
-  ::-webkit-scrollbar{width:8px;height:8px;}
-  ::-webkit-scrollbar-track{background:#000;}
-  ::-webkit-scrollbar-thumb{background:#333;border-radius:4px;}
-  ::-webkit-scrollbar-thumb:hover{background:#555;}
-  html{scrollbar-color:#333 #000;scrollbar-width:thin;}
-
   /* Keep horizontal carousels & chip rows clean without horizontal scrollbars */
   .poster-row, .row-scroll, .top10-row, .hero-indicators, .genre-row, .chips-row, .filter-chips, .character-voice-row{
     scrollbar-width:none;
@@ -440,6 +433,9 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
     justify-content: center;
     padding: 10px 24px;
     transition: transform .2s, background .2s, opacity .2s;
+    flex: 0 0 auto !important;
+    flex-grow: 0 !important;
+    width: auto !important;
   }
   .hero-btn-row .action-btn:active {
     opacity: .8;
@@ -475,9 +471,12 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
       gap: 8px;
     }
     .hero-btn-row .action-btn {
-      padding: 8px 16px;
-      font-size: .88rem;
+      padding: 10px 16px;
+      font-size: .85rem;
       gap: 6px;
+      flex: 0 0 auto !important;
+      flex-grow: 0 !important;
+      width: auto !important;
     }
     .hero-btn-row .svg-icon {
       width: 15px;
@@ -1001,7 +1000,7 @@ body>.container:has(#home-page.active),body>.container:has(#detail-page.active){
   .btn-download{background:#484848;color:#fff;}
   .btn-download:hover{background:#5a5a5a;}
   @media (max-width:767px){
-    .action-btn{flex-grow:1;}
+    .detail-action-buttons .action-btn{flex-grow:1;}
   }
   /* ---------- Cast & Characters Rich Section ---------- */
   .cast-section-wrap{margin-top:24px;}
@@ -1815,24 +1814,67 @@ function setupHeroDrag(count) {
   }, true);
 }
 
+function getAniListSeasons(){
+  const d = new Date();
+  const m = d.getMonth(); // 0 to 11
+  const y = d.getFullYear();
+  let season = 'FALL';
+  let seasonYear = y;
+  let nextSeason = 'WINTER';
+  let nextSeasonYear = y + 1;
+
+  if (m >= 0 && m <= 2) {
+    season = 'WINTER'; seasonYear = y;
+    nextSeason = 'SPRING'; nextSeasonYear = y;
+  } else if (m >= 3 && m <= 5) {
+    season = 'SPRING'; seasonYear = y;
+    nextSeason = 'SUMMER'; nextSeasonYear = y;
+  } else if (m >= 6 && m <= 8) {
+    season = 'SUMMER'; seasonYear = y;
+    nextSeason = 'FALL'; nextSeasonYear = y;
+  } else {
+    season = 'FALL'; seasonYear = y;
+    nextSeason = 'WINTER'; nextSeasonYear = y + 1;
+  }
+
+  return { season, seasonYear, nextSeason, nextSeasonYear };
+}
+
 /* ============ HOME PAGE ============ */
 async function loadHome(){
   const slot = document.getElementById('hero-slot');
   try{
+    const { season, seasonYear, nextSeason, nextSeasonYear } = getAniListSeasons();
     const query = `
-      query {
-        Page(page:1, perPage:16){
-          media(sort:TRENDING_DESC, type:ANIME){ ${MEDIA_FIELDS} }
+      query($season: MediaSeason, $seasonYear: Int, $nextSeason: MediaSeason, $nextSeasonYear: Int) {
+        trending: Page(page:1, perPage:16){
+          media(sort:TRENDING_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
+        }
+        popularSeason: Page(page:1, perPage:16){
+          media(season:$season, seasonYear:$seasonYear, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
+        }
+        upcomingNext: Page(page:1, perPage:16){
+          media(season:$nextSeason, seasonYear:$nextSeasonYear, sort:POPULARITY_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
+        }
+        allTimePopular: Page(page:1, perPage:16){
+          media(sort:POPULARITY_DESC, type:ANIME, isAdult:false){ ${MEDIA_FIELDS} }
         }
       }`;
-    const data = await anilistQuery(query);
-    const list = data.Page.media;
-    list.forEach(cacheMedia);
+    const data = await anilistQuery(query, { season, seasonYear, nextSeason, nextSeasonYear });
+    const trendingList = (data.trending && data.trending.media) || [];
+    const popularSeasonList = (data.popularSeason && data.popularSeason.media) || [];
+    const upcomingNextList = (data.upcomingNext && data.upcomingNext.media) || [];
+    const allTimePopularList = (data.allTimePopular && data.allTimePopular.media) || [];
+
+    trendingList.forEach(cacheMedia);
+    popularSeasonList.forEach(cacheMedia);
+    upcomingNextList.forEach(cacheMedia);
+    allTimePopularList.forEach(cacheMedia);
 
     // Pick top 5 with banner images (fallback to cover if needed)
-    const withBanner = list.filter(m => m.bannerImage);
-    const heroTop5 = (withBanner.length >= 5 ? withBanner : list).slice(0, 5);
-    const top10 = list.slice(0, 10);
+    const withBanner = trendingList.filter(m => m.bannerImage);
+    const heroTop5 = (withBanner.length >= 5 ? withBanner : trendingList).slice(0, 5);
+    const top10 = trendingList.slice(0, 10);
 
     slot.className = '';
     slot.innerHTML = `
@@ -1883,6 +1925,15 @@ async function loadHome(){
 
       <div class="section-title">Trending Now</div>
       <div class="poster-row" id="trending-row"></div>
+
+      <div class="section-title">Popular this season</div>
+      <div class="poster-row" id="popular-season-row"></div>
+
+      <div class="section-title">Upcoming next season</div>
+      <div class="poster-row" id="upcoming-next-row"></div>
+
+      <div class="section-title">All time popular</div>
+      <div class="poster-row" id="all-time-popular-row" style="margin-bottom:28px;"></div>
     `;
 
     // Initialize Hero Carousel
@@ -1911,7 +1962,19 @@ async function loadHome(){
 
     // Trending posters
     const trendRow = document.getElementById('trending-row');
-    trendRow.innerHTML = list.slice(4,14).map(m=>posterCardHTML(m)).join('');
+    if (trendRow) trendRow.innerHTML = trendingList.slice(4,16).map(m=>posterCardHTML(m)).join('');
+
+    // Popular this season
+    const popSeasonRow = document.getElementById('popular-season-row');
+    if (popSeasonRow) popSeasonRow.innerHTML = popularSeasonList.map(m=>posterCardHTML(m)).join('');
+
+    // Upcoming next season
+    const upcomingRow = document.getElementById('upcoming-next-row');
+    if (upcomingRow) upcomingRow.innerHTML = upcomingNextList.map(m=>posterCardHTML(m)).join('');
+
+    // All time popular
+    const allTimeRow = document.getElementById('all-time-popular-row');
+    if (allTimeRow) allTimeRow.innerHTML = allTimePopularList.map(m=>posterCardHTML(m)).join('');
 
     // Genre card background art (fetched separately, non-blocking)
     loadGenreBackgrounds();
