@@ -690,13 +690,16 @@
             max-width: calc(100% + 32px) !important;
             margin-left: -16px !important;
             margin-right: -16px !important;
-            margin-top: -86px !important;
-            min-height: 540px;
+            margin-top: -86px;
+            aspect-ratio: auto !important;
+            height: auto !important;
+            max-height: none !important;
+            min-height: 460px;
             background: #000;
             overflow: hidden;
-            display: flex;
+            display: flex !important;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: flex-start !important;
             margin-bottom: 26px;
             padding-top: 94px;
             padding-bottom: 28px;
@@ -742,11 +745,13 @@
             z-index: 5;
             width: 100%;
             max-width: 1480px;
+            min-width: 0;
             margin: 0 auto;
             padding: 0 4%;
             display: flex;
             flex-direction: column;
             gap: 18px;
+            box-sizing: border-box;
         }
 
         .scores-hero-topbar {
@@ -882,6 +887,8 @@
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
+            width: 100%;
+            min-width: 0;
         }
 
         .league-tabs-scroll {
@@ -890,8 +897,9 @@
             gap: 8px;
             overflow-x: auto;
             padding: 2px 2px 4px;
-            flex: 1;
+            flex: 1 1 0%;
             min-width: 0;
+            max-width: 100%;
         }
 
         .league-pill {
@@ -953,6 +961,9 @@
         /* Featured Match Spotlight Card */
         .match-spotlight {
             position: relative;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             border-radius: 18px;
             padding: 20px 24px;
             background:
@@ -962,9 +973,10 @@
             -webkit-backdrop-filter: blur(18px) saturate(140%);
             box-shadow: 0 22px 55px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             gap: 20px;
+            overflow: hidden;
         }
 
         .spotlight-left {
@@ -1138,6 +1150,9 @@
         /* Live Scores & Fixtures Horizontal Carousel */
         .fixtures-strip-wrap {
             position: relative;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
         }
 
         .fixtures-strip {
@@ -1146,6 +1161,9 @@
             overflow-x: auto;
             padding: 4px 2px 6px;
             scroll-behavior: smooth;
+            width: 100%;
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         .fixture-card {
@@ -1995,12 +2013,13 @@
 
         @media (max-width: 991px) {
             #hero-section {
-                padding-top: 86px !important;
-                padding-bottom: 24px !important;
-                min-height: 460px !important;
+                margin-top: -70px !important;
+                padding-top: 84px !important;
+                padding-bottom: 22px !important;
+                min-height: 0 !important;
             }
             .match-spotlight {
-                grid-template-columns: 1fr;
+                grid-template-columns: minmax(0, 1fr);
                 padding: 16px;
                 gap: 14px;
             }
@@ -2008,21 +2027,118 @@
         }
 
         @media (max-width: 768px) {
-            #hero-section {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-                border-radius: 14px !important;
+            html, body {
+                overflow-x: hidden !important;
             }
-            .scores-hero-inner { padding: 0 14px; }
+            body > .container {
+                overflow-x: hidden !important;
+            }
+            #hero-section {
+                width: calc(100% + 32px) !important;
+                max-width: calc(100% + 32px) !important;
+                margin-left: -16px !important;
+                margin-right: -16px !important;
+                border-radius: 0 !important;
+                padding-top: 82px !important;
+                padding-bottom: 18px !important;
+            }
+            .scores-hero-inner {
+                padding: 0 16px;
+                gap: 12px;
+            }
+            .scores-hero-topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .scores-hero-controls {
+                width: 100%;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .scores-stat-pills {
+                gap: 6px;
+            }
+            .scores-stat-pill {
+                padding: 4px 9px;
+                font-size: 11px;
+            }
+            .scores-refresh-btn {
+                height: 30px;
+                padding: 0 11px;
+                font-size: 11.5px;
+            }
+            .scores-league-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .league-tabs-scroll {
+                width: 100%;
+                flex: none;
+            }
+            .league-pill {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .fixture-state-tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .state-tab {
+                flex: 1;
+                text-align: center;
+                padding: 5px 8px;
+            }
+            .match-spotlight {
+                padding: 14px;
+                border-radius: 14px;
+                gap: 12px;
+            }
+            .spotlight-left {
+                gap: 10px;
+            }
+            .spotlight-matchup {
+                gap: 10px;
+            }
+            .spotlight-team {
+                gap: 8px;
+                max-width: 100%;
+            }
+            .spotlight-team-logo {
+                width: 32px;
+                height: 32px;
+            }
+            .spotlight-team-name {
+                font-size: 0.95rem;
+            }
+            .spotlight-score-box {
+                padding: 6px 12px;
+                font-size: 1.25rem;
+                border-radius: 9px;
+            }
+            .spotlight-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+            .spotlight-actions .sports-btn {
+                width: 100%;
+                padding: 10px 12px;
+                font-size: 12.5px;
+            }
+            .fixture-card {
+                flex: 0 0 232px;
+                max-width: 78vw;
+                padding: 12px;
+            }
             .sports-main-wrap { padding: 0 12px 20px; }
             .infinite-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
             .multiview-grid { grid-template-columns: 1fr; }
             .sports-filter-controls select { max-width: none; flex: 1; min-width: 120px; }
             .tv-now-playing { padding: 12px; }
             .tv-np-right { width: 100%; justify-content: space-between; }
-            .fixture-card { flex: 0 0 250px; }
         }
     </style>
 </head>
