@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg_jolene" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4e2e1e"/>
+      <stop offset="100%" stop-color="#24150f"/>
+    </linearGradient>
+    <radialGradient id="glow_jolene" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#d4935a" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#24150f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="200" rx="22" fill="url(#bg_jolene)"/>
+  <rect width="200" height="200" rx="22" fill="url(#glow_jolene)"/>
+  <!-- Chessboard subtle border accent -->
+  <g opacity="0.12" fill="#f5d5a7">
+    <rect x="14" y="14" width="12" height="12"/><rect x="38" y="14" width="12" height="12"/>
+    <rect x="26" y="26" width="12" height="12"/><rect x="150" y="14" width="12" height="12"/>
+    <rect x="174" y="14" width="12" height="12"/><rect x="162" y="26" width="12" height="12"/>
+  </g>
+  <!-- Hair puffs / 1950s braids -->
+  <circle cx="52" cy="76" r="24" fill="#1b120e"/>
+  <circle cx="148" cy="76" r="24" fill="#1b120e"/>
+  <circle cx="100" cy="68" r="44" fill="#1b120e"/>
+  <!-- Shoulders & Methuen green pinafore -->
+  <path d="M36 200 C40 156, 62 140, 100 140 C138 140, 160 156, 164 200 Z" fill="#4f6d5a"/>
+  <!-- White blouse & collar -->
+  <path d="M74 142 L100 166 L126 142 L120 136 L100 150 L80 136 Z" fill="#eae4d7"/>
+  <path d="M84 142 L100 158 L116 142 L116 200 L84 200 Z" fill="#dcd4c3" opacity="0.25"/>
+  <!-- Neck -->
+  <rect x="87" y="118" width="26" height="26" rx="10" fill="#6f4128"/>
+  <path d="M87 124 Q100 134 113 124 L113 118 L87 118 Z" fill="#522e1b" opacity="0.55"/>
+  <!-- Face -->
+  <path d="M66 78 C66 50, 134 50, 134 78 C134 110, 120 128, 100 128 C80 128, 66 110, 66 78 Z" fill="#824d31"/>
+  <!-- Ears -->
+  <ellipse cx="64" cy="88" rx="6" ry="9" fill="#74432a"/>
+  <ellipse cx="136" cy="88" rx="6" ry="9" fill="#74432a"/>
+  <!-- Hairline -->
+  <path d="M64 76 C68 42, 132 42, 136 76 C125 60, 110 56, 100 58 C90 56, 75 60, 64 76 Z" fill="#1b120e"/>
+  <!-- Eyebrows -->
+  <path d="M76 74 Q84 70 92 74" fill="none" stroke="#1b120e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M108 74 Q116 70 124 74" fill="none" stroke="#1b120e" stroke-width="3" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <ellipse cx="84" cy="84" rx="6" ry="4.5" fill="#fff"/>
+  <ellipse cx="116" cy="84" rx="6" ry="4.5" fill="#fff"/>
+  <circle cx="84.5" cy="84" r="3.4" fill="#23140d"/>
+  <circle cx="116.5" cy="84" r="3.4" fill="#23140d"/>
+  <circle cx="85.8" cy="82.7" r="1.1" fill="#fff"/>
+  <circle cx="117.8" cy="82.7" r="1.1" fill="#fff"/>
+  <!-- Nose -->
+  <path d="M100 84 L96 98 Q100 101 104 98" fill="none" stroke="#5b321d" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Warm confident smile -->
+  <path d="M86 108 Q100 119 114 108 Z" fill="#f7f2ea"/>
+  <path d="M85 108 Q100 121 115 108" fill="none" stroke="#472213" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- White hair ribbons -->
+  <circle cx="67" cy="60" r="4.5" fill="#e8dfd1"/>
+  <circle cx="133" cy="60" r="4.5" fill="#e8dfd1"/>
+</svg>

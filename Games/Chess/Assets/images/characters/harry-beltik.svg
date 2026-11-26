@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg_beltik" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#25364a"/>
+      <stop offset="100%" stop-color="#131a23"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="22" fill="url(#bg_beltik)"/>
+  <!-- Sweater vest & collared shirt -->
+  <path d="M34 200 C38 156, 62 140, 100 140 C138 140, 162 156, 166 200 Z" fill="#3b4d63"/>
+  <path d="M80 140 L100 172 L120 140 Z" fill="#eceef2"/>
+  <path d="M96 164 L104 164 L106 200 L94 200 Z" fill="#632b30"/>
+  <!-- Neck -->
+  <rect x="87" y="118" width="26" height="26" rx="9" fill="#e5b899"/>
+  <!-- Face (lean, serious) -->
+  <path d="M68 78 C68 50, 132 50, 132 78 C132 108, 118 128, 100 128 C82 128, 68 108, 68 78 Z" fill="#f0c8ab"/>
+  <!-- Neat side-parted hair -->
+  <path d="M64 80 C62 44, 138 44, 136 80 C128 63, 115 56, 92 58 C78 59, 70 68, 64 80 Z" fill="#463325"/>
+  <!-- Prominent determined brows -->
+  <path d="M75 74 Q84 72 93 76" fill="none" stroke="#3a291d" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M107 76 Q116 72 125 74" fill="none" stroke="#3a291d" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <ellipse cx="84" cy="84" rx="5.5" ry="4" fill="#fff"/>
+  <ellipse cx="116" cy="84" rx="5.5" ry="4" fill="#fff"/>
+  <circle cx="84.5" cy="84" r="3" fill="#2e3f4f"/>
+  <circle cx="116.5" cy="84" r="3" fill="#2e3f4f"/>
+  <circle cx="85.5" cy="83" r="1" fill="#fff"/>
+  <circle cx="117.5" cy="83" r="1" fill="#fff"/>
+  <!-- Nose -->
+  <path d="M100 84 L98 98 Q100 101 103 98" fill="none" stroke="#c79776" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Serious mouth -->
+  <path d="M89 109 Q100 108 111 109" fill="none" stroke="#9e685d" stroke-width="2.6" stroke-linecap="round"/>
+</svg>

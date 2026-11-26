@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg_ganz" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#273c33"/>
+      <stop offset="100%" stop-color="#141e1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="22" fill="url(#bg_ganz)"/>
+  <!-- Tweed jacket & bow tie -->
+  <path d="M32 200 C36 154, 60 138, 100 138 C140 138, 164 154, 168 200 Z" fill="#5c4b3c"/>
+  <path d="M78 140 L100 185 L122 140 Z" fill="#ebe6da"/>
+  <!-- Bowtie -->
+  <path d="M87 146 L100 152 L87 158 Z M113 146 L100 152 L113 158 Z" fill="#8b2d2d"/>
+  <circle cx="100" cy="152" r="3.5" fill="#6b1f1f"/>
+  <!-- Neck -->
+  <rect x="86" y="118" width="28" height="24" rx="10" fill="#e5ba9a"/>
+  <!-- Ears -->
+  <ellipse cx="64" cy="90" rx="6" ry="9" fill="#d9ab8b"/>
+  <ellipse cx="136" cy="90" rx="6" ry="9" fill="#d9ab8b"/>
+  <!-- Face -->
+  <path d="M67 78 C67 48, 133 48, 133 78 C133 110, 120 128, 100 128 C80 128, 67 110, 67 78 Z" fill="#efc7a9"/>
+  <!-- Hair (receding neat teacher style) -->
+  <path d="M64 80 C62 46, 138 46, 136 80 C130 62, 114 54, 100 56 C86 54, 70 62, 64 80 Z" fill="#5d4c41"/>
+  <!-- Eyebrows -->
+  <path d="M75 74 Q84 70 92 73" fill="none" stroke="#4a3b31" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M108 73 Q116 70 125 74" fill="none" stroke="#4a3b31" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Horn-rimmed glasses -->
+  <rect x="72" y="76" width="23" height="16" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#221b17" stroke-width="3.2"/>
+  <rect x="105" y="76" width="23" height="16" rx="4" fill="#ffffff" fill-opacity="0.14" stroke="#221b17" stroke-width="3.2"/>
+  <line x1="95" y1="83" x2="105" y2="83" stroke="#221b17" stroke-width="3"/>
+  <!-- Eyes -->
+  <circle cx="83.5" cy="84" r="3" fill="#2b211a"/>
+  <circle cx="116.5" cy="84" r="3" fill="#2b211a"/>
+  <circle cx="84.5" cy="83" r="1" fill="#fff"/>
+  <circle cx="117.5" cy="83" r="1" fill="#fff"/>
+  <!-- Nose -->
+  <path d="M100 84 L97 99 Q100 102 104 99" fill="none" stroke="#c59473" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Mustache & smile -->
+  <path d="M88 106 Q100 102 112 106" fill="none" stroke="#5d4c41" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M91 112 Q100 116 109 112" fill="none" stroke="#a6695b" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

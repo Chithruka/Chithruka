@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg_annette" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4d3d1c"/>
+      <stop offset="100%" stop-color="#221c10"/>
+    </linearGradient>
+    <radialGradient id="glow_annette" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#f2c96b" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#221c10" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="200" rx="22" fill="url(#bg_annette)"/>
+  <rect width="200" height="200" rx="22" fill="url(#glow_annette)"/>
+  <!-- 1960s blonde flip hair back -->
+  <path d="M52 80 C46 116, 40 132, 60 136 L140 136 C160 132, 154 116, 148 80 C145 40, 55 40, 52 80 Z" fill="#c99b49"/>
+  <!-- Buttercup yellow 60s dress & cardigan -->
+  <path d="M36 200 C40 156, 62 140, 100 140 C138 140, 160 156, 164 200 Z" fill="#e4b745"/>
+  <path d="M80 140 L100 172 L120 140 Z" fill="#f7f1de"/>
+  <!-- Neck -->
+  <rect x="88" y="118" width="24" height="26" rx="10" fill="#f0c7a8"/>
+  <path d="M88 124 Q100 134 112 124 L112 118 L88 118 Z" fill="#d9a684" opacity="0.6"/>
+  <!-- Face -->
+  <path d="M68 78 C68 52, 132 52, 132 78 C132 109, 118 126, 100 126 C82 126, 68 109, 68 78 Z" fill="#f7d3b7"/>
+  <!-- Blonde bangs & headband -->
+  <path d="M63 75 C66 42, 134 42, 137 75 C124 62, 105 56, 86 64 C76 68, 69 72, 63 75 Z" fill="#dfb35c"/>
+  <path d="M64 62 Q100 42 136 62" fill="none" stroke="#e4b745" stroke-width="6" stroke-linecap="round"/>
+  <!-- Eyebrows -->
+  <path d="M77 75 Q85 71 92 75" fill="none" stroke="#9e742e" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M108 75 Q115 71 123 75" fill="none" stroke="#9e742e" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <ellipse cx="85" cy="84" rx="5.8" ry="4.4" fill="#fff"/>
+  <ellipse cx="115" cy="84" rx="5.8" ry="4.4" fill="#fff"/>
+  <circle cx="85.5" cy="84" r="3.1" fill="#46627c"/>
+  <circle cx="115.5" cy="84" r="3.1" fill="#46627c"/>
+  <circle cx="86.6" cy="82.8" r="1.1" fill="#fff"/>
+  <circle cx="116.6" cy="82.8" r="1.1" fill="#fff"/>
+  <!-- Nose -->
+  <path d="M100 84 L98 96 Q100 99 103 96" fill="none" stroke="#cfa080" stroke-width="2" stroke-linecap="round"/>
+  <!-- Friendly smile -->
+  <path d="M88 107 Q100 115 112 107" fill="none" stroke="#b9635a" stroke-width="2.8" stroke-linecap="round"/>
+</svg>
