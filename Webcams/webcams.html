@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#141414">
+    <meta name="description" content="Stream thousands of live global webcams in a cinematic Netflix-themed interface powered by Vidstack HLS Player, YouTube Live embeds, live weather telemetry, and a 3D world globe.">
+    <title>Netflix Webcams — Live Global Camera Streams</title>
+
+    <link rel="icon" href="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://cdn.vidstack.io" crossorigin>
+    <link rel="preconnect" href="https://data.famelack.com" crossorigin>
+    <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
+    <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Vidstack Player Theme, Default Layout & Module Bundle -->
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css" />
+    <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css" />
+    <script src="https://cdn.vidstack.io/player" type="module"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Sticky Netflix Navigation Bar -->
+    <header class="nf-navbar" id="navbar">
+        <div class="nf-nav-left">
+            <a href="#top" class="nf-brand" id="brandHomeBtn" aria-label="Netflix Webcams Home">
+                <span class="nf-n-mark" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                </span>
+                <span class="nf-brand-word">WEBCAMS</span>
+            </a>
+
+            <nav class="nf-nav-links" aria-label="Primary Navigation">
+                <button type="button" class="nf-nav-link active" data-view="browse">Home</button>
+                <button type="button" class="nf-nav-link" data-view="globe">
+                    <span class="nav-live-dot" aria-hidden="true"></span>
+                    World Globe
+                </button>
+                <button type="button" class="nf-nav-link" data-view="wall">
+                    Multi-Cam Wall
+                    <span class="nf-nav-badge hidden" id="navWallBadge">0</span>
+                </button>
+                <button type="button" class="nf-nav-link" data-view="countries">Countries</button>
+                <button type="button" class="nf-nav-link" data-view="mylist">
+                    My List
+                    <span class="nf-nav-badge hidden" id="navFavBadge">0</span>
+                </button>
+                <a href="../index.html" class="nf-nav-link nf-nav-hub" title="Back to main Netflix portal">Browse Portal ↗</a>
+            </nav>
+        </div>
+
+        <div class="nf-nav-right">
+            <!-- Expandable Netflix Search Box -->
+            <div class="nf-search-box" id="searchBox">
+                <button type="button" class="nf-icon-btn" id="searchToggleBtn" aria-label="Search webcams (Shortcut /)" title="Search webcams (/)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="11" cy="11" r="7.5"></circle>
+                        <path d="M20 20l-4-4"></path>
+                    </svg>
+                </button>
+                <input
+                    type="search"
+                    id="searchInput"
+                    class="nf-search-input"
+                    placeholder="Cities, beaches, countries, HLS..."
+                    autocomplete="off"
+                    aria-label="Search live webcams"
+                >
+                <span class="nf-kbd-hint" id="searchKbdHint">/</span>
+                <button type="button" class="nf-search-clear hidden" id="searchClearBtn" aria-label="Clear search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Surprise Me / Random Live Webcam -->
+            <button type="button" class="nf-shuffle-pill" id="randomCamBtn" title="Teleport to a random live webcam worldwide">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+                <span>Random Cam</span>
+            </button>
+
+            <!-- Add Custom Cam Button -->
+            <button type="button" class="nf-add-pill" id="openAddCamBtn" title="Add a custom HLS (.m3u8) or YouTube Live webcam">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                <span>Add Cam</span>
+            </button>
+
+            <!-- Live Clock & Detected Location -->
+            <div class="nf-location-pill" id="navLocationPill" title="Jump to local webcams">
+                <span class="nf-loc-flag" id="navLocFlag">🌍</span>
+                <span class="nf-loc-name" id="navLocName">Global</span>
+                <span class="nf-loc-clock" id="navLocClock">--:--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Bottom Quick Tab Bar -->
+    <nav class="nf-mobile-tabs" aria-label="Mobile Navigation">
+        <button type="button" class="nf-mobile-tab active" data-view="browse">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="globe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>Globe</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="wall">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Wall</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="countries">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>Countries</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="mylist">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>My List</span>
+        </button>
+    </nav>
+
+    <main id="top" class="nf-main">
+        <!-- ===================== PERSISTENT CINEMA VIDEO STAGE ===================== -->
+        <section id="cinemaStage" class="wc-cinema-stage hidden" aria-label="Live Webcam Player Stage">
+            <div class="wc-stage-shell">
+                <div class="wc-stage-topbar">
+                    <div class="wc-stage-eyebrow">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span class="wc-stage-label">LIVE FEED</span>
+                        <span class="wc-engine-chip" id="stageEngineChip">VIDSTACK HLS</span>
+                        <span class="nf-status-pill idle" id="stageStatusPill">IDLE</span>
+                    </div>
+
+                    <div class="wc-stage-top-actions">
+                        <button type="button" class="wc-tool-btn" id="toggleHudBtn" title="Toggle live telemetry overlay">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span>HUD</span>
+                        </button>
+                        <button type="button" class="wc-tool-btn" id="autoTourBtn" title="Auto-cycle cameras every 45 seconds">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            <span id="autoTourLabel">Auto-Tour</span>
+                        </button>
+                        <button type="button" class="wc-tool-btn" id="snapshotBtn" title="Capture live frame snapshot (HLS streams)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            <span>Snapshot</span>
+                        </button>
+                        <button type="button" class="wc-tool-btn" id="vfxBtn" title="Toggle retro camera night/CRT filter">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            <span>CRT FX</span>
+                        </button>
+                        <button type="button" class="wc-tool-btn" id="theaterBtn" title="Toggle Theater Mode (T)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+                            <span>Theater</span>
+                        </button>
+                        <button type="button" class="wc-tool-btn" id="sendToWallBtn" title="Pin this camera to Multi-Cam Wall">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            <span>+ Wall</span>
+                        </button>
+                        <button type="button" class="wc-close-stage-btn" id="closeStageBtn" title="Close Player Stage (Esc)" aria-label="Close Player Stage">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="wc-stage-grid" id="stageGrid">
+                    <!-- Main 16:9 Video Frame & Now Playing Bar -->
+                    <div class="wc-stage-primary">
+                        <div class="wc-player-frame" id="playerWrapper">
+                            <!-- Ambient CRT/Retro Effects -->
+                            <div class="wc-scanlines" aria-hidden="true"></div>
+                            <div class="wc-vignette" aria-hidden="true"></div>
+
+                            <!-- Vidstack HLS Player (Swapped in for HLS .m3u8 / MP4 streams) -->
+                            <media-player
+                                id="vidstackPlayer"
+                                title="Select a live webcam"
+                                stream-type="live"
+                                playsinline
+                                autoplay
+                            >
+                                <media-provider></media-provider>
+                                <media-video-layout></media-video-layout>
+                            </media-player>
+
+                            <!-- YouTube Live Embed Iframe (Swapped in for YouTube Live streams like famelack.com) -->
+                            <iframe
+                                id="youtubePlayer"
+                                class="wc-embed-frame hidden"
+                                title="YouTube Live Webcam"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen
+                            ></iframe>
+
+                            <!-- EarthCam-style Top Telemetry HUD -->
+                            <div class="wc-hud-overlay" id="playerHudOverlay">
+                                <div class="wc-hud-pill wc-hud-left">
+                                    <span class="pulse-dot"></span>
+                                    <span id="hudCamTitle">LIVE CAMERA</span>
+                                </div>
+                                <div class="wc-hud-pill wc-hud-right">
+                                    <span id="hudDayNight">🌍</span>
+                                    <span id="hudLocalTime">--:--</span>
+                                    <span class="wc-hud-sep hidden" id="hudWeatherSep">&bull;</span>
+                                    <span id="hudWeather" class="hidden"></span>
+                                </div>
+                            </div>
+
+                            <!-- Buffering / Error / Blocked Fallback Overlay -->
+                            <div class="wc-player-overlay hidden" id="playerOverlay">
+                                <div class="wc-overlay-card">
+                                    <div class="wc-overlay-spinner hidden" id="overlaySpinner"></div>
+                                    <div class="wc-overlay-icon hidden" id="overlayErrorIcon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                    </div>
+                                    <h3 id="overlayTitle">Connecting to live camera...</h3>
+                                    <p id="overlayDesc">Negotiating stream manifest...</p>
+                                    <div class="wc-overlay-actions hidden" id="overlayActions">
+                                        <button type="button" class="nf-btn nf-btn-play nf-btn-sm" id="overlayRetryBtn">Retry Stream</button>
+                                        <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="overlayNextBtn">Next Live Cam</button>
+                                        <a href="#" target="_blank" rel="noopener noreferrer" class="nf-btn nf-btn-glass nf-btn-sm hidden" id="overlayExternalLink">Open Source ↗</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Now Playing Info & Source Switcher Bar -->
+                        <div class="wc-now-playing">
+                            <div class="wc-np-left">
+                                <div class="wc-np-avatar" id="npAvatar">CAM</div>
+                                <div class="wc-np-meta">
+                                    <div class="wc-np-title-row">
+                                        <h2 id="npTitle">No Camera Selected</h2>
+                                        <span class="wc-source-tag" id="npSourceTag">Famelack</span>
+                                    </div>
+                                    <p class="wc-np-sub" id="npSub">Select any webcam below to begin streaming</p>
+                                </div>
+                            </div>
+
+                            <div class="wc-np-right">
+                                <!-- Switch manually between HLS & YouTube if cam has multiple sources -->
+                                <div class="wc-stream-variants" id="streamVariants"></div>
+
+                                <div class="wc-np-controls">
+                                    <button type="button" class="wc-icon-btn" id="prevCamBtn" title="Previous Webcam (Left arrow)" aria-label="Previous Webcam">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+                                    </button>
+                                    <button type="button" class="wc-icon-btn" id="nextCamBtn" title="Next Webcam (Right arrow)" aria-label="Next Webcam">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                                    </button>
+                                    <button type="button" class="wc-icon-btn" id="stageFavBtn" title="Save to My List (F)" aria-label="Toggle Favorite">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="wc-icon-btn" id="copyUrlBtn" title="Copy stream URL" aria-label="Copy stream URL">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="wc-icon-btn" id="fullscreenBtn" title="Fullscreen Stage" aria-label="Fullscreen">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <polyline points="9 21 3 21 3 15"></polyline>
+                                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EarthCam-Style Telemetry & Up Next Side Rail -->
+                    <aside class="wc-stage-rail" id="cinemaSideRail">
+                        <div class="wc-telemetry-card">
+                            <div class="wc-telemetry-head">
+                                <span>LIVE WEATHER &amp; LOCATION</span>
+                                <button type="button" class="wc-unit-toggle" id="tempUnitToggle" title="Switch °C / °F">°C</button>
+                            </div>
+                            <div class="wc-weather-main">
+                                <div class="wc-weather-temp" id="railWeatherTemp">--°</div>
+                                <div class="wc-weather-meta">
+                                    <strong id="railWeatherCond">Fetching telemetry...</strong>
+                                    <span id="railLocalClock">Local time --:--</span>
+                                </div>
+                            </div>
+                            <div class="wc-telemetry-grid">
+                                <div class="wc-tele-stat">
+                                    <span>WIND</span>
+                                    <strong id="railWind">--</strong>
+                                </div>
+                                <div class="wc-tele-stat">
+                                    <span>HUMIDITY</span>
+                                    <strong id="railHumidity">--</strong>
+                                </div>
+                                <div class="wc-tele-stat">
+                                    <span>STREAM</span>
+                                    <strong id="railProtocol">--</strong>
+                                </div>
+                                <div class="wc-tele-stat">
+                                    <span>COORDS</span>
+                                    <strong id="railCoords">--</strong>
+                                </div>
+                            </div>
+                            <div class="wc-rail-tags" id="railTags"></div>
+                        </div>
+
+                        <div class="wc-upnext-card">
+                            <div class="wc-upnext-head">
+                                <span>UP NEXT IN QUEUE</span>
+                                <span id="upNextCount">0 cams</span>
+                            </div>
+                            <div class="wc-upnext-list" id="stageUpNextList"></div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== VIEW 1: BROWSE HOME ===================== -->
+        <div id="viewBrowse" class="nf-view active">
+            <!-- Featured Netflix Hero Billboard -->
+            <section class="nf-hero" id="heroSection" aria-label="Featured Live Webcam">
+                <div class="nf-hero-backdrop" id="heroBackdrop"></div>
+                <div class="nf-hero-image-layer" id="heroImageLayer"></div>
+                <div class="nf-hero-vignette"></div>
+
+                <div class="nf-hero-content">
+                    <div class="nf-hero-series-tag">
+                        <span class="nf-n-badge" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span class="nf-series-label">LIVE CAMERA</span>
+                        <span class="nf-live-chip">
+                            <span class="pulse-dot"></span>
+                            ON AIR 24/7
+                        </span>
+                    </div>
+
+                    <h1 class="nf-hero-title" id="heroTitle">Live Around the World</h1>
+                    <p class="nf-hero-desc" id="heroDesc">
+                        Stream real-time city skylines, beaches, airports, wildlife reserves, and mountain passes. Adaptive HLS playback powered by Vidstack alongside instant YouTube Live switching.
+                    </p>
+
+                    <div class="nf-hero-meta" id="heroMeta">
+                        <span class="nf-meta-match">Live Signal</span>
+                        <span class="nf-meta-pill" id="heroCountryChip">🌍 Global</span>
+                        <span class="nf-meta-pill" id="heroFormatChip">HLS &bull; YouTube Live</span>
+                        <span class="nf-meta-pill" id="heroCategoryChip">Scenic / City</span>
+                    </div>
+
+                    <div class="nf-hero-actions">
+                        <button type="button" class="nf-btn nf-btn-play" id="heroPlayBtn">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                            <span>Watch Live</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-secondary" id="heroFavBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            <span id="heroFavLabel">My List</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-glass" id="heroWallBtn" title="Add to 2x2 Multi-Cam Wall">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            <span>Quad Wall</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-icon" id="heroShuffleBtn" title="Next featured webcam" aria-label="Shuffle featured webcam">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category & Stream Filter Strip -->
+            <section class="nf-filter-strip" aria-label="Browse Filters">
+                <div class="nf-genre-chips" id="categoryChipBar">
+                    <button type="button" class="nf-chip active" data-category="all">All Webcams</button>
+                    <button type="button" class="nf-chip" data-category="city">City</button>
+                    <button type="button" class="nf-chip" data-category="beach">Beach</button>
+                    <button type="button" class="nf-chip" data-category="harbor">Harbor</button>
+                    <button type="button" class="nf-chip" data-category="airport">Airport</button>
+                    <button type="button" class="nf-chip" data-category="train">Train</button>
+                    <button type="button" class="nf-chip" data-category="traffic">Traffic</button>
+                    <button type="button" class="nf-chip" data-category="mountain">Mountain</button>
+                    <button type="button" class="nf-chip" data-category="volcano">Volcano</button>
+                    <button type="button" class="nf-chip" data-category="nature">Nature</button>
+                    <button type="button" class="nf-chip" data-category="animals">Animals</button>
+                    <button type="button" class="nf-chip" data-category="landmark">Landmark</button>
+                    <button type="button" class="nf-chip" data-category="weather">Weather</button>
+                    <button type="button" class="nf-chip" data-category="ski">Ski</button>
+                    <button type="button" class="nf-chip" data-category="lake">Lake</button>
+                    <button type="button" class="nf-chip" data-category="river">River</button>
+                    <button type="button" class="nf-chip" data-category="park">Park</button>
+                    <button type="button" class="nf-chip" data-category="sports">Sports</button>
+                    <button type="button" class="nf-chip" data-category="space">Space</button>
+                    <button type="button" class="nf-chip" data-category="underwater">Underwater</button>
+                    <button type="button" class="nf-chip" data-category="construction">Construction</button>
+                </div>
+
+                <div class="nf-filter-controls">
+                    <select id="streamTypeFilter" class="nf-select" aria-label="Filter by Stream Engine">
+                        <option value="all">All Players (HLS + YT)</option>
+                        <option value="hls">Vidstack HLS (.m3u8)</option>
+                        <option value="youtube">YouTube Live (Iframe)</option>
+                    </select>
+
+                    <select id="countrySelect" class="nf-select" aria-label="Select Country">
+                        <option value="">All Countries</option>
+                    </select>
+
+                    <label class="nf-switch-label" title="Show only HTTPS streams to avoid mixed-content browser blocks">
+                        <input type="checkbox" id="httpsOnlyToggle">
+                        <span class="nf-switch-track"></span>
+                        <span class="nf-switch-text">HTTPS Safe</span>
+                    </label>
+
+                    <button type="button" class="nf-globe-cta" id="openGlobeQuickBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <span>3D Globe</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Active Search / Filtered Results Grid -->
+            <section class="nf-search-results hidden" id="searchResultsSection" aria-live="polite">
+                <div class="nf-section-header">
+                    <div>
+                        <h2 class="nf-row-title" id="searchResultsTitle">Search Results</h2>
+                        <p class="nf-row-subtitle" id="searchResultsSubtitle">Scanning live directories...</p>
+                    </div>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="resetFilterBtn">Clear Filters</button>
+                </div>
+                <div class="nf-grid" id="searchResultsGrid"></div>
+            </section>
+
+            <!-- Netflix Horizontal Carousel Rows -->
+            <div id="browseRowsContainer" class="nf-rows-stack"></div>
+        </div>
+
+        <!-- ===================== VIEW 2: 3D WORLD WEBCAM GLOBE ===================== -->
+        <section id="viewGlobe" class="nf-view nf-globe-view hidden" aria-label="Interactive World Webcam Globe">
+            <div class="nf-globe-layout">
+                <div class="nf-globe-stage">
+                    <canvas id="globeCanvas" aria-label="Interactive 3D Earth Globe"></canvas>
+
+                    <div class="nf-globe-hud-top">
+                        <div class="nf-globe-badge">
+                            <span class="nf-n-badge small" aria-hidden="true">
+                                <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                            </span>
+                            <span>WORLD WEBCAM GLOBE</span>
+                        </div>
+                        <p class="nf-globe-hint">Drag to spin Earth &bull; Scroll to zoom &bull; Click any glowing red camera node</p>
+                    </div>
+
+                    <div class="nf-globe-controls">
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeZoomOut" title="Zoom out" aria-label="Zoom out">&minus;</button>
+                        <button type="button" class="nf-globe-ctrl-btn active" id="globeAutoSpin" title="Toggle auto-rotation" aria-label="Toggle auto-rotation">⟳</button>
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeFlyHome" title="Fly to my country" aria-label="Fly to my country">⌖</button>
+                    </div>
+
+                    <div class="nf-globe-tooltip hidden" id="globeTooltip"></div>
+                </div>
+
+                <aside class="nf-globe-sidebar">
+                    <div class="nf-globe-sidebar-head">
+                        <div class="nf-globe-country-meta">
+                            <span class="nf-globe-flag" id="globeCountryFlag">🌍</span>
+                            <div>
+                                <h2 id="globeCountryName">Select a Country</h2>
+                                <p id="globeCountrySub">Click a pin on the globe or search below</p>
+                            </div>
+                        </div>
+                        <div class="nf-globe-local-time" id="globeLocalTime">--:--</div>
+                    </div>
+
+                    <div class="nf-globe-sidebar-search">
+                        <input type="text" id="globeCountrySearch" placeholder="Jump to country (e.g. Japan, USA, Norway)..." aria-label="Filter countries">
+                    </div>
+
+                    <div class="nf-globe-country-pills" id="globeQuickPills"></div>
+
+                    <div class="nf-globe-cam-list" id="globeCamList">
+                        <div class="nf-empty-inline">Loading global webcam nodes...</div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ===================== VIEW 3: 2x2 MULTI-CAM CONTROL ROOM ===================== -->
+        <section id="viewWall" class="nf-view nf-directory-view hidden" aria-label="Multi-Cam Control Room">
+            <div class="nf-directory-head">
+                <div>
+                    <div class="nf-eyebrow-red">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>CONTROL ROOM</span>
+                    </div>
+                    <h2 class="nf-page-title">2&times;2 Multi-Cam Wall</h2>
+                    <p class="nf-page-sub">Monitor up to 4 live Vidstack HLS &amp; YouTube Live cameras simultaneously in a unified command grid.</p>
+                </div>
+
+                <div class="wc-wall-presets">
+                    <button type="button" class="nf-btn nf-btn-play nf-btn-sm" id="wallPresetScenic">Scenic Mix</button>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="wallPresetHls">HLS Streams</button>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="wallPresetBeach">Beaches &amp; Sea</button>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="wallClearBtn">Clear Wall</button>
+                </div>
+            </div>
+
+            <div class="wc-wall-grid" id="wallGrid"></div>
+        </section>
+
+        <!-- ===================== VIEW 4: COUNTRIES DIRECTORY ===================== -->
+        <section id="viewCountries" class="nf-view nf-directory-view hidden" aria-label="Countries Directory">
+            <div class="nf-directory-head">
+                <div>
+                    <div class="nf-eyebrow-red">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>GLOBAL DIRECTORY</span>
+                    </div>
+                    <h2 class="nf-page-title">Browse Webcams by Country</h2>
+                    <p class="nf-page-sub">Live local clocks, capital cities, and direct HLS + YouTube webcam feeds worldwide.</p>
+                </div>
+                <input type="search" id="directoryCountryFilter" class="nf-directory-input" placeholder="Search countries or capitals...">
+            </div>
+
+            <div class="nf-countries-grid" id="countriesDirectoryGrid"></div>
+        </section>
+
+        <!-- ===================== VIEW 5: MY LIST (FAVORITES, CUSTOM & HISTORY) ===================== -->
+        <section id="viewMyList" class="nf-view nf-directory-view hidden" aria-label="My List and History">
+            <div class="nf-directory-head">
+                <div>
+                    <div class="nf-eyebrow-red">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>PERSONAL COLLECTION</span>
+                    </div>
+                    <h2 class="nf-page-title">My List &amp; Recent Cameras</h2>
+                    <p class="nf-page-sub">Your saved favorite live webcams, custom camera streams, and watch history stored locally.</p>
+                </div>
+                <div class="wc-mylist-actions">
+                    <button type="button" class="nf-btn nf-btn-play nf-btn-sm" id="myListAddCamBtn">+ Add Custom Cam</button>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="clearHistoryBtn">Clear History</button>
+                </div>
+            </div>
+
+            <div class="nf-mylist-section">
+                <h3 class="nf-row-title mb-md">Saved Favorites</h3>
+                <div class="nf-grid" id="myListFavoritesGrid"></div>
+            </div>
+
+            <div class="nf-mylist-section hidden" id="myListCustomSection">
+                <h3 class="nf-row-title mb-md">Custom Added Webcams</h3>
+                <div class="nf-grid" id="myListCustomGrid"></div>
+            </div>
+
+            <div class="nf-mylist-section">
+                <h3 class="nf-row-title mb-md">Recently Watched</h3>
+                <div class="nf-grid" id="myListHistoryGrid"></div>
+            </div>
+        </section>
+
+        <!-- Signature Netflix Footer -->
+        <footer class="nf-footer">
+            <div class="nf-footer-arc" aria-hidden="true"></div>
+            <div class="nf-footer-inner">
+                <div class="nf-footer-brand">
+                    <span class="nf-n-mark" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                    </span>
+                    <span class="nf-footer-title">Netflix Webcams</span>
+                </div>
+                <p class="nf-footer-lead">
+                    Real-time global camera streaming powered by Vidstack HLS Player and dynamic YouTube Live iframe switching, inspired by EarthCam telemetry and Famelack discovery with D3 3D World Globe and Open-Meteo weather.
+                </p>
+                <div class="nf-shortcuts-bar">
+                    <span><kbd>/</kbd> Search</span>
+                    <span><kbd>Space</kbd> Play / Pause HLS</span>
+                    <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Prev / Next Cam</span>
+                    <span><kbd>F</kbd> Favorite</span>
+                    <span><kbd>T</kbd> Theater</span>
+                    <span><kbd>G</kbd> 3D Globe</span>
+                    <span><kbd>W</kbd> Multi-Cam Wall</span>
+                    <span><kbd>Esc</kbd> Close Stage / Modal</span>
+                </div>
+                <p class="nf-footer-copy">&copy; <span id="footerYear">2026</span> Netflix Webcams Project &bull; Vidstack Player + YouTube Live + D3 Orthographic Globe</p>
+            </div>
+        </footer>
+    </main>
+
+    <!-- ===================== FLOATING MINI NOW-WATCHING DOCK ===================== -->
+    <aside class="wc-mini-dock hidden" id="miniDock" aria-label="Active Webcam Mini Bar">
+        <div class="wc-dock-inner">
+            <div class="wc-dock-left" id="dockScrollToStage" role="button" tabindex="0" title="Jump back to Video Player Stage">
+                <div class="wc-dock-thumb" id="dockThumb">
+                    <img id="dockThumbImg" src="" alt="" class="hidden">
+                    <span id="dockThumbFallback">CAM</span>
+                </div>
+                <div class="wc-dock-info">
+                    <div class="wc-dock-title-row">
+                        <span class="wc-dock-name" id="dockCamName">No Active Feed</span>
+                        <span class="nf-status-pill live" id="dockStatusPill">LIVE</span>
+                    </div>
+                    <div class="wc-dock-sub" id="dockCamMeta">Click to jump to stage</div>
+                </div>
+            </div>
+
+            <div class="wc-dock-actions">
+                <button type="button" class="wc-icon-btn" id="dockPrevBtn" title="Previous Cam" aria-label="Previous Cam">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button type="button" class="wc-icon-btn" id="dockNextBtn" title="Next Cam" aria-label="Next Cam">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <button type="button" class="nf-btn nf-btn-play nf-btn-sm" id="dockFocusBtn">Back to Player</button>
+                <button type="button" class="wc-icon-btn" id="dockCloseBtn" title="Stop Stream" aria-label="Stop Stream">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===================== ADD CUSTOM WEBCAM MODAL ===================== -->
+    <div class="nf-modal-overlay hidden" id="addCamModal" role="dialog" aria-modal="true" aria-labelledby="addCamTitle">
+        <div class="nf-modal-card">
+            <button type="button" class="nf-modal-close" id="closeAddCamBtn" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+
+            <div class="nf-eyebrow-red">
+                <span class="nf-n-badge small" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                </span>
+                <span>CUSTOM STREAM</span>
+            </div>
+            <h2 class="wc-modal-title" id="addCamTitle">Add Live Webcam Stream</h2>
+            <p class="wc-modal-sub">Paste any direct HLS (<code>.m3u8</code>) stream for Vidstack Player or any YouTube Live URL / Video ID.</p>
+
+            <form id="addCamForm" class="wc-form">
+                <label class="wc-field">
+                    <span>Camera Name *</span>
+                    <input type="text" id="customCamName" required placeholder="e.g. Tokyo Shibuya Crossing Cam">
+                </label>
+
+                <label class="wc-field">
+                    <span>Stream URL (HLS .m3u8, MP4, or YouTube Live URL / ID) *</span>
+                    <input type="text" id="customCamUrl" required placeholder="https://example.com/live/stream.m3u8 or https://youtube.com/watch?v=...">
+                </label>
+
+                <div class="wc-form-row">
+                    <label class="wc-field">
+                        <span>Country Code (ISO-2)</span>
+                        <input type="text" id="customCamCountry" maxlength="2" placeholder="US, JP, GB, LK...">
+                    </label>
+                    <label class="wc-field">
+                        <span>Category</span>
+                        <select id="customCamCategory">
+                            <option value="city">City</option>
+                            <option value="beach">Beach</option>
+                            <option value="harbor">Harbor</option>
+                            <option value="airport">Airport</option>
+                            <option value="train">Train</option>
+                            <option value="traffic">Traffic</option>
+                            <option value="mountain">Mountain</option>
+                            <option value="nature">Nature</option>
+                            <option value="animals">Animals</option>
+                            <option value="landmark">Landmark</option>
+                            <option value="weather">Weather</option>
+                            <option value="space">Space</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="wc-form-actions">
+                    <button type="submit" class="nf-btn nf-btn-play">Save &amp; Stream Now</button>
+                    <button type="button" class="nf-btn nf-btn-glass" id="cancelAddCamBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== PICK CAMERA FOR QUAD WALL MODAL ===================== -->
+    <div class="nf-modal-overlay hidden" id="pickWallCamModal" role="dialog" aria-modal="true" aria-labelledby="pickWallCamTitle">
+        <div class="nf-modal-card wc-picker-card">
+            <button type="button" class="nf-modal-close" id="closePickWallBtn" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <h2 class="wc-modal-title" id="pickWallCamTitle">Assign Camera to Wall Slot</h2>
+            <p class="wc-modal-sub">Choose any live HLS or YouTube camera for this Multi-Cam Wall tile.</p>
+            <input type="search" id="wallPickerSearch" class="nf-directory-input wc-picker-search" placeholder="Filter cameras by name, country, or HLS / YouTube...">
+            <div class="wc-picker-list" id="wallPickerList"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="nf-toast hidden" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- D3 Geo + TopoJSON for Interactive 3D World Globe -->
+    <script src="https://cdn.jsdelivr.net/npm/d3-array@3/dist/d3-array.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
+    <script src="app.js" defer></script>
+</body>
+</html>
