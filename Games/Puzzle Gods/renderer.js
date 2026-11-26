@@ -31,7 +31,9 @@
       this.engine = null;
       this.selected = null; // { r, c }
       this.hoverCell = null;
+      this.dragFeedback = null; // { r, c, dx, dy }
       this.tutorialStage = null;
+      this.dpr = 1;
 
       this.particles = [];
       this.beams = [];
@@ -61,6 +63,8 @@
     setEngine(engine) {
       this.engine = engine;
       this.selected = null;
+      this.hoverCell = null;
+      this.dragFeedback = null;
       this.particles = [];
       this.beams = [];
       this.shockwaves = [];
@@ -72,18 +76,24 @@
     }
 
     resize(cssW, cssH) {
+      const w = Math.max(1, Math.floor(cssW));
+      const h = Math.max(1, Math.floor(cssH));
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      this.canvas.width = Math.max(1, Math.round(cssW * dpr));
-      this.canvas.height = Math.max(1, Math.round(cssH * dpr));
+      this.dpr = dpr;
+      this.canvas.width = Math.max(1, Math.round(w * dpr));
+      this.canvas.height = Math.max(1, Math.round(h * dpr));
+      this.canvas.style.width = w + 'px';
+      this.canvas.style.height = h + 'px';
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      this.cssW = cssW;
-      this.cssH = cssH;
-      const pad = 12;
-      const size = Math.min(cssW - pad * 2, cssH - pad * 2);
+      this.cssW = w;
+      this.cssH = h;
+      const minDim = Math.min(w, h);
+      const pad = Math.max(4, Math.min(12, Math.round(minDim * 0.018)));
+      const size = Math.max(8, minDim - pad * 2);
       const cell = size / 8;
       this.boardRect = {
-        x: (cssW - size) / 2,
-        y: (cssH - size) / 2,
+        x: (w - size) / 2,
+        y: (h - size) / 2,
         size,
         cell
       };
@@ -91,8 +101,11 @@
 
     clientToCell(clientX, clientY) {
       const rect = this.canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      if (!rect.width || !rect.height || !this.boardRect.cell) return null;
+      const scaleX = (this.cssW || rect.width) / rect.width;
+      const scaleY = (this.cssH || rect.height) / rect.height;
+      const x = (clientX - rect.left) * scaleX;
+      const y = (clientY - rect.top) * scaleY;
       const c = Math.floor((x - this.boardRect.x) / this.boardRect.cell);
       const r = Math.floor((y - this.boardRect.y) / this.boardRect.cell);
       if (r < 0 || r >= 8 || c < 0 || c >= 8) return null;
@@ -286,8 +299,8 @@
           const cellData = board[r][c];
           if (!cellData.active || !cellData.piece) continue;
           const p = cellData.piece;
-          const cx = bx + (p.vx + 0.5) * cell;
-          const cy = by + (p.vy + 0.5) * cell;
+          let cx = bx + (p.vx + 0.5) * cell;
+          let cy = by + (p.vy + 0.5) * cell;
 
           // Smooth scale recovery after special formation
           if (p.scale > 1.001) p.scale += (1 - p.scale) * Math.min(1, dt * 10);
@@ -296,6 +309,13 @@
           let drawScale = p.scale;
           if (this.selected && this.selected.r === r && this.selected.c === c) {
             drawScale *= 1.12 + 0.04 * Math.sin(now * 0.01);
+          }
+          if (this.dragFeedback && this.dragFeedback.r === r && this.dragFeedback.c === c) {
+            drawScale *= 1.09;
+            if ((p.kind === 'gem' || p.kind === 'treasure') && !p.chained) {
+              cx += this.dragFeedback.dx || 0;
+              cy += this.dragFeedback.dy || 0;
+            }
           }
 
           const s = cell * 0.86 * drawScale;
@@ -426,13 +446,24 @@
         }
       }
 
-      // 5. Selection ring & active booster hover target
+      // 5. Selection ring, touch drag feedback & active booster hover target
       if (this.selected) {
         const tx = bx + this.selected.c * cell;
         const ty = by + this.selected.r * cell;
         ctx.save();
         ctx.strokeStyle = '#ffe55c';
         ctx.lineWidth = 4;
+        this.roundRect(ctx, tx + 2, ty + 2, cell - 4, cell - 4, 8);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (this.dragFeedback && board[this.dragFeedback.r]?.[this.dragFeedback.c]?.active) {
+        const tx = bx + this.dragFeedback.c * cell;
+        const ty = by + this.dragFeedback.r * cell;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 240, 140, 0.85)';
+        ctx.lineWidth = 3;
         this.roundRect(ctx, tx + 2, ty + 2, cell - 4, cell - 4, 8);
         ctx.stroke();
         ctx.restore();
@@ -611,7 +642,7 @@
           this.drawSprite('btn_boost_hammer_blue', -cell * 0.52, -cell * 0.8, cell * 1.04, cell * 1.04, 1 - t * 0.35);
         } else if (ba.type === 'trident') {
           const sx = bx + (ba.c - 2 + t * 10) * cell;
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const dpr = this.dpr || Math.min(window.devicePixelRatio || 1, 2);
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
           this.drawSprite('btn_boost_trident_blue', sx - cell * 0.55, p.y - cell * 0.5, cell * 1.1, cell * 1.0, 1 - t * 0.25);
         } else if (ba.type === 'arrow') {

@@ -68,10 +68,13 @@
     }
 
     unlock() {
-      if (this.unlocked) return;
-      this.unlocked = true;
+      if (this.unlocked && (!this.musicEnabled || !this.currentTrackKey || (this.bgm && !this.bgm.paused))) {
+        return;
+      }
       if (this.musicEnabled && this.currentTrackKey && (!this.bgm || this.bgm.paused)) {
         this.playMusic(this.currentTrackKey, true);
+      } else {
+        this.unlocked = true;
       }
     }
 
@@ -133,7 +136,11 @@
         a.volume = 0.35;
         this.bgm = a;
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
+        if (p && typeof p.then === 'function') {
+          p.then(() => { this.unlocked = true; }).catch(() => {});
+        } else {
+          this.unlocked = true;
+        }
       } catch (e) {}
     }
 
@@ -147,7 +154,11 @@
         a.loop = false;
         a.volume = 0.45;
         const p = a.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
+        if (p && typeof p.then === 'function') {
+          p.then(() => { this.unlocked = true; }).catch(() => {});
+        } else {
+          this.unlocked = true;
+        }
       } catch (e) {}
     }
   }

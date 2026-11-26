@@ -39,14 +39,19 @@
   box-sizing: border-box;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
+  height: 100%;
   height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
   font-family: var(--pg-font-ui);
   background: #140f2d;
   color: #fff;
@@ -95,6 +100,7 @@ button:disabled {
   position: fixed;
   inset: 0;
   width: 100%;
+  height: 100%;
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -105,8 +111,10 @@ button:disabled {
 .screen-welcome {
   align-items: center;
   justify-content: space-between;
-  padding: clamp(10px, 1.8vh, 22px) 20px;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   background:
     radial-gradient(circle at 50% 35%, rgba(56, 175, 255, 0.55), rgba(20, 48, 128, 0.88) 70%),
     url('assets/single_resolution/backgrounds/lg_game_bg_1.jpg') center/cover no-repeat;
@@ -436,15 +444,30 @@ button:disabled {
   object-fit: contain;
 }
 
+.sandbox-label-short {
+  display: none;
+}
+
 .realm-tabs {
   position: relative;
   z-index: 3;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   padding: 10px 12px 6px;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   scrollbar-width: thin;
+}
+
+.realm-tab:first-child {
+  margin-left: auto;
+}
+
+.realm-tab:last-child {
+  margin-right: auto;
 }
 
 .realm-tab {
@@ -568,6 +591,8 @@ button:disabled {
   padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   scrollbar-width: thin;
 }
 
@@ -764,6 +789,13 @@ button:disabled {
   50% { transform: scale(1.1); }
 }
 
+.timer-mode-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
 .timer-ring-wrap {
   position: relative;
   width: 86px;
@@ -911,6 +943,7 @@ button:disabled {
 }
 
 .top-bars-wrap {
+  position: relative;
   width: 100%;
   max-width: 620px;
   display: flex;
@@ -1009,23 +1042,33 @@ button:disabled {
   position: relative;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
 }
 
 .board-canvas-frame {
   position: relative;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   max-width: min(100%, 620px);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  touch-action: none;
 }
 
 #board-canvas {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: block;
   touch-action: none;
   border-radius: 14px;
@@ -1033,33 +1076,39 @@ button:disabled {
 
 .booster-target-banner {
   position: absolute;
-  top: 8px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 8;
+  width: max-content;
+  max-width: calc(100% - 8px);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(28, 15, 58, 0.94);
+  background: rgba(28, 15, 58, 0.96);
   border: 2px solid var(--pg-gold);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .btn-cancel-booster {
-  padding: 3px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: #e03131;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 /* Booster Dock below board */
 .booster-dock {
+  order: 3;
   width: 100%;
   max-width: 560px;
   display: flex;
@@ -1251,11 +1300,47 @@ button:disabled {
   font-weight: 700;
 }
 
+.tut-gap {
+  display: block;
+  height: 5px;
+}
+
 .tutorial-actions {
   margin-top: 8px;
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+}
+
+.tutorial-overlay:not(.tap-blocking) {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: 620px;
+  padding: 0;
+  flex-shrink: 0;
+  order: -1;
+}
+
+.tutorial-overlay:not(.tap-blocking).pos-bottom {
+  order: 2;
+}
+
+.tutorial-overlay:not(.tap-blocking) .tutorial-card {
+  max-width: 100%;
+  padding: 5px 10px;
+}
+
+.tutorial-overlay:not(.tap-blocking) .tutorial-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tutorial-overlay:not(.tap-blocking) .tutorial-actions {
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .tutorial-btn {
@@ -1293,6 +1378,8 @@ button:disabled {
   max-width: 480px;
   max-height: 90dvh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   background: var(--pg-parchment);
   color: var(--pg-ink-brown);
   border: 5px solid var(--pg-parchment-border);
@@ -1483,24 +1570,36 @@ button:disabled {
   font-weight: 700;
 }
 
-/* ==================== RESPONSIVE (< 900px) ==================== */
+/* ==================== RESPONSIVE (TABLET & MOBILE PORTRAIT <= 900px) ==================== */
 @media (max-width: 900px) {
   .map-body {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    padding: 8px 12px 12px;
+    grid-template-rows: auto minmax(0, 1fr);
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom));
+    gap: 8px;
   }
 
   .map-realm-card {
     flex-direction: row;
     text-align: left;
-    gap: 12px;
-    padding: 10px 14px;
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .map-realm-card > div {
+    flex: 1;
+    min-width: 0;
   }
 
   .map-realm-portrait {
-    width: 68px;
-    height: 68px;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+  }
+
+  .map-realm-title {
+    font-size: 1.15rem;
+    margin: 0 0 2px;
   }
 
   .map-realm-desc {
@@ -1510,18 +1609,89 @@ button:disabled {
   .map-quick-jump {
     width: auto;
     white-space: nowrap;
+    flex-shrink: 0;
+    padding: 9px 12px;
+    font-size: 0.9rem;
   }
 
   .game-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    padding: 6px 8px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding:
+      max(5px, env(safe-area-inset-top))
+      max(6px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(6px, env(safe-area-inset-left));
+    gap: 5px;
+  }
+
+  .game-right-col {
+    order: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     gap: 6px;
+    min-width: 0;
+  }
+
+  .level-meta-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: 13px;
+    flex-shrink: 0;
+  }
+
+  .level-meta-num {
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  .level-meta-sub {
+    display: none;
+  }
+
+  .level-meta-card .resource-pill {
+    margin-top: 0 !important;
+    align-self: center !important;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+  }
+
+  .level-meta-card .resource-pill img {
+    width: 17px;
+    height: 17px;
+  }
+
+  .combo-tip-card {
+    display: none;
+  }
+
+  .control-btn-stack {
+    width: auto;
+    flex-direction: row;
+    gap: 5px;
+    padding: 4px 6px;
+    border-radius: 13px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .ui-action-btn {
+    width: auto;
+    padding: 5px 8px;
+    font-size: 0.74rem;
+    gap: 4px;
+    border-radius: 10px;
+    white-space: nowrap;
   }
 
   .game-left-col {
+    order: 2;
     flex-direction: row;
     align-items: stretch;
+    gap: 6px;
   }
 
   .companion-card {
@@ -1530,61 +1700,821 @@ button:disabled {
 
   .moves-panel {
     flex-shrink: 0;
-    min-width: 112px;
+    min-width: 90px;
+    padding: 5px 8px;
+    border-radius: 14px;
+  }
+
+  .moves-pill-wrap {
+    width: 84px;
+    height: 46px;
+  }
+
+  .moves-label {
+    font-size: 0.58rem;
+  }
+
+  .moves-value {
+    font-size: 1.38rem;
+  }
+
+  .timer-mode-wrap {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .timer-ring-wrap {
+    width: 46px;
+    height: 46px;
+  }
+
+  .timer-ring-val {
+    font-size: 1.08rem;
+  }
+
+  .speed-mult-badge {
+    font-size: 0.68rem;
+    padding: 2px 7px;
   }
 
   .goals-panel {
     flex: 1;
     min-width: 0;
+    padding: 5px 8px;
+    gap: 4px;
+    justify-content: center;
+    border-radius: 14px;
+  }
+
+  .goals-title {
+    font-size: 0.72rem;
+    line-height: 1;
   }
 
   .goals-list {
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
+    gap: 4px;
   }
 
   .goal-row {
-    flex: 1 1 115px;
-    padding: 4px 8px;
+    padding: 4px 7px;
+    gap: 5px;
+    border-radius: 10px;
   }
 
-  .game-right-col {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+  .goal-row-left {
+    gap: 5px;
   }
 
-  .level-meta-card, .combo-tip-card {
-    display: none;
+  .goal-row-left img {
+    width: 22px;
+    height: 22px;
   }
 
-  .control-btn-stack {
-    width: 100%;
-    flex-direction: row;
-    gap: 6px;
+  .goal-row-label {
+    font-size: 0.74rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .ui-action-btn {
-    padding: 6px 4px;
-    font-size: 0.72rem;
-    flex-direction: column;
-    gap: 2px;
-    text-align: center;
-    line-height: 1.15;
+  .goal-row-count {
+    font-size: 0.86rem;
+  }
+
+  .goal-check-img {
+    width: 17px;
+    height: 17px;
+  }
+
+  .game-center-col {
+    order: 3;
+    gap: 5px;
+    min-height: 0;
+  }
+
+  .top-bars-wrap {
+    gap: 4px;
+  }
+
+  .score-bar-row {
+    padding: 4px 10px;
+    gap: 8px;
+    border-radius: 11px;
+  }
+
+  .star-meter-track {
+    height: 15px;
+  }
+
+  .star-marker {
+    width: 20px;
+    height: 20px;
+  }
+
+  .score-readout {
+    font-size: 0.9rem;
+    min-width: 62px;
+  }
+
+  .boss-bar-row {
+    padding: 3px 10px;
+    gap: 8px;
+    border-radius: 11px;
+  }
+
+  .boss-bar-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .boss-bar-track {
+    height: 14px;
+  }
+
+  .boss-bar-text {
+    font-size: 0.76rem;
   }
 
   .booster-dock {
-    padding: 5px 8px;
-    gap: 8px;
+    padding: 5px 10px;
+    gap: 10px;
+    border-radius: 14px;
   }
 
   .booster-slot {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+  }
+
+  .booster-slot img.booster-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .booster-count-badge {
+    min-width: 19px;
+    height: 19px;
+    font-size: 0.7rem;
+  }
+
+  .tutorial-card {
+    padding: 6px 10px;
+    gap: 8px;
+    border-radius: 14px;
+  }
+
+  .tutorial-zu-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .tutorial-body {
+    font-size: 0.78rem;
+    line-height: 1.24;
+  }
+
+  .tutorial-actions {
+    margin-top: 5px;
+  }
+
+  .tutorial-btn {
+    padding: 6px 12px;
+    font-size: 0.76rem;
+  }
+}
+
+/* ==================== COMPACT TOP ACTIONS (<= 760px) ==================== */
+@media (max-width: 760px) {
+  .ui-btn-label {
+    display: none;
+  }
+
+  .ui-action-btn {
+    min-width: 34px;
+    height: 32px;
+    padding: 4px 6px;
+    font-size: 1rem;
+  }
+}
+
+/* ==================== PHONES (<= 600px) ==================== */
+@media (max-width: 600px) {
+  .welcome-topbar {
+    gap: 6px;
+  }
+
+  .welcome-topbar .pill-toggle {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    gap: 5px;
+  }
+
+  .welcome-topbar .icon-round-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .welcome-halo {
+    width: clamp(115px, 19vh, 175px);
+    margin-bottom: -22px;
+  }
+
+  .welcome-puzzle-img {
+    width: clamp(150px, 24vh, 225px);
+  }
+
+  .welcome-gods-img {
+    width: clamp(132px, 20vh, 196px);
+  }
+
+  .welcome-wing {
+    width: clamp(34px, 6vh, 56px);
+  }
+
+  .welcome-hero-row {
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .welcome-zu {
+    width: 62px;
+    flex-shrink: 0;
+  }
+
+  .welcome-quote {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 8px 10px;
+  }
+
+  .welcome-footer {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .sandbox-label-full {
+    display: none;
+  }
+
+  .sandbox-label-short {
+    display: inline;
+  }
+
+  .map-header {
+    padding: max(6px, env(safe-area-inset-top)) 10px 6px;
+    gap: 6px;
+  }
+
+  .map-header-left, .map-header-right {
+    gap: 6px;
+  }
+
+  .map-header .pill-toggle {
+    padding: 5px 9px;
+    font-size: 0.74rem;
+    gap: 5px;
+  }
+
+  .map-header .resource-pill {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    gap: 5px;
+  }
+
+  .map-header .resource-pill img {
+    width: 17px;
+    height: 17px;
+  }
+
+  .map-header .icon-round-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+
+  .realm-tabs {
+    padding: 7px 8px 4px;
+    gap: 6px;
+  }
+
+  .realm-tab {
+    padding: 5px 9px;
+    gap: 6px;
+    border-radius: 13px;
+  }
+
+  .realm-tab img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .realm-tab-name {
+    font-size: 0.78rem;
+  }
+
+  .realm-tab-sub {
+    font-size: 0.66rem;
+  }
+
+  .map-realm-portrait {
+    width: 50px;
+    height: 50px;
+  }
+
+  .map-realm-title {
+    font-size: 1rem;
+  }
+
+  .map-quick-jump {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .map-path-scroll {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .map-nodes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 10px 8px;
+  }
+
+  .stage-node {
+    padding: 6px 4px;
+    border-radius: 13px;
+  }
+
+  .stage-node-circle {
+    width: 56px;
+    height: 56px;
+  }
+
+  .stage-node-circle img.node-bg {
     width: 54px;
     height: 54px;
   }
 
+  .stage-node-num {
+    font-size: 1.12rem;
+  }
+
+  .goals-title {
+    display: none;
+  }
+
+  .goals-list {
+    grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  }
+
+  .goal-row {
+    padding: 3px 4px;
+    gap: 3px;
+  }
+
+  .goal-row-left {
+    gap: 3px;
+  }
+
+  .goal-row-left img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .goal-row-label {
+    font-size: 0.68rem;
+  }
+
+  .goal-row-count {
+    font-size: 0.78rem;
+  }
+
+  .booster-target-banner {
+    font-size: 0.74rem;
+    padding: 5px 10px;
+    gap: 6px;
+  }
+
+  .tutorial-overlay {
+    padding: 2px 6px;
+  }
+
+  .tutorial-zu-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tutorial-body {
+    font-size: 0.74rem;
+    line-height: 1.2;
+  }
+
+  .tut-gap {
+    height: 2px;
+  }
+
+  .modal-box {
+    padding: 16px 14px 14px;
+    border-radius: 20px;
+  }
+
+  .modal-header-ribbon {
+    margin: 0 34px 8px;
+    font-size: 1.15rem;
+    padding: 5px 16px;
+  }
+
+  .preboost-row {
+    gap: 8px;
+  }
+
+  .preboost-btn {
+    flex: 1;
+    width: auto;
+    max-width: 98px;
+  }
+
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== EXTRA NARROW PHONES (<= 375px) ==================== */
+@media (max-width: 375px) {
+  .level-meta-card {
+    padding: 4px 8px;
+    gap: 5px;
+  }
+
+  .level-meta-num {
+    font-size: 0.9rem;
+  }
+
+  .ui-action-btn {
+    min-width: 30px;
+    height: 30px;
+    padding: 3px 4px;
+    font-size: 0.92rem;
+  }
+
+  .moves-panel {
+    min-width: 80px;
+    padding: 4px 5px;
+  }
+
+  .moves-pill-wrap {
+    width: 74px;
+    height: 40px;
+  }
+
+  .moves-value {
+    font-size: 1.2rem;
+  }
+
+  .booster-slot {
+    width: 46px;
+    height: 46px;
+  }
+
   .booster-slot img.booster-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 345px) {
+  .level-meta-card .resource-pill {
+    display: none;
+  }
+}
+
+/* ==================== MOBILE / SHORT LANDSCAPE (height <= 540px, width >= 540px) ==================== */
+@media (max-height: 540px) and (min-width: 540px) {
+  .screen-welcome {
+    padding: 8px 14px;
+  }
+
+  .welcome-halo {
+    width: 96px;
+    margin-bottom: -18px;
+  }
+
+  .welcome-puzzle-img {
+    width: 145px;
+  }
+
+  .welcome-gods-img {
+    width: 126px;
+  }
+
+  .welcome-wing {
+    width: 34px;
+  }
+
+  .welcome-center {
+    gap: 6px;
+  }
+
+  .welcome-zu {
+    width: 60px;
+  }
+
+  .welcome-quote {
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    max-width: 280px;
+  }
+
+  .btn-play-main {
+    width: 155px;
+  }
+
+  .welcome-footer {
+    font-size: 0.7rem;
+  }
+
+  .map-header {
+    padding: 5px 12px;
+    gap: 6px;
+  }
+
+  .realm-tabs {
+    padding: 5px 10px 3px;
+  }
+
+  .realm-tab {
+    padding: 4px 9px;
+  }
+
+  .realm-tab img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .map-body {
+    grid-template-columns: 196px 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    padding: 6px 12px 8px;
+    gap: 10px;
+  }
+
+  .map-realm-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .map-realm-portrait {
+    width: 66px;
+    height: 66px;
+  }
+
+  .map-realm-title {
+    font-size: 1rem;
+  }
+
+  .map-realm-desc {
+    display: none;
+  }
+
+  .map-quick-jump {
+    width: 100%;
+    padding: 7px 8px;
+    font-size: 0.84rem;
+  }
+
+  .map-path-scroll {
+    padding: 10px;
+  }
+
+  .map-nodes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 10px 8px;
+  }
+
+  .stage-node-circle {
+    width: 54px;
+    height: 54px;
+  }
+
+  .stage-node-circle img.node-bg {
+    width: 52px;
+    height: 52px;
+  }
+
+  .game-layout {
+    grid-template-columns: 146px minmax(0, 1fr) 132px;
+    grid-template-rows: minmax(0, 1fr);
+    padding:
+      4px
+      max(8px, env(safe-area-inset-right))
+      4px
+      max(8px, env(safe-area-inset-left));
+    gap: 8px;
+  }
+
+  .game-left-col {
+    order: initial;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+  }
+
+  .companion-card {
+    display: none;
+  }
+
+  .moves-panel {
+    min-width: 0;
+    padding: 5px 6px;
+  }
+
+  .moves-pill-wrap {
+    width: 90px;
+    height: 46px;
+  }
+
+  .moves-label {
+    font-size: 0.58rem;
+  }
+
+  .moves-value {
+    font-size: 1.35rem;
+  }
+
+  .timer-mode-wrap {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .timer-ring-wrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .timer-ring-val {
+    font-size: 1.05rem;
+  }
+
+  .goals-panel {
+    flex: 1;
+    padding: 6px;
+    gap: 4px;
+    justify-content: flex-start;
+  }
+
+  .goals-title {
+    display: block;
+    font-size: 0.72rem;
+  }
+
+  .goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .goal-row {
+    padding: 3px 6px;
+  }
+
+  .goal-row-left img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .goal-row-label {
+    font-size: 0.72rem;
+  }
+
+  .goal-row-count {
+    font-size: 0.82rem;
+  }
+
+  .game-center-col {
+    order: initial;
+    gap: 3px;
+  }
+
+  .score-bar-row {
+    padding: 3px 8px;
+  }
+
+  .star-meter-track {
+    height: 14px;
+  }
+
+  .star-marker {
+    width: 18px;
+    height: 18px;
+  }
+
+  .score-readout {
+    font-size: 0.86rem;
+    min-width: 58px;
+  }
+
+  .booster-dock {
+    padding: 3px 8px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .booster-slot {
     width: 40px;
     height: 40px;
+    border-radius: 10px;
+  }
+
+  .booster-slot img.booster-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .booster-count-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 0.64rem;
+    bottom: -3px;
+    right: -3px;
+  }
+
+  .tutorial-card {
+    padding: 5px 8px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .tutorial-zu-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tutorial-body {
+    font-size: 0.72rem;
+    line-height: 1.18;
+  }
+
+  .game-right-col {
+    order: initial;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .level-meta-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 6px 8px;
+  }
+
+  .level-meta-num {
+    font-size: 0.96rem;
+  }
+
+  .level-meta-sub {
+    display: block;
+    font-size: 0.7rem;
+  }
+
+  .control-btn-stack {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    padding: 6px;
+    width: 100%;
+  }
+
+  .ui-action-btn {
+    width: 100%;
+    min-width: 0;
+    height: 34px;
+    padding: 4px;
+    font-size: 0.96rem;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .ui-btn-label {
+    display: none;
+  }
+
+  #btn-game-settings {
+    grid-column: span 2;
+  }
+
+  .combo-tip-card {
+    display: none;
   }
 }

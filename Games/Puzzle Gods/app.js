@@ -139,11 +139,14 @@
   let tutIndex = 0;
   let tutSkipped = false;
   let dragStart = null;
+  let boosterTargetDrag = null;
   let lastHudSig = '';
   let lastFrameTime = performance.now();
 
   // ==================== AUDIO UNLOCK & PREFS ====================
   window.addEventListener('pointerdown', () => AUDIO.unlock(), { passive: true });
+  window.addEventListener('touchend', () => AUDIO.unlock(), { passive: true });
+  window.addEventListener('click', () => AUDIO.unlock(), { passive: true });
   AUDIO.setSfx(save.sfx);
   AUDIO.setMusic(save.music);
 
@@ -160,7 +163,9 @@
       AUDIO.playMusic('welcome', true);
       renderWorldMap();
     } else if (name === 'game') {
+      resizeBoardCanvas();
       requestAnimationFrame(() => resizeBoardCanvas());
+      setTimeout(() => resizeBoardCanvas(), 80);
     }
   }
 
@@ -183,9 +188,16 @@
   }
 
   if (typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(() => resizeBoardCanvas()).observe(canvasFrame);
+    const ro = new ResizeObserver(() => resizeBoardCanvas());
+    ro.observe(canvasFrame);
+    const boardStage = canvasFrame?.parentElement;
+    if (boardStage) ro.observe(boardStage);
   }
   window.addEventListener('resize', () => resizeBoardCanvas());
+  window.addEventListener('orientationchange', () => setTimeout(resizeBoardCanvas, 120));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => resizeBoardCanvas());
+  }
 
   // ==================== LEVEL HELPERS ====================
   function getLevelByNum(num) {
@@ -342,6 +354,11 @@
       });
       grid.appendChild(nodeBtn);
     }
+
+    requestAnimationFrame(() => {
+      tabsWrap.querySelector('.realm-tab.active')?.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+      grid.querySelector('.stage-node.current')?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+    });
   }
 
   // ==================== PRE-GAME MODAL ====================
@@ -491,6 +508,7 @@
     renderer.setEngine(engine);
     renderer.selected = null;
     dragStart = null;
+    boosterTargetDrag = null;
     lastHudSig = '';
 
     // Initialize tutorial stages if defined for this level
@@ -617,6 +635,8 @@
       $('booster-target-text').textContent = BOOSTER_INFO[engine.activeBooster].label;
     } else {
       banner.classList.add('hidden');
+      boosterTargetDrag = null;
+      renderer.hoverCell = null;
     }
 
     for (const [type, info] of Object.entries(BOOSTER_INFO)) {
@@ -737,7 +757,9 @@
     }
 
     const txt = formatLangText(stage.dialogText || '');
-    $('tutorial-text').innerHTML = escapeHtml(txt).replace(/\n/g, '<br/>');
+    $('tutorial-text').innerHTML = escapeHtml(txt)
+      .replace(/\n{2,}/g, '<span class="tut-gap"></span>')
+      .replace(/\n/g, '<br/>');
     $('btn-tutorial-next').classList.toggle('hidden', !isTap);
 
     // If booster tutorial & booster count is 0, ensure player has at least 1
@@ -814,8 +836,12 @@
     updateBoosterDock();
   }
 
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
   canvas.addEventListener('pointerdown', e => {
     AUDIO.unlock();
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!e.isPrimary) return;
     if (!engine || engine.busy || engine.ended || isModalOpen()) return;
     const stage = currentTutorialStage();
     if (stage && (stage.completionEvent === 'eTappedScreen' || stage.completionEvent === 'eGodBoosterSelected')) {
@@ -825,24 +851,24 @@
     const cell = renderer.clientToCell(e.clientX, e.clientY);
     if (!cell || !engine.board[cell.r][cell.c].active) {
       renderer.selected = null;
+      renderer.dragFeedback = null;
       return;
     }
 
     if (engine.activeBooster) {
-      const bType = engine.activeBooster;
-      engine.useBooster(bType, cell.r, cell.c).then(used => {
-        if (used && !save.sandbox) {
-          save.boosters[bType] = Math.max(0, (save.boosters[bType] || 1) - 1);
-          persistSave();
-        }
-        updateGameHUD(true);
-        updateBoosterDock();
-      });
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      boosterTargetDrag = { pointerId: e.pointerId, booster: engine.activeBooster };
+      renderer.hoverCell = cell;
+      renderer.dragFeedback = null;
+      engine.lastInputAt = performance.now();
+      engine.hintPair = null;
       return;
     }
 
+    if (dragStart && dragStart.pointerId !== e.pointerId) return;
     try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    dragStart = { x: e.clientX, y: e.clientY, r: cell.r, c: cell.c, swiped: false };
+    dragStart = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, r: cell.r, c: cell.c, swiped: false };
+    renderer.dragFeedback = { r: cell.r, c: cell.c, dx: 0, dy: 0 };
     engine.lastInputAt = performance.now();
     engine.hintPair = null;
   });
@@ -850,12 +876,39 @@
   canvas.addEventListener('pointermove', e => {
     if (!engine) return;
     const cell = renderer.clientToCell(e.clientX, e.clientY);
-    renderer.hoverCell = cell;
 
-    if (!dragStart || dragStart.swiped || engine.busy || engine.ended || engine.activeBooster) return;
+    if (boosterTargetDrag) {
+      if (e.pointerId !== boosterTargetDrag.pointerId) return;
+      renderer.hoverCell = (cell && engine.board[cell.r][cell.c].active) ? cell : null;
+      return;
+    }
+
+    if (e.pointerType !== 'touch') {
+      renderer.hoverCell = cell;
+    }
+
+    if (!dragStart || e.pointerId !== dragStart.pointerId || dragStart.swiped || engine.busy || engine.ended || engine.activeBooster) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
-    const thresh = Math.max(16, (renderer.boardRect.cell || 48) * 0.34);
+    const cellPx = renderer.boardRect.cell || 44;
+    const maxNudge = cellPx * 0.26;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      renderer.dragFeedback = {
+        r: dragStart.r,
+        c: dragStart.c,
+        dx: Math.max(-maxNudge, Math.min(maxNudge, dx)),
+        dy: 0
+      };
+    } else {
+      renderer.dragFeedback = {
+        r: dragStart.r,
+        c: dragStart.c,
+        dx: 0,
+        dy: Math.max(-maxNudge, Math.min(maxNudge, dy))
+      };
+    }
+
+    const thresh = Math.max(12, cellPx * 0.28);
     if (Math.hypot(dx, dy) >= thresh) {
       dragStart.swiped = true;
       let dr = 0, dc = 0;
@@ -864,7 +917,9 @@
       const r1 = dragStart.r, c1 = dragStart.c;
       const r2 = r1 + dr, c2 = c1 + dc;
       renderer.selected = null;
+      renderer.dragFeedback = null;
       dragStart = null;
+      try { canvas.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
       if (engine.inBounds(r2, c2)) {
         handlePlayerSwap(r1, c1, r2, c2);
       }
@@ -872,12 +927,39 @@
   });
 
   canvas.addEventListener('pointerup', e => {
-    if (!dragStart) return;
+    if (boosterTargetDrag) {
+      if (e.pointerId !== boosterTargetDrag.pointerId) return;
+      const bType = boosterTargetDrag.booster;
+      boosterTargetDrag = null;
+      renderer.hoverCell = null;
+      try { canvas.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (!engine || engine.busy || engine.ended) return;
+      const cell = renderer.clientToCell(e.clientX, e.clientY);
+      if (cell && engine.board[cell.r][cell.c].active && engine.activeBooster === bType) {
+        engine.useBooster(bType, cell.r, cell.c).then(used => {
+          if (used && !save.sandbox) {
+            save.boosters[bType] = Math.max(0, (save.boosters[bType] || 1) - 1);
+            persistSave();
+          }
+          updateGameHUD(true);
+          updateBoosterDock();
+        });
+      }
+      return;
+    }
+
+    if (!dragStart || e.pointerId !== dragStart.pointerId) return;
     const ds = dragStart;
     dragStart = null;
+    renderer.dragFeedback = null;
+    if (e.pointerType === 'touch') renderer.hoverCell = null;
+    try { canvas.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     if (ds.swiped || !engine || engine.busy || engine.ended) return;
 
-    const cell = renderer.clientToCell(e.clientX, e.clientY);
+    const rawCell = renderer.clientToCell(e.clientX, e.clientY);
+    const cell = (rawCell && engine.board[rawCell.r][rawCell.c].active)
+      ? rawCell
+      : (Math.hypot(e.clientX - ds.x, e.clientY - ds.y) < 18 ? { r: ds.r, c: ds.c } : null);
     if (!cell || !engine.board[cell.r][cell.c].active) {
       renderer.selected = null;
       return;
@@ -898,8 +980,19 @@
     }
   });
 
-  canvas.addEventListener('pointercancel', () => { dragStart = null; });
-  canvas.addEventListener('pointerleave', () => { renderer.hoverCell = null; });
+  canvas.addEventListener('pointercancel', e => {
+    if (boosterTargetDrag && e.pointerId === boosterTargetDrag.pointerId) {
+      boosterTargetDrag = null;
+      renderer.hoverCell = null;
+    }
+    if (dragStart && e.pointerId === dragStart.pointerId) {
+      dragStart = null;
+      renderer.dragFeedback = null;
+    }
+  });
+  canvas.addEventListener('pointerleave', e => {
+    if (e.pointerType !== 'touch') renderer.hoverCell = null;
+  });
 
   // ==================== VICTORY & OUT OF MOVES ====================
   function showVictoryModal(lvl, score, stars) {

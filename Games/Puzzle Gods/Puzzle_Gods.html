@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Puzzle Gods</title>
   <link rel="icon" href="web_assets/sprites/char_zu.png" />
   <link rel="stylesheet" href="styles.css" />
@@ -87,7 +89,7 @@
 
       <div class="map-header-right">
         <button id="btn-sandbox-map" class="pill-toggle" type="button">
-          <span>Unlock All Levels:</span><strong id="sandbox-map-label">OFF</strong>
+          <span class="sandbox-label-full">Unlock All Levels:</span><span class="sandbox-label-short">All Lvls:</span><strong id="sandbox-map-label">OFF</strong>
         </button>
         <button id="btn-help-map" class="icon-round-btn" type="button" title="How to Play">
           <img src="web_assets/sprites/btn_qmark.png" alt="Help" />
@@ -133,7 +135,7 @@
             </div>
           </div>
 
-          <div id="timer-mode-wrap" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div id="timer-mode-wrap" class="timer-mode-wrap hidden">
             <div class="timer-ring-wrap">
               <svg viewBox="0 0 86 86">
                 <circle cx="43" cy="43" r="36" fill="rgba(18,12,38,0.85)" stroke="#4c357a" stroke-width="7"></circle>
@@ -176,16 +178,16 @@
             </div>
             <div id="boss-bar-text" class="boss-bar-text outlined">65 / 65</div>
           </div>
+
+          <div id="booster-target-banner" class="booster-target-banner hidden">
+            <span id="booster-target-text">Tap a tile to smash!</span>
+            <button id="btn-cancel-booster" class="btn-cancel-booster" type="button">Cancel</button>
+          </div>
         </div>
 
         <div class="board-stage">
           <div id="board-canvas-frame" class="board-canvas-frame">
             <canvas id="board-canvas"></canvas>
-
-            <div id="booster-target-banner" class="booster-target-banner hidden">
-              <span id="booster-target-text">Tap a tile to smash!</span>
-              <button id="btn-cancel-booster" class="btn-cancel-booster" type="button">Cancel</button>
-            </div>
           </div>
         </div>
 
@@ -243,11 +245,11 @@
         </div>
 
         <div class="hud-card control-btn-stack">
-          <button id="btn-game-hint" class="ui-action-btn" type="button">💡 Show Hint</button>
-          <button id="btn-game-restart" class="ui-action-btn" type="button">↻ Restart Level</button>
-          <button id="btn-game-map" class="ui-action-btn" type="button">🗺️ World Map</button>
-          <button id="btn-game-help" class="ui-action-btn" type="button">❓ Guide</button>
-          <button id="btn-game-settings" class="ui-action-btn" type="button">⚙️ Settings</button>
+          <button id="btn-game-hint" class="ui-action-btn" type="button" title="Show Hint" aria-label="Show Hint"><span class="ui-btn-icon">💡</span><span class="ui-btn-label">Show Hint</span></button>
+          <button id="btn-game-restart" class="ui-action-btn" type="button" title="Restart Level" aria-label="Restart Level"><span class="ui-btn-icon">↻</span><span class="ui-btn-label">Restart Level</span></button>
+          <button id="btn-game-map" class="ui-action-btn" type="button" title="World Map" aria-label="World Map"><span class="ui-btn-icon">🗺️</span><span class="ui-btn-label">World Map</span></button>
+          <button id="btn-game-help" class="ui-action-btn" type="button" title="Guide" aria-label="Guide"><span class="ui-btn-icon">❓</span><span class="ui-btn-label">Guide</span></button>
+          <button id="btn-game-settings" class="ui-action-btn" type="button" title="Settings" aria-label="Settings"><span class="ui-btn-icon">⚙️</span><span class="ui-btn-label">Settings</span></button>
         </div>
 
         <div class="hud-card combo-tip-card">
