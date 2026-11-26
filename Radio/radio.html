@@ -14,99 +14,238 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+      .nav-svg{width:22px;height:22px;display:block;fill:currentColor;flex-shrink:0}
+      @property --wipe{syntax:'<percentage>';inherits:false;initial-value:135%}
+      .site-navbar{position:fixed;top:0;left:0;width:100%;z-index:9999;box-sizing:border-box;background:linear-gradient(to bottom,rgba(0,0,0,.75) 0,rgba(0,0,0,.35) 60%,transparent 100%);transition:background .3s ease}
+      .site-navbar.scrolled{background:rgba(14,14,14,.94);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid rgba(255,255,255,.07)}
+      .logo-container{position:relative;height:35px;width:130px;display:flex;align-items:center;overflow:hidden;flex-shrink:0}
+      .logo-full,.logo-mini{position:absolute;left:0;top:50%;transform:translateY(-50%);height:35px;display:block;max-width:none}
+      .logo-full{width:auto;--wipe:135%;--feather:35%;-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(var(--wipe) - var(--feather)),transparent var(--wipe));mask-image:linear-gradient(to right,#000 0,#000 calc(var(--wipe) - var(--feather)),transparent var(--wipe));transition:--wipe .7s ease;cursor:pointer}
+      #desktop-navbar.search-open .logo-full,.site-navbar.scrolled .logo-full{--wipe:-35%}
+      .logo-mini{width:auto;height:35px;opacity:0;transition:opacity .5s ease .2s;cursor:pointer}
+      #desktop-navbar.search-open .logo-mini,.site-navbar.scrolled .logo-mini{opacity:1}
+      #navbar{height:70px;display:flex;align-items:center;padding:0 4%;pointer-events:none}
+      #navbar .logo-container{pointer-events:auto}
+      #mobile-user-slot{position:fixed;top:15px;right:4%;width:40px;height:40px;z-index:10000;pointer-events:auto}
+      #mobile-user-slot #user-section{width:100%;height:100%}
+      #mobile-user-slot .login-btn,#mobile-user-slot #user-avatar{width:40px!important;height:40px!important;border-radius:50%!important}
+      #mobile-user-slot .user-menu{top:calc(100% + 10px)!important;right:0}
+      #desktop-navbar{display:none;align-items:center;gap:28px;padding:0 4%;height:70px}
+      #desktop-navbar .logo-container{transition:width .7s ease}
+      #desktop-navbar.search-open .logo-container{width:36px}
+      .desktop-links{display:flex;align-items:center;gap:20px;flex-shrink:0;white-space:nowrap}
+      .desktop-link{color:#e5e5e5;text-decoration:none;font-size:14px;font-weight:500;line-height:1;padding-bottom:6px;position:relative;transition:color .2s ease;cursor:pointer}
+      .desktop-link:hover{color:#b3b3b3}
+      .desktop-link.active{color:#fff;font-weight:700}
+      .desktop-link.active::after{content:'';position:absolute;left:0;right:0;bottom:-6px;height:2px;background:#e50914;border-radius:2px}
+      #desktop-more-btn{position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:50%;cursor:pointer;color:#e5e5e5;transition:background-color .2s ease,color .2s ease}
+      #desktop-more-btn:hover{background-color:rgba(255,255,255,.12);color:#fff}
+      #desktop-more-btn .nav-svg{width:22px;height:22px}
+      .desktop-dropdown{position:absolute;top:calc(100% + 14px);right:0;display:flex;flex-direction:column;gap:4px;background:rgba(30,30,30,.85);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:8px;min-width:190px;z-index:9999;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease,visibility .2s}
+      .desktop-dropdown.open{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
+      #desktop-filter-btn{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:4px;background-color:rgba(0,0,0,.75);border:1px solid transparent;color:#fff;cursor:pointer;flex-shrink:0;padding:0;opacity:0;margin-left:auto;margin-right:0;transform:translateX(16px);pointer-events:none;overflow:hidden;transition:transform .25s ease,opacity .2s ease,width .3s ease .15s,margin-right .3s ease .15s,border-color .3s ease,background-color .3s ease}
+      #desktop-filter-btn:hover{background-color:rgba(255,255,255,.12);border-color:rgba(255,255,255,.55)}
+      #desktop-navbar:not(.search-open) #desktop-filter-btn{width:0}
+      #desktop-navbar.search-open #desktop-filter-btn{width:40px;opacity:1;margin-right:4px;transform:translateX(0);pointer-events:auto;transition:width .3s ease,margin-right .3s ease,transform .3s ease .15s,opacity .25s ease .15s,border-color .3s ease,background-color .3s ease}
+      #desktop-filter-btn .svg-icon{width:18px;height:18px}
+      #desktop-search-group{display:flex;align-items:center;height:40px;width:40px;border-radius:4px;background-color:rgba(0,0,0,.75);border:1px solid transparent;overflow:visible;flex-shrink:0;margin-left:0;transition:width .4s ease,background-color .3s ease,border-color .3s ease}
+      #desktop-navbar.search-open #desktop-search-group{width:300px;background-color:rgba(0,0,0,.9);border-color:rgba(255,255,255,.55)}
+      #desktop-search-btn{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:0 0;border:none;padding:0;color:#fff;cursor:pointer}
+      #desktop-search-btn .nav-svg{width:20px;height:20px}
+      #desktop-search-slot{display:flex;align-items:center;flex:1;min-width:0;overflow:visible;height:100%}
+      #desktop-search-slot .search-group{display:flex;align-items:center;gap:6px;height:100%;width:100%;padding-right:6px;margin:0!important;justify-content:flex-start!important;flex-grow:0!important}
+      #desktop-search-slot .site-search-wrap{flex:1;min-width:0;max-width:none;opacity:0;transition:opacity .2s ease;position:relative}
+      #desktop-navbar.search-open #desktop-search-slot .site-search-wrap{opacity:1;transition:opacity .25s ease .15s}
+      #desktop-search-slot .glass-input{background:0 0!important;border:none!important;box-shadow:none!important;padding:8px 6px!important;color:#fff;font-size:14px;width:100%;outline:none!important}
+      #desktop-search-slot #search-submit-btn{display:none!important}
+      #desktop-user-slot{display:flex;align-items:center;flex-shrink:0;margin-left:-14px}
+      #desktop-user-slot #user-section{position:relative}
+      #desktop-user-slot #user-avatar,#desktop-user-slot .login-btn{width:36px!important;height:36px!important;border-radius:8px!important}
+      #pill-nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999}
+      .pill-group{display:flex;align-items:center;gap:6px;background:rgba(20,20,20,.7);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:width .3s ease,padding .3s ease}
+      .pill-btn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:18px;color:#fff;cursor:pointer;transition:background-color .2s ease;text-decoration:none;flex-shrink:0;background:0 0;border:none}
+      .pill-btn:hover{background-color:rgba(255,255,255,.12)}
+      .pill-btn.active{background-color:rgba(229,9,20,.35)}
+      #mobile-search-slot{display:none;flex:1;min-width:0}
+      #mobile-search-slot .search-group{display:flex;align-items:center;width:100%;gap:2px;margin:0}
+      #mobile-search-slot .filter-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.05);color:#9ca3af;border:1px solid transparent;cursor:pointer}
+      #mobile-search-slot .filter-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+      #mobile-search-slot .site-search-wrap{position:relative;flex-grow:1;width:100%}
+      #mobile-search-slot .glass-input{background:0 0;border:none;padding:8px 34px 8px 6px;box-shadow:none;color:#fff;font-size:14px;width:100%;outline:none!important}
+      #pill-clear-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:18px;cursor:pointer;color:#fff;flex-shrink:0}
+      #pill-clear-btn:hover{background-color:rgba(255,255,255,.12)}
+      #pill-nav.search-open .pill-group{width:min(92vw,400px);justify-content:flex-start;padding:6px}
+      #pill-nav.search-open .pill-btn{display:none}
+      #pill-nav.search-open #mobile-search-slot{display:flex}
+      #pill-nav.search-open #pill-clear-btn{display:flex}
+      @media (max-width:480px){.pill-group{gap:2px;padding:4px}.pill-btn{width:40px;height:40px}.nav-svg{width:19px;height:19px}}
+      @media (min-width:992px){#mobile-user-slot,#navbar,#pill-nav{display:none!important}#desktop-navbar{display:flex}}
+      .login-btn{background-color:transparent;border:2px solid #e50914;border-radius:6px;color:#fff;cursor:pointer;font-size:1rem;height:40px;padding:0;transition:all .3s ease;width:40px;display:flex;align-items:center;justify-content:center}
+      .login-btn:hover{background-color:#e50914;box-shadow:0 0 15px rgba(229,9,20,.6);transform:scale(1.05)}
+      .login-btn.hidden{display:none!important}
+      .user-avatar{border:2px solid #e50914;border-radius:6px;cursor:pointer;height:40px;object-fit:cover;width:40px}
+      .user-avatar.hidden{display:none!important}
+      .user-menu{background:#222;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none;min-width:180px;overflow:hidden;position:absolute;right:0;top:calc(100% + 8px);z-index:60;padding:4px}
+      .user-menu.show{display:block}
+      .user-menu-item{color:#e5e7eb!important;cursor:pointer;font-size:.9rem;padding:11px 12px!important;transition:background .18s ease,transform .18s ease,color .18s ease!important;border-radius:9px!important;display:flex!important;align-items:center!important;gap:8px;position:relative;white-space:nowrap}
+      .user-menu-item:hover{background:rgba(229,9,20,.14)!important;color:#fff!important;transform:translateX(2px)}
+      .user-menu-item svg.svg-icon{width:16px;height:16px;fill:#fff;color:#fff;opacity:.85;flex-shrink:0}
+      .user-menu-item:hover svg.svg-icon{opacity:1;transform:scale(1.08)}
+      #menu-fav-count{margin-left:auto;font-size:12px;color:#f87171;font-weight:700}
+      #user-section:has(#user-avatar:not(.hidden)) #unified-login-btn{display:none}
+      #pill-more-panel{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(8px);display:flex;flex-direction:column;gap:4px;background:rgba(30,30,30,.85);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:8px;min-width:190px;z-index:9999;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,transform .2s ease,visibility .2s}
+      #pill-more-panel.open{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+      .more-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;cursor:pointer;font-size:14px;color:#fff;text-decoration:none;transition:background-color .2s ease}
+      .more-item:hover{background-color:rgba(255,255,255,.12)}
+      .more-item.active{background-color:rgba(229,9,20,.28);font-weight:700}
+
+      /* Inline sub-controls inside page body (no second floating navbar) */
+      .nf-navbar{position:relative!important;top:auto!important;left:auto!important;right:auto!important;height:auto!important;min-height:54px;padding:12px 4%!important;background:#0b0b0d!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-bottom:1px solid rgba(255,255,255,.08)!important;flex-wrap:wrap;gap:12px;z-index:10!important}
+      .nf-nav-left,.nf-nav-links{display:flex!important;flex-wrap:wrap;align-items:center;gap:8px 16px}
+      .nf-location-pill{display:inline-flex!important}
+      .nf-mobile-tabs{display:none!important}
+      .nf-main{padding-top:70px!important}
+      .nf-hero{padding:36px 4% 56px!important}
+      @media (max-width:991px){
+        .nf-hero{padding:24px 4% 28px!important}
+        .nf-player-dock{bottom:82px}
+        body:not(.has-dock){padding-bottom:84px}
+        body.has-dock{padding-bottom:calc(var(--dock-height) + 92px)}
+      }
+
+      /* Footer (exact index.html styles) */
+      .netflix-footer-section{position:relative;background-color:#000;width:100%;margin-top:40px;z-index:10;overflow:hidden;flex-shrink:0}
+      .netflix-flare-header{position:relative;width:100%;height:95px;pointer-events:none;z-index:3}
+      .netflix-curve-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+      .netflix-flare-glow{position:absolute;top:0;left:0;width:100%;height:420px;pointer-events:none;z-index:1;-webkit-mask-image:linear-gradient(to bottom,#000 0,rgba(0,0,0,.75) 22%,rgba(0,0,0,.3) 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,rgba(0,0,0,.75) 22%,rgba(0,0,0,.3) 55%,transparent 100%)}
+      .netflix-flare-glow svg{width:100%;height:100%;display:block}
+      .netflix-footer-content{position:relative;max-width:1100px;margin:0 auto;padding:16px 36px 56px 36px;z-index:10}
+      .netflix-footer-logo-wrap{margin-bottom:26px}
+      .netflix-footer-logo{height:38px;width:auto;max-width:175px;object-fit:contain;display:block;margin-bottom:16px}
+      .netflix-footer-desc{color:rgba(255,255,255,.92);font-size:17px;line-height:1.55;max-width:520px;font-weight:400;letter-spacing:-.1px}
+      .netflix-footer-contact{margin-bottom:32px}
+      .netflix-footer-contact a{display:inline-flex;align-items:center;gap:8px;color:#d2d2d2;font-size:15px;font-weight:500;text-decoration:none;padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.28);transition:color .2s ease,border-color .2s ease,gap .2s ease}
+      .netflix-footer-contact a::after{content:'→';transition:transform .2s ease}
+      .netflix-footer-contact a:hover{color:#fff;border-color:#e50914}
+      .netflix-footer-contact a:hover::after{transform:translateX(3px)}
+      .netflix-footer-links-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 40px;padding-bottom:32px;margin-bottom:30px;border-bottom:1px solid rgba(255,255,255,.09)}
+      .netflix-footer-col{display:flex;flex-direction:column;gap:14px}
+      .netflix-footer-col a{position:relative;color:#a8a8a8;font-size:14px;text-decoration:none;line-height:1.4;width:fit-content;transition:color .2s ease,transform .2s ease}
+      .netflix-footer-col a::after{content:'';position:absolute;left:0;bottom:-2px;width:100%;height:1px;background:#e50914;transform:scaleX(0);transform-origin:left;transition:transform .25s ease}
+      .netflix-footer-col a:hover{color:#fff}
+      .netflix-footer-col a:hover::after{transform:scaleX(1)}
+      .netflix-footer-lang-wrap{margin-bottom:26px}
+      .netflix-lang-btn{position:relative;display:inline-flex;align-items:center;background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);border-radius:8px;color:#fff;padding:0 16px 0 14px;height:42px;cursor:pointer;transition:border-color .2s ease,background .2s ease,box-shadow .2s ease}
+      .netflix-lang-btn:hover{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);box-shadow:0 0 0 4px rgba(229,9,20,.08)}
+      .netflix-lang-btn:focus-within{outline:2px solid #fff;outline-offset:2px}
+      .netflix-lang-icon{display:flex;align-items:center;margin-right:10px;color:#d9d9d9;pointer-events:none}
+      .netflix-lang-icon svg{width:20px;height:20px;display:block}
+      .netflix-lang-select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:0 0;border:none;color:#fff;font-family:inherit;font-size:14px;font-weight:500;padding-right:22px;cursor:pointer;outline:0}
+      .netflix-lang-select option{background-color:#141414;color:#fff;font-size:14px;padding:8px 12px}
+      .netflix-lang-caret{position:absolute;right:12px;display:flex;align-items:center;pointer-events:none;color:#fff}
+      .netflix-lang-caret svg{width:10px;height:10px;fill:currentColor}
+      .netflix-footer-copy{color:#a8a8a8;font-size:13px;font-weight:500;margin-bottom:10px;letter-spacing:.1px}
+      .netflix-footer-recaptcha{color:#6b6b6b;font-size:12px;line-height:1.5;max-width:600px}
+      @media (max-width:860px){.netflix-footer-links-grid{grid-template-columns:repeat(2,1fr);gap:16px 24px}.netflix-footer-content{padding:12px 24px 44px 24px}.netflix-flare-header{height:75px}}
+      @media (max-width:500px){.netflix-footer-links-grid{grid-template-columns:1fr;gap:14px}.netflix-footer-desc{font-size:15px}.netflix-footer-contact a{font-size:14.5px}.netflix-footer-logo{height:32px}.netflix-lang-btn{height:40px}}
+      @media (max-width:991px){footer.netflix-footer-section{padding-bottom:92px}}
+    </style>
 </head>
 <body>
-    <!-- Top Netflix Navigation Bar -->
-    <header class="nf-navbar" id="navbar">
-        <div class="nf-nav-left">
-            <a href="#top" class="nf-brand" id="brandHomeBtn" aria-label="Netflix Radio Home">
-                <span class="nf-n-mark" aria-hidden="true">
-                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
-                </span>
-                <span class="nf-brand-word">RADIO</span>
-            </a>
+    <!-- Site-wide Navbar -->
+    <nav class="site-navbar" id="navbar">
+      <div class="logo-container">
+        <svg viewBox="0 0 370 100" class="logo-full" xmlns="http://www.w3.org/2000/svg" onclick='location.href="../index.html"' oncontextmenu="return!1" ondragstart="return!1" onselectstart="return!1"><path d="M50.83 93.54V0H35.21v56.77L14.9 0H0v100c5.31-.83 10.31-1.56 15.94-2.19V43.23l17.81 52.4c5.94-.84 11.56-1.15 17.08-2.09m30.84-56.87V15.63h27.6V0H66.04v92.3l43.23-3.45v-15c-9.27.32-18.44 1.05-27.6 1.67V52.3c5.83-.31 13.95-.31 20.83-.31V36.35c-5.52 0-14.8.32-20.83.32m85.73-21.04V0h-48.03v15.63h16.15V87.7c5.1-.21 10.42-.21 15.63-.21V15.63zm25.41 19.9v-19.9h28.34V0H177.4v86.67h15.41V51.15h21.36V35.52zm53.65 37.39V0h-15.63v87.7a930 930 0 0 1 42.2 2.1V74.26c-8.65-.42-17.61-1.14-26.57-1.35m39.79 17.91c5 .32 10.2.52 15.31 1.15V0h-15.31zM370 0h-17.08l-10.94 26.25L331.78 0H314.9l18.23 46.98-20.1 45.83c5.62.73 11.14 1.04 16.76 1.98l11.46-26.56 11.15 28.96c5.93.94 11.77 1.98 17.6 2.81l-19.8-52.4z" fill="#e50914"/></svg>
+        <svg viewBox="0 0 551.11109 999.99998" class="logo-mini" xmlns="http://www.w3.org/2000/svg" onclick='location.href="../index.html"' oncontextmenu="return!1" ondragstart="return!1" onselectstart="return!1" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="linearGradient19332"><stop offset="0" style="stop-color:#b1060f;stop-opacity:1"/><stop offset="0.54607224" style="stop-color:#7b010c;stop-opacity:1"/><stop offset="1" style="stop-color:#e50914;stop-opacity:0"/></linearGradient><linearGradient id="linearGradient35887"><stop offset="0" style="stop-color:#b1060f;stop-opacity:1"/><stop offset="0.62500739" style="stop-color:#7b010c;stop-opacity:1"/><stop offset="1" style="stop-color:#b1060f;stop-opacity:0"/></linearGradient><linearGradient id="linearGradient13368" x1="78.23394" x2="221.66281" y1="423.76712" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient19332" y2="365.09167"/><linearGradient id="linearGradient35889" x1="456.36462" x2="309.67599" y1="521.55957" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient35887" y2="583.49475"/></defs><path d="M -1.1524947,-1.1524946 2.3049893,1002.6704 C 75.577724,988.55904 133.19716,990.10098 198.22908,984.23044 V 0 Z" style="fill:url(#linearGradient13368);stroke:none"/><path d="m 353.81586,0 h 199.38158 l 2.30498,1000.3654 -202.83905,-33.42238 z" style="fill:url(#linearGradient35889);stroke:none"/><path d="M 1.1524964,-3.6590427e-7 C 5.7624764,11.524946 346.90086,981.92546 346.90086,981.92546 c 56.0558,-0.40033 131.2191,8.75315 205.1441,17.28745 L 197.07656,-3.6590427e-7 Z" style="fill:#e50914"/></svg>
+      </div>
+    </nav>
 
-            <nav class="nf-nav-links" aria-label="Primary Navigation">
-                <button type="button" class="nf-nav-link active" data-view="browse">Home</button>
-                <button type="button" class="nf-nav-link" data-view="globe">
-                    <span class="nav-live-dot" aria-hidden="true"></span>
-                    World Globe
-                </button>
-                <button type="button" class="nf-nav-link" data-view="countries">Countries</button>
-                <button type="button" class="nf-nav-link" data-view="mylist">
-                    My List
-                    <span class="nf-nav-badge hidden" id="navFavBadge">0</span>
-                </button>
-            </nav>
+    <div id="mobile-user-slot"><div id="account-controls"><div class="relative" id="user-section"><button class="login-btn" onclick="openAvatarModal()" id="unified-login-btn" title="Sign In"><svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M352 96l64 0c17.7 0 32 14.3 32 32l0 256c0 17.7-14.3 32-32 32l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0c53 0 96-43 96-96l0-256c0-53-43-96-96-96l-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32zm-9.4 182.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L242.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z" fill="currentColor"/></svg></button><img src="" class="hidden user-avatar" id="user-avatar" onclick="toggleUserMenu()" onerror='this.onerror=null,this.src="../Attachments/Avatars/Classics/1.png"'><div class="user-menu" id="user-menu"><div class="user-menu-item" onclick="switchRadioView('mylist');toggleUserMenu()"><svg viewBox="0 0 512 512" class="svg-icon" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M241 87.1l15 20.7 15-20.7C296 52.5 336.2 32 378.9 32 452.4 32 512 91.6 512 165.1l0 2.6c0 112.2-139.9 242.5-212.9 298.2-12.4 9.4-27.6 14.1-43.1 14.1s-30.8-4.6-43.1-14.1C139.9 410.2 0 279.9 0 167.7l0-2.6C0 91.6 59.6 32 133.1 32 175.8 32 216 52.5 241 87.1z" fill="currentColor"/></svg>Saved Channels <span id="menu-fav-count">0</span></div><div class="user-menu-item" onclick="openAvatarModal()"><svg viewBox="0 0 448 512" class="svg-icon" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z" fill="currentColor"/></svg>Change Avatar</div></div></div></div></div>
+
+    <nav class="site-navbar" id="desktop-navbar">
+      <div class="logo-container">
+        <svg viewBox="0 0 370 100" class="logo-full" xmlns="http://www.w3.org/2000/svg" onclick='location.href="../index.html"' oncontextmenu="return!1" ondragstart="return!1" onselectstart="return!1"><path d="M50.83 93.54V0H35.21v56.77L14.9 0H0v100c5.31-.83 10.31-1.56 15.94-2.19V43.23l17.81 52.4c5.94-.84 11.56-1.15 17.08-2.09m30.84-56.87V15.63h27.6V0H66.04v92.3l43.23-3.45v-15c-9.27.32-18.44 1.05-27.6 1.67V52.3c5.83-.31 13.95-.31 20.83-.31V36.35c-5.52 0-14.8.32-20.83.32m85.73-21.04V0h-48.03v15.63h16.15V87.7c5.1-.21 10.42-.21 15.63-.21V15.63zm25.41 19.9v-19.9h28.34V0H177.4v86.67h15.41V51.15h21.36V35.52zm53.65 37.39V0h-15.63v87.7a930 930 0 0 1 42.2 2.1V74.26c-8.65-.42-17.61-1.14-26.57-1.35m39.79 17.91c5 .32 10.2.52 15.31 1.15V0h-15.31zM370 0h-17.08l-10.94 26.25L331.78 0H314.9l18.23 46.98-20.1 45.83c5.62.73 11.14 1.04 16.76 1.98l11.46-26.56 11.15 28.96c5.93.94 11.77 1.98 17.6 2.81l-19.8-52.4z" fill="#e50914"/></svg>
+        <svg viewBox="0 0 551.11109 999.99998" class="logo-mini" xmlns="http://www.w3.org/2000/svg" onclick='location.href="../index.html"' oncontextmenu="return!1" ondragstart="return!1" onselectstart="return!1" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="linearGradient19332-dt"><stop offset="0" style="stop-color:#b1060f;stop-opacity:1"/><stop offset="0.54607224" style="stop-color:#7b010c;stop-opacity:1"/><stop offset="1" style="stop-color:#e50914;stop-opacity:0"/></linearGradient><linearGradient id="linearGradient35887-dt"><stop offset="0" style="stop-color:#b1060f;stop-opacity:1"/><stop offset="0.62500739" style="stop-color:#7b010c;stop-opacity:1"/><stop offset="1" style="stop-color:#b1060f;stop-opacity:0"/></linearGradient><linearGradient id="linearGradient13368-dt" x1="78.23394" x2="221.66281" y1="423.76712" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient19332-dt" y2="365.09167"/><linearGradient id="linearGradient35889-dt" x1="456.36462" x2="309.67599" y1="521.55957" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient35887-dt" y2="583.49475"/></defs><path d="M -1.1524947,-1.1524946 2.3049893,1002.6704 C 75.577724,988.55904 133.19716,990.10098 198.22908,984.23044 V 0 Z" style="fill:url(#linearGradient13368-dt);stroke:none"/><path d="m 353.81586,0 h 199.38158 l 2.30498,1000.3654 -202.83905,-33.42238 z" style="fill:url(#linearGradient35889-dt);stroke:none"/><path d="M 1.1524964,-3.6590427e-7 C 5.7624764,11.524946 346.90086,981.92546 346.90086,981.92546 c 56.0558,-0.40033 131.2191,8.75315 205.1441,17.28745 L 197.07656,-3.6590427e-7 Z" style="fill:#e50914"/></svg>
+      </div>
+      <div class="desktop-links">
+        <a class="desktop-link" onclick='location.href="../index.html"' style="cursor:pointer">Home</a>
+        <a href="../Anime/anime.html" class="desktop-link">Anime</a>
+        <a href="../TV/tv.html" class="desktop-link">Live TV</a>
+        <a href="../Sports/sports.html" class="desktop-link">Sports</a>
+        <a href="../Games/Games.html" class="desktop-link">Games</a>
+        <div class="desktop-link active" id="desktop-more-btn" title="More">
+          <svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>
+          <div class="desktop-dropdown" id="desktop-more-panel">
+            <a class="more-item" href="../Webcams/webcams.html" title="Webcams"><svg class="nav-svg" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><title>camera</title><g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"><g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -465.000000)" fill="currentColor"><path d="M272,487 C268.687,487 266,484.313 266,481 C266,477.687 268.687,475 272,475 C275.313,475 278,477.687 278,481 C278,484.313 275.313,487 272,487 L272,487 Z M272,473 C267.582,473 264,476.582 264,481 C264,485.418 267.582,489 272,489 C276.418,489 280,485.418 280,481 C280,476.582 276.418,473 272,473 L272,473 Z M286,489 C286,490.104 285.104,491 284,491 L260,491 C258.896,491 258,490.104 258,489 L258,473 C258,471.896 258.896,471 260,471 L264,471 L265,469 C265.707,467.837 265.896,467 267,467 L277,467 C278.104,467 278.293,467.837 279,469 L280,471 L284,471 C285.104,471 286,471.896 286,473 L286,489 L286,489 Z M284,469 L281,469 L280,467 C279.411,465.837 279.104,465 278,465 L266,465 C264.896,465 264.53,465.954 264,467 L263,469 L260,469 C257.791,469 256,470.791 256,473 L256,489 C256,491.209 257.791,493 260,493 L284,493 C286.209,493 288,491.209 288,489 L288,473 C288,470.791 286.209,469 284,469 L284,469 Z" id="camera" sketch:type="MSShapeGroup"></path></g></g></g></svg><span>Webcams</span></a>
+            <a href="#" class="more-item active" title="Radio"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span>Radio</span></a>
+            <a href="../Books/Books.html" class="more-item" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
+          </div>
         </div>
+      </div>
+      <button id="desktop-filter-btn" onclick="tuneRandomWorldwide()" title="Tune Random" type="button"><svg viewBox="0 0 24 24" class="svg-icon" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+      <div class="desktop-search-group" id="desktop-search-group">
+        <button type="button" id="desktop-search-btn" title="Search"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg></button>
+        <div id="desktop-search-slot"></div>
+      </div>
+      <div id="desktop-user-slot"></div>
+    </nav>
 
-        <div class="nf-nav-right">
-            <!-- Expandable Netflix Search Box -->
-            <div class="nf-search-box" id="searchBox">
-                <button type="button" class="nf-icon-btn" id="searchToggleBtn" aria-label="Search stations (Shortcut /)" title="Search stations (/)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <circle cx="11" cy="11" r="7.5"></circle>
-                        <path d="M20 20l-4-4"></path>
-                    </svg>
-                </button>
-                <input
-                    type="search"
-                    id="searchInput"
-                    class="nf-search-input"
-                    placeholder="Stations, genres, countries, tags..."
-                    autocomplete="off"
-                    aria-label="Search radio stations"
-                >
-                <span class="nf-kbd-hint" id="searchKbdHint">/</span>
-                <button type="button" class="nf-search-clear hidden" id="searchClearBtn" aria-label="Clear search">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <path d="M18 6L6 18M6 6l12 12"></path>
-                    </svg>
-                </button>
+    <div id="pill-more-panel">
+      <a class="more-item" href="../Webcams/webcams.html" title="Webcams"><svg class="nav-svg" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><title>camera</title><g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"><g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -465.000000)" fill="currentColor"><path d="M272,487 C268.687,487 266,484.313 266,481 C266,477.687 268.687,475 272,475 C275.313,475 278,477.687 278,481 C278,484.313 275.313,487 272,487 L272,487 Z M272,473 C267.582,473 264,476.582 264,481 C264,485.418 267.582,489 272,489 C276.418,489 280,485.418 280,481 C280,476.582 276.418,473 272,473 L272,473 Z M286,489 C286,490.104 285.104,491 284,491 L260,491 C258.896,491 258,490.104 258,489 L258,473 C258,471.896 258.896,471 260,471 L264,471 L265,469 C265.707,467.837 265.896,467 267,467 L277,467 C278.104,467 278.293,467.837 279,469 L280,471 L284,471 C285.104,471 286,471.896 286,473 L286,489 L286,489 Z M284,469 L281,469 L280,467 C279.411,465.837 279.104,465 278,465 L266,465 C264.896,465 264.53,465.954 264,467 L263,469 L260,469 C257.791,469 256,470.791 256,473 L256,489 C256,491.209 257.791,493 260,493 L284,493 C286.209,493 288,491.209 288,489 L288,473 C288,470.791 286.209,469 284,469 L284,469 Z" id="camera" sketch:type="MSShapeGroup"></path></g></g></g></svg><span>Webcams</span></a>
+      <a href="#" class="more-item active" title="Radio"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span>Radio</span></a>
+      <a href="../Books/Books.html" class="more-item" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
+    </div>
+
+    <nav id="pill-nav">
+      <div class="pill-group">
+        <a href="../index.html" class="pill-btn" title="Home"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M20 20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V11L1 11L11.3273 1.6115C11.7087 1.26475 12.2913 1.26475 12.6727 1.6115L23 11L20 11V20ZM8 15V17H16V15H8Z"></path></svg></a>
+        <a href="../Anime/anime.html" class="pill-btn" title="Anime"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4ZM12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 11.4872 7.07719 10.9925 7.22057 10.5268C7.61175 11.3954 8.48527 12 9.5 12C10.8807 12 12 10.8807 12 9.5C12 8.48527 11.3954 7.61175 10.5269 7.21995C10.9925 7.07719 11.4872 7 12 7Z"></path></svg></a>
+        <a href="../TV/tv.html" class="pill-btn" title="Live TV"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg></a>
+        <a href="../Sports/sports.html" class="pill-btn" title="Sports"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg></a>
+        <a href="../Games/Games.html" class="pill-btn" title="Games"><svg viewBox="0 0 512 512" class="nav-svg" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/></svg></a>
+        <div class="pill-btn active" id="pill-more-btn" title="More"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></div>
+        <div class="pill-btn" id="pill-search-btn" title="Search"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg></div>
+        <div id="mobile-search-slot">
+          <div class="search-group">
+            <button class="filter-btn" onclick="tuneRandomWorldwide()" title="Tune Random"><svg viewBox="0 0 24 24" class="svg-icon" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+            <div class="site-search-wrap">
+              <input id="search-input" class="glass-input" placeholder="Stations, genres, countries..." autocomplete="off">
             </div>
-
-            <!-- Surprise Me / Instant Radio Hop -->
-            <button type="button" class="nf-shuffle-pill" id="surpriseMeBtn" title="Tune a random live station worldwide">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="16 3 21 3 21 8"></polyline>
-                    <line x1="4" y1="20" x2="21" y2="3"></line>
-                    <polyline points="21 16 21 21 16 21"></polyline>
-                    <line x1="15" y1="15" x2="21" y2="21"></line>
-                    <line x1="4" y1="4" x2="9" y2="9"></line>
-                </svg>
-                <span>Tune Random</span>
-            </button>
-
-            <!-- Live Clock & Detected Location -->
-            <div class="nf-location-pill" id="navLocationPill" title="Detected local region">
-                <span class="nf-loc-flag" id="navLocFlag">🌍</span>
-                <span class="nf-loc-name" id="navLocName">Global</span>
-                <span class="nf-loc-clock" id="navLocClock">--:--</span>
-            </div>
+          </div>
         </div>
-    </header>
-
-    <!-- Mobile Bottom Quick Tab Bar -->
-    <nav class="nf-mobile-tabs" aria-label="Mobile Navigation">
-        <button type="button" class="nf-mobile-tab active" data-view="browse">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>Home</span>
-        </button>
-        <button type="button" class="nf-mobile-tab" data-view="globe">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Globe</span>
-        </button>
-        <button type="button" class="nf-mobile-tab" data-view="countries">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>Countries</span>
-        </button>
-        <button type="button" class="nf-mobile-tab" data-view="mylist">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <span>My List</span>
-        </button>
+        <div class="pill-btn" id="pill-clear-btn" title="Clear"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor" style="width:18px;height:18px"><path d="M12 10.5858L16.9497 5.63604L18.3639 7.05025L13.4142 12L18.3639 16.9497L16.9497 18.3639L12 13.4142L7.05025 18.3639L5.63604 16.9497L10.5858 12L5.63604 7.05025L7.05025 5.63604L12 10.5858Z"></path></svg></div>
+      </div>
     </nav>
 
     <main id="top" class="nf-main">
+        <!-- Page Sub-Controls (Inline in Page Body) -->
+        <div class="nf-navbar" id="nf-navbar">
+            <div class="nf-nav-left">
+                <nav class="nf-nav-links" aria-label="Radio Views">
+                    <button type="button" class="nf-nav-link active" data-view="browse">Home</button>
+                    <button type="button" class="nf-nav-link" data-view="globe">
+                        <span class="nav-live-dot" aria-hidden="true"></span>
+                        World Globe
+                    </button>
+                    <button type="button" class="nf-nav-link" data-view="countries">Countries</button>
+                    <button type="button" class="nf-nav-link" data-view="mylist">
+                        My List
+                        <span class="nf-nav-badge hidden" id="navFavBadge">0</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="nf-nav-right">
+                <!-- Live Clock & Detected Location -->
+                <div class="nf-location-pill" id="navLocationPill" title="Detected local region">
+                    <span class="nf-loc-flag" id="navLocFlag">🌍</span>
+                    <span class="nf-loc-name" id="navLocName">Global</span>
+                    <span class="nf-loc-clock" id="navLocClock">--:--</span>
+                </div>
+            </div>
+        </div>
+
         <!-- ===================== VIEW 1: BROWSE HOME ===================== -->
         <div id="viewBrowse" class="nf-view active">
             <!-- Featured Netflix Hero Billboard -->
@@ -344,6 +483,57 @@
         </footer>
     </main>
 
+    <footer class="netflix-footer-section">
+      <div class="netflix-flare-glow" aria-hidden="true">
+        <svg viewBox="0 0 1440 420" preserveAspectRatio="none">
+          <defs>
+            <clipPath id="belowCurve"><path d="M -40 79 Q 720 -31 1480 79 L 1480 420 L -40 420 Z"/></clipPath>
+            <radialGradient cx="50%" cy="50%" id="flareBlue" r="50%"><stop offset="0%" stop-color="#3b65e8" stop-opacity="0.42"/><stop offset="30%" stop-color="#2a45b8" stop-opacity="0.26"/><stop offset="60%" stop-color="#16236e" stop-opacity="0.10"/><stop offset="85%" stop-color="#0a123d" stop-opacity="0.025"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
+            <radialGradient cx="50%" cy="50%" id="flareRed" r="50%"><stop offset="0%" stop-color="#e50914" stop-opacity="0.34"/><stop offset="35%" stop-color="#9a1848" stop-opacity="0.16"/><stop offset="70%" stop-color="#450818" stop-opacity="0.04"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
+            <radialGradient cx="50%" cy="50%" id="flarePink" r="50%"><stop offset="0%" stop-color="#ff7b94" stop-opacity="0.42"/><stop offset="45%" stop-color="#e50914" stop-opacity="0.15"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
+          </defs>
+          <g clip-path="url(#belowCurve)">
+            <ellipse cx="720" cy="26" fill="url(#flareBlue)" rx="760" ry="330"/>
+            <ellipse cx="720" cy="26" fill="url(#flareRed)" rx="460" ry="210"/>
+            <ellipse cx="720" cy="22" fill="url(#flarePink)" rx="220" ry="90"/>
+          </g>
+        </svg>
+      </div>
+      <div class="netflix-flare-header" aria-hidden="true">
+        <svg viewBox="0 0 1440 70" class="netflix-curve-svg" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="curveNeonRed" x1="0%" x2="100%" y1="0%" y2="0%"><stop offset="0%" stop-color="#e50914" stop-opacity="0"/><stop offset="15%" stop-color="#4a0815" stop-opacity="0.35"/><stop offset="30%" stop-color="#8c122b" stop-opacity="0.75"/><stop offset="44%" stop-color="#d40b2a" stop-opacity="0.95"/><stop offset="50%" stop-color="#ff3b5c" stop-opacity="1"/><stop offset="56%" stop-color="#d40b2a" stop-opacity="0.95"/><stop offset="70%" stop-color="#8c122b" stop-opacity="0.75"/><stop offset="85%" stop-color="#4a0815" stop-opacity="0.35"/><stop offset="100%" stop-color="#e50914" stop-opacity="0"/></linearGradient>
+            <filter id="svgCurveGlow" height="200%" width="120%" x="-10%" y="-20%"><feGaussianBlur result="blur1" stdDeviation="1.8"/><feMerge><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <path d="M -40 58 Q 720 -22 1480 58 L 1480 80 L -40 80 Z" fill="#000000" fill-opacity="0.0"/>
+          <path d="M -40 58 Q 720 -22 1480 58" fill="none" stroke="url(#curveNeonRed)" stroke-width="4.2" filter="url(#svgCurveGlow)" opacity="0.65"/>
+          <path d="M -40 58 Q 720 -22 1480 58" fill="none" stroke="url(#curveNeonRed)" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <div class="netflix-footer-content">
+        <div class="netflix-footer-logo-wrap">
+          <img src="../Attachments/Chithruka%20Signature.svg" alt="Netflix" class="netflix-footer-logo" loading="lazy">
+          <p class="netflix-footer-desc">A full world of entertainment in one place – series, movies, live events, games, and podcasts.</p>
+        </div>
+        <div class="netflix-footer-contact"><a href="https://help.netflix.com/">Questions? Contact us.</a></div>
+        <nav class="netflix-footer-links-grid" aria-label="Footer links">
+          <div class="netflix-footer-col"><a href="https://help.netflix.com/">FAQ</a><a href="https://ir.netflix.net/">Investor Relations</a><a href="https://help.netflix.com/legal/privacy">Privacy</a><a href="https://fast.com/">Speed Test</a></div>
+          <div class="netflix-footer-col"><a href="https://help.netflix.com/">Help Center</a><a href="https://jobs.netflix.com/">Jobs</a><a href="#">Cookie Preferences</a><a href="https://help.netflix.com/legal/notices">Legal Notices</a></div>
+          <div class="netflix-footer-col"><a href="https://www.netflix.com/youraccount">Account</a><a href="https://devices.netflix.com/">Ways to Watch</a><a href="https://help.netflix.com/legal/corpinfo">Corporate Information</a><a href="https://www.netflix.com/browse/genre/839338">Only on Netflix</a></div>
+          <div class="netflix-footer-col"><a href="https://media.netflix.com/">Media Center</a><a href="https://help.netflix.com/legal/termsofuse">Terms of Use</a><a href="https://help.netflix.com/contactus">Contact Us</a></div>
+        </nav>
+        <div class="netflix-footer-lang-wrap">
+          <div class="netflix-lang-btn">
+            <div class="netflix-lang-icon" aria-hidden="true"><svg viewBox="0 0 528 528" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m204.5 29.5l6.5 2.34c3.57 1.28 8.97 3.83 12 5.65 3.03 1.82 8.43 6.39 12.01 10.16 3.85 4.05 7.81 9.51 9.68 13.35 1.76 3.63 3.83 10.25 4.69 15 0.84 4.67 2.07 12.55 2.73 17.5 0.66 4.95 1.7 9.57 2.3 10.27 0.87 1.02 20.87 1.32 194.09 1.73l6.5 2.6c3.57 1.43 8.3 3.72 10.5 5.1 2.2 1.37 6.71 5.15 10.02 8.4 3.3 3.24 7.28 8.15 8.83 10.9 1.55 2.75 3.76 7.25 4.9 10 2.02 4.85 2.1 7.19 2.8 77.5 0.4 39.88 0.77 107.15 0.84 149.5 0.09 64.67-0.13 78.24-1.39 84.75-0.83 4.26-2.88 10.56-4.57 14-1.69 3.44-4.28 7.82-5.74 9.75-1.47 1.93-4.7 5.45-7.18 7.83-2.48 2.38-7.21 5.83-10.51 7.67-3.3 1.83-8.48 4.15-11.5 5.15-5.15 1.71-11.95 1.84-106 2.14-70.77 0.23-102.27-0.01-106.5-0.79-3.3-0.61-8.93-2.21-12.5-3.56-3.57-1.34-9.3-4.58-12.73-7.19-3.42-2.61-8.28-7.45-10.8-10.75-2.51-3.3-5.86-9.15-7.43-13-1.58-3.86-3.36-10.82-3.97-15.5-0.6-4.68-1.58-13.23-2.16-19-0.58-5.77-1.36-12.98-2.42-21.5l-56.49-0.53c-51.08-0.47-57.03-0.7-62-2.34-3.03-1-8.19-3.24-11.47-4.98-3.29-1.73-8.48-5.63-11.54-8.65-3.06-3.02-7.02-7.75-8.81-10.5-1.79-2.75-4.1-7.25-5.13-10-1.04-2.75-2.37-8.82-2.96-13.5-0.74-5.89-0.89-50.46-0.49-145 0.48-112.67 0.82-137.5 1.99-142.25 0.77-3.16 2.82-8.56 4.55-12 1.96-3.9 5.81-8.91 10.25-13.34 5.33-5.32 9.24-8.13 15.61-11.25 4.67-2.29 10.97-4.57 14-5.07 3.03-0.5 33.4-0.83 129.5-0.59zm-134.11 34.65c-1.71 0.91-4.48 3.61-6.15 6-1.68 2.39-3.56 6.38-4.18 8.85-0.82 3.26-1.05 42.52-0.84 142.5l0.28 138c4.65 8.29 7.35 11.72 9 12.97 1.65 1.25 4.8 3.02 7 3.93 3.62 1.49 12.69 1.65 95.75 1.62l91.75-0.02c-0.77-5.04-1.44-9.87-2-14-0.55-4.12-1.65-12-2.43-17.5-0.78-5.5-2.78-19.45-4.45-31-1.67-11.55-3.52-23.7-4.1-27-0.59-3.3-1.73-10.95-2.53-17-0.8-6.05-3.95-28.1-7-49-3.05-20.9-6.45-44.07-7.57-51.5-1.12-7.43-2.92-19.8-4-27.5-1.08-7.7-2.59-18.28-3.35-23.5-0.76-5.22-2.32-16.03-3.46-24-1.14-7.97-2.79-16.53-3.66-19-0.88-2.47-2.85-6.08-4.39-8-1.54-1.92-5.22-4.74-8.18-6.25l-5.38-2.74c-104.36 0.12-121.83 0.47-124 1.32-1.65 0.65-4.4 1.92-6.11 2.82zm191.13 92.35c1.4 9.9 3.65 25.88 5.01 35.5 1.36 9.63 2.9 19.98 3.42 23 0.53 3.03 1.43 9.32 2.02 14 0.59 4.68 1.71 12.55 2.51 17.5 0.79 4.95 1.63 10.35 1.86 12 0.24 1.65 1.84 12.23 3.57 23.5 1.74 11.27 4.29 28.15 5.67 37.5 1.39 9.35 3.14 21.5 3.88 27 0.75 5.5 2.09 15.18 2.98 21.5 0.88 6.32 2.04 13.64 2.58 16.25 0.54 2.61 0.98 6.32 0.98 8.25 0 1.93-0.77 5.19-1.72 7.25-0.95 2.06-12.42 18.04-25.5 35.5-13.08 17.46-24 32.43-24.28 33.25-0.44 1.33 10.91 1.5 98.25 1.49l98.75-0.01c7.75-3.61 11.54-6.41 13.42-8.57 1.88-2.15 4.13-5.48 5-7.41 1.42-3.14 1.58-18.71 1.58-151.5 0-145.42-0.03-148.07-1.98-152-1.09-2.2-3.81-5.8-6.06-8-2.58-2.52-6.09-4.65-9.52-5.77-5.04-1.64-11.99-1.77-95.19-1.75-84.8 0.02-89.75 0.12-89.76 1.77 0 0.96 1.14 9.85 2.53 19.75zm-42.44 256.75c0.05 2.34 0.61 10.06 1.25 17.17 0.79 8.66 1.58 13.03 2.42 13.25 0.69 0.18 4.99-4.73 9.57-10.92 4.57-6.19 10.2-13.84 12.5-17 2.3-3.16 4.18-5.98 4.18-6.25 0-0.27-6.75-0.5-15-0.5h-15zm-71.58-274.13c0.55-0.06 3.92 0.43 7.5 1.08 4.34 0.8 8.32 2.38 12 4.78 3.02 1.98 6.68 5.16 8.13 7.06 1.45 1.9 3.55 5.26 4.66 7.46 1.11 2.2 3.44 11.43 5.18 20.5 1.74 9.07 4.27 22.13 5.62 29 1.34 6.88 3.11 15.88 3.92 20 0.82 4.13 2.43 12.22 3.59 18 1.17 5.78 2.93 15 3.92 20.5 0.99 5.5 2.28 12.02 2.87 14.5 0.58 2.48 1.07 6.75 1.08 9.5 0.01 3.27-0.67 6.12-1.98 8.25-1.09 1.79-3.34 3.93-4.99 4.75-1.65 0.82-5.14 1.59-7.75 1.69-3.35 0.14-5.86-0.45-8.5-2-2.7-1.57-4.17-3.38-5.23-6.44-0.82-2.34-2.39-8.98-3.5-14.75-1.1-5.77-2.57-13.12-3.27-16.32-0.94-4.38-1.75-5.93-3.25-6.31-1.1-0.27-10.42-0.36-20.7-0.18-10.65 0.17-19.16 0.74-19.75 1.31-0.57 0.55-2.56 8.65-4.41 18-1.85 9.35-3.99 18.28-4.76 19.85-0.76 1.56-2.96 3.77-4.88 4.91-2.19 1.29-5.2 2.06-8 2.04-2.48-0.02-5.96-0.77-7.75-1.67-1.79-0.9-4.23-3.32-5.42-5.38-1.86-3.2-2.09-4.7-1.57-10.25 0.34-3.57 3.11-19.1 6.17-34.5 3.06-15.4 6.46-32.72 7.55-38.5 1.1-5.78 3.59-18.6 5.54-28.5 1.95-9.9 4.21-20.47 5.03-23.5 0.97-3.58 3.15-7.57 6.22-11.41 3.13-3.91 6.58-6.88 10.23-8.78 3.02-1.59 7.75-3.26 10.5-3.73 2.75-0.46 5.45-0.89 6-0.96zm-6.98 47.88c-1.34 7.43-3.19 17.1-4.09 21.5-0.91 4.4-2.17 11.06-2.79 14.8-0.63 3.74-0.92 7.01-0.64 7.27 0.27 0.27 7.14 0.47 15.25 0.46 8.11-0.02 14.95-0.37 15.2-0.78 0.25-0.41-2.02-13.35-5.06-28.75-3.72-18.9-6.06-28.58-7.2-29.78-0.93-0.98-2.2-1.77-2.82-1.75-0.62 0.02-2.09 0.82-3.27 1.78-1.71 1.4-2.64 4.48-4.58 15.25zm211.98 36.05c4.68-0.04 10.28 0.61 13.5 1.57 3.02 0.89 6.62 2.33 8 3.18 1.37 0.86 4.22 3.16 6.33 5.13 2.11 1.96 4.47 4.81 5.25 6.32 0.78 1.51 1.76 2.76 2.17 2.77 0.41 0.02 1.71-1.67 2.89-3.75 1.19-2.07 4-5.46 6.25-7.52 2.8-2.56 6.25-4.39 10.86-5.77 4.01-1.2 9.59-2.02 13.75-2.01 3.85 0 8.47 0.35 13.54 1.53l-0.04 17.5-3.75 1.53c-3.49 1.42-3.71 1.76-3.13 4.75 0.34 1.77 2.4 6.37 4.57 10.22 2.16 3.85 4.77 9.25 5.79 12 1.36 3.66 1.72 6.61 1.35 11-0.36 4.16-1.41 7.51-3.42 10.93-1.6 2.7-4.26 5.94-5.91 7.18-1.65 1.25-4.69 2.97-6.75 3.83-2.06 0.86-7.13 1.9-18.77 3.06l0.02 23.5 2.75-0.64c1.51-0.36 5-1.53 7.75-2.6 2.75-1.07 6.12-2.73 7.5-3.69 1.37-0.96 3.29-2.04 4.25-2.41 1.11-0.42 1.93-0.12 2.25 0.84 0.27 0.82 0.5 5.32 0.5 10 0 4.68-0.34 9.24-0.75 10.15-0.41 0.9-2.78 2.65-5.25 3.87-2.48 1.23-7.76 3.3-18.99 6.98l-0.51 36-22.5 0.5v-32.5l-16.75-0.64c-14.09-0.54-18.03-1.05-24.75-3.2-4.4-1.41-10.7-4.31-14-6.45-3.3-2.14-8.01-6.09-10.46-8.8-2.45-2.7-5.82-7.84-7.48-11.41-2.87-6.16-3.03-7.16-3.01-19 0.02-10.88 0.34-13.28 2.45-18.5 1.54-3.83 4.42-8.12 7.96-11.86 3.05-3.23 8.24-7.34 11.54-9.14 3.3-1.79 9.15-4 13-4.9 3.85-0.91 12.4-1.97 19-2.37 11.24-0.68 11.98-0.86 11.68-2.73-0.18-1.1-1.08-3.57-2-5.49-0.93-1.91-3.26-4.54-5.18-5.83-3.08-2.06-4.46-2.31-11.33-2.01-7.39 0.31-8 0.52-10.75 3.58-1.61 1.79-2.91 4.26-2.91 5.5 0.01 1.24-0.53 2.81-1.2 3.5-0.81 0.84-4.59 1.25-11.51 1.25-8.9 0-10.39-0.24-10.94-1.75-0.35-0.96 0.1-4.68 1-8.25 0.91-3.57 2.89-8.27 4.4-10.44 1.5-2.17 4.76-5.47 7.24-7.33 2.47-1.86 7.2-4.23 10.5-5.25 3.61-1.13 9.18-1.89 14-1.93zm56.24 24.95c-0.94 1.38-2.16 4.07-2.72 6-0.56 1.93-1.02 9.46-1.02 16.75v13.25c6 0.06 8.6-0.75 10.25-1.97 2.2-1.62 2.75-2.83 2.75-6.03 0-2.2-1.38-7.71-3.06-12.25-1.68-4.54-3.38-10.5-3.78-13.25l-0.73-5zm-65.19 37.62c-2.18 1.04-5.29 3.23-6.91 4.88-1.63 1.65-3.56 4.46-4.3 6.25-0.74 1.79-1.34 6.18-1.34 9.75 0 3.57 0.59 7.96 1.31 9.75 0.72 1.79 2.63 4.98 4.25 7.1 1.82 2.37 5.23 4.94 8.94 6.72 3.3 1.58 8.93 3.33 12.5 3.89 3.58 0.57 9.76 1.03 13.75 1.03 3.99 0.01 7.93-0.22 8.75-0.49 1.28-0.43 1.5-4.28 1.5-26.5v-26c-20.54 0.17-28.3 0.56-30.5 0.98-2.2 0.42-5.78 1.61-7.95 2.64z" fill-rule="evenodd"></path></svg></div>
+            <select class="netflix-lang-select" id="lang-switcher" aria-label="Select Language"><option value="en" selected>English</option><option value="si">Sinhala</option></select>
+            <div class="netflix-lang-caret" aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M3.5 6l4.5 4.5L12.5 6z"/></svg></div>
+          </div>
+        </div>
+        <p class="netflix-footer-copy">&copy;<span id="footer-year">2026</span> Netflix<span id="footer-country"> Sri Lanka</span>. All Rights Reserved.</p>
+        <p class="netflix-footer-recaptcha">This page is protected by Google reCAPTCHA to ensure you're not a bot.</p>
+      </div>
+    </footer>
+
     <!-- ===================== PERSISTENT NETFLIX BOTTOM PLAYER DOCK ===================== -->
     <aside class="nf-player-dock hidden" id="playerDock" aria-label="Audio Player Dock">
         <div class="nf-dock-progress" id="dockProgressBar"></div>
@@ -522,5 +712,482 @@
     <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
     <script src="app.js" defer></script>
+    <script>
+      (function(){
+        function d(id){return document.getElementById(id);}
+        var mobileNav=d("navbar");
+        window.addEventListener("scroll",function(){
+          var sc=window.scrollY>50;
+          if(mobileNav)mobileNav.classList.toggle("scrolled",sc);
+        });
+        var lastW=window.innerWidth;
+        function layoutNav(){
+          var wChanged=window.innerWidth!==lastW;
+          lastW=window.innerWidth;
+          var desktop=window.matchMedia("(min-width:992px)").matches;
+          var searchGroup=document.querySelector(".search-group");
+          var accountControls=d("account-controls");
+          var dSlot=d("desktop-search-slot"),mSlot=d("mobile-search-slot");
+          var dUser=d("desktop-user-slot"),mUser=d("mobile-user-slot");
+          if(desktop){
+            if(searchGroup&&dSlot&&searchGroup.parentElement!==dSlot)dSlot.appendChild(searchGroup);
+            if(accountControls&&dUser&&accountControls.parentElement!==dUser)dUser.appendChild(accountControls);
+          }else{
+            if(searchGroup&&mSlot&&searchGroup.parentElement!==mSlot)mSlot.appendChild(searchGroup);
+            if(accountControls&&mUser&&accountControls.parentElement!==mUser)mUser.appendChild(accountControls);
+            if(wChanged){
+              var pn=d("pill-nav");if(pn)pn.classList.remove("search-open");
+              var dn=d("desktop-navbar");if(dn)dn.classList.remove("search-open");
+            }
+          }
+        }
+        var rTimer;window.addEventListener("resize",function(){clearTimeout(rTimer);rTimer=setTimeout(layoutNav,120);});
+        layoutNav();
+        var pMoreBtn=d("pill-more-btn"),pMorePanel=d("pill-more-panel");
+        if(pMoreBtn&&pMorePanel){
+          pMoreBtn.addEventListener("click",function(e){e.stopPropagation();pMorePanel.classList.toggle("open");});
+          document.addEventListener("click",function(e){if(!pMorePanel.contains(e.target)&&e.target!==pMoreBtn)pMorePanel.classList.remove("open");});
+        }
+        var dMoreBtn=d("desktop-more-btn"),dMorePanel=d("desktop-more-panel");
+        if(dMoreBtn&&dMorePanel){
+          dMoreBtn.addEventListener("click",function(e){e.stopPropagation();dMorePanel.classList.toggle("open");});
+          document.addEventListener("click",function(e){if(!dMorePanel.contains(e.target)&&e.target!==dMoreBtn)dMorePanel.classList.remove("open");});
+        }
+        var pillNav=d("pill-nav"),pillSearchBtn=d("pill-search-btn"),pillClearBtn=d("pill-clear-btn");
+        if(pillNav&&pillSearchBtn){
+          pillSearchBtn.addEventListener("click",function(){
+            pillNav.classList.add("search-open");
+            var inp=d("search-input");if(inp)setTimeout(function(){inp.focus();},50);
+          });
+        }
+        if(pillNav&&pillClearBtn){
+          pillClearBtn.addEventListener("click",function(){
+            var inp=d("search-input");
+            if(inp&&inp.value){inp.value="";inp.dispatchEvent(new Event("input",{bubbles:true}));inp.focus();}
+            else{pillNav.classList.remove("search-open");}
+          });
+        }
+        var dSearchBtn=d("desktop-search-btn");
+        if(dSearchBtn){
+          dSearchBtn.addEventListener("click",function(e){
+            e.stopPropagation();
+            var dn=d("desktop-navbar");if(dn)dn.classList.add("search-open");
+            var inp=d("search-input");if(inp)setTimeout(function(){inp.focus();},150);
+          });
+        }
+        document.addEventListener("focusin",function(e){
+          if(e.target&&e.target.id==="search-input"&&window.matchMedia("(min-width:992px)").matches){
+            var dn=d("desktop-navbar");if(dn)dn.classList.add("search-open");
+          }
+        });
+        document.addEventListener("click",function(e){
+          var dn=d("desktop-navbar");
+          if(dn&&dn.classList.contains("search-open")){
+            var within=e.target.closest&&e.target.closest("#desktop-search-group"),inp=d("search-input");
+            if(!within&&(!inp||!inp.value))dn.classList.remove("search-open");
+          }
+          var pn=d("pill-nav");
+          if(pn&&pn.classList.contains("search-open")){
+            var withinP=e.target.closest&&e.target.closest("#pill-nav"),inp2=d("search-input");
+            if(!withinP&&(!inp2||!inp2.value))pn.classList.remove("search-open");
+          }
+        });
+      })();
+      document.addEventListener("DOMContentLoaded",function(){
+        var y=document.getElementById("footer-year");
+        if(y)y.textContent=new Date().getFullYear();
+        var langSel=document.getElementById("lang-switcher");
+        if(langSel){
+          try{
+            var savedLang=localStorage.getItem("app_language")||"en";
+            langSel.value=savedLang;
+            if(savedLang==="si"){
+              document.documentElement.lang="si";
+              var siDict={
+                "Questions? Contact us.":"ප්‍රශ්න තිබේද? අප අමතන්න.","FAQ":"නිතර අසන ප්‍රශ්න","Help Center":"උපකාරක මධ්‍යස්ථානය",
+                "Account":"ගිණුම","Media Center":"මාධ්‍ය මධ්‍යස්ථානය","Investor Relations":"ආයෝජක සබඳතා","Jobs":"රැකියා",
+                "Ways to Watch":"නැරඹිය හැකි ක්‍රම","Terms of Use":"භාවිත කොන්දේසි","Privacy":"පෞද්ගලිකත්වය","Cookie Preferences":"කුකී මනාප",
+                "Corporate Information":"සංගම් තොරතුරු","Contact Us":"අප අමතන්න","Speed Test":"වේග පරීක්ෂාව","Legal Notices":"නීතිමය දැන්වීම්",
+                "Only on Netflix":"Netflix හි පමණි","This page is protected by Google reCAPTCHA to ensure you're not a bot.":"ඔබ රොබෝවකු නොවන බව තහවුරු කිරීමට මෙම පිටුව Google reCAPTCHA මගින් ආරක්ෂා කර ඇත."
+              };
+              document.querySelectorAll(".netflix-footer-section a, .netflix-footer-section p").forEach(function(el){
+                var txt=el.textContent.trim();
+                if(siDict[txt])el.textContent=siDict[txt];
+              });
+            }
+            langSel.addEventListener("change",function(){
+              localStorage.setItem("app_language",langSel.value);
+              location.reload();
+            });
+          }catch(e){}
+        }
+        fetch("https://ipapi.co/json/").then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+          var fc=document.getElementById("footer-country");
+          if(fc&&d.country_name)fc.textContent=" "+d.country_name;
+        }).catch(function(){
+          fetch("https://get.geojs.io/v1/ip/country/full.json").then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+            var fc=document.getElementById("footer-country");
+            if(fc&&d.name)fc.textContent=" "+d.name;
+          }).catch(function(){});
+        });
+      });
+    </script>
+<style>
+      #avatarModalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:100000}
+      #avatarModalOverlay.active{display:flex}
+      @media (min-width:640px){#avatarModalOverlay{align-items:center}}
+      #avatarModalOverlay .modal-panel{background:#181b1e;width:100%;max-width:640px;max-height:90vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:amSlideUp .25s ease}
+      @media (min-width:640px){#avatarModalOverlay .modal-panel{border-radius:16px;max-height:85vh}}
+      @keyframes amSlideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+      #avatarModalOverlay .modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #2b2f33;flex-shrink:0}
+      #avatarModalOverlay .modal-header h2{margin:0;font-size:22px;font-weight:700;color:#eef0f2}
+      #avatarModalOverlay .back-btn{background:none;border:none;color:#eef0f2;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%}
+      #avatarModalOverlay .back-btn:hover{background:#1f2226}
+      #avatarModalOverlay .back-btn.visible{display:flex}
+      #avatarModalOverlay .close-btn{background:none;border:none;color:#9aa1a8;font-size:22px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+      #avatarModalOverlay .close-btn:hover{background:#1f2226;color:#eef0f2}
+      #avatarModalOverlay .modal-body{overflow-y:auto;padding:20px 24px 32px}
+      #avatarModalOverlay .am-section-title{font-size:12px;font-weight:700;letter-spacing:1.2px;color:#9aa1a8;text-transform:uppercase;margin:24px 0 14px}
+      #avatarModalOverlay .am-section-title:first-child{margin-top:0}
+      #avatarModalOverlay .am-avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+      #avatarModalOverlay .am-avatar-item{aspect-ratio:1/1;border-radius:50%;overflow:hidden;cursor:pointer;border:3px solid transparent;background:#1f2226;transition:border-color .15s ease,transform .15s ease}
+      #avatarModalOverlay .am-avatar-item img{width:100%;height:100%;object-fit:cover;display:block}
+      #avatarModalOverlay .am-avatar-item:hover{transform:scale(1.05)}
+      #avatarModalOverlay .am-avatar-item.selected{border-color:#e50914}
+      #avatarModalOverlay .am-see-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:18px;padding:10px;background:none;border:none;color:#9aa1a8;font-size:14px;font-weight:600;cursor:pointer}
+      #avatarModalOverlay .am-see-more-btn:hover{color:#eef0f2}
+      #avatarModalOverlay .am-see-more-btn svg{transition:transform .2s ease}
+      #avatarModalOverlay .am-see-more-btn.expanded svg{transform:rotate(180deg)}
+      #avatarModalOverlay .am-poster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:14px 14px}
+      #avatarModalOverlay .am-poster-item{cursor:pointer;text-align:left;width:100%;min-width:0;display:flex;flex-direction:column}
+      #avatarModalOverlay .am-poster-item .am-poster-thumb{width:100%;aspect-ratio:2/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#1f2226;transition:transform .15s ease;display:flex;align-items:center;justify-content:center}
+      #avatarModalOverlay .am-poster-item:hover .am-poster-thumb{transform:scale(1.03)}
+      #avatarModalOverlay .am-poster-item .am-poster-thumb img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+      #avatarModalOverlay .am-poster-item .am-poster-title{display:block;margin-top:8px;font-size:13px;color:#eef0f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #avatarModalOverlay .am-loading,#avatarModalOverlay .am-empty-state{color:#9aa1a8;font-size:14px;padding:20px 0;text-align:center}
+      #avatarModalOverlay .modal-body::-webkit-scrollbar{width:8px}
+      #avatarModalOverlay .modal-body::-webkit-scrollbar-thumb{background:#3a3f45;border-radius:4px}
+    </style>
+    <div class="modal-overlay" id="avatarModalOverlay">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <button class="back-btn" id="amBackBtn" aria-label="Back">&#8592;</button>
+          <h2 id="amModalTitle">Change avatar</h2>
+          <button class="close-btn" id="amCloseBtn" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body" id="amModalBody"></div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      const AVATAR_SETS_RAW = [
+        { path: "Classics", count: 21, previewCount: 12 },
+        { path: "movie-194", count: 10 },
+        { path: "tv-110316", count: 12 },
+        { path: "tv-82452", count: 12 },
+        { path: "tv-94605", count: 12 },
+        { path: "tv-249522", count: 6 },
+        { path: "tv-246246", count: 12 },
+        { path: "tv-42009", count: 7 },
+        { path: "tv-61222", count: 5 },
+        { path: "movie-740985", count: 3 },
+        { path: "tv-60585", count: 5 },
+        { path: "tv-91239", count: 16 },
+        { path: "tv-77169", count: 22 },
+        { path: "movie-484718", count: 13 },
+        { path: "tv-70523", count: 11 },
+        { path: "tv-254420", count: 9 },
+        { path: "tv-260592", count: 6 },
+        { path: "tv-106379", count: 27 },
+        { path: "tv-67070", count: 4 },
+        { path: "tv-94954", count: 13 },
+        { path: "tv-12998", count: 19 },
+        { path: "tv-95557", count: 10 },
+        { path: "tv-73375", count: 5 },
+        { path: "movie-803796", count: 11 },
+        { path: "tv-283304", count: 10 },
+        { path: "tv-63174", count: 7 },
+        { path: "tv-96677", count: 13 },
+        { path: "tv-71446", count: 10 },
+        { path: "tv-273240", count: 7 },
+        { path: "tv-76747", count: 7 },
+        { path: "tv-111110", count: 17 },
+        { path: "tv-12513", count: 15 },
+        { path: "tv-1424", count: 10 },
+        { path: "tv-100757", count: 7 },
+        { path: "tv-81356", count: 16 },
+        { path: "tv-93405", count: 20 },
+        { path: "tv-66732", count: 21 },
+        { path: "tv-76479", count: 14 },
+        { path: "tv-65494", count: 14 },
+        { path: "tv-135934", count: 7 },
+        { path: "tv-70796", count: 5 },
+        { path: "tv-219080", count: 9 },
+        { path: "tv-84773", count: 22 },
+        { path: "tv-90802", count: 7 },
+        { path: "tv-194766", count: 5 },
+        { path: "tv-71914", count: 7 },
+        { path: "tv-71912", count: 8 },
+        { path: "tv-86248", count: 6 },
+        { path: "tv-119051", count: 13 },
+        { path: "tv-126914", count: 12 },
+        { path: "movie-567189", count: 9 },
+        { path: "movie-1156593", count: 10 }
+      ];
+
+      function deriveSetMeta(raw){
+        const match = /^(movie|tv)-(\d+)$/.exec(raw.path);
+        if (match){
+          const [, mediaType, id] = match;
+          return { ...raw, key: raw.path, type: "title", tmdb: { id: Number(id), mediaType }, label: raw.label || raw.path };
+        }
+        return { ...raw, key: raw.path, type: "grid", label: raw.label || raw.path };
+      }
+
+      const AVATAR_SETS = AVATAR_SETS_RAW.map(deriveSetMeta);
+      const AM_TMDB_API_KEY = "3a73619bbb8fc6d47742d1b5b2b707b5";
+      const AM_TMDB_IMG_BASE = "https://image.tmdb.org/t/p/w300";
+      const AVATAR_BASE_PATH = "../Attachments/Avatars";
+      const CUSTOM_AVATAR_KEY = "custom_avatar_path";
+
+      const overlay = document.getElementById("avatarModalOverlay");
+      const modalBody = document.getElementById("amModalBody");
+      const modalTitle = document.getElementById("amModalTitle");
+      const backBtn = document.getElementById("amBackBtn");
+      const closeBtn = document.getElementById("amCloseBtn");
+
+      let selectedAvatar = localStorage.getItem(CUSTOM_AVATAR_KEY) || null;
+
+      function buildImagePath(set, index){
+        return `${AVATAR_BASE_PATH}/${set.path}/${index}.png`;
+      }
+
+      function renderMainView(){
+        modalTitle.textContent = "Change avatar";
+        backBtn.classList.remove("visible");
+        modalBody.innerHTML = "";
+
+        const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+        const titleSets = AVATAR_SETS.filter(s => s.type === "title");
+
+        gridSets.forEach(set => {
+          const section = document.createElement("div");
+          const heading = document.createElement("div");
+          heading.className = "am-section-title";
+          heading.textContent = set.label;
+          section.appendChild(heading);
+          section.appendChild(buildAvatarGrid(set));
+          modalBody.appendChild(section);
+        });
+
+        if (titleSets.length){
+          const heading = document.createElement("div");
+          heading.className = "am-section-title";
+          heading.textContent = "From Shows & Movies";
+          modalBody.appendChild(heading);
+
+          const posterGrid = document.createElement("div");
+          posterGrid.className = "am-poster-grid";
+          modalBody.appendChild(posterGrid);
+
+          titleSets.forEach(set => {
+            const item = document.createElement("div");
+            item.className = "am-poster-item";
+            item.innerHTML = `
+              <div class="am-poster-thumb"><div class="am-loading">\u00b7\u00b7\u00b7</div></div>
+              <span class="am-poster-title">${set.label}</span>
+            `;
+            item.addEventListener("click", () => renderTitleView(set));
+            posterGrid.appendChild(item);
+
+            resolvePosterAndTitle(set).then(({ posterUrl, title }) => {
+              const thumb = item.querySelector(".am-poster-thumb");
+              thumb.innerHTML = posterUrl
+                ? `<img src="${posterUrl}" alt="${title}">`
+                : `<div class="am-loading">No image</div>`;
+              if (title) {
+                set.label = title;
+                item.querySelector(".am-poster-title").textContent = title;
+              }
+            });
+          });
+        }
+      }
+
+      function buildAvatarGrid(set, expanded){
+        const grid = document.createElement("div");
+        grid.className = "am-avatar-grid";
+
+        const previewCount = set.previewCount || set.count;
+        const showCount = expanded ? set.count : Math.min(previewCount, set.count);
+
+        for (let i = 1; i <= showCount; i++){
+          const item = document.createElement("div");
+          item.className = "am-avatar-item";
+          if (selectedAvatar === buildImagePath(set, i)) item.classList.add("selected");
+
+          const img = document.createElement("img");
+          img.src = buildImagePath(set, i);
+          img.alt = `${set.label} avatar ${i}`;
+          img.loading = "lazy";
+          item.appendChild(img);
+
+          item.addEventListener("click", () => selectAvatar(set, i, item));
+          grid.appendChild(item);
+        }
+
+        if (!expanded && set.count > previewCount){
+          const wrapper = document.createElement("div");
+          wrapper.appendChild(grid);
+
+          const seeMoreBtn = document.createElement("button");
+          seeMoreBtn.className = "am-see-more-btn";
+          seeMoreBtn.innerHTML = `See more
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>`;
+          seeMoreBtn.addEventListener("click", () => {
+            const newGrid = buildAvatarGrid(set, true);
+            wrapper.replaceWith(newGrid);
+          });
+          wrapper.appendChild(seeMoreBtn);
+          return wrapper;
+        }
+
+        return grid;
+      }
+
+      function applyAvatarToProfile(path){
+        const avatarImg = document.getElementById("user-avatar");
+        if (avatarImg){
+          avatarImg.src = path;
+          avatarImg.classList.remove("hidden");
+        }
+      }
+
+      function selectAvatar(set, index, el){
+        selectedAvatar = buildImagePath(set, index);
+        localStorage.setItem(CUSTOM_AVATAR_KEY, selectedAvatar);
+        document.querySelectorAll(".am-avatar-item.selected").forEach(n => n.classList.remove("selected"));
+        el.classList.add("selected");
+        applyAvatarToProfile(selectedAvatar);
+      }
+
+      function renderTitleView(set){
+        modalTitle.textContent = set.label;
+        backBtn.classList.add("visible");
+        modalBody.innerHTML = "";
+
+        const heading = document.createElement("div");
+        heading.className = "am-section-title";
+        heading.textContent = "Choose an avatar";
+        modalBody.appendChild(heading);
+
+        modalBody.appendChild(buildAvatarGrid(set, false));
+
+        backBtn.onclick = renderMainView;
+      }
+
+      const tmdbCache = {};
+      async function resolvePosterAndTitle(set){
+        if (set.poster || set.title){
+          return { posterUrl: set.poster || null, title: set.title || set.label };
+        }
+        if (!set.tmdb) return { posterUrl: null, title: set.label };
+
+        const cacheKey = `${set.tmdb.mediaType}-${set.tmdb.id}`;
+        if (tmdbCache[cacheKey]) return tmdbCache[cacheKey];
+
+        try {
+          const url = `https://api.themoviedb.org/3/${set.tmdb.mediaType}/${set.tmdb.id}?api_key=${AM_TMDB_API_KEY}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("TMDB fetch failed");
+          const data = await res.json();
+          const title = data.title || data.name || set.label;
+          const posterUrl = data.poster_path ? `${AM_TMDB_IMG_BASE}${data.poster_path}` : null;
+          const result = { posterUrl, title };
+          tmdbCache[cacheKey] = result;
+          return result;
+        } catch (err){
+          return { posterUrl: null, title: set.label };
+        }
+      }
+
+      window.openAvatarModal = function(){
+        const userMenu = document.getElementById("user-menu");
+        if (userMenu) userMenu.classList.remove("show");
+        overlay.classList.add("active");
+        renderMainView();
+        document.body.style.overflow = "hidden";
+      };
+      window.closeAvatarModal = function(){
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+      };
+
+      closeBtn.addEventListener("click", window.closeAvatarModal);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) window.closeAvatarModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay.classList.contains("active")) window.closeAvatarModal();
+      });
+
+      window.toggleUserMenu = function(){
+        const menu = document.getElementById("user-menu");
+        if (menu) menu.classList.toggle("show");
+      };
+      document.addEventListener("click", (e) => {
+        const menu = document.getElementById("user-menu");
+        const avatarImg = document.getElementById("user-avatar");
+        if (!menu || !avatarImg) return;
+        if (menu.classList.contains("show") && !menu.contains(e.target) && e.target !== avatarImg){
+          menu.classList.remove("show");
+        }
+      });
+
+      function pickRandomAvatar(excludePath){
+        const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+        if (!gridSets.length) return null;
+        const set = gridSets[Math.floor(Math.random() * gridSets.length)];
+        const count = Math.min(set.previewCount || set.count, set.count) || 1;
+        const index = Math.floor(Math.random() * count) + 1;
+        const path = buildImagePath(set, index);
+        if (path === excludePath && count > 1) return pickRandomAvatar(excludePath);
+        return path;
+      }
+
+      function fallbackAvatar(){
+        const gridSets = AVATAR_SETS.filter(s => s.type === "grid");
+        if (!gridSets.length) return null;
+        return buildImagePath(gridSets[0], 1);
+      }
+
+      function initAvatar(){
+        const avatarImg = document.getElementById("user-avatar");
+        if (!avatarImg) return;
+        let saved = localStorage.getItem(CUSTOM_AVATAR_KEY);
+        if (!saved){
+          saved = pickRandomAvatar();
+          if (saved) selectedAvatar = saved;
+        }
+        if (saved){
+          let retries = 2;
+          avatarImg.onerror = () => {
+            if (retries > 0){
+              retries--;
+              avatarImg.src = pickRandomAvatar(avatarImg.src);
+            } else {
+              avatarImg.onerror = null;
+              avatarImg.src = fallbackAvatar();
+            }
+          };
+          avatarImg.src = saved;
+          avatarImg.classList.remove("hidden");
+        }
+      }
+      document.addEventListener("DOMContentLoaded", initAvatar);
+    })();
+    </script>
 </body>
 </html>

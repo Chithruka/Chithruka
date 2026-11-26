@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en" data-app-theme="obsidian">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KODEX — Unified Books, Comics &amp; Manga Reader</title>
+  <meta name="description" content="Read books, poetry, comics, and manga from open archives and local EPUB, CBZ, PDF, and TXT files in one unified interface." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Global App Shell -->
+  <div id="app" class="app-shell">
+    <!-- Top Sticky Navigation -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="Go to Discover">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+              <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H13v22H6.5A2.5 2.5 0 0 1 4 22.5v-17Z" stroke="currentColor" stroke-width="2" />
+              <path d="M24 5.5A2.5 2.5 0 0 0 21.5 3H15v22h6.5a2.5 2.5 0 0 0 2.5-2.5v-17Z" stroke="currentColor" stroke-width="2" />
+              <circle cx="19.5" cy="9.5" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">KODEX</span>
+            <span class="brand-tag">Books · Comics · Manga</span>
+          </div>
+        </div>
+
+        <!-- Unified Z-Lib + Kagane style Omni-Search -->
+        <form id="globalSearchForm" class="search-bar" role="search">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            id="globalSearchInput"
+            type="search"
+            autocomplete="off"
+            placeholder="Search books, manga, comics, poets... (try author:Poe or type:manga)"
+            aria-label="Search books, manga, comics, and poetry"
+          />
+          <select id="globalSearchScope" class="search-scope" aria-label="Search scope">
+            <option value="all">All Media</option>
+            <option value="books">Books</option>
+            <option value="poetry">Poetry</option>
+            <option value="manga">Manga</option>
+            <option value="comics">Comics</option>
+          </select>
+          <button type="submit" class="btn-search">Search</button>
+        </form>
+
+        <!-- Right Quick Actions -->
+        <div class="topbar-actions">
+          <div id="proxyStatusBadge" class="status-pill" title="Shows whether the optional local proxy server is active for CORS-restricted feeds like MangaDex chapter pages">
+            <span class="status-dot"></span>
+            <span class="status-label">Standalone Mode</span>
+          </div>
+
+          <button id="openUploadBtn" class="btn btn-ghost" title="Open local EPUB, CBZ, PDF, TXT, MD or images">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+              <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            <span>Open File</span>
+          </button>
+
+          <button id="themeToggleBtn" class="btn-icon" title="Toggle app theme (Obsidian / Daylight)" aria-label="Toggle app theme">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Navigation Bar -->
+      <nav class="nav-tabs" aria-label="Primary sections">
+        <div class="nav-tabs-inner">
+          <button class="nav-tab active" data-view="discover">
+            <span class="tab-dot dot-discover"></span>Discover
+          </button>
+          <button class="nav-tab" data-view="books">
+            <span class="tab-dot dot-books"></span>Books &amp; Poetry
+          </button>
+          <button class="nav-tab" data-view="manga">
+            <span class="tab-dot dot-manga"></span>Manga
+          </button>
+          <button class="nav-tab" data-view="comics">
+            <span class="tab-dot dot-comics"></span>Comics
+          </button>
+          <button class="nav-tab" data-view="library">
+            <span class="tab-dot dot-library"></span>My Library
+            <span id="libraryCountBadge" class="pill-count">0</span>
+          </button>
+          <button class="nav-tab" data-view="sources">
+            <span class="tab-dot dot-sources"></span>Sources &amp; Setup
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Hidden File Input for Local Reading -->
+    <input
+      id="localFileInput"
+      type="file"
+      multiple
+      accept=".epub,.cbz,.txt,.md,.markdown,.html,.htm,.pdf,image/*"
+      hidden
+    />
+
+    <!-- Main Dynamic Workspace -->
+    <main id="mainContent" class="main-content">
+      <!-- VIEW: DISCOVER -->
+      <section id="view-discover" class="view-section active">
+        <!-- Hero Spotlight -->
+        <div class="hero-grid">
+          <article class="hero-card">
+            <div class="hero-badge-row">
+              <span class="tag tag-accent">Unified Reader Platform</span>
+              <span class="tag tag-outline">EPUB · CBZ · PDF · Manga · Poetry</span>
+            </div>
+            <h1 class="hero-title">One Sanctuary for Literature, Comics &amp; Manga.</h1>
+            <p class="hero-subtitle">
+              Inspired by Z-Library’s deep archival filtering, Kagane’s crisp comic/manga reader, and Toonkotsu’s clean multi-source aggregation. Browse live catalogs from Gutendex, Open Library, PoetryDB, Jikan, MangaDex, and Internet Archive — or drop your own files straight into the browser.
+            </p>
+            <div class="hero-cta-row">
+              <button class="btn btn-primary" data-quick-action="open-sample-book">
+                Read Sample Classic
+              </button>
+              <button class="btn btn-secondary" data-quick-action="open-sample-manga">
+                Try Manga Reader (RTL / Webtoon)
+              </button>
+              <button class="btn btn-ghost" data-quick-action="open-sample-comic">
+                Try Comic Spread
+              </button>
+            </div>
+          </article>
+
+          <!-- Drag & Drop Local Reader Dropzone -->
+          <div id="heroDropzone" class="dropzone-card" tabindex="0" role="button" aria-label="Drop EPUB, CBZ, PDF, TXT, or images here to read">
+            <div class="dropzone-icon">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M12 18v-6m-3 3 3-3 3 3" />
+              </svg>
+            </div>
+            <h3>Drop Files to Read Locally</h3>
+            <p>Zero-server client parsing for <strong>.EPUB</strong>, <strong>.CBZ</strong>, <strong>.PDF</strong>, <strong>.TXT</strong>, <strong>.MD</strong> &amp; <strong>Image Folders</strong>.</p>
+            <span class="dropzone-hint">Click or drag &amp; drop anywhere on the page</span>
+          </div>
+        </div>
+
+        <!-- Continue Reading Shelf (visible when history exists) -->
+        <div id="continueReadingBlock" class="shelf-block hidden">
+          <div class="shelf-header">
+            <div>
+              <h2>Continue Reading</h2>
+              <p class="shelf-sub">Pick up right where you left off</p>
+            </div>
+            <button class="btn-link" data-jump-view="library">Manage Library →</button>
+          </div>
+          <div id="continueReadingGrid" class="horizontal-scroll-grid"></div>
+        </div>
+
+        <!-- Instant Read Built-In Showcase -->
+        <div class="shelf-block">
+          <div class="shelf-header">
+            <div>
+              <h2>Instant Read Collection</h2>
+              <p class="shelf-sub">Always-available books, poetry, comics &amp; manga ready to open immediately</p>
+            </div>
+          </div>
+          <div id="instantShowcaseGrid" class="media-grid"></div>
+        </div>
+
+        <!-- Live Feeds on Discover -->
+        <div class="shelf-block">
+          <div class="shelf-header">
+            <div>
+              <h2>Trending Manga <span class="source-chip">Jikan / MAL</span></h2>
+              <p class="shelf-sub">Top-ranked manga &amp; manhwa from MyAnimeList via Jikan v4</p>
+            </div>
+            <button class="btn-link" data-jump-view="manga">Explore All Manga →</button>
+          </div>
+          <div id="discoverMangaGrid" class="media-grid"></div>
+        </div>
+
+        <div class="shelf-block">
+          <div class="shelf-header">
+            <div>
+              <h2>Public Domain Classics <span class="source-chip">Gutendex &amp; Open Library</span></h2>
+              <p class="shelf-sub">Timeless literature ready for distraction-free reading</p>
+            </div>
+            <button class="btn-link" data-jump-view="books">Browse Books →</button>
+          </div>
+          <div id="discoverBooksGrid" class="media-grid"></div>
+        </div>
+
+        <div class="shelf-block">
+          <div class="shelf-header">
+            <div>
+              <h2>Golden &amp; Silver Age Comics <span class="source-chip">Internet Archive</span></h2>
+              <p class="shelf-sub">Open public-domain comic issues &amp; graphic collections</p>
+            </div>
+            <button class="btn-link" data-jump-view="comics">Browse Comics →</button>
+          </div>
+          <div id="discoverComicsGrid" class="media-grid"></div>
+        </div>
+      </section>
+
+      <!-- VIEW: BOOKS & POETRY -->
+      <section id="view-books" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h1>Books &amp; Poetry Archive</h1>
+            <p>Z-Library inspired multi-filter search across Project Gutenberg, Open Library, Internet Archive, and PoetryDB.</p>
+          </div>
+          <div class="source-switcher" id="booksSourceTabs">
+            <button class="chip active" data-book-source="gutendex">Gutendex (Gutenberg)</button>
+            <button class="chip" data-book-source="openlibrary">Open Library</button>
+            <button class="chip" data-book-source="poetrydb">PoetryDB</button>
+            <button class="chip" data-book-source="archive_books">Internet Archive</button>
+          </div>
+        </div>
+
+        <!-- Z-Lib Style Advanced Filter Bar -->
+        <div class="filter-panel">
+          <div class="filter-row">
+            <div class="filter-field grow">
+              <label for="booksQueryInput">Search Title, Author, Subject, or Poem</label>
+              <input id="booksQueryInput" type="text" placeholder="e.g. Frankenstein, Shakespeare, Cyberpunk, Philosophy..." />
+            </div>
+            <div class="filter-field">
+              <label for="booksTopicSelect">Subject / Genre</label>
+              <select id="booksTopicSelect">
+                <option value="">All Subjects</option>
+                <option value="science fiction">Science Fiction</option>
+                <option value="fantasy">Fantasy</option>
+                <option value="mystery">Mystery &amp; Detective</option>
+                <option value="horror">Horror &amp; Gothic</option>
+                <option value="philosophy">Philosophy</option>
+                <option value="history">History</option>
+                <option value="adventure">Adventure</option>
+                <option value="romance">Romance</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="booksLangSelect">Language</label>
+              <select id="booksLangSelect">
+                <option value="">Any Language</option>
+                <option value="en" selected>English (EN)</option>
+                <option value="fr">French (FR)</option>
+                <option value="es">Spanish (ES)</option>
+                <option value="de">German (DE)</option>
+                <option value="ja">Japanese (JA)</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="booksSortSelect">Sort By</label>
+              <select id="booksSortSelect">
+                <option value="popular">Most Popular</option>
+                <option value="ascending">Title / ID</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button id="booksSearchBtn" class="btn btn-primary">Filter Results</button>
+            </div>
+          </div>
+
+          <!-- PoetryDB Quick Poet Chips (shown when PoetryDB selected or anytime as shortcut) -->
+          <div id="poetQuickChips" class="quick-chips-row hidden">
+            <span class="quick-chips-label">Featured Poets:</span>
+            <button class="chip-sm" data-poet="Edgar Allan Poe">Edgar Allan Poe</button>
+            <button class="chip-sm" data-poet="Emily Dickinson">Emily Dickinson</button>
+            <button class="chip-sm" data-poet="William Shakespeare">Shakespeare</button>
+            <button class="chip-sm" data-poet="Percy Bysshe Shelley">Percy Shelley</button>
+            <button class="chip-sm" data-poet="John Keats">John Keats</button>
+            <button class="chip-sm" data-poet="Walt Whitman">Walt Whitman</button>
+            <button class="chip-sm" data-poet="William Blake">William Blake</button>
+            <button class="chip-sm" data-poet="random">Random Anthology</button>
+          </div>
+        </div>
+
+        <div id="booksStatusBar" class="results-meta"></div>
+        <div id="booksResultsGrid" class="media-grid"></div>
+        <div id="booksPagination" class="pagination-bar"></div>
+      </section>
+
+      <!-- VIEW: MANGA -->
+      <section id="view-manga" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h1>Manga &amp; Webtoons</h1>
+            <p>Kagane &amp; Toonkotsu inspired discovery powered by MangaDex &amp; Jikan (MyAnimeList) with RTL, Single, Spread &amp; Long-Strip reading.</p>
+          </div>
+          <div class="source-switcher" id="mangaSourceTabs">
+            <button class="chip active" data-manga-source="mangadex">MangaDex Live</button>
+            <button class="chip" data-manga-source="jikan">Jikan (MyAnimeList)</button>
+          </div>
+        </div>
+
+        <div class="filter-panel">
+          <div class="filter-row">
+            <div class="filter-field grow">
+              <label for="mangaQueryInput">Search Manga / Manhwa / Webtoon</label>
+              <input id="mangaQueryInput" type="text" placeholder="e.g. Berserk, Vagabond, Solo Leveling, One Piece, Frieren..." />
+            </div>
+            <div class="filter-field">
+              <label for="mangaStatusSelect">Publication Status</label>
+              <select id="mangaStatusSelect">
+                <option value="">All Statuses</option>
+                <option value="ongoing">Ongoing / Publishing</option>
+                <option value="completed">Completed</option>
+                <option value="hiatus">On Hiatus</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="mangaDemoSelect">Demographic</label>
+              <select id="mangaDemoSelect">
+                <option value="">All</option>
+                <option value="shounen">Shounen</option>
+                <option value="seinen">Seinen</option>
+                <option value="shoujo">Shoujo</option>
+                <option value="josei">Josei</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="mangaSortSelect">Order</label>
+              <select id="mangaSortSelect">
+                <option value="followedCount">Most Followed / Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="latestUploadedChapter">Latest Updates</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button id="mangaSearchBtn" class="btn btn-primary">Search Manga</button>
+            </div>
+          </div>
+
+          <div class="quick-chips-row">
+            <span class="quick-chips-label">Quick Tags:</span>
+            <button class="chip-sm" data-manga-tag="Action">Action</button>
+            <button class="chip-sm" data-manga-tag="Fantasy">Fantasy</button>
+            <button class="chip-sm" data-manga-tag="Sci-Fi">Sci-Fi</button>
+            <button class="chip-sm" data-manga-tag="Mystery">Mystery</button>
+            <button class="chip-sm" data-manga-tag="Slice of Life">Slice of Life</button>
+            <button class="chip-sm" data-manga-tag="Psychological">Psychological</button>
+          </div>
+        </div>
+
+        <div id="mangaStatusBar" class="results-meta"></div>
+        <div id="mangaResultsGrid" class="media-grid"></div>
+        <div id="mangaPagination" class="pagination-bar"></div>
+      </section>
+
+      <!-- VIEW: COMICS -->
+      <section id="view-comics" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h1>Comics &amp; Graphic Novels</h1>
+            <p>Explore public-domain Golden &amp; Silver Age comic books from the Internet Archive or open local .CBZ &amp; image packs.</p>
+          </div>
+          <div class="source-switcher">
+            <button class="chip active" data-comic-collection="comics">Public Domain Comics</button>
+            <button class="chip" data-comic-collection="comic_books">Vintage Comic Books</button>
+            <button class="chip" data-comic-collection="pulp_magazine_archive">Pulp &amp; Illustrated</button>
+          </div>
+        </div>
+
+        <div class="filter-panel">
+          <div class="filter-row">
+            <div class="filter-field grow">
+              <label for="comicsQueryInput">Search Comic Title, Hero, or Publisher</label>
+              <input id="comicsQueryInput" type="text" placeholder="e.g. Captain Marvel, Wonder, Detective, Space, Classic..." />
+            </div>
+            <div class="filter-field">
+              <label for="comicsSortSelect">Sort By</label>
+              <select id="comicsSortSelect">
+                <option value="downloads desc">Most Downloaded</option>
+                <option value="avg_rating desc">Top Rated</option>
+                <option value="publicdate desc">Recently Archived</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button id="comicsSearchBtn" class="btn btn-primary">Search Comics</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="comicsStatusBar" class="results-meta"></div>
+        <div id="comicsResultsGrid" class="media-grid"></div>
+        <div id="comicsPagination" class="pagination-bar"></div>
+      </section>
+
+      <!-- VIEW: MY LIBRARY -->
+      <section id="view-library" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h1>My Library &amp; Lists</h1>
+            <p>Manage bookmarks, reading progress, custom shelves, local files, and JSON/CSV imports (AniList / MAL / Z-Lib compatible backup).</p>
+          </div>
+          <div class="library-actions">
+            <button id="exportLibraryBtn" class="btn btn-secondary">Export JSON</button>
+            <button id="importLibraryBtn" class="btn btn-ghost">Import JSON / CSV</button>
+            <input id="importLibraryInput" type="file" accept=".json,.csv" hidden />
+            <button id="clearHistoryBtn" class="btn btn-danger-ghost">Clear History</button>
+          </div>
+        </div>
+
+        <div class="source-switcher" id="libraryFilterTabs">
+          <button class="chip active" data-lib-filter="all">All Saved</button>
+          <button class="chip" data-lib-filter="reading">Reading</button>
+          <button class="chip" data-lib-filter="plan">Plan to Read</button>
+          <button class="chip" data-lib-filter="completed">Completed</button>
+          <button class="chip" data-lib-filter="history">Recent History</button>
+          <button class="chip" data-lib-filter="local">Local Files</button>
+        </div>
+
+        <div id="libraryGrid" class="media-grid" style="margin-top: 1.25rem;"></div>
+      </section>
+
+      <!-- VIEW: SOURCES & SETUP -->
+      <section id="view-sources" class="view-section">
+        <div class="section-banner">
+          <div>
+            <h1>Sources, APIs &amp; Local Proxy Setup</h1>
+            <p>How KODEX connects to open catalogs, respects CORS rules, and unlocks MangaDex chapter images + Archive CBZ/EPUB streaming.</p>
+          </div>
+        </div>
+
+        <div class="sources-grid">
+          <article class="info-card">
+            <div class="info-card-head">
+              <h3>Live Integrated APIs</h3>
+              <span class="tag tag-success">Active</span>
+            </div>
+            <ul class="source-list">
+              <li>
+                <strong>PoetryDB</strong> (<code>poetrydb.org</code>) — Direct CORS-enabled REST API for classic English poetry &amp; author anthologies.
+              </li>
+              <li>
+                <strong>Jikan v4</strong> (<code>api.jikan.moe</code>) — Unofficial MyAnimeList API for manga discovery, ratings, demographics, and synopses.
+              </li>
+              <li>
+                <strong>MangaDex</strong> (<code>api.mangadex.org</code>) — Rich manga catalog, chapter lists, and page streaming (images load best with the included local proxy).
+              </li>
+              <li>
+                <strong>Gutendex</strong> (<code>gutendex.com</code>) — Project Gutenberg JSON catalog of 70,000+ public domain books.
+              </li>
+              <li>
+                <strong>Open Library</strong> (<code>openlibrary.org</code>) — Internet Archive's open book catalog, ISBN lookups, and cover art.
+              </li>
+              <li>
+                <strong>Internet Archive</strong> (<code>archive.org</code>) — Public domain Golden/Silver Age comics, vintage books, CBZ/EPUB metadata, and embedded BookReader.
+              </li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-head">
+              <h3>Optional 1-Click Windows Proxy Server</h3>
+              <span id="proxyCardBadge" class="tag tag-outline">Checking...</span>
+            </div>
+            <p class="info-copy">
+              Browsers enforce <strong>CORS</strong> on external image/binary downloads (like MangaDex At-Home chapter images, raw Project Gutenberg <code>.txt</code> files, and Internet Archive <code>.cbz</code>/<code>.epub</code> binaries).
+            </p>
+            <p class="info-copy">
+              To enable seamless streaming for those external files on Windows without installing Node.js or Python, simply double-click <code>start-server.bat</code> (or run <code>start-server.ps1</code>) in this project folder and open <code>http://localhost:8080</code>.
+            </p>
+            <div class="proxy-config-box">
+              <label for="customProxyInput">Custom CORS Proxy Prefix (optional)</label>
+              <div class="proxy-input-row">
+                <input id="customProxyInput" type="text" placeholder="http://localhost:8080/proxy?url=" />
+                <button id="saveProxyBtn" class="btn btn-secondary">Save &amp; Test</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <div class="info-card-head">
+              <h3>FMHY &amp; Open Reading Directory</h3>
+              <span class="tag tag-accent">Curated Links</span>
+            </div>
+            <p class="info-copy">
+              Quick directory of open-access reading ecosystems, public-domain libraries, and tracker imports inspired by <strong>FMHY Reading</strong>, <strong>Kagane</strong>, <strong>Toonkotsu</strong>, and <strong>Z-Library</strong>.
+            </p>
+            <div class="directory-links">
+              <a href="https://fmhy.net/reading" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>FMHY Reading Index</strong>
+                <span>Comprehensive directory of ebook, manga &amp; comic resources</span>
+              </a>
+              <a href="https://standardebooks.org/" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>Standard Ebooks</strong>
+                <span>Carefully formatted, typography-first public domain EPUBs</span>
+              </a>
+              <a href="https://www.gutenberg.org/" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>Project Gutenberg</strong>
+                <span>Over 70,000 free public domain eBooks</span>
+              </a>
+              <a href="https://openlibrary.org/" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>Open Library</strong>
+                <span>One web page for every book ever published</span>
+              </a>
+              <a href="https://mangadex.org/" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>MangaDex</strong>
+                <span>Scanlation &amp; multi-language manga reading ecosystem</span>
+              </a>
+              <a href="https://digitalcomicmuseum.com/" target="_blank" rel="noopener noreferrer" class="dir-link">
+                <strong>Digital Comic Museum</strong>
+                <span>Free public domain Golden Age comic books (.CBZ/.CBR)</span>
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- DETAIL MODAL (Book / Manga / Comic Inspector + Chapter Picker) -->
+  <div id="detailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal-shell">
+      <button id="closeDetailModal" class="modal-close" aria-label="Close details">✕</button>
+      <div id="detailBody" class="detail-body"></div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN UNIFIED READER WORKSPACE -->
+  <div id="readerOverlay" class="reader-overlay hidden" role="dialog" aria-modal="true" aria-label="Reading Workspace">
+    <!-- Top Reader Control Bar -->
+    <header id="readerHeader" class="reader-topbar">
+      <div class="reader-left">
+        <button id="readerBackBtn" class="btn btn-ghost btn-sm" title="Exit Reader (Esc)">
+          ← Back
+        </button>
+        <div class="reader-title-wrap">
+          <span id="readerModePill" class="reader-mode-pill">BOOK</span>
+          <div class="reader-titles">
+            <strong id="readerWorkTitle">Untitled</strong>
+            <small id="readerWorkSub">Chapter 1</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="reader-center" id="readerCenterControls">
+        <!-- Populated contextually for Book vs Visual Reader -->
+      </div>
+
+      <div class="reader-right">
+        <button id="readerBookmarkBtn" class="btn-icon" title="Save Bookmark / Add to Library" aria-label="Bookmark">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+        <button id="readerTocBtn" class="btn-icon" title="Chapters / Table of Contents" aria-label="Chapters">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <circle cx="4" cy="6" r="1" fill="currentColor" />
+            <circle cx="4" cy="12" r="1" fill="currentColor" />
+            <circle cx="4" cy="18" r="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button id="readerSettingsBtn" class="btn-icon" title="Reader Settings" aria-label="Reader Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+        <button id="readerFullscreenBtn" class="btn-icon" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Reader Side Drawers (TOC & Settings) -->
+    <aside id="readerTocDrawer" class="reader-drawer left hidden" aria-label="Chapters and Bookmarks">
+      <div class="drawer-head">
+        <h3>Contents &amp; Bookmarks</h3>
+        <button class="btn-icon" id="closeTocDrawer">✕</button>
+      </div>
+      <div id="readerTocBody" class="drawer-body"></div>
+    </aside>
+
+    <aside id="readerSettingsDrawer" class="reader-drawer right hidden" aria-label="Reader Appearance and Controls">
+      <div class="drawer-head">
+        <h3>Reader Settings</h3>
+        <button class="btn-icon" id="closeSettingsDrawer">✕</button>
+      </div>
+      <div id="readerSettingsBody" class="drawer-body"></div>
+    </aside>
+
+    <!-- Reader Viewport -->
+    <div id="readerViewport" class="reader-viewport"></div>
+
+    <!-- Bottom Reader Footer / Scrubber -->
+    <footer id="readerFooter" class="reader-footer">
+      <div class="reader-progress-wrap">
+        <span id="readerProgressLeft">0%</span>
+        <input id="readerScrubber" type="range" min="0" max="100" value="0" aria-label="Reading progress" />
+        <span id="readerProgressRight">Page 1 / 1</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts loaded in dependency order (works over both file:// and http://) -->
+  <script defer src="js/utils.js"></script>
+  <script defer src="js/zip-parser.js"></script>
+  <script defer src="js/sample-data.js"></script>
+  <script defer src="js/apis.js"></script>
+  <script defer src="js/reader-book.js"></script>
+  <script defer src="js/reader-visual.js"></script>
+  <script defer src="js/app.js"></script>
+</body>
+</html>

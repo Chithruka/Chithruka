@@ -208,7 +208,7 @@
 
     // --- DOM REFERENCES ---
     const dom = {
-        navbar: document.getElementById("navbar"),
+        navbar: document.getElementById("nf-navbar"),
         brandHomeBtn: document.getElementById("brandHomeBtn"),
         navLinks: document.querySelectorAll(".nf-nav-link[data-view]"),
         mobileTabs: document.querySelectorAll(".nf-mobile-tab[data-view]"),
@@ -221,7 +221,7 @@
 
         searchBox: document.getElementById("searchBox"),
         searchToggleBtn: document.getElementById("searchToggleBtn"),
-        searchInput: document.getElementById("searchInput"),
+        searchInput: document.getElementById("search-input") || document.getElementById("searchInput"),
         searchClearBtn: document.getElementById("searchClearBtn"),
         randomCamBtn: document.getElementById("randomCamBtn"),
         openAddCamBtn: document.getElementById("openAddCamBtn"),
@@ -862,6 +862,8 @@
         const favCount = state.favorites.length;
         dom.navFavBadge.textContent = String(favCount);
         dom.navFavBadge.classList.toggle("hidden", favCount === 0);
+        const menuFavCount = document.getElementById("menu-fav-count");
+        if (menuFavCount) menuFavCount.textContent = String(favCount);
 
         const wallCount = state.wallSlots.filter(Boolean).length;
         dom.navWallBadge.textContent = String(wallCount);
@@ -2724,7 +2726,7 @@
         // Navigation
         dom.navLinks.forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
         dom.mobileTabs.forEach(btn => btn.addEventListener("click", () => switchView(btn.dataset.view)));
-        dom.brandHomeBtn.addEventListener("click", e => {
+        if (dom.brandHomeBtn) dom.brandHomeBtn.addEventListener("click", e => {
             e.preventDefault();
             switchView("browse");
         });
@@ -2737,38 +2739,44 @@
         });
 
         // Search
-        dom.searchToggleBtn.addEventListener("click", () => {
-            dom.searchBox.classList.add("open");
-            dom.searchInput.focus();
-        });
-        dom.searchInput.addEventListener("input", () => {
-            const val = dom.searchInput.value;
-            state.searchQuery = val;
-            dom.searchClearBtn.classList.toggle("hidden", !val);
-            if (state.activeView !== "browse") switchView("browse");
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(runSearchOrFilter, 320);
-        });
-        dom.searchInput.addEventListener("blur", () => {
-            if (!dom.searchInput.value.trim()) dom.searchBox.classList.remove("open");
-        });
-        dom.searchClearBtn.addEventListener("click", () => {
-            dom.searchInput.value = "";
-            state.searchQuery = "";
-            dom.searchClearBtn.classList.add("hidden");
-            dom.searchBox.classList.remove("open");
-            runSearchOrFilter();
-        });
+        if (dom.searchToggleBtn && dom.searchBox && dom.searchInput) {
+            dom.searchToggleBtn.addEventListener("click", () => {
+                dom.searchBox.classList.add("open");
+                dom.searchInput.focus();
+            });
+        }
+        if (dom.searchInput) {
+            dom.searchInput.addEventListener("input", () => {
+                const val = dom.searchInput.value;
+                state.searchQuery = val;
+                if (dom.searchClearBtn) dom.searchClearBtn.classList.toggle("hidden", !val);
+                if (state.activeView !== "browse") switchView("browse");
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(runSearchOrFilter, 320);
+            });
+            dom.searchInput.addEventListener("blur", () => {
+                if (dom.searchBox && !dom.searchInput.value.trim()) dom.searchBox.classList.remove("open");
+            });
+        }
+        if (dom.searchClearBtn) {
+            dom.searchClearBtn.addEventListener("click", () => {
+                if (dom.searchInput) dom.searchInput.value = "";
+                state.searchQuery = "";
+                dom.searchClearBtn.classList.add("hidden");
+                if (dom.searchBox) dom.searchBox.classList.remove("open");
+                runSearchOrFilter();
+            });
+        }
 
         dom.resetFilterBtn.addEventListener("click", () => {
-            dom.searchInput.value = "";
+            if (dom.searchInput) dom.searchInput.value = "";
             state.searchQuery = "";
             state.selectedCategory = "all";
             state.selectedCountry = "";
             state.selectedStreamType = "all";
             dom.countrySelect.value = "";
             dom.streamTypeFilter.value = "all";
-            dom.searchClearBtn.classList.add("hidden");
+            if (dom.searchClearBtn) dom.searchClearBtn.classList.add("hidden");
             dom.categoryChipBar.querySelectorAll(".nf-chip").forEach(c => c.classList.toggle("active", c.dataset.category === "all"));
             runSearchOrFilter();
         });
@@ -2823,7 +2831,9 @@
         });
 
         // Cinema Stage Controls
-        dom.randomCamBtn.addEventListener("click", playRandomWebcam);
+        if (dom.randomCamBtn) dom.randomCamBtn.addEventListener("click", playRandomWebcam);
+        window.playRandomWebcam = playRandomWebcam;
+        window.switchWebcamsView = switchView;
         dom.closeStageBtn.addEventListener("click", closeCinemaStage);
         dom.dockCloseBtn.addEventListener("click", closeCinemaStage);
         dom.prevCamBtn.addEventListener("click", () => stepCam(-1));
@@ -2976,8 +2986,14 @@
 
             if (e.key === "/") {
                 e.preventDefault();
-                dom.searchBox.classList.add("open");
-                dom.searchInput.focus();
+                const dn = document.getElementById("desktop-navbar");
+                const pn = document.getElementById("pill-nav");
+                if (window.matchMedia("(min-width:992px)").matches) {
+                    if (dn) dn.classList.add("search-open");
+                } else {
+                    if (pn) pn.classList.add("search-open");
+                }
+                if (dom.searchInput) setTimeout(() => dom.searchInput.focus(), 50);
             } else if (e.key === " " && state.stageVisible && state.activeEngine === "hls") {
                 e.preventDefault();
                 try {
