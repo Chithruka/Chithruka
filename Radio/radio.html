@@ -2,438 +2,525 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Radio Global V14 (On-Demand Loading)</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        /* --- CORE STYLES --- */
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #050505; color: white; overflow: hidden; }
-        
-        #map { height: 100vh; width: 100%; z-index: 1; opacity: 1; background: #000; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#141414">
+    <meta name="description" content="Stream thousands of live global radio stations in a cinematic Netflix-themed interface powered by multi-source stream rotation, HLS, and an interactive 3D world globe.">
+    <title>Netflix Radio — Live Global Audio Streaming</title>
 
-        /* --- TOGGLE BUTTON --- */
-        #menu-toggle {
-            position: fixed; top: 15px; left: 15px; z-index: 10000;
-            background: #00ff88; color: #000; border: none;
-            width: 40px; height: 40px; border-radius: 50%;
-            font-weight: bold; font-size: 20px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,255,136,0.4);
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* --- UI CONTAINER --- */
-        #ui-layer {
-            position: fixed; top: 0; left: 0; z-index: 9999;
-            width: 360px; height: 100vh;
-            overflow-y: auto; pointer-events: none;
-            padding: 70px 20px 100px 20px;
-            box-sizing: border-box;
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .ui-hidden { transform: translateX(-105%); }
-
-        .panel {
-            background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px);
-            padding: 15px; border-radius: 12px; border: 1px solid #333;
-            margin-bottom: 12px; pointer-events: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-
-        h2 { margin: 0 0 10px 0; font-size: 14px; color: #00ff88; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* --- RESPONSIVE CSS --- */
-        @media (max-width: 600px) {
-            #ui-layer { width: 100%; padding-right: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%); }
-            #recorder-panel { display: none !important; } 
-        }
-
-        /* --- CONTROLS --- */
-        .metric-row { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 4px; }
-        .metric-val { color: #eee; font-weight: 600; font-family: monospace; }
-        .server-dot { height: 8px; width: 8px; background: #555; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .server-online { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
-
-        .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
-        input {
-            background: #222; border: 1px solid #444; color: white; padding: 12px;
-            border-radius: 6px; width: 100%; font-size: 16px; outline: none; 
-        }
-        input:focus { border-color: #00ff88; }
-        
-        button {
-            background: #333; color: white; border: 1px solid #444;
-            padding: 10px; border-radius: 6px; cursor: pointer;
-            font-size: 13px; font-weight: 600; white-space: nowrap;
-        }
-        button:active { background: #555; transform: scale(0.98); }
-
-        /* --- PLAYER --- */
-        #now-playing {
-            background: linear-gradient(90deg, #111, #1a1a1a);
-            padding: 10px; border-radius: 6px; border: 1px solid #333;
-            margin-top: 10px; text-align: center;
-        }
-        #np-title { font-size: 14px; color: #00ff88; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #np-meta { font-size: 11px; color: #666; margin-top: 2px; }
-
-        /* --- LOGS --- */
-        #sys-log {
-            font-family: monospace; font-size: 10px; color: #666;
-            height: 60px; overflow-y: auto; background: #080808; padding: 8px;
-            border: 1px solid #333; margin-top: 5px; border-radius: 4px;
-        }
-        .log-ok { color: #4f4; } .log-err { color: #f44; } .log-info { color: #4af; }
-
-        /* --- RECORDER BUTTON --- */
-        .rec-btn { width: 100%; border-color: #522; color: #fbb; background: #211; margin-top:5px; }
-        .rec-active { background: #e00 !important; color: white !important; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-    </style>
+    <link rel="icon" href="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://data.famelack.com" crossorigin>
+    <link rel="preconnect" href="https://de1.api.radio-browser.info" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Top Netflix Navigation Bar -->
+    <header class="nf-navbar" id="navbar">
+        <div class="nf-nav-left">
+            <a href="#top" class="nf-brand" id="brandHomeBtn" aria-label="Netflix Radio Home">
+                <span class="nf-n-mark" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                </span>
+                <span class="nf-brand-word">RADIO</span>
+            </a>
 
-    <button id="menu-toggle" onclick="toggleMenu()">☰</button>
+            <nav class="nf-nav-links" aria-label="Primary Navigation">
+                <button type="button" class="nf-nav-link active" data-view="browse">Home</button>
+                <button type="button" class="nf-nav-link" data-view="globe">
+                    <span class="nav-live-dot" aria-hidden="true"></span>
+                    World Globe
+                </button>
+                <button type="button" class="nf-nav-link" data-view="countries">Countries</button>
+                <button type="button" class="nf-nav-link" data-view="mylist">
+                    My List
+                    <span class="nf-nav-badge hidden" id="navFavBadge">0</span>
+                </button>
+            </nav>
+        </div>
 
-    <div id="ui-layer">
-        <div class="panel">
-            <h2>System Status</h2>
-            <div class="metric-row">
-                <span>Network:</span>
-                <span><span id="server-dot" class="server-dot"></span><span id="connected-server" class="metric-val">Connecting...</span></span>
+        <div class="nf-nav-right">
+            <!-- Expandable Netflix Search Box -->
+            <div class="nf-search-box" id="searchBox">
+                <button type="button" class="nf-icon-btn" id="searchToggleBtn" aria-label="Search stations (Shortcut /)" title="Search stations (/)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="11" cy="11" r="7.5"></circle>
+                        <path d="M20 20l-4-4"></path>
+                    </svg>
+                </button>
+                <input
+                    type="search"
+                    id="searchInput"
+                    class="nf-search-input"
+                    placeholder="Stations, genres, countries, tags..."
+                    autocomplete="off"
+                    aria-label="Search radio stations"
+                >
+                <span class="nf-kbd-hint" id="searchKbdHint">/</span>
+                <button type="button" class="nf-search-clear hidden" id="searchClearBtn" aria-label="Clear search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-            <div class="metric-row">
-                <span>Location:</span> <span id="location-val" class="metric-val">Triangulating...</span>
+
+            <!-- Surprise Me / Instant Radio Hop -->
+            <button type="button" class="nf-shuffle-pill" id="surpriseMeBtn" title="Tune a random live station worldwide">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+                <span>Tune Random</span>
+            </button>
+
+            <!-- Live Clock & Detected Location -->
+            <div class="nf-location-pill" id="navLocationPill" title="Detected local region">
+                <span class="nf-loc-flag" id="navLocFlag">🌍</span>
+                <span class="nf-loc-name" id="navLocName">Global</span>
+                <span class="nf-loc-clock" id="navLocClock">--:--</span>
             </div>
-            <div class="metric-row">
-                <span>Stations:</span> <span id="station-count" class="metric-val">0</span>
+        </div>
+    </header>
+
+    <!-- Mobile Bottom Quick Tab Bar -->
+    <nav class="nf-mobile-tabs" aria-label="Mobile Navigation">
+        <button type="button" class="nf-mobile-tab active" data-view="browse">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>Home</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="globe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>Globe</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="countries">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>Countries</span>
+        </button>
+        <button type="button" class="nf-mobile-tab" data-view="mylist">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>My List</span>
+        </button>
+    </nav>
+
+    <main id="top" class="nf-main">
+        <!-- ===================== VIEW 1: BROWSE HOME ===================== -->
+        <div id="viewBrowse" class="nf-view active">
+            <!-- Featured Netflix Hero Billboard -->
+            <section class="nf-hero" id="heroSection" aria-label="Featured Live Broadcast">
+                <div class="nf-hero-backdrop" id="heroBackdrop"></div>
+                <canvas class="nf-hero-wave" id="heroWaveCanvas" aria-hidden="true"></canvas>
+                <div class="nf-hero-vignette"></div>
+
+                <div class="nf-hero-content">
+                    <div class="nf-hero-series-tag">
+                        <span class="nf-n-badge" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span class="nf-series-label">LIVE BROADCAST</span>
+                        <span class="nf-live-chip">
+                            <span class="pulse-dot"></span>
+                            ON AIR
+                        </span>
+                    </div>
+
+                    <h1 class="nf-hero-title" id="heroTitle">Radio Paradise — Main Mix</h1>
+                    <p class="nf-hero-desc" id="heroDesc">
+                        Eclectic, commercial-free 320 kbps high-fidelity broadcast streaming live from California. Tap Listen Live or spin the 3D World Globe to tune in across 200+ countries.
+                    </p>
+
+                    <div class="nf-hero-meta" id="heroMeta">
+                        <span class="nf-meta-match">99% Signal</span>
+                        <span class="nf-meta-pill" id="heroCountryChip">🇺🇸 United States</span>
+                        <span class="nf-meta-pill" id="heroCodecChip">MP3 • 320 kbps</span>
+                        <span class="nf-meta-pill" id="heroGenreChip">Eclectic / Rock</span>
+                    </div>
+
+                    <div class="nf-hero-actions">
+                        <button type="button" class="nf-btn nf-btn-play" id="heroPlayBtn">
+                            <svg viewBox="0 0 24 24" fill="currentColor" id="heroPlayIcon"><path d="M8 5v14l11-7z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor" id="heroPauseIcon" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            <span id="heroPlayLabel">Listen Live</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-secondary" id="heroFavBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" id="heroFavIcon">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            <span id="heroFavLabel">My List</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-glass" id="heroInfoBtn" title="Station details & streams">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <span>More Info</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-icon" id="heroShuffleBtn" title="Next featured station" aria-label="Shuffle featured station">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter & Genre Strip -->
+            <section class="nf-filter-strip" aria-label="Browse Filters">
+                <div class="nf-genre-chips" id="genreChipBar">
+                    <button type="button" class="nf-chip active" data-genre="all">All Genres</button>
+                    <button type="button" class="nf-chip" data-genre="pop">Pop &amp; Hits</button>
+                    <button type="button" class="nf-chip" data-genre="chill">Chill &amp; Lo-Fi</button>
+                    <button type="button" class="nf-chip" data-genre="rock">Rock</button>
+                    <button type="button" class="nf-chip" data-genre="electronic">Electronic</button>
+                    <button type="button" class="nf-chip" data-genre="jazz">Jazz</button>
+                    <button type="button" class="nf-chip" data-genre="classical">Classical</button>
+                    <button type="button" class="nf-chip" data-genre="hip-hop">Hip-Hop</button>
+                    <button type="button" class="nf-chip" data-genre="80s">80s Retro</button>
+                    <button type="button" class="nf-chip" data-genre="90s">90s Hits</button>
+                    <button type="button" class="nf-chip" data-genre="indie">Indie</button>
+                    <button type="button" class="nf-chip" data-genre="news">News &amp; Talk</button>
+                    <button type="button" class="nf-chip" data-genre="sports">Sports</button>
+                </div>
+
+                <div class="nf-filter-controls">
+                    <select id="countrySelect" class="nf-select" aria-label="Select Country">
+                        <option value="">All Countries</option>
+                    </select>
+
+                    <label class="nf-switch-label" title="Show only HTTPS-compatible streams to prevent mixed-content blocks">
+                        <input type="checkbox" id="httpsOnlyToggle">
+                        <span class="nf-switch-track"></span>
+                        <span class="nf-switch-text">HTTPS Safe</span>
+                    </label>
+
+                    <button type="button" class="nf-globe-cta" id="openGlobeQuickBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <span>3D Globe</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Active Search / Filtered Results Section -->
+            <section class="nf-search-results hidden" id="searchResultsSection" aria-live="polite">
+                <div class="nf-section-header">
+                    <div>
+                        <h2 class="nf-row-title" id="searchResultsTitle">Search Results</h2>
+                        <p class="nf-row-subtitle" id="searchResultsSubtitle">Scanning global directories...</p>
+                    </div>
+                    <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="resetFilterBtn">Clear Filters</button>
+                </div>
+                <div class="nf-grid" id="searchResultsGrid"></div>
+            </section>
+
+            <!-- Netflix Horizontal Carousel Rows -->
+            <div id="browseRowsContainer" class="nf-rows-stack">
+                <!-- Populated dynamically with Netflix rows -->
             </div>
         </div>
 
-        <div class="panel">
-            <h2>Tuner</h2>
-            <div class="input-group">
-                <input type="text" id="search-box" placeholder="Search (Name, Country, Tag)" onkeypress="handleEnter(event)">
-                <button onclick="performSearch()">GO</button>
+        <!-- ===================== VIEW 2: 3D WORLD RADIO GLOBE ===================== -->
+        <section id="viewGlobe" class="nf-view nf-globe-view hidden" aria-label="Interactive World Radio Globe">
+            <div class="nf-globe-layout">
+                <div class="nf-globe-stage">
+                    <canvas id="globeCanvas" aria-label="Interactive 3D Earth Globe"></canvas>
+
+                    <div class="nf-globe-hud-top">
+                        <div class="nf-globe-badge">
+                            <span class="nf-n-badge small" aria-hidden="true">
+                                <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                            </span>
+                            <span>WORLD RADIO GLOBE</span>
+                        </div>
+                        <p class="nf-globe-hint">Drag to spin Earth &bull; Scroll to zoom &bull; Click any glowing red frequency pin</p>
+                    </div>
+
+                    <div class="nf-globe-controls">
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeZoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeZoomOut" title="Zoom out" aria-label="Zoom out">&minus;</button>
+                        <button type="button" class="nf-globe-ctrl-btn active" id="globeAutoSpin" title="Toggle auto-rotation" aria-label="Toggle auto-rotation">⟳</button>
+                        <button type="button" class="nf-globe-ctrl-btn" id="globeFlyHome" title="Fly to my country" aria-label="Fly to my country">⌖</button>
+                    </div>
+
+                    <div class="nf-globe-tooltip hidden" id="globeTooltip"></div>
+                </div>
+
+                <aside class="nf-globe-sidebar">
+                    <div class="nf-globe-sidebar-head">
+                        <div class="nf-globe-country-meta">
+                            <span class="nf-globe-flag" id="globeCountryFlag">🌍</span>
+                            <div>
+                                <h2 id="globeCountryName">Select a Country</h2>
+                                <p id="globeCountrySub">Click a pin on the globe or search below</p>
+                            </div>
+                        </div>
+                        <div class="nf-globe-local-time" id="globeLocalTime">--:--</div>
+                    </div>
+
+                    <div class="nf-globe-sidebar-search">
+                        <input type="text" id="globeCountrySearch" placeholder="Jump to country (e.g. Sri Lanka, Japan, UK)..." aria-label="Filter countries">
+                    </div>
+
+                    <div class="nf-globe-country-pills" id="globeQuickPills"></div>
+
+                    <div class="nf-globe-station-list" id="globeStationList">
+                        <div class="nf-empty-inline">Loading global country nodes...</div>
+                    </div>
+                </aside>
             </div>
-            <div style="display:flex; gap:5px;">
-                <button onclick="loadLocal()" style="flex:1;">📍 My Country</button>
-                <button onclick="loadGlobal()" style="flex:1;">🌍 Global Top</button>
+        </section>
+
+        <!-- ===================== VIEW 3: COUNTRIES DIRECTORY ===================== -->
+        <section id="viewCountries" class="nf-view nf-directory-view hidden" aria-label="Countries Directory">
+            <div class="nf-directory-head">
+                <div>
+                    <div class="nf-eyebrow-red">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>GLOBAL DIRECTORY</span>
+                    </div>
+                    <h2 class="nf-page-title">Browse Radio by Country</h2>
+                    <p class="nf-page-sub">Live local clocks, capital cities, and direct multi-mirror streams across 200+ territories.</p>
+                </div>
+                <input type="search" id="directoryCountryFilter" class="nf-directory-input" placeholder="Search 200+ countries...">
             </div>
 
-            <div id="now-playing">
-                <div id="np-title">No Signal</div>
-                <div id="np-meta">Ready to tune</div>
-                <audio id="audio-player" controls crossorigin="anonymous" style="width: 100%; margin-top: 8px; height: 30px;"></audio>
+            <div class="nf-countries-grid" id="countriesDirectoryGrid"></div>
+        </section>
+
+        <!-- ===================== VIEW 4: MY LIST (FAVORITES & HISTORY) ===================== -->
+        <section id="viewMyList" class="nf-view nf-directory-view hidden" aria-label="My List and Recently Played">
+            <div class="nf-directory-head">
+                <div>
+                    <div class="nf-eyebrow-red">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>PERSONAL COLLECTION</span>
+                    </div>
+                    <h2 class="nf-page-title">My List &amp; Recent Stations</h2>
+                    <p class="nf-page-sub">Your saved favorite broadcasts and listening history stored locally in your browser.</p>
+                </div>
+                <button type="button" class="nf-btn nf-btn-glass nf-btn-sm" id="clearHistoryBtn">Clear History</button>
+            </div>
+
+            <div class="nf-mylist-section">
+                <h3 class="nf-row-title mb-md">Saved Favorites</h3>
+                <div class="nf-grid" id="myListFavoritesGrid"></div>
+            </div>
+
+            <div class="nf-mylist-section">
+                <h3 class="nf-row-title mb-md">Recently Played</h3>
+                <div class="nf-grid" id="myListHistoryGrid"></div>
+            </div>
+        </section>
+
+        <!-- Netflix Signature Footer -->
+        <footer class="nf-footer">
+            <div class="nf-footer-arc" aria-hidden="true"></div>
+            <div class="nf-footer-inner">
+                <div class="nf-footer-brand">
+                    <span class="nf-n-mark" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                    </span>
+                    <span class="nf-footer-title">Netflix Radio</span>
+                </div>
+                <p class="nf-footer-lead">
+                    Multi-source global audio streaming combining curated lossless/320k mixes, Famelack radio directories, Radio-Browser community nodes, and interactive 3D world discovery.
+                </p>
+                <div class="nf-shortcuts-bar">
+                    <span><kbd>Space</kbd> Play / Pause</span>
+                    <span><kbd>/</kbd> Search</span>
+                    <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Prev / Next Station</span>
+                    <span><kbd>M</kbd> Mute</span>
+                    <span><kbd>F</kbd> Favorite</span>
+                    <span><kbd>G</kbd> 3D Globe</span>
+                </div>
+                <p class="nf-footer-copy">&copy; <span id="footerYear">2026</span> Netflix Radio Project &bull; Built with HTML5 Audio, HLS.js &amp; D3 Orthographic Globe</p>
+            </div>
+        </footer>
+    </main>
+
+    <!-- ===================== PERSISTENT NETFLIX BOTTOM PLAYER DOCK ===================== -->
+    <aside class="nf-player-dock hidden" id="playerDock" aria-label="Audio Player Dock">
+        <div class="nf-dock-progress" id="dockProgressBar"></div>
+        <div class="nf-dock-inner">
+            <!-- Left: Artwork & Station Meta -->
+            <div class="nf-dock-station" id="dockExpandTrigger" role="button" tabindex="0" title="Open Studio Player">
+                <div class="nf-dock-art" id="dockArt">
+                    <span class="nf-n-badge tiny" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                    </span>
+                    <img id="dockLogoImg" src="" alt="" class="hidden">
+                    <span id="dockLogoFallback" class="nf-art-initials">FM</span>
+                </div>
+
+                <div class="nf-dock-info">
+                    <div class="nf-dock-title-row">
+                        <span class="nf-dock-name" id="dockStationName">No Signal</span>
+                        <span class="nf-status-pill idle" id="dockStatusPill">IDLE</span>
+                    </div>
+                    <div class="nf-dock-sub-row">
+                        <span id="dockCountryMeta">Select a station to stream</span>
+                        <span class="nf-eq" id="dockEq" aria-hidden="true">
+                            <i></i><i></i><i></i><i></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Transport Controls -->
+            <div class="nf-dock-controls">
+                <button type="button" class="nf-ctrl-btn" id="prevStationBtn" title="Previous station (Left arrow)" aria-label="Previous station">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                </button>
+                <button type="button" class="nf-ctrl-play" id="playPauseBtn" title="Play / Pause (Space)" aria-label="Play or Pause">
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="playIconSvg"><path d="M8 5v14l11-7z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIconSvg" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <span class="nf-btn-spinner hidden" id="playBtnSpinner"></span>
+                </button>
+                <button type="button" class="nf-ctrl-btn" id="nextStationBtn" title="Next station (Right arrow)" aria-label="Next station">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+            </div>
+
+            <!-- Right: Favorite, Sleep Timer, Volume, Expand -->
+            <div class="nf-dock-actions">
+                <button type="button" class="nf-ctrl-btn" id="dockFavBtn" title="Toggle Favorite (F)" aria-label="Toggle Favorite">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </button>
+
+                <div class="nf-sleep-wrap">
+                    <button type="button" class="nf-ctrl-btn" id="sleepTimerBtn" title="Sleep timer" aria-label="Sleep timer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <span class="nf-sleep-badge hidden" id="sleepTimerBadge"></span>
+                    </button>
+                    <div class="nf-sleep-menu hidden" id="sleepTimerMenu">
+                        <button type="button" data-minutes="0">Timer Off</button>
+                        <button type="button" data-minutes="15">15 minutes</button>
+                        <button type="button" data-minutes="30">30 minutes</button>
+                        <button type="button" data-minutes="45">45 minutes</button>
+                        <button type="button" data-minutes="60">60 minutes</button>
+                    </div>
+                </div>
+
+                <div class="nf-volume-wrap">
+                    <button type="button" class="nf-ctrl-btn" id="muteBtn" title="Mute / Unmute (M)" aria-label="Mute or Unmute">
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="volHighIcon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="volMutedIcon" class="hidden"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                    </button>
+                    <input type="range" id="volumeSlider" class="nf-volume-slider" min="0" max="100" value="85" aria-label="Volume">
+                </div>
+
+                <button type="button" class="nf-ctrl-btn" id="expandStudioBtn" title="Expand Studio View" aria-label="Expand Studio View">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
             </div>
         </div>
+    </aside>
 
-        <div class="panel" id="recorder-panel">
-            <h2>Tape Recorder</h2>
-            <button id="btn-record" class="rec-btn">● REC (System Audio)</button>
-        </div>
+    <!-- ===================== EXPANDED STUDIO / STATION DETAIL MODAL ===================== -->
+    <div class="nf-modal-overlay hidden" id="studioModal" role="dialog" aria-modal="true" aria-labelledby="studioTitle">
+        <div class="nf-studio-card">
+            <button type="button" class="nf-modal-close" id="closeStudioModalBtn" aria-label="Close Studio Player">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M18 6L6 18M6 6l12 12"></path>
+                </svg>
+            </button>
 
-        <div class="panel">
-            <div class="metric-row"><span>LOG</span> <button onclick="window.location.reload()" style="padding:2px 6px; font-size:9px; height:auto;">RESET</button></div>
-            <div id="sys-log"></div>
+            <div class="nf-studio-hero">
+                <div class="nf-studio-glow"></div>
+                <div class="nf-studio-disc-wrap">
+                    <div class="nf-vinyl-disc" id="studioDisc">
+                        <div class="nf-vinyl-center">
+                            <img id="studioArtImg" src="" alt="" class="hidden">
+                            <span id="studioArtFallback">FM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nf-studio-meta">
+                    <div class="nf-studio-eyebrow">
+                        <span class="nf-n-badge small" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span>STUDIO MONITOR</span>
+                        <span class="nf-status-pill idle" id="studioStatusPill">IDLE</span>
+                    </div>
+                    <h2 id="studioTitle">Station Name</h2>
+                    <p class="nf-studio-sub" id="studioSubtitle">Country &bull; Local Time &bull; Language</p>
+
+                    <div class="nf-studio-chips" id="studioChips"></div>
+
+                    <div class="nf-studio-actions">
+                        <button type="button" class="nf-btn nf-btn-play" id="studioPlayBtn">
+                            <svg viewBox="0 0 24 24" fill="currentColor" id="studioPlayIcon"><path d="M8 5v14l11-7z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor" id="studioPauseIcon" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            <span id="studioPlayLabel">Listen Live</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-secondary" id="studioFavBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span id="studioFavLabel">Save to My List</span>
+                        </button>
+                        <button type="button" class="nf-btn nf-btn-glass" id="studioCopyUrlBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy Stream URL</span>
+                        </button>
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="nf-btn nf-btn-glass hidden" id="studioHomepageLink">
+                            <span>Website ↗</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Spectrum Visualizer -->
+            <div class="nf-studio-viz-box">
+                <canvas id="studioVizCanvas"></canvas>
+            </div>
+
+            <!-- Stream Mirrors & Failover Diagnostics -->
+            <div class="nf-studio-body">
+                <div class="nf-studio-col">
+                    <h3>Stream Sources &amp; Failover Mirrors</h3>
+                    <p class="nf-muted-note">Automatically rotates through backup mirrors if a stream drops or stalls.</p>
+                    <div class="nf-mirror-list" id="studioMirrorList"></div>
+                </div>
+                <div class="nf-studio-col">
+                    <h3>Up Next in Queue</h3>
+                    <div class="nf-upnext-list" id="studioUpNextList"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="map"></div>
+    <!-- Hidden Core Audio Element (no forced crossorigin so Icecast/Shoutcast streams play freely) -->
+    <audio id="radioAudio" preload="none" playsinline></audio>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Toast Notification -->
+    <div class="nf-toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-    <script>
-        // --- SETUP ---
-        const DEFAULT_SERVERS = ["https://de1.api.radio-browser.info", "https://at1.api.radio-browser.info", "https://nl1.api.radio-browser.info"];
-        
-        let map;
-        let activeServer = null;
-        let markersLayer = new L.LayerGroup();
-        let loadedUUIDs = new Set();
-        let audioPlayer = document.getElementById('audio-player');
-        let hls = null; 
-        
-        // Tracking Variables for on-demand loading
-        let currentCountryCode = 'US';
-        let userCountryCode = 'US';
-        let userLocation = null;
-        
-        let mediaRecorder;
-        let audioChunks = [];
-        let streamObj;
-        let isMenuOpen = true;
-
-        // --- LOGGER ---
-        function log(msg, type = 'info') {
-            const box = document.getElementById('sys-log');
-            const d = document.createElement('div');
-            d.innerHTML = `> ${msg}`;
-            if(type === 'ok') d.classList.add('log-ok');
-            if(type === 'err') d.classList.add('log-err');
-            box.appendChild(d);
-            box.scrollTop = box.scrollHeight;
-        }
-
-        // --- UI LOGIC ---
-        function toggleMenu() {
-            const ui = document.getElementById('ui-layer');
-            const btn = document.getElementById('menu-toggle');
-            isMenuOpen = !isMenuOpen;
-            
-            if(isMenuOpen) {
-                ui.classList.remove('ui-hidden');
-                btn.innerHTML = "✖";
-                btn.style.background = "#ff4444";
-                btn.style.color = "white";
-            } else {
-                ui.classList.add('ui-hidden');
-                btn.innerHTML = "☰";
-                btn.style.background = "#00ff88";
-                btn.style.color = "black";
-            }
-        }
-
-        function checkMobileAutoClose() {
-            if(window.innerWidth < 600 && !isMenuOpen) toggleMenu(); 
-        }
-
-        // --- BOOT ---
-        async function boot() {
-            if(window.innerWidth < 600) { toggleMenu(); } 
-
-            initMap();
-            
-            log("Connecting to radio network...", 'info');
-            activeServer = await findBestServer();
-            
-            if(activeServer) {
-                document.getElementById('server-dot').classList.add('server-online');
-                document.getElementById('connected-server').innerText = "Online";
-                log("Connected: " + activeServer.split('//')[1], 'ok');
-            } else {
-                log("Server Connection Failed", 'err');
-                return;
-            }
-
-            // Geo Cascade
-            try {
-                const geo = await resolveUserLocation();
-                currentCountryCode = geo.code;
-                userCountryCode = geo.code;
-                userLocation = [geo.lat, geo.lon];
-                document.getElementById('location-val').innerText = geo.country;
-                if(geo.lat) map.flyTo(userLocation, 6);
-                loadStations(`countrycode=${currentCountryCode}&order=clickcount&reverse=true`, true); 
-            } catch (e) {
-                log("Loc failed. Global mode.", 'err');
-                document.getElementById('location-val').innerText = "Global";
-                loadStations(`order=clickcount&reverse=true`, false);
-            }
-        }
-
-        async function resolveUserLocation() {
-            try {
-                const r = await fetch('https://ipwho.is/');
-                const d = await r.json();
-                if(d.success) return { code: d.country_code, country: d.country, lat: d.latitude, lon: d.longitude };
-            } catch(e) {}
-            try {
-                const r = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client');
-                const d = await r.json();
-                return { code: d.countryCode, country: d.countryName, lat: d.latitude, lon: d.longitude };
-            } catch(e) {}
-            throw new Error("Geo fail");
-        }
-
-        async function findBestServer() {
-            for (const server of DEFAULT_SERVERS) {
-                try {
-                    const r = await fetch(`${server}/json/stats`, { method: 'HEAD' });
-                    if (r.ok) return server;
-                } catch (e) { continue; }
-            }
-            return DEFAULT_SERVERS[0]; 
-        }
-
-        function initMap() {
-            // preferCanvas enabled to prevent DOM lag when populating thousands of markers globally
-            map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([20, 0], 2);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
-            markersLayer.addTo(map);
-
-            // ON-DEMAND MAP LOADER: Dynamically append channels as you pan the map
-            map.on('moveend', async () => {
-                if(!activeServer) return;
-                
-                // Wrap ensures coordinates stay within mathematical bounds when zooming far out
-                const center = map.getCenter().wrap(); 
-                
-                try {
-                    // Reverse geocode the new map center to find what region we are looking at
-                    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${center.lat}&longitude=${center.lng}&localityLanguage=en`);
-                    const d = await r.json();
-                    
-                    if (d.countryCode && d.countryCode !== currentCountryCode) {
-                        currentCountryCode = d.countryCode;
-                        document.getElementById('location-val').innerText = d.countryName;
-                        log(`Scanning Region: ${d.countryName}`, 'info');
-                        // Append stations for the newly discovered country (clear is set to false)
-                        loadStations(`countrycode=${d.countryCode}&order=clickcount&reverse=true`, false);
-                    }
-                } catch(e) {
-                    // Fail silently over oceans or unmapped territories
-                }
-            });
-        }
-
-        async function loadStations(q, clear) {
-            if(!activeServer) return;
-            log("Scanning frequencies...", 'info');
-            try {
-                const r = await fetch(`${activeServer}/json/stations/search?hidebroken=true&limit=500&${q}`); 
-                const s = await r.json();
-                
-                if(s.length === 0) {
-                    log("No stations found.", 'err');
-                    return;
-                }
-
-                if(clear) { markersLayer.clearLayers(); loadedUUIDs.clear(); }
-                
-                let count = 0;
-                s.forEach(st => {
-                    if(st.geo_lat && !loadedUUIDs.has(st.stationuuid)) {
-                        loadedUUIDs.add(st.stationuuid);
-                        const isSec = st.url_resolved.startsWith('https');
-                        
-                        L.circleMarker([st.geo_lat, st.geo_long], {
-                            radius: 9, 
-                            fillColor: "#00ff88", 
-                            color: isSec ? "#fff" : "#ffaa00", 
-                            weight: 1, 
-                            fillOpacity: 0.8
-                        })
-                        .bindTooltip(`<b>${st.name}</b><br>${st.tags}`)
-                        .on('click', () => tuneStation(st))
-                        .addTo(markersLayer);
-                        count++;
-                    }
-                });
-                
-                document.getElementById('station-count').innerText = loadedUUIDs.size;
-                log(`Tuned: ${count} stations`, 'ok');
-
-                // Only adjust bounds visually if we are doing a fresh hard load
-                if(clear && count > 0) {
-                    const group = L.featureGroup(markersLayer.getLayers());
-                    map.fitBounds(group.getBounds(), {padding: [50, 50]});
-                }
-
-            } catch(e) { log("Fetch error", 'err'); }
-        }
-
-        function tuneStation(st) {
-            document.getElementById('np-title').innerText = st.name;
-            document.getElementById('np-meta').innerText = "Connecting...";
-            log(`Tuning: ${st.name}`, 'info');
-
-            const url = st.url_resolved;
-
-            if (Hls.isSupported() && (url.includes('.m3u8') || st.codec === 'HLS')) {
-                if(hls) { hls.destroy(); } 
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(audioPlayer);
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    audioPlayer.play().catch(e => handleError(e));
-                });
-                hls.on(Hls.Events.ERROR, function(event, data) {
-                    if(data.fatal) {
-                        log("HLS Error: " + data.type, 'err');
-                        handleError("Stream Format Error");
-                    }
-                });
-            } else {
-                if(hls) { hls.destroy(); hls = null; }
-                audioPlayer.src = url;
-                audioPlayer.load();
-                audioPlayer.play().catch(e => handleError(e));
-            }
-
-            audioPlayer.onplaying = () => {
-                document.getElementById('np-meta').innerText = "LIVE ON AIR";
-                document.getElementById('np-title').style.color = "#00ff88";
-                log("Playing successfully", 'ok');
-            };
-
-            checkMobileAutoClose(); 
-        }
-
-        function handleError(e) {
-            console.error(e);
-            document.getElementById('np-meta').innerText = "Connection Failed";
-            document.getElementById('np-title').style.color = "#ff4444";
-            log("Stream failed (Mixed Content/Offline)", 'err');
-        }
-
-        // --- ACTIONS ---
-        function loadLocal() { 
-            currentCountryCode = userCountryCode; 
-            if(userLocation && userLocation[0]) map.flyTo(userLocation, 6);
-            loadStations(`countrycode=${userCountryCode}&order=clickcount&reverse=true`, true); 
-            checkMobileAutoClose(); 
-        }
-        
-        function loadGlobal() { 
-            loadStations(`order=clickcount&reverse=true`, true); 
-            checkMobileAutoClose(); 
-        }
-        
-        function performSearch() { 
-            const v = document.getElementById('search-box').value; 
-            if(v) {
-                loadStations(`name=${encodeURIComponent(v)}`, true); 
-            }
-            checkMobileAutoClose();
-        }
-        
-        function handleEnter(e) { if(e.key === 'Enter') performSearch(); }
-
-        // --- RECORDER (Desktop) ---
-        const btnRec = document.getElementById('btn-record');
-        if(btnRec) {
-            btnRec.addEventListener('click', async () => {
-                if(btnRec.classList.contains('rec-active')) {
-                    mediaRecorder.stop();
-                    streamObj.getTracks().forEach(t => t.stop());
-                    btnRec.classList.remove('rec-active');
-                    btnRec.innerText = "● REC (System Audio)";
-                } else {
-                    try {
-                        streamObj = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-                        mediaRecorder = new MediaRecorder(new MediaStream([streamObj.getAudioTracks()[0]]), { mimeType: 'audio/webm' });
-                        audioChunks = [];
-                        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                        mediaRecorder.onstop = () => {
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(new Blob(audioChunks, {type:'audio/webm'}));
-                            a.download = `radio_rec_${Date.now()}.webm`;
-                            a.click();
-                        };
-                        mediaRecorder.start();
-                        btnRec.classList.add('rec-active');
-                        btnRec.innerText = "■ STOP";
-                    } catch(e) { log("Recording cancelled", 'err'); }
-                }
-            });
-        }
-
-        boot();
-    </script>
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-array@3/dist/d3-array.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
+    <script src="app.js" defer></script>
 </body>
 </html>
