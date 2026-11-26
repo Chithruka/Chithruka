@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Netflix Games | Solitaire</title>
+    <link href="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico" rel="shortcut icon" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-felt="emerald">
+    <div id="spa-solitaire" class="nf-sol-app">
+        <!-- ================= PERSISTENT NETFLIX TOPBAR ================= -->
+        <header class="nf-topbar">
+            <div class="nf-topbar-inner">
+                <div class="nf-brand-group">
+                    <a href="../Games.html" class="nf-back-hub" title="Back to Netflix Games Hub" aria-label="Back to Netflix Games Hub">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                    </a>
+                    <button type="button" class="nf-brand-btn" data-view="overview" aria-label="Solitaire Overview">
+                        <span class="nf-n-mark" aria-hidden="true">
+                            <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                        </span>
+                        <span class="nf-games-word">Games</span>
+                        <span class="nf-brand-divider" aria-hidden="true"></span>
+                        <span class="nf-brand-title">Solitaire</span>
+                    </button>
+                </div>
+
+                <nav class="nf-nav-pills" aria-label="Solitaire Sections">
+                    <button type="button" class="nf-nav-pill active" data-view="overview">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3z"/></svg>
+                        <span>Overview</span>
+                    </button>
+                    <button type="button" class="nf-nav-pill" data-view="play">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5C9.5 6.2 4.5 9.8 4.5 14a4.4 4.4 0 0 0 4.4 4.4c1.1 0 2-.4 2.6-1-.2 1.6-.9 3-2 4.1h5c-1.1-1.1-1.8-2.5-2-4.1.6.6 1.5 1 2.6 1a4.4 4.4 0 0 0 4.4-4.4c0-4.2-5-7.8-7.5-11.5z"/></svg>
+                        <span>Play Table</span>
+                    </button>
+                    <button type="button" class="nf-nav-pill" data-view="daily">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m3 6 4.5 5L12 4l4.5 7L21 6l-2 11H5L3 6zm2 13h14v2H5v-2z"/></svg>
+                        <span>Daily Challenge</span>
+                    </button>
+                    <button type="button" class="nf-nav-pill" data-view="rules">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 12h3v8H5v-8zm5.5-6h3v14h-3V6zM16 9h3v11h-3V9z"/></svg>
+                        <span>Stats &amp; Rules</span>
+                    </button>
+                </nav>
+
+                <div class="nf-top-actions">
+                    <button type="button" class="nf-progress-chip" id="top-streak-chip" data-view="daily" title="Daily Challenge Crowns &amp; Win Streak">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m2 5 4 5 6-7 6 7 4-5-2.5 12h-15L2 5zm3 14h14v2H5v-2z"/></svg>
+                        <span id="top-crown-count">0 Crowns</span>
+                    </button>
+                    <button type="button" class="nf-icon-btn" id="sound-toggle-btn" title="Toggle Card Sound Effects" aria-label="Toggle Sound Effects" aria-pressed="true">
+                        <svg class="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                        </svg>
+                        <svg class="icon-sound-off hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/>
+                            <line x1="22" y1="9" x2="16" y2="15"/>
+                            <line x1="16" y1="9" x2="22" y2="15"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= VIEW 1: OVERVIEW ================= -->
+        <section id="view-overview" class="spa-view active" aria-label="Solitaire Overview">
+            <div class="sol-hero">
+                <div class="sol-hero-bg" aria-hidden="true"></div>
+                <div class="sol-hero-scrim" aria-hidden="true"></div>
+
+                <div class="sol-hero-inner">
+                    <div class="sol-game-lockup">
+                        <img
+                            class="sol-game-icon"
+                            src="https://dnm.nflximg.net/api/v6/FwIN8Meirvnafkk7bSzCCCDzXJs/AAAABZRyFER0b-3Uc4sibXEVA9gKo2pzhlrIsKXWSnq4fccnpCFwMR0xtbk1yMtLAnYeJbahVJe-K7JCZr8u_3g_Y6PAfBA4BrU9zOZl.png?r=0f1"
+                            alt="Netflix Solitaire game icon"
+                        >
+                        <div class="sol-lockup-meta">
+                            <div class="sol-eyebrow">
+                                <span class="nf-n-mark" aria-hidden="true">
+                                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                                </span>
+                                <span>Netflix Game</span>
+                            </div>
+
+                            <div class="sol-title-logo-wrap">
+                                <img
+                                    class="sol-title-logo"
+                                    src="https://occ-0-2794-2218.1.nflxso.net/dnm/api/v6/NQMscAviTbcSthK7LRWw8ctgi78/AAAABSchfKstoIPdHinGBzjXwKJIkg1OUeZu--LfxnFtR-nXoiqhDXW1dU0htfH3q9wgGZbabtVbOTfSHTDvWnNMVHAqvLOI4lOEH2rb0x-5m1WewdLIYxlkFvtFkyfymTKlXZPvoy5X5_sIZ83AYFBWcuHC1qdepxPV97zgWoeRAir_02u7PAuF.webp"
+                                    alt="Solitaire"
+                                    onerror="this.style.display='none';this.nextElementSibling.style.display='block';"
+                                >
+                                <h1 class="sol-title-fallback" style="display:none;">Solitaire</h1>
+                            </div>
+
+                            <div class="sol-meta-row">
+                                <span>Tabletop</span>
+                                <span aria-hidden="true">&bull;</span>
+                                <span class="sol-age-badge">4+</span>
+                                <span aria-hidden="true">&bull;</span>
+                                <span>Klondike</span>
+                                <span aria-hidden="true">&bull;</span>
+                                <span class="sol-suits-inline" aria-hidden="true">
+                                    <span class="suit-black">&#9824;&#xFE0E;</span>
+                                    <span class="suit-red">&#9829;&#xFE0E;</span>
+                                    <span class="suit-black">&#9827;&#xFE0E;</span>
+                                    <span class="suit-red">&#9830;&#xFE0E;</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="sol-tagline">&lsquo;The classic card game&rsquo;</p>
+                    <p class="sol-desc">Drag cards to arrange them in descending order with alternating colors. Sort all the suits from ace to king &mdash; it's the timeless game you know and love.</p>
+
+                    <div class="sol-cta-row">
+                        <button type="button" class="btn-nf-primary" id="hero-play-draw1">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3.8v16.4a.8.8 0 0 0 1.22.68l13.2-8.2a.8.8 0 0 0 0-1.36L6.22 3.12A.8.8 0 0 0 5 3.8z"/></svg>
+                            <span>Play Draw 1</span>
+                        </button>
+                        <button type="button" class="btn-nf-secondary" id="hero-play-draw3">
+                            <span class="unicode-glyph" aria-hidden="true">&#x1F0A1;</span>
+                            <span>Play Draw 3</span>
+                        </button>
+                        <button type="button" class="btn-nf-secondary" id="hero-play-daily">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m2 5 4 5 6-7 6 7 4-5-2.5 12h-15L2 5zm3 14h14v2H5v-2z"/></svg>
+                            <span>Today&rsquo;s Daily Challenge</span>
+                        </button>
+                        <button type="button" class="btn-nf-secondary hidden" id="hero-resume-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+                            <span id="hero-resume-label">Resume Game</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-container">
+                <div class="section-heading-row">
+                    <div>
+                        <h2 class="section-heading">Classic Klondike, Netflix Edition</h2>
+                        <span class="section-sub">Winning deals, daily crown challenges, and customizable tabletops</span>
+                    </div>
+                </div>
+
+                <div class="overview-showcase-grid">
+                    <div class="keyart-card">
+                        <img
+                            src="https://dnm.nflximg.net/api/v6/a01MIaQTUgSJoLaS_OCn68Eg3hU/AAAAQUW9hUBfxb5gmedcEm12Z5bwOpubgxj7wzoozIPxw00y2VV-Nw0DA6SbrNTFBxwOt3R-lptjJiP-jAv3JDp-vkVYMaX1P72n7Ws2lkEtaQpXSWMap81whC87nw1e2Zn-1qgiZJuWm3kwKNNeD2zMb6J5.jpg?r=ff7"
+                            alt="Netflix Solitaire key artwork"
+                        >
+                        <div class="keyart-overlay">
+                            <div>
+                                <div class="keyart-badge">
+                                    <span class="nf-n-mark" aria-hidden="true">
+                                        <svg viewBox="0 0 16 16" width="14" height="14" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                                    </span>
+                                    <span>Featured Tabletop</span>
+                                </div>
+                                <p>Crisp card faces, unlimited undo, smart hints, and classic bouncing card victory cascades.</p>
+                            </div>
+                            <button type="button" class="btn-nf-primary keyart-play-btn" id="keyart-launch-btn">Deal Cards</button>
+                        </div>
+                    </div>
+
+                    <div class="pillars-grid">
+                        <button type="button" class="pillar-card" id="pillar-draw1">
+                            <span class="pillar-icon unicode-card-icon suit-black" aria-hidden="true">&#x1F0A1;</span>
+                            <h3>Draw 1 Classic</h3>
+                            <p>Turn one card from the stock at a time for smooth, relaxing Klondike mastery.</p>
+                        </button>
+                        <button type="button" class="pillar-card" id="pillar-draw3">
+                            <span class="pillar-icon unicode-card-icon suit-red" aria-hidden="true">&#x1F0B1;</span>
+                            <h3>Draw 3 Challenge</h3>
+                            <p>Cycle three stock cards per turn for sharper planning and higher win stakes.</p>
+                        </button>
+                        <button type="button" class="pillar-card" id="pillar-daily">
+                            <span class="pillar-icon unicode-card-icon suit-gold" aria-hidden="true">&#9819;&#xFE0E;</span>
+                            <h3>Daily Crowns</h3>
+                            <p>Play today&rsquo;s verified solvable daily deal and build your monthly crown streak.</p>
+                        </button>
+                        <button type="button" class="pillar-card" id="pillar-vegas">
+                            <span class="pillar-icon unicode-card-icon suit-red" aria-hidden="true">&#9830;&#xFE0E;</span>
+                            <h3>Vegas Scoring</h3>
+                            <p>Start at -$52 and earn +$5 per foundation card with classic limited passes.</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Felt & Card Preview Section -->
+                <div class="section-heading-row">
+                    <div>
+                        <h2 class="section-heading">Table Felt &amp; Classic Deck</h2>
+                        <span class="section-sub">Choose your felt backdrop and inspect the card deck</span>
+                    </div>
+                </div>
+
+                <div class="customization-showcase">
+                    <div class="felt-picker-panel">
+                        <div class="side-picker-label">Select Table Theme</div>
+                        <div class="felt-grid" id="overview-felt-grid">
+                            <button type="button" class="felt-option active" data-felt="emerald">
+                                <span class="felt-swatch felt-emerald"></span>
+                                <span>Emerald Felt</span>
+                            </button>
+                            <button type="button" class="felt-option" data-felt="crimson">
+                                <span class="felt-swatch felt-crimson"></span>
+                                <span>Netflix Velvet</span>
+                            </button>
+                            <button type="button" class="felt-option" data-felt="obsidian">
+                                <span class="felt-swatch felt-obsidian"></span>
+                                <span>Midnight Slate</span>
+                            </button>
+                            <button type="button" class="felt-option" data-felt="sapphire">
+                                <span class="felt-swatch felt-sapphire"></span>
+                                <span>Royal Navy</span>
+                            </button>
+                            <button type="button" class="felt-option" data-felt="mahogany">
+                                <span class="felt-swatch felt-mahogany"></span>
+                                <span>Warm Walnut</span>
+                            </button>
+                        </div>
+                        <p class="felt-tip">Every card uses crisp classic deck artwork &mdash; drag stacks freely, double-click to send to foundation, or toggle one-tap play right at the table.</p>
+                    </div>
+
+                    <div class="deck-fan-preview" aria-label="Sample playing cards from deck">
+                        <img src="Images/card-back.png" alt="Classic red lattice card back" class="fan-card fan-1">
+                        <img src="Images/spade_1.png" alt="Ace of Spades" class="fan-card fan-2">
+                        <img src="Images/heart_12.png" alt="Queen of Hearts" class="fan-card fan-3">
+                        <img src="Images/club_11.png" alt="Jack of Clubs" class="fan-card fan-4">
+                        <img src="Images/diamond_13.png" alt="King of Diamonds" class="fan-card fan-5">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: PLAY SOLITAIRE TABLE ================= -->
+        <section id="view-play" class="spa-view" aria-label="Solitaire Game Table">
+            <div class="play-workspace">
+                <!-- Game HUD Bar -->
+                <div class="game-hud" role="toolbar" aria-label="Solitaire Game Controls">
+                    <div class="hud-stats-group">
+                        <span class="hud-mode-badge" id="hud-mode-badge">Draw 1</span>
+                        <div class="hud-stat">
+                            <span class="hud-label">Score</span>
+                            <span class="hud-value" id="hud-score">0</span>
+                        </div>
+                        <div class="hud-stat">
+                            <span class="hud-label">Time</span>
+                            <span class="hud-value" id="hud-timer">00:00</span>
+                        </div>
+                        <div class="hud-stat">
+                            <span class="hud-label">Moves</span>
+                            <span class="hud-value" id="hud-moves">0</span>
+                        </div>
+                    </div>
+
+                    <div class="hud-actions-group">
+                        <button type="button" class="hud-btn hidden" id="btn-autocomplete" title="Auto-Complete Remaining Cards (A)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M5 12h14"/>
+                                <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                            <span>Auto-Complete</span>
+                        </button>
+                        <button type="button" class="hud-btn" id="btn-undo" title="Undo Last Move (Z)" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 7v6h6"/>
+                                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                            </svg>
+                            <span>Undo</span>
+                        </button>
+                        <button type="button" class="hud-btn" id="btn-hint" title="Show Hint (H)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 18h6"/>
+                                <path d="M10 22h4"/>
+                                <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                            </svg>
+                            <span>Hint</span>
+                        </button>
+                        <button type="button" class="hud-btn hud-btn-primary" id="btn-new-deal" title="New Deal Menu (N)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="5" width="12" height="16" rx="2"/>
+                                <path d="M9 3h10a2 2 0 0 1 2 2v14"/>
+                            </svg>
+                            <span>New Deal</span>
+                        </button>
+                        <button type="button" class="hud-btn" id="btn-settings" title="Table Theme &amp; Play Preferences">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            <span>Options</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Felt Solitaire Table -->
+                <div class="sol-table-shell">
+                    <div class="sol-table" id="sol-table">
+                        <div class="sol-table-watermark" aria-hidden="true">
+                            <span>&#9824;&#xFE0E;</span>
+                            <span>&#9829;&#xFE0E;</span>
+                            <span>&#9827;&#xFE0E;</span>
+                            <span>&#9830;&#xFE0E;</span>
+                        </div>
+
+                        <!-- Top Row: Stock, Waste, Spacer, 4 Foundations -->
+                        <div class="sol-top-row">
+                            <div class="pile-slot stock-slot" id="stock-pile" role="button" tabindex="0" aria-label="Stock pile: click to draw">
+                                <div class="empty-slot-mark" id="stock-empty-mark">
+                                    <svg class="stock-recycle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+                                        <path d="M3 3v5h5"/>
+                                    </svg>
+                                    <svg class="stock-locked-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <line x1="8" y1="8" x2="16" y2="16"/>
+                                        <line x1="16" y1="8" x2="8" y2="16"/>
+                                    </svg>
+                                </div>
+                                <div class="stock-cards" id="stock-cards"></div>
+                                <span class="stock-count-badge" id="stock-count-badge">24</span>
+                            </div>
+
+                            <div class="pile-slot waste-slot" id="waste-pile" aria-label="Waste pile">
+                                <div class="waste-cards" id="waste-cards"></div>
+                            </div>
+
+                            <div class="top-spacer" aria-hidden="true">
+                                <div class="table-brand-emblem">
+                                    <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                                    <span>SOLITAIRE</span>
+                                </div>
+                            </div>
+
+                            <div class="pile-slot foundation-slot" data-foundation="0" aria-label="Foundation pile 1">
+                                <div class="empty-slot-mark foundation-mark">
+                                    <span class="foundation-ace">A</span>
+                                    <span class="foundation-suits">&#9824;&#xFE0E;&#9829;&#xFE0E;</span>
+                                </div>
+                            </div>
+                            <div class="pile-slot foundation-slot" data-foundation="1" aria-label="Foundation pile 2">
+                                <div class="empty-slot-mark foundation-mark">
+                                    <span class="foundation-ace">A</span>
+                                    <span class="foundation-suits">&#9827;&#xFE0E;&#9830;&#xFE0E;</span>
+                                </div>
+                            </div>
+                            <div class="pile-slot foundation-slot" data-foundation="2" aria-label="Foundation pile 3">
+                                <div class="empty-slot-mark foundation-mark">
+                                    <span class="foundation-ace">A</span>
+                                    <span class="foundation-suits">&#9829;&#xFE0E;&#9824;&#xFE0E;</span>
+                                </div>
+                            </div>
+                            <div class="pile-slot foundation-slot" data-foundation="3" aria-label="Foundation pile 4">
+                                <div class="empty-slot-mark foundation-mark">
+                                    <span class="foundation-ace">A</span>
+                                    <span class="foundation-suits">&#9830;&#xFE0E;&#9827;&#xFE0E;</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Row: 7 Tableau Columns -->
+                        <div class="sol-tableau-row" id="tableau-row">
+                            <div class="tableau-col" data-col="0" aria-label="Tableau column 1"></div>
+                            <div class="tableau-col" data-col="1" aria-label="Tableau column 2"></div>
+                            <div class="tableau-col" data-col="2" aria-label="Tableau column 3"></div>
+                            <div class="tableau-col" data-col="3" aria-label="Tableau column 4"></div>
+                            <div class="tableau-col" data-col="4" aria-label="Tableau column 5"></div>
+                            <div class="tableau-col" data-col="5" aria-label="Tableau column 6"></div>
+                            <div class="tableau-col" data-col="6" aria-label="Tableau column 7"></div>
+                        </div>
+
+                        <!-- Hint Toast -->
+                        <div class="hint-toast hidden" id="hint-toast" role="status" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Floating Drag & Flight Layers -->
+                    <div id="drag-layer" class="drag-layer" aria-hidden="true"></div>
+                    <div id="flight-layer" class="flight-layer" aria-hidden="true"></div>
+
+                    <!-- Bouncing Card Victory Cascade Canvas -->
+                    <canvas id="victory-canvas" class="victory-canvas hidden"></canvas>
+                </div>
+
+                <!-- Compact Shortcut Bar -->
+                <div class="shortcut-footer">
+                    <span>Click &amp; drag or tap cards to move</span>
+                    <span class="dot-sep" aria-hidden="true">&bull;</span>
+                    <span>Double-click for smart move</span>
+                    <span class="dot-sep" aria-hidden="true">&bull;</span>
+                    <span><kbd>Space</kbd> Draw</span>
+                    <span class="dot-sep" aria-hidden="true">&bull;</span>
+                    <span><kbd>Z</kbd> Undo</span>
+                    <span class="dot-sep" aria-hidden="true">&bull;</span>
+                    <span><kbd>H</kbd> Hint</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: DAILY CHALLENGE ================= -->
+        <section id="view-daily" class="spa-view" aria-label="Daily Solitaire Challenge">
+            <div class="page-container">
+                <div class="daily-hero-card">
+                    <div class="daily-hero-info">
+                        <div class="sol-eyebrow">
+                            <span class="nf-n-mark" aria-hidden="true">
+                                <svg viewBox="0 0 16 16" width="16" height="16" data-icon="NetflixSmall" data-icon-id="_r_m_" class="default-ltr-iqcdef-cache-1i3oso3" xmlns="http://www.w3.org/2000/svg" fill="none" role="img"><path fill="currentColor" d="M9.12.67v6.52L6.82.67h-2.9v14.66s1.7-.21 2.88-.24V8.8l2.22 6.28c1.4.03 2.97.24 2.97.24V.67z"></path></svg>
+                            </span>
+                            <span>Daily Solitaire</span>
+                        </div>
+                        <h2 class="daily-heading" id="daily-date-heading">Today&rsquo;s Challenge</h2>
+                        <p class="daily-sub" id="daily-mode-desc">Verified solvable daily deal. Complete it today to earn your crown and extend your streak.</p>
+                        <div class="daily-cta-row">
+                            <button type="button" class="btn-nf-primary" id="daily-play-today-btn">
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m2 5 4 5 6-7 6 7 4-5-2.5 12h-15L2 5zm3 14h14v2H5v-2z"/></svg>
+                                <span id="daily-play-btn-text">Play Today&rsquo;s Deal</span>
+                            </button>
+                            <div class="daily-crown-summary">
+                                <span class="crown-pill"><span class="crown-glyph" aria-hidden="true">&#9819;&#xFE0E;</span> <strong id="daily-total-crowns">0</strong> Total Crowns</span>
+                                <span class="crown-pill"><span class="crown-glyph" aria-hidden="true">&#9824;&#xFE0E;</span> <strong id="daily-month-crowns">0</strong> This Month</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="daily-month-badge">
+                        <div class="month-trophy-ring">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m2 5 4 5 6-7 6 7 4-5-2.5 12h-15L2 5zm3 14h14v2H5v-2z"/></svg>
+                        </div>
+                        <div class="month-trophy-meta">
+                            <span id="daily-month-label">Month Progress</span>
+                            <strong id="daily-month-ratio">0 / 30 Days</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calendar-panel">
+                    <div class="calendar-header">
+                        <button type="button" class="hud-btn" id="cal-prev-month" aria-label="Previous Month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <h3 id="cal-month-title">November 2026</h3>
+                        <button type="button" class="hud-btn" id="cal-next-month" aria-label="Next Month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                    <div class="calendar-weekdays" aria-hidden="true">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="calendar-grid" id="daily-calendar-grid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: STATS & RULES ================= -->
+        <section id="view-rules" class="spa-view" aria-label="Statistics and Rules">
+            <div class="page-container">
+                <div class="section-heading-row">
+                    <div>
+                        <h2 class="section-heading">Your Solitaire Statistics</h2>
+                        <span class="section-sub">Saved locally on this browser</span>
+                    </div>
+                    <div class="stats-controls">
+                        <div class="stats-filter-tabs" id="stats-filter-tabs" role="tablist">
+                            <button type="button" class="stats-tab active" data-stats-mode="all">All Modes</button>
+                            <button type="button" class="stats-tab" data-stats-mode="draw1">Draw 1</button>
+                            <button type="button" class="stats-tab" data-stats-mode="draw3">Draw 3</button>
+                            <button type="button" class="stats-tab" data-stats-mode="vegas">Vegas</button>
+                        </div>
+                        <button type="button" class="hud-btn danger-btn" id="reset-stats-btn">Reset Stats</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card"><span class="stat-label">Games Played</span><strong class="stat-val" id="stat-played">0</strong></div>
+                    <div class="stat-card"><span class="stat-label">Games Won</span><strong class="stat-val" id="stat-won">0</strong></div>
+                    <div class="stat-card"><span class="stat-label">Win Rate</span><strong class="stat-val" id="stat-rate">0%</strong></div>
+                    <div class="stat-card"><span class="stat-label">High Score</span><strong class="stat-val" id="stat-highscore">0</strong></div>
+                    <div class="stat-card"><span class="stat-label">Best Time</span><strong class="stat-val" id="stat-besttime">--:--</strong></div>
+                    <div class="stat-card"><span class="stat-label">Fewest Moves</span><strong class="stat-val" id="stat-bestmoves">--</strong></div>
+                    <div class="stat-card"><span class="stat-label">Current Streak</span><strong class="stat-val" id="stat-streak">0</strong></div>
+                    <div class="stat-card"><span class="stat-label">Best Streak</span><strong class="stat-val" id="stat-beststreak">0</strong></div>
+                </div>
+
+                <div class="section-heading-row" style="margin-top:34px;">
+                    <div>
+                        <h2 class="section-heading">How to Play Klondike Solitaire</h2>
+                        <span class="section-sub">Master the timeless card rules in under a minute</span>
+                    </div>
+                </div>
+
+                <div class="rules-grid">
+                    <article class="rule-card">
+                        <div class="rule-badge unicode-glyph suit-black" aria-hidden="true">&#x1F0A1; &#x1F0B1; &#x1F0C1; &#x1F0D1;</div>
+                        <h3>1. Build the 4 Foundations</h3>
+                        <p>Move Aces up to the four top-right Foundation piles and build each suit upward in ascending order from <strong>Ace &rarr; 2 &rarr; 3 &hellip; &rarr; Queen &rarr; King</strong>.</p>
+                    </article>
+                    <article class="rule-card">
+                        <div class="rule-badge unicode-glyph" aria-hidden="true">
+                            <span class="suit-black">&#9824;&#xFE0E;K</span>
+                            <span class="suit-red">&#9829;&#xFE0E;Q</span>
+                            <span class="suit-black">&#9827;&#xFE0E;J</span>
+                            <span class="suit-red">&#9830;&#xFE0E;10</span>
+                        </div>
+                        <h3>2. Stack Alternating Colors</h3>
+                        <p>In the seven Tableau columns, place cards in descending rank with alternating colors (Red on Black, Black on Red). Only a <strong>King</strong> (or King-led stack) can fill an empty column.</p>
+                    </article>
+                    <article class="rule-card">
+                        <div class="rule-badge unicode-glyph suit-red" aria-hidden="true">&#x1F0A0;</div>
+                        <h3>3. Draw &amp; Recycle Stock</h3>
+                        <p>Click the top-left Stock pile to flip 1 or 3 cards into the Waste pile. Uncover face-down tableau cards whenever possible to open more lines of play.</p>
+                    </article>
+                    <article class="rule-card">
+                        <div class="rule-badge unicode-glyph suit-gold" aria-hidden="true">&#9819;&#xFE0E;</div>
+                        <h3>4. Scoring &amp; Controls</h3>
+                        <p><strong>+10</strong> to Foundation, <strong>+5</strong> Waste to Tableau or flipping a hidden card. Drag stacks smoothly, double-click to auto-move, or enable One-Tap Move in Options.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= MODALS & POPOVERS ================= -->
+        <!-- New Deal Modal -->
+        <div class="sol-modal-backdrop hidden" id="new-deal-modal" role="dialog" aria-modal="true" aria-labelledby="new-deal-title">
+            <div class="sol-modal">
+                <div class="sol-modal-head">
+                    <h3 id="new-deal-title">Start a Deal</h3>
+                    <button type="button" class="modal-close-btn" data-close-modal="new-deal-modal" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="deal-options-list">
+                    <button type="button" class="deal-option-btn" data-deal-action="winning-draw1">
+                        <span class="deal-icon suit-black">&#x1F0A1;</span>
+                        <div>
+                            <strong>Winning Deal &bull; Draw 1</strong>
+                            <span>Verified solvable Klondike deal (1 card per draw)</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn" data-deal-action="winning-draw3">
+                        <span class="deal-icon suit-red">&#x1F0B1;</span>
+                        <div>
+                            <strong>Winning Deal &bull; Draw 3</strong>
+                            <span>Verified solvable 3-card draw challenge</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn" data-deal-action="random-draw1">
+                        <span class="deal-icon">&#9827;&#xFE0E;</span>
+                        <div>
+                            <strong>Random Shuffle &bull; Draw 1</strong>
+                            <span>Classic unweighted deck shuffle</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn" data-deal-action="random-draw3">
+                        <span class="deal-icon suit-red">&#9830;&#xFE0E;</span>
+                        <div>
+                            <strong>Random Shuffle &bull; Draw 3</strong>
+                            <span>Traditional 3-card Klondike shuffle</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn" data-deal-action="vegas-draw1">
+                        <span class="deal-icon suit-gold">&#9830;&#xFE0E;</span>
+                        <div>
+                            <strong>Vegas Mode &bull; Draw 1 (-$52)</strong>
+                            <span>Single pass, +$5 per foundation card</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn" data-deal-action="vegas-draw3">
+                        <span class="deal-icon suit-gold">&#9824;&#xFE0E;</span>
+                        <div>
+                            <strong>Vegas Mode &bull; Draw 3 (-$52)</strong>
+                            <span>3 passes maximum, +$5 per foundation card</span>
+                        </div>
+                    </button>
+                    <button type="button" class="deal-option-btn replay-btn" data-deal-action="restart-current">
+                        <span class="deal-icon">&#8634;</span>
+                        <div>
+                            <strong>Restart Current Deal</strong>
+                            <span>Reset this exact layout from move 0</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Options / Settings Modal -->
+        <div class="sol-modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+            <div class="sol-modal">
+                <div class="sol-modal-head">
+                    <h3 id="settings-title">Table Options</h3>
+                    <button type="button" class="modal-close-btn" data-close-modal="settings-modal" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <div class="settings-section">
+                    <div class="side-picker-label">Table Felt Theme</div>
+                    <div class="felt-grid compact" id="modal-felt-grid">
+                        <button type="button" class="felt-option active" data-felt="emerald"><span class="felt-swatch felt-emerald"></span><span>Emerald</span></button>
+                        <button type="button" class="felt-option" data-felt="crimson"><span class="felt-swatch felt-crimson"></span><span>Crimson</span></button>
+                        <button type="button" class="felt-option" data-felt="obsidian"><span class="felt-swatch felt-obsidian"></span><span>Obsidian</span></button>
+                        <button type="button" class="felt-option" data-felt="sapphire"><span class="felt-swatch felt-sapphire"></span><span>Sapphire</span></button>
+                        <button type="button" class="felt-option" data-felt="mahogany"><span class="felt-swatch felt-mahogany"></span><span>Walnut</span></button>
+                    </div>
+                </div>
+
+                <div class="settings-toggles">
+                    <label class="toggle-row">
+                        <div>
+                            <strong>Quick Single-Tap Move</strong>
+                            <span>Clicking a card automatically sends it to the best valid spot</span>
+                        </div>
+                        <input type="checkbox" id="opt-quick-tap">
+                    </label>
+                    <label class="toggle-row">
+                        <div>
+                            <strong>Sound Effects</strong>
+                            <span>Soft card deal, flip, snap, and victory chimes</span>
+                        </div>
+                        <input type="checkbox" id="opt-sound" checked>
+                    </label>
+                    <label class="toggle-row">
+                        <div>
+                            <strong>Auto-Complete Prompt</strong>
+                            <span>Show Auto-Complete button once every hidden card is revealed</span>
+                        </div>
+                        <input type="checkbox" id="opt-autocomplete" checked>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Victory Modal -->
+        <div class="sol-modal-backdrop hidden" id="victory-modal" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+            <div class="sol-modal victory-modal">
+                <div class="victory-crown-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 5 4 5 6-7 6 7 4-5-2.5 12h-15L2 5zm3 14h14v2H5v-2z"/></svg>
+                </div>
+                <div class="victory-eyebrow" id="victory-mode-label">KLONDIKE VICTORY</div>
+                <h2 id="victory-title">You Cleared the Table!</h2>
+                <p class="victory-subtitle" id="victory-subtitle">All four suits sorted from Ace to King.</p>
+
+                <div class="victory-stats-row">
+                    <div class="v-stat"><span>Final Score</span><strong id="v-score">0</strong></div>
+                    <div class="v-stat"><span>Time</span><strong id="v-time">00:00</strong></div>
+                    <div class="v-stat"><span>Moves</span><strong id="v-moves">0</strong></div>
+                    <div class="v-stat"><span>Time Bonus</span><strong id="v-bonus">+0</strong></div>
+                </div>
+
+                <div class="victory-actions">
+                    <button type="button" class="btn-nf-primary" id="v-new-deal-btn">Play New Deal</button>
+                    <button type="button" class="btn-nf-secondary" id="v-watch-cascade-btn">Watch Card Cascade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
