@@ -75,13 +75,19 @@ html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 body {
     min-height: 100vh;
+    width: 100%;
+    max-width: 100%;
     background-color: var(--bg-base);
     color: var(--ink-primary);
     overflow-x: hidden;
+    overflow-x: clip;
     padding-bottom: 0;
 }
 
@@ -196,7 +202,8 @@ a {
     display: flex;
     align-items: center;
     gap: 26px;
-    flex-shrink: 0;
+    min-width: 0;
+    flex-shrink: 1;
 }
 
 .nf-brand {
@@ -482,6 +489,10 @@ a {
    ========================================================================== */
 .nf-main {
     min-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 .nf-hero {
@@ -529,13 +540,17 @@ a {
 .nf-hero-content {
     position: relative;
     z-index: 4;
+    width: 100%;
+    min-width: 0;
     max-width: 680px;
 }
 
 .nf-hero-series-tag {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+    max-width: 100%;
     margin-bottom: 14px;
 }
 
@@ -576,6 +591,8 @@ a {
     letter-spacing: -0.02em;
     margin-bottom: 14px;
     text-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .nf-hero-desc {
@@ -709,8 +726,9 @@ a {
     scrollbar-width: none;
     padding-bottom: 4px;
     padding-right: 22px;
-    flex: 1;
-    min-width: 240px;
+    flex: 1 1 520px;
+    min-width: 0;
+    max-width: 100%;
     -webkit-mask-image: linear-gradient(to right, #000 0%, #000 94%, transparent 100%);
     mask-image: linear-gradient(to right, #000 0%, #000 94%, transparent 100%);
 }
@@ -838,10 +856,16 @@ a {
     flex-direction: column;
     gap: 34px;
     padding-bottom: 48px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 .nf-row {
     position: relative;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .nf-row-head {
@@ -882,6 +906,8 @@ a {
     font-size: 12px;
     font-weight: 600;
     color: var(--ink-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nf-carousel-wrap {
@@ -1225,7 +1251,7 @@ a {
 
 .nf-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
     gap: 16px;
 }
 .nf-grid .nf-card {
@@ -1247,18 +1273,21 @@ a {
    3D WORLD RADIO GLOBE VIEW
    ========================================================================== */
 .nf-globe-view {
-    padding-top: var(--nav-height);
+    padding-top: 0;
     min-height: calc(100vh - 120px);
+    overflow-x: hidden;
 }
 
 .nf-globe-layout {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: minmax(0, 1fr) 400px;
     min-height: calc(100vh - var(--nav-height));
 }
 
 .nf-globe-stage {
     position: relative;
+    min-width: 0;
+    width: 100%;
     background:
         radial-gradient(circle at 50% 50%, rgba(229, 9, 20, 0.14) 0%, rgba(16, 18, 28, 0.5) 45%, #060608 100%);
     overflow: hidden;
@@ -1269,8 +1298,11 @@ a {
 }
 
 #globeCanvas {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
+    max-width: 100%;
     display: block;
     cursor: grab;
     touch-action: none;
@@ -1367,6 +1399,8 @@ body.has-dock .nf-globe-sidebar {
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    width: 100%;
     max-height: calc(100vh - var(--nav-height));
 }
 
@@ -1531,7 +1565,7 @@ body.has-dock .nf-globe-sidebar {
    COUNTRIES DIRECTORY & MY LIST VIEWS
    ========================================================================== */
 .nf-directory-view {
-    padding: calc(var(--nav-height) + 32px) 4% 64px;
+    padding: 24px 4% 64px;
 }
 
 .nf-directory-head {
@@ -1581,7 +1615,7 @@ body.has-dock .nf-globe-sidebar {
 
 .nf-countries-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
     gap: 14px;
 }
 
@@ -1941,7 +1975,7 @@ body.has-dock .nf-globe-sidebar {
 .nf-modal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1400;
+    z-index: 100000;
     background: rgba(0, 0, 0, 0.82);
     backdrop-filter: blur(12px);
     display: flex;
@@ -1953,8 +1987,10 @@ body.has-dock .nf-globe-sidebar {
 .nf-studio-card {
     position: relative;
     width: min(940px, 100%);
+    max-width: 100%;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     border-radius: 18px;
     background: #161619;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1969,12 +2005,12 @@ body.has-dock .nf-globe-sidebar {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    z-index: 5;
+    z-index: 10;
 }
 .nf-modal-close:hover {
     background: var(--nf-red);
@@ -2035,7 +2071,7 @@ body.has-dock .nf-globe-sidebar {
 
 .nf-studio-meta {
     flex: 1;
-    min-width: 260px;
+    min-width: min(260px, 100%);
 }
 .nf-studio-eyebrow {
     display: inline-flex;
@@ -2086,8 +2122,11 @@ body.has-dock .nf-globe-sidebar {
 
 .nf-studio-body {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 24px;
+}
+.nf-studio-col {
+    min-width: 0;
 }
 .nf-studio-col h3 {
     font-size: 15px;
@@ -2212,7 +2251,8 @@ body.has-dock .nf-globe-sidebar {
     position: fixed;
     top: calc(var(--nav-height) + 14px);
     right: 24px;
-    z-index: 1600;
+    z-index: 100010;
+    max-width: calc(100vw - 32px);
     padding: 11px 16px;
     border-radius: 10px;
     background: rgba(18, 18, 22, 0.95);
@@ -2258,10 +2298,10 @@ body.has-dock .nf-globe-sidebar {
 
 @media (max-width: 980px) {
     .nf-globe-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
     .nf-globe-stage {
-        min-height: 430px;
+        min-height: 360px;
     }
     .nf-globe-sidebar {
         border-left: none;
@@ -2269,7 +2309,7 @@ body.has-dock .nf-globe-sidebar {
         max-height: 460px;
     }
     .nf-studio-body {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -2280,16 +2320,56 @@ body.has-dock .nf-globe-sidebar {
     }
 
     .nf-hero {
-        min-height: 360px;
-        padding: calc(var(--nav-height) + 22px) 4% 28px;
+        min-height: 320px;
+        padding: 20px 4% 24px;
     }
 
     .nf-filter-strip {
         padding: 10px 4% 16px;
     }
 
+    .nf-filter-controls {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .nf-select {
+        flex: 1 1 140px;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .nf-scroll-arrow {
+        display: none;
+    }
+
+    .nf-globe-stage {
+        min-height: 340px;
+    }
+
+    .nf-globe-hud-top {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        max-width: calc(100% - 24px);
+    }
+
+    .nf-globe-controls {
+        left: 12px;
+        bottom: 14px;
+    }
+
     body.has-dock .nf-globe-controls {
-        bottom: calc(var(--dock-height) + 74px);
+        bottom: 14px;
+    }
+
+    .nf-modal-overlay {
+        padding: 12px;
+    }
+
+    .nf-toast {
+        right: 16px;
+        top: 76px;
     }
 
     .nf-nav-links,
@@ -2361,16 +2441,46 @@ body.has-dock .nf-globe-sidebar {
     }
 
     .nf-card {
-        flex: 0 0 178px;
+        flex: 0 0 172px;
     }
     .nf-top10-item {
-        flex: 0 0 226px;
+        flex: 0 0 220px;
     }
     .nf-top10-rank {
         font-size: 98px;
         margin-right: -14px;
     }
     .nf-studio-card {
-        padding: 20px;
+        padding: 18px;
+        max-height: calc(100dvh - 24px);
+    }
+    .nf-studio-hero {
+        gap: 16px;
+    }
+    .nf-studio-meta {
+        min-width: 0;
+    }
+    .nf-vinyl-disc {
+        width: 128px;
+        height: 128px;
+    }
+}
+
+@media (max-width: 560px) {
+    .nf-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .nf-hero-title {
+        font-size: clamp(1.6rem, 6.5vw, 2.2rem);
+    }
+    .nf-hero-actions .nf-btn:not(.nf-btn-icon) {
+        height: 40px;
+        padding: 0 15px;
+        font-size: 13.5px;
+    }
+    .nf-hero-actions .nf-btn-icon {
+        width: 40px;
+        height: 40px;
     }
 }

@@ -2534,7 +2534,8 @@
 
     // --- BOOTSTRAP ---
     async function boot() {
-        document.getElementById("footerYear").textContent = String(new Date().getFullYear());
+        const footerYearEl = document.getElementById("footerYear");
+        if (footerYearEl) footerYearEl.textContent = String(new Date().getFullYear());
         loadPersistedState();
         bindEvents();
         startVisualizers();
