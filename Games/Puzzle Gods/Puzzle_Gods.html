@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Puzzle Gods</title>
+  <link rel="icon" href="web_assets/sprites/char_zu.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ==================== 1. WELCOME SCREEN ==================== -->
+  <section id="screen-welcome" class="screen screen-welcome">
+    <div class="welcome-clouds">
+      <img src="web_assets/sprites/welcome_cloud.png" alt="" class="welcome-cloud welcome-cloud-1" />
+      <img src="web_assets/sprites/welcome_cloud.png" alt="" class="welcome-cloud welcome-cloud-2" />
+    </div>
+
+    <div class="welcome-topbar">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <a href="../Games.html" class="pill-toggle" style="text-decoration:none;" title="Return to Netflix Games Hub">&larr; Games Hub</a>
+        <button id="btn-sandbox-welcome" class="pill-toggle" type="button" title="Unlock all 105 levels & boosters freely">
+          <span>Sandbox:</span><strong id="sandbox-welcome-label">OFF</strong>
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="btn-help-welcome" class="icon-round-btn" type="button" title="How to Play">
+          <img src="web_assets/sprites/btn_qmark.png" alt="Help" />
+        </button>
+        <button id="btn-settings-welcome" class="icon-round-btn" type="button" title="Audio & Settings">⚙️</button>
+      </div>
+    </div>
+
+    <div class="welcome-center">
+      <div class="welcome-logo-stage">
+        <img src="web_assets/sprites/logo_halo.png" alt="" class="welcome-halo" />
+        <div class="welcome-title-row">
+          <img src="web_assets/sprites/logo_wing_left.png" alt="" class="welcome-wing welcome-wing-left" />
+          <div class="welcome-wordmarks">
+            <img src="web_assets/sprites/logo_puzzle.png" alt="Puzzle" class="welcome-puzzle-img" />
+            <img src="web_assets/sprites/logo_gods.png" alt="Gods" class="welcome-gods-img" />
+          </div>
+          <img src="web_assets/sprites/logo_wing_right.png" alt="" class="welcome-wing welcome-wing-right" />
+        </div>
+      </div>
+
+      <div class="welcome-hero-row">
+        <img src="web_assets/sprites/char_zu.png" alt="Little Zu" class="welcome-zu" />
+        <div class="welcome-quote">
+          “Quick! Help me defeat Hades and free the Puzzle Gods across all 6 realms!”
+        </div>
+      </div>
+
+      <div class="welcome-cta-group">
+        <button id="btn-welcome-play" class="btn-sprite-wrap btn-play-main" type="button">
+          <img src="web_assets/sprites/btn_play_green.png" alt="Play" />
+          <span class="btn-sprite-label">PLAY</span>
+        </button>
+        <button id="btn-welcome-quickplay" class="pill-toggle" type="button">
+          Continue Level <strong id="welcome-next-lvl">1</strong> →
+        </button>
+      </div>
+    </div>
+
+    <div class="welcome-footer">
+      105 Levels • 6 God Realms • Interactive Tutorials, Crystals, Lanterns, Keys, Treasure &amp; Boss Battles
+    </div>
+  </section>
+
+  <!-- ==================== 2. WORLD MAP SCREEN ==================== -->
+  <section id="screen-map" class="screen screen-map hidden">
+    <div class="map-overlay-tint"></div>
+
+    <header class="map-header">
+      <div class="map-header-left">
+        <a href="../Games.html" class="pill-toggle" style="text-decoration:none;" title="Return to Netflix Games Hub">&#8962; Games Hub</a>
+        <button id="btn-map-home" class="pill-toggle" type="button">← Title</button>
+        <div class="resource-pill" title="Total Stars Earned">
+          <img src="web_assets/sprites/star_big.png" alt="Stars" />
+          <span id="map-stars-total">0 / 315</span>
+        </div>
+        <div class="resource-pill" title="Gold Bars">
+          <img src="web_assets/sprites/icon_gold.png" alt="Gold" />
+          <span id="map-gold-total">350</span>
+        </div>
+      </div>
+
+      <div class="map-header-right">
+        <button id="btn-sandbox-map" class="pill-toggle" type="button">
+          <span>Unlock All Levels:</span><strong id="sandbox-map-label">OFF</strong>
+        </button>
+        <button id="btn-help-map" class="icon-round-btn" type="button" title="How to Play">
+          <img src="web_assets/sprites/btn_qmark.png" alt="Help" />
+        </button>
+        <button id="btn-settings-map" class="icon-round-btn" type="button" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <nav id="realm-tabs" class="realm-tabs" aria-label="God Realms"></nav>
+
+    <div class="map-body">
+      <aside class="map-realm-card">
+        <img id="map-realm-portrait" src="web_assets/sprites/char_life.png" alt="Realm God" class="map-realm-portrait" />
+        <div>
+          <div id="map-realm-title" class="map-realm-title outlined">Realm of Life</div>
+          <div id="map-realm-stars" style="font-size:0.84rem;color:#ffe69b;font-weight:700;">★ 0 / 30</div>
+          <p id="map-realm-desc" class="map-realm-desc"></p>
+        </div>
+        <button id="btn-map-play-current" class="map-quick-jump outlined-brown" type="button">
+          Play Level <span id="map-next-lvl-num">1</span>
+        </button>
+      </aside>
+
+      <div id="map-path-scroll" class="map-path-scroll">
+        <div id="map-nodes-grid" class="map-nodes-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. ACTIVE GAME SCREEN ==================== -->
+  <section id="screen-game" class="screen screen-game hidden">
+    <div class="game-backdrop-scrim"></div>
+
+    <div class="game-layout">
+      <!-- Left HUD -->
+      <aside class="game-left-col">
+        <div id="hud-moves-panel" class="hud-card moves-panel">
+          <div id="moves-mode-wrap" class="moves-pill-wrap">
+            <img id="moves-pill-img" src="web_assets/sprites/hud_moves_pill.png" alt="" class="moves-pill-bg" />
+            <div class="moves-pill-content">
+              <span class="moves-label">Moves</span>
+              <span id="hud-moves-val" class="moves-value outlined">25</span>
+            </div>
+          </div>
+
+          <div id="timer-mode-wrap" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="timer-ring-wrap">
+              <svg viewBox="0 0 86 86">
+                <circle cx="43" cy="43" r="36" fill="rgba(18,12,38,0.85)" stroke="#4c357a" stroke-width="7"></circle>
+                <circle id="timer-arc" cx="43" cy="43" r="36" fill="none" stroke="#ffd84d" stroke-width="7" stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="0"></circle>
+              </svg>
+              <span id="hud-timer-val" class="timer-ring-val outlined">60</span>
+            </div>
+            <span id="hud-speed-mult" class="speed-mult-badge">1x SCORE</span>
+          </div>
+        </div>
+
+        <div class="hud-card goals-panel">
+          <div class="goals-title outlined">OBJECTIVES</div>
+          <div id="hud-goals-list" class="goals-list"></div>
+        </div>
+
+        <div class="hud-card companion-card">
+          <img id="companion-avatar" src="web_assets/sprites/char_zu.png" alt="Companion" class="companion-avatar" />
+          <div id="companion-bubble" class="companion-bubble">Match 4+ elements for special blasts!</div>
+        </div>
+      </aside>
+
+      <!-- Center Playable Board -->
+      <main class="game-center-col">
+        <div class="top-bars-wrap">
+          <div class="score-bar-row">
+            <div class="star-meter-track">
+              <div id="star-meter-fill" class="star-meter-fill"></div>
+              <img id="star-m1" src="web_assets/sprites/star_empty.png" alt="" class="star-marker" style="left:33%;" />
+              <img id="star-m2" src="web_assets/sprites/star_empty.png" alt="" class="star-marker" style="left:66%;" />
+              <img id="star-m3" src="web_assets/sprites/star_empty.png" alt="" class="star-marker" style="left:97%;" />
+            </div>
+            <div id="hud-score-val" class="score-readout outlined">0</div>
+          </div>
+
+          <div id="boss-bar-row" class="boss-bar-row hidden">
+            <img src="web_assets/sprites/char_hades.png" alt="Little Hades" class="boss-bar-avatar" />
+            <div class="boss-bar-track">
+              <div id="boss-bar-fill" class="boss-bar-fill"></div>
+            </div>
+            <div id="boss-bar-text" class="boss-bar-text outlined">65 / 65</div>
+          </div>
+        </div>
+
+        <div class="board-stage">
+          <div id="board-canvas-frame" class="board-canvas-frame">
+            <canvas id="board-canvas"></canvas>
+
+            <div id="booster-target-banner" class="booster-target-banner hidden">
+              <span id="booster-target-text">Tap a tile to smash!</span>
+              <button id="btn-cancel-booster" class="btn-cancel-booster" type="button">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom God Boosters Dock -->
+        <div class="booster-dock" aria-label="God Boosters">
+          <button id="boost-btn-hammer" class="booster-slot" data-booster="hammer" data-unlock="9" type="button" title="Element Hammer: Smash any tile">
+            <img id="boost-img-hammer" src="web_assets/sprites/btn_boost_hammer_green.png" alt="Hammer" class="booster-icon" />
+            <span id="boost-cnt-hammer" class="booster-count-badge">3</span>
+            <span id="boost-lock-hammer" class="booster-lock-tag hidden">Lv 9</span>
+          </button>
+
+          <button id="boost-btn-trident" class="booster-slot" data-booster="trident" data-unlock="13" type="button" title="Nova Trident: Clear full row">
+            <img id="boost-img-trident" src="web_assets/sprites/btn_boost_trident_green.png" alt="Trident" class="booster-icon" />
+            <span id="boost-cnt-trident" class="booster-count-badge">3</span>
+            <span id="boost-lock-trident" class="booster-lock-tag hidden">Lv 13</span>
+          </button>
+
+          <button id="boost-btn-torch" class="booster-slot" data-booster="torch" data-unlock="17" type="button" title="Flame Blast: Clear full column">
+            <img id="boost-img-torch" src="web_assets/sprites/btn_boost_fire_green.png" alt="Flame" class="booster-icon" />
+            <span id="boost-cnt-torch" class="booster-count-badge">3</span>
+            <span id="boost-lock-torch" class="booster-lock-tag hidden">Lv 17</span>
+          </button>
+
+          <button id="boost-btn-arrow" class="booster-slot" data-booster="arrow" data-unlock="24" type="button" title="Magic Arrows: Zap all gems of chosen element">
+            <img id="boost-img-arrow" src="web_assets/sprites/btn_boost_arrow_green.png" alt="Arrows" class="booster-icon" />
+            <span id="boost-cnt-arrow" class="booster-count-badge">3</span>
+            <span id="boost-lock-arrow" class="booster-lock-tag hidden">Lv 24</span>
+          </button>
+        </div>
+
+        <!-- Interactive Tutorial Overlay (docked over top/bottom bars, never blocking board cells) -->
+        <div id="tutorial-overlay" class="tutorial-overlay hidden">
+          <div class="tutorial-card">
+            <img src="web_assets/sprites/char_zu.png" alt="Zu" class="tutorial-zu-icon" />
+            <div class="tutorial-body">
+              <div id="tutorial-text"></div>
+              <div class="tutorial-actions">
+                <button id="btn-tutorial-skip" class="tutorial-btn tutorial-btn-skip" type="button">Skip</button>
+                <button id="btn-tutorial-next" class="tutorial-btn tutorial-btn-primary hidden" type="button">Tap to Continue</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Controls -->
+      <aside class="game-right-col">
+        <div class="hud-card level-meta-card">
+          <div id="hud-level-title" class="level-meta-num outlined">Level 1</div>
+          <div id="hud-level-realm" class="level-meta-sub">Realm of Life</div>
+          <div class="resource-pill" style="margin-top:6px;align-self:flex-start;">
+            <img src="web_assets/sprites/icon_gold.png" alt="Gold" />
+            <span id="game-gold-val">350</span>
+          </div>
+        </div>
+
+        <div class="hud-card control-btn-stack">
+          <button id="btn-game-hint" class="ui-action-btn" type="button">💡 Show Hint</button>
+          <button id="btn-game-restart" class="ui-action-btn" type="button">↻ Restart Level</button>
+          <button id="btn-game-map" class="ui-action-btn" type="button">🗺️ World Map</button>
+          <button id="btn-game-help" class="ui-action-btn" type="button">❓ Guide</button>
+          <button id="btn-game-settings" class="ui-action-btn" type="button">⚙️ Settings</button>
+        </div>
+
+        <div class="hud-card combo-tip-card">
+          <strong>Godly Combos:</strong><br />
+          • Swap <strong>Element Bomb + Special</strong> to transform every matching gem into blasts!<br />
+          • Swap any <strong>2 Specials</strong> for Mega-Cross &amp; Supernova clears!<br />
+          • Match next to Mud, Lanterns &amp; Tablets!
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Pre-Game Level & Booster Dialog -->
+  <div id="modal-pregame" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <button id="btn-pregame-close" class="modal-close-btn" type="button" aria-label="Close">
+        <img src="web_assets/sprites/btn_close_sm.png" alt="Close" />
+      </button>
+      <div id="pregame-title" class="modal-header-ribbon">LEVEL 1</div>
+      <div id="pregame-subtitle" style="font-weight:700;font-size:0.9rem;color:#6e431a;"></div>
+      <div id="pregame-objectives" class="pregame-objectives"></div>
+
+      <div style="font-weight:700;font-size:0.86rem;margin-top:6px;">Select Pre-Game Blessings (Free in Sandbox / 50 Gold):</div>
+      <div class="preboost-row">
+        <button id="pb-halo" class="preboost-btn" data-pb="halo" type="button">
+          <img src="web_assets/sprites/pre_halo.png" alt="" class="pb-icon" />
+          <span id="pb-halo-label">+5 Moves</span>
+          <img src="web_assets/sprites/pre_tick.png" alt="" class="preboost-tick hidden" />
+        </button>
+        <button id="pb-wrapped" class="preboost-btn" data-pb="wrappedLine" type="button">
+          <img src="web_assets/sprites/pre_wrapped_line.png" alt="" class="pb-icon" />
+          <span>Power Pair</span>
+          <img src="web_assets/sprites/pre_tick.png" alt="" class="preboost-tick hidden" />
+        </button>
+        <button id="pb-ebomb" class="preboost-btn" data-pb="ebomb" type="button">
+          <img src="web_assets/sprites/pre_ebomb.png" alt="" class="pb-icon" />
+          <span>Elem Bomb</span>
+          <img src="web_assets/sprites/pre_tick.png" alt="" class="preboost-tick hidden" />
+        </button>
+      </div>
+
+      <div class="modal-btn-row">
+        <button id="btn-pregame-play" class="modal-pill-btn btn-green outlined-brown" type="button">PLAY LEVEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory Dialog -->
+  <div id="modal-victory" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div id="victory-ribbon" class="modal-header-ribbon">LEVEL COMPLETE!</div>
+      <img id="victory-stars-img" src="web_assets/sprites/win_stars_3.png" alt="Stars" class="victory-stars-banner" />
+      <div id="victory-score" style="font-family:var(--pg-font-display);font-size:1.6rem;color:#4c2d12;">Score: 0</div>
+      <div id="victory-reward" style="font-weight:700;color:#8e5807;margin:6px 0 4px;">+50 Gold Earned!</div>
+      <div class="modal-btn-row">
+        <button id="btn-victory-map" class="modal-pill-btn btn-blue" type="button">World Map</button>
+        <button id="btn-victory-replay" class="modal-pill-btn btn-gold" type="button">Replay</button>
+        <button id="btn-victory-next" class="modal-pill-btn btn-green" type="button">Next Level →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Out of Moves / Time Dialog -->
+  <div id="modal-failed" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div id="failed-ribbon" class="modal-header-ribbon">OUT OF MOVES!</div>
+      <img src="web_assets/sprites/char_zu.png" alt="Zu" style="width:92px;height:92px;object-fit:contain;margin:4px auto;display:block;" />
+      <p id="failed-msg" style="font-weight:700;font-size:0.95rem;margin:6px 0 10px;">So close! Add extra moves or retry the board.</p>
+      <div class="modal-btn-row">
+        <button id="btn-failed-extra" class="modal-pill-btn btn-gold" type="button">+5 Moves (100 Gold)</button>
+        <button id="btn-failed-retry" class="modal-pill-btn btn-green" type="button">Retry</button>
+        <button id="btn-failed-map" class="modal-pill-btn btn-blue" type="button">World Map</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How To Play Guide -->
+  <div id="modal-help" class="modal-backdrop hidden">
+    <div class="modal-box" style="max-width:600px;">
+      <button id="btn-help-close" class="modal-close-btn" type="button" aria-label="Close">
+        <img src="web_assets/sprites/btn_close_sm.png" alt="Close" />
+      </button>
+      <div class="modal-header-ribbon">HOW TO PLAY</div>
+      <div class="help-grid">
+        <div class="help-item">
+          <img src="web_assets/sprites/gem_fire_h.png" alt="" />
+          <div><strong>Match 4 in a line</strong><br />Creates a Horizontal or Vertical Line Blast.</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/gem_water_w.png" alt="" />
+          <div><strong>L-Shape (5 gems)</strong><br />Creates an Encased Wrapped Bomb (explodes twice!).</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/gem_earth_x.png" alt="" />
+          <div><strong>T or + Cross</strong><br />Creates a Diagonal X-Blast clearing across diagonals!</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/bomb_ring.png" alt="" />
+          <div><strong>Match 5 in a line</strong><br />Creates an Element Bomb! Swap with any color to clear it all.</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/obj_crystal.png" alt="" />
+          <div><strong>Ice Crystals</strong><br />Match elements atop Crystal tiles (1–2 layers) to shatter them.</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/obj_lantern.png" alt="" />
+          <div><strong>Olympian Lanterns</strong><br />Match adjacent gems 3 times to fully ignite every brazier!</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/obj_key.png" alt="" />
+          <div><strong>Mud &amp; Hidden Keys</strong><br />Match next to dark Mud patches to uncover hidden keys!</div>
+        </div>
+        <div class="help-item">
+          <img src="web_assets/sprites/obj_treasure.png" alt="" />
+          <div><strong>Sunken Treasure</strong><br />Guide Gold Rings, Rubies &amp; Diamonds down to golden bottom chests!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="modal-settings" class="modal-backdrop hidden">
+    <div class="modal-box" style="max-width:410px;">
+      <button id="btn-settings-close" class="modal-close-btn" type="button" aria-label="Close">
+        <img src="web_assets/sprites/btn_close_sm.png" alt="Close" />
+      </button>
+      <div class="modal-header-ribbon">SETTINGS</div>
+      <div class="settings-row">
+        <span>Sound Effects</span>
+        <button id="btn-set-sfx" class="pill-toggle active" type="button">ON</button>
+      </div>
+      <div class="settings-row">
+        <span>Music</span>
+        <button id="btn-set-music" class="pill-toggle active" type="button">ON</button>
+      </div>
+      <div class="settings-row">
+        <span>Auto-Hints (5s idle)</span>
+        <button id="btn-set-hints" class="pill-toggle active" type="button">ON</button>
+      </div>
+      <div class="settings-row">
+        <span>Sandbox (All 105 Levels)</span>
+        <button id="btn-set-sandbox" class="pill-toggle" type="button">OFF</button>
+      </div>
+      <div class="modal-btn-row">
+        <button id="btn-set-reset" class="modal-pill-btn btn-gold" style="font-size:0.86rem;padding:8px 14px;" type="button">Reset Save Progress</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts in strict dependency order (zero fetch() calls -> file:// compatible) -->
+  <script src="web_assets/levels_data.js"></script>
+  <script src="audio.js"></script>
+  <script src="engine.js"></script>
+  <script src="renderer.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
