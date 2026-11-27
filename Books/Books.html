@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -28,7 +28,7 @@ window.addEventListener('DOMContentLoaded', function () {
 
 *,*::before,*::after{box-sizing:border-box;border:0 solid;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{line-height:1.5;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{color:#f0f0f0;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;background-color:#000;display:flex;flex-direction:column;font-family:'Netflix Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;min-height:100vh;overflow-x:hidden;padding-bottom:0;position:relative;width:100%}
+body{color:#f0f0f0;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;background-color:#141414;display:flex;flex-direction:column;font-family:'Netflix Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;min-height:100vh;overflow-x:hidden;padding-bottom:0;position:relative;width:100%}
 a{color:inherit;text-decoration:none}
 button,input,select,textarea{background-color:transparent;color:inherit;font:inherit}
 button{cursor:pointer}
@@ -189,7 +189,7 @@ menu,ol,ul{list-style:none}
 #pill-nav.search-open .pill-group{width:min(92vw,400px);justify-content:flex-start;padding:6px}
 #pill-nav.search-open .pill-btn{display:none}
 #pill-nav.search-open #mobile-search-slot{display:flex}
-#pill-nav.search-open #pill-clear-btn{display:none}
+#pill-nav.search-open #pill-clear-btn{display:flex}
 @media (max-width:480px){.pill-group{gap:2px;padding:4px}.pill-btn{width:40px;height:40px}.nav-svg{width:19px;height:19px}}
 @media (min-width:992px){#mobile-user-slot,#navbar,#pill-nav{display:none!important}#desktop-navbar{display:flex}}
 #pill-more-panel{position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(8px);display:flex;flex-direction:column;gap:4px;background:rgba(30,30,30,.85);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:8px;min-width:190px;z-index:9999;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,transform .2s ease,visibility .2s}
@@ -293,12 +293,16 @@ menu,ol,ul{list-style:none}
 #message-text{color:#141414!important;font-weight:700!important}
 
 /* Footer (exact index.html styles) */
-.netflix-footer-section{position:relative;background-color:#000;width:100%;margin-top:40px;z-index:10;overflow:hidden;flex-shrink:0}
-.netflix-flare-header{position:relative;width:100%;height:95px;pointer-events:none;z-index:3}
-.netflix-curve-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.netflix-flare-glow{position:absolute;top:0;left:0;width:100%;height:420px;pointer-events:none;z-index:1;-webkit-mask-image:linear-gradient(to bottom,#000 0,rgba(0,0,0,.75) 22%,rgba(0,0,0,.3) 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,rgba(0,0,0,.75) 22%,rgba(0,0,0,.3) 55%,transparent 100%)}
-.netflix-flare-glow svg{width:100%;height:100%;display:block}
-.netflix-footer-content{position:relative;max-width:1100px;margin:0 auto;padding:16px 36px 56px 36px;z-index:10}
+.netflix-footer-section{position:relative;background-color:#141414;width:100%;margin-top:40px;z-index:10;overflow:hidden;flex-shrink:0}
+.netflix-footer-arc-wrap{box-sizing:border-box;overflow-x:hidden;position:relative;height:6.25rem;z-index:1;width:100%;pointer-events:none}
+.netflix-footer-arc-inner{box-sizing:border-box;position:absolute;height:100%;top:0;margin:auto;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-align-items:center;-webkit-box-align:center;-ms-flex-align:center;align-items:center;border:solid .25rem transparent;border-top-left-radius:50% 100%;border-top-right-radius:50% 100%;border-bottom:none;background:radial-gradient(50% 500% at 50% -420%,rgba(64,97,231,0.4) 80%,rgba(20,20,20,0.1) 100%),#141414;-webkit-background-clip:padding-box;background-clip:padding-box;width:200%;left:-50%}
+@media all and (min-width:600px){.netflix-footer-arc-inner{width:180%;left:-40%}}
+@media all and (min-width:960px){.netflix-footer-arc-inner{width:150%;left:-25%}}
+@media all and (min-width:1280px){.netflix-footer-arc-inner{width:130%;left:-15%}}
+@media all and (min-width:1920px){.netflix-footer-arc-inner{width:120%;left:-10%}}
+.netflix-footer-arc-inner::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;margin-top:-.25rem;border-radius:inherit;background:linear-gradient(to right,rgba(33,13,22,1) 16%,rgba(184,40,105,1),rgba(229,9,20,1),rgba(184,40,105,1),rgba(33,13,22,1) 84%)}
+.netflix-footer-content{position:relative;max-width:1100px;margin:0 auto;margin-top:-3rem;padding:16px 36px 56px 36px;z-index:10}
+@media all and (min-width:600px){.netflix-footer-content{margin-top:-2rem}}
 .netflix-footer-logo-wrap{margin-bottom:26px}
 .netflix-footer-logo{height:38px;width:auto;max-width:175px;object-fit:contain;display:block;margin-bottom:16px}
 .netflix-footer-desc{color:rgba(255,255,255,.92);font-size:17px;line-height:1.55;max-width:520px;font-weight:400;letter-spacing:-.1px}
@@ -325,7 +329,7 @@ menu,ol,ul{list-style:none}
 .netflix-lang-caret svg{width:10px;height:10px;fill:currentColor}
 .netflix-footer-copy{color:#a8a8a8;font-size:13px;font-weight:500;margin-bottom:10px;letter-spacing:.1px}
 .netflix-footer-recaptcha{color:#6b6b6b;font-size:12px;line-height:1.5;max-width:600px}
-@media (max-width:860px){.netflix-footer-links-grid{grid-template-columns:repeat(2,1fr);gap:16px 24px}.netflix-footer-content{padding:12px 24px 44px 24px}.netflix-flare-header{height:75px}}
+@media (max-width:860px){.netflix-footer-links-grid{grid-template-columns:repeat(2,1fr);gap:16px 24px}.netflix-footer-content{padding:12px 24px 44px 24px}}
 @media (max-width:500px){.netflix-footer-links-grid{grid-template-columns:1fr;gap:14px}.netflix-footer-desc{font-size:15px}.netflix-footer-contact a{font-size:14.5px}.netflix-footer-logo{height:32px}.netflix-lang-btn{height:40px}}
 @media (max-width:991px){footer.netflix-footer-section{padding-bottom:92px}}
 html[lang="si"] body,html[lang="si"] .nf-section-title{font-family:"Netflix Sans","Noto Sans Sinhala",sans-serif!important}
@@ -340,14 +344,14 @@ html[lang="si"] body,html[lang="si"] .nf-section-title{font-family:"Netflix Sans
 .books-view-pad{max-width:1480px;margin:0 auto;padding:92px 4% 40px}
 
 /* Full-Bleed Netflix Hero Billboard */
-.nf-hero{position:relative;width:100%;aspect-ratio:2/3;min-height:430px;max-height:74vh;overflow:hidden;background:#000;margin-bottom:20px}
+.nf-hero{position:relative;width:100%;aspect-ratio:2/3;min-height:430px;max-height:74vh;overflow:hidden;background:#141414;margin-bottom:20px}
 @media (min-width:768px){.nf-hero{aspect-ratio:16/8.2;min-height:460px;max-height:660px}}
-.nf-hero-slides{position:relative;width:100%;height:100%}
+.nf-hero-slides{position:absolute;inset:0;width:100%;height:100%}
 .nf-hero-slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .95s ease;overflow:hidden}
 .nf-hero-slide.active{opacity:1;pointer-events:auto;z-index:2}
 .nf-hero-bg{position:absolute;inset:-2%;background-size:cover;background-position:center 22%;filter:brightness(.72) saturate(1.12);transform:scale(1);transition:transform 8s ease-out}
 .nf-hero-slide.active .nf-hero-bg{transform:scale(1.06)}
-.nf-hero-vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.05) 28%,rgba(0,0,0,.55) 72%,#000 100%),linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.68) 38%,rgba(0,0,0,.18) 68%,transparent 100%);pointer-events:none}
+.nf-hero-vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,20,20,.62) 0%,rgba(20,20,20,.05) 28%,rgba(20,20,20,.55) 72%,#141414 100%),linear-gradient(90deg,rgba(20,20,20,.92) 0%,rgba(20,20,20,.68) 38%,rgba(20,20,20,.18) 68%,transparent 100%);pointer-events:none}
 .nf-hero-body{position:relative;z-index:3;height:100%;display:flex;align-items:flex-end;padding:0 4% 52px;gap:28px;max-width:1480px;margin:0 auto}
 .nf-hero-info{max-width:640px;flex:1;min-width:0}
 .nf-hero-brand-line{display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:#e5e7eb}
@@ -736,12 +740,12 @@ mark.reader-hit{background:rgba(229,9,20,.38);color:inherit;padding:0 3px;border
     <a href="../TV/tv.html" class="desktop-link">Live TV</a>
     <a href="../Sports/sports.html" class="desktop-link">Sports</a>
     <a href="../Games/Games.html" class="desktop-link">Games</a>
-    <div class="desktop-link" id="desktop-more-btn" title="More">
+    <div class="desktop-link active" id="desktop-more-btn" title="More">
       <svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>
       <div class="desktop-dropdown" id="desktop-more-panel">
         <a class="more-item" href="../Webcams/webcams.html" title="Webcams"><svg class="nav-svg" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><title>camera</title><g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"><g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -465.000000)" fill="currentColor"><path d="M272,487 C268.687,487 266,484.313 266,481 C266,477.687 268.687,475 272,475 C275.313,475 278,477.687 278,481 C278,484.313 275.313,487 272,487 L272,487 Z M272,473 C267.582,473 264,476.582 264,481 C264,485.418 267.582,489 272,489 C276.418,489 280,485.418 280,481 C280,476.582 276.418,473 272,473 L272,473 Z M286,489 C286,490.104 285.104,491 284,491 L260,491 C258.896,491 258,490.104 258,489 L258,473 C258,471.896 258.896,471 260,471 L264,471 L265,469 C265.707,467.837 265.896,467 267,467 L277,467 C278.104,467 278.293,467.837 279,469 L280,471 L284,471 C285.104,471 286,471.896 286,473 L286,489 L286,489 Z M284,469 L281,469 L280,467 C279.411,465.837 279.104,465 278,465 L266,465 C264.896,465 264.53,465.954 264,467 L263,469 L260,469 C257.791,469 256,470.791 256,473 L256,489 C256,491.209 257.791,493 260,493 L284,493 C286.209,493 288,491.209 288,489 L288,473 C288,470.791 286.209,469 284,469 L284,469 Z" id="camera" sketch:type="MSShapeGroup"></path></g></g></g></svg><span>Webcams</span></a>
         <a href="../Radio/radio.html" class="more-item" title="Radio"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span>Radio</span></a>
-        <a href="Books.html" class="more-item" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
+        <a href="Books.html" class="more-item active" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
         <a class="more-item" title="AI Search" onclick="toggleAIModal()" style="cursor:pointer"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13.5 2C13.5 2.44425 13.3069 2.84339 13 3.11805V5H18C19.6569 5 21 6.34315 21 8V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18V8C3 6.34315 4.34315 5 6 5H11V3.11805C10.6931 2.84339 10.5 2.44425 10.5 2C10.5 1.17157 11.1716 0.5 12 0.5C12.8284 0.5 13.5 1.17157 13.5 2ZM6 7C5.44772 7 5 7.44772 5 8V18C5 18.5523 5.44772 19 6 19H18C18.5523 19 19 18.5523 19 18V8C19 7.44772 18.5523 7 18 7H13H11H6ZM2 10H0V16H2V10ZM22 10H24V16H22V10ZM9 14.5C9.82843 14.5 10.5 13.8284 10.5 13C10.5 12.1716 9.82843 11.5 9 11.5C8.17157 11.5 7.5 12.1716 7.5 13C7.5 13.8284 8.17157 14.5 9 14.5ZM15 14.5C15.8284 14.5 16.5 13.8284 16.5 13C16.5 12.1716 15.8284 11.5 15 11.5C14.1716 11.5 13.5 12.1716 13.5 13C13.5 13.8284 14.1716 14.5 15 14.5Z"></path></svg><span>AI Search</span></a>
       </div>
     </div>
@@ -757,7 +761,7 @@ mark.reader-hit{background:rgba(229,9,20,.38);color:inherit;padding:0 3px;border
 <div id="pill-more-panel">
   <a class="more-item" href="../Webcams/webcams.html" title="Webcams"><svg class="nav-svg" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><title>camera</title><g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"><g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -465.000000)" fill="currentColor"><path d="M272,487 C268.687,487 266,484.313 266,481 C266,477.687 268.687,475 272,475 C275.313,475 278,477.687 278,481 C278,484.313 275.313,487 272,487 L272,487 Z M272,473 C267.582,473 264,476.582 264,481 C264,485.418 267.582,489 272,489 C276.418,489 280,485.418 280,481 C280,476.582 276.418,473 272,473 L272,473 Z M286,489 C286,490.104 285.104,491 284,491 L260,491 C258.896,491 258,490.104 258,489 L258,473 C258,471.896 258.896,471 260,471 L264,471 L265,469 C265.707,467.837 265.896,467 267,467 L277,467 C278.104,467 278.293,467.837 279,469 L280,471 L284,471 C285.104,471 286,471.896 286,473 L286,489 L286,489 Z M284,469 L281,469 L280,467 C279.411,465.837 279.104,465 278,465 L266,465 C264.896,465 264.53,465.954 264,467 L263,469 L260,469 C257.791,469 256,470.791 256,473 L256,489 C256,491.209 257.791,493 260,493 L284,493 C286.209,493 288,491.209 288,489 L288,473 C288,470.791 286.209,469 284,469 L284,469 Z" id="camera" sketch:type="MSShapeGroup"></path></g></g></g></svg><span>Webcams</span></a>
   <a href="../Radio/radio.html" class="more-item" title="Radio"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M6 3V1H8V3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934C2 3.44476 2.45531 3 2.9918 3H6ZM4 5V19H20V5H4ZM9 15C7.34315 15 6 13.6569 6 12C6 10.3431 7.34315 9 9 9C10.6569 9 12 10.3431 12 12C12 13.6569 10.6569 15 9 15ZM14 9H18V11H14V9ZM14 13H18V15H14V13Z"></path></svg><span>Radio</span></a>
-  <a href="Books.html" class="more-item" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
+  <a href="Books.html" class="more-item active" title="Books"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13 21V23H11V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H9C10.1947 3 11.2671 3.52375 12 4.35418C12.7329 3.52375 13.8053 3 15 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H13ZM20 19V5H15C13.8954 5 13 5.89543 13 7V19H20ZM11 19V7C11 5.89543 10.1046 5 9 5H4V19H11Z"></path></svg><span>Books</span></a>
   <a class="more-item" title="AI Search" onclick="toggleAIModal()" style="cursor:pointer"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M13.5 2C13.5 2.44425 13.3069 2.84339 13 3.11805V5H18C19.6569 5 21 6.34315 21 8V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18V8C3 6.34315 4.34315 5 6 5H11V3.11805C10.6931 2.84339 10.5 2.44425 10.5 2C10.5 1.17157 11.1716 0.5 12 0.5C12.8284 0.5 13.5 1.17157 13.5 2ZM6 7C5.44772 7 5 7.44772 5 8V18C5 18.5523 5.44772 19 6 19H18C18.5523 19 19 18.5523 19 18V8C19 7.44772 18.5523 7 18 7H13H11H6ZM2 10H0V16H2V10ZM22 10H24V16H22V10ZM9 14.5C9.82843 14.5 10.5 13.8284 10.5 13C10.5 12.1716 9.82843 11.5 9 11.5C8.17157 11.5 7.5 12.1716 7.5 13C7.5 13.8284 8.17157 14.5 9 14.5ZM15 14.5C15.8284 14.5 16.5 13.8284 16.5 13C16.5 12.1716 15.8284 11.5 15 11.5C14.1716 11.5 13.5 12.1716 13.5 13C13.5 13.8284 14.1716 14.5 15 14.5Z"></path></svg><span>AI Search</span></a>
 </div>
 
@@ -768,7 +772,7 @@ mark.reader-hit{background:rgba(229,9,20,.38);color:inherit;padding:0 3px;border
     <a href="../TV/tv.html" class="pill-btn" title="Live TV"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M15.4142 4.99998H21.0082C21.556 4.99998 22 5.44461 22 6.00085V19.9991C22 20.5519 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5553 2 19.9991V6.00085C2 5.44808 2.45531 4.99998 2.9918 4.99998H8.58579L6.05025 2.46445L7.46447 1.05023L11.4142 4.99998H12.5858L16.5355 1.05023L17.9497 2.46445L15.4142 4.99998ZM4 6.99998V19H20V6.99998H4Z"></path></svg></a>
     <a href="../Sports/sports.html" class="pill-btn" title="Sports"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M19.9887 11.5716C19.9029 9.94513 19.3313 8.44745 18.4163 7.22097C18.1749 7.48407 17.8785 7.7698 17.4957 8.09159C16.5881 8.85458 15.4887 9.54307 14.1834 10.101C14.3498 10.4506 14.5029 10.7899 14.6376 11.1098L14.6388 11.1125C14.6652 11.1742 14.6879 11.2306 14.7321 11.3418C14.7379 11.3562 14.7433 11.3697 14.7485 11.3825C16.2621 11.2122 17.8576 11.2749 19.4049 11.4845C19.6106 11.5123 19.805 11.5415 19.9887 11.5716ZM10.6044 4.1213C10.7783 4.36621 10.9602 4.62859 11.1803 4.95378C11.7929 5.8589 12.396 6.81391 12.9604 7.79507C13.0749 7.99416 13.187 8.19289 13.2964 8.39112C14.5193 7.90993 15.5296 7.30281 16.3438 6.62486C16.6731 6.35063 16.9383 6.093 17.1403 5.86972C15.7501 4.70277 13.9571 4 12 4C11.524 4 11.0576 4.04158 10.6044 4.1213ZM4.25266 9.99755C4.83145 9.98452 5.48467 9.94941 6.29303 9.87518C7.90024 9.72758 9.54141 9.46249 11.1549 9.05274C10.5719 8.03721 9.93888 7.02331 9.29452 6.05378C8.98479 5.58775 8.68357 5.14992 8.45484 4.82642C6.39541 5.84613 4.83794 7.72658 4.25266 9.99755ZM5.78366 17.036C6.17111 16.4693 6.68061 15.8314 7.35797 15.1374C8.81199 13.6478 10.5286 12.4878 12.5139 11.8473C12.5417 11.8391 12.5604 11.8336 12.576 11.829C12.411 11.4651 12.2562 11.1405 12.1003 10.8342C10.2643 11.3687 8.3303 11.703 6.40279 11.8762C5.46319 11.9606 4.62005 11.9981 4 12.0044C4.00102 13.9112 4.66915 15.662 5.78366 17.036ZM15.0045 19.4166C14.9001 18.8745 14.7669 18.2706 14.5899 17.574C14.2689 16.3112 13.8668 15.012 13.373 13.7078C11.3712 14.4343 9.77574 15.4974 8.54309 16.7649C7.94904 17.3757 7.51244 17.9537 7.22642 18.4203C8.55892 19.4127 10.2109 20 12 20C13.0626 20 14.0769 19.7928 15.0045 19.4166ZM16.8778 18.3414C18.4073 17.1632 19.4985 15.444 19.8652 13.4703C19.5253 13.3865 19.094 13.3005 18.6196 13.2346C17.5756 13.0897 16.5014 13.0655 15.4409 13.2018C15.8933 14.4764 16.2642 15.7332 16.5608 16.9361C16.6903 17.4614 16.7958 17.9358 16.8778 18.3414ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"></path></svg></a>
     <a href="../Games/Games.html" class="pill-btn" title="Games"><svg viewBox="0 0 512 512" class="nav-svg" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M340.693,55.787 L256,106.624 L171.307,55.787 c-14.72,-8.832-33.152-8.832-43.947,0 l-106.667,64 c-13.12,7.872-20.693,22.144-20.693,36.608 v156.587 c0,14.464,7.573,28.736,20.693,36.587 l213.333,128 c13.525,8.107,30.421,8.107,43.947,0 l213.333-128 c13.12-7.851,20.693-22.123,20.693-36.587 V156.395 c0-14.464-7.573-28.736-20.693-36.587 l-106.667-64 C373.845,46.955,355.413,46.955,340.693,55.787 Z M256,156.373 l106.667-64 l106.667,64 v156.587 l-213.333,128 l-213.333-128 V156.373 l106.667-64 L256,156.373 Z M149.333,160 c-11.776,0-21.333,9.557-21.333,21.333 v32.043 H96 c-11.782,0-21.333,9.551-21.333,21.333 s9.551,21.333,21.333,21.333 h32v32.043 c0,11.782,9.551,21.333,21.333,21.333 s21.333-9.551,21.333-21.333 v-31.957 h32 c11.782,0,21.333-9.551,21.333-21.333 s-9.551-21.333-21.333-21.333 h-32 v-32.043 C170.667,169.557,161.109,160,149.333,160 Z M394.667,192.043 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S412.331,192.043,394.667,192.043 Z M309.333,234.709 c-17.664,0-32,14.336-32,32 s14.336,32,32,32 s32-14.336,32-32 S326.997,234.709,309.333,234.709 Z"/></svg></a>
-    <div class="pill-btn" id="pill-more-btn" title="More"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></div>
+    <div class="pill-btn active" id="pill-more-btn" title="More"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></div>
     <div class="pill-btn" id="pill-search-btn" title="Search"><svg viewBox="0 0 24 24" class="nav-svg" fill="currentColor"><path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path></svg></div>
     <div id="mobile-search-slot">
       <div class="search-group">
@@ -1312,32 +1316,7 @@ mark.reader-hit{background:rgba(229,9,20,.38);color:inherit;padding:0 3px;border
 
 <!-- ==================== EXACT INDEX.HTML FOOTER ==================== -->
 <footer class="netflix-footer-section">
-  <div class="netflix-flare-glow" aria-hidden="true">
-    <svg viewBox="0 0 1440 420" preserveAspectRatio="none">
-      <defs>
-        <clipPath id="belowCurve"><path d="M -40 79 Q 720 -31 1480 79 L 1480 420 L -40 420 Z"/></clipPath>
-        <radialGradient cx="50%" cy="50%" id="flareBlue" r="50%"><stop offset="0%" stop-color="#3b65e8" stop-opacity="0.42"/><stop offset="30%" stop-color="#2a45b8" stop-opacity="0.26"/><stop offset="60%" stop-color="#16236e" stop-opacity="0.10"/><stop offset="85%" stop-color="#0a123d" stop-opacity="0.025"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
-        <radialGradient cx="50%" cy="50%" id="flareRed" r="50%"><stop offset="0%" stop-color="#e50914" stop-opacity="0.34"/><stop offset="35%" stop-color="#9a1848" stop-opacity="0.16"/><stop offset="70%" stop-color="#450818" stop-opacity="0.04"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
-        <radialGradient cx="50%" cy="50%" id="flarePink" r="50%"><stop offset="0%" stop-color="#ff7b94" stop-opacity="0.42"/><stop offset="45%" stop-color="#e50914" stop-opacity="0.15"/><stop offset="100%" stop-color="#000000" stop-opacity="0"/></radialGradient>
-      </defs>
-      <g clip-path="url(#belowCurve)">
-        <ellipse cx="720" cy="26" fill="url(#flareBlue)" rx="760" ry="330"/>
-        <ellipse cx="720" cy="26" fill="url(#flareRed)" rx="460" ry="210"/>
-        <ellipse cx="720" cy="22" fill="url(#flarePink)" rx="220" ry="90"/>
-      </g>
-    </svg>
-  </div>
-  <div class="netflix-flare-header" aria-hidden="true">
-    <svg viewBox="0 0 1440 70" class="netflix-curve-svg" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="curveNeonRed" x1="0%" x2="100%" y1="0%" y2="0%"><stop offset="0%" stop-color="#e50914" stop-opacity="0"/><stop offset="15%" stop-color="#4a0815" stop-opacity="0.35"/><stop offset="30%" stop-color="#8c122b" stop-opacity="0.75"/><stop offset="44%" stop-color="#d40b2a" stop-opacity="0.95"/><stop offset="50%" stop-color="#ff3b5c" stop-opacity="1"/><stop offset="56%" stop-color="#d40b2a" stop-opacity="0.95"/><stop offset="70%" stop-color="#8c122b" stop-opacity="0.75"/><stop offset="85%" stop-color="#4a0815" stop-opacity="0.35"/><stop offset="100%" stop-color="#e50914" stop-opacity="0"/></linearGradient>
-        <filter id="svgCurveGlow" height="200%" width="120%" x="-10%" y="-20%"><feGaussianBlur result="blur1" stdDeviation="1.8"/><feMerge><feMergeNode in="blur1"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <path d="M -40 58 Q 720 -22 1480 58 L 1480 80 L -40 80 Z" fill="#000000" fill-opacity="0.0"/>
-      <path d="M -40 58 Q 720 -22 1480 58" fill="none" stroke="url(#curveNeonRed)" stroke-width="4.2" filter="url(#svgCurveGlow)" opacity="0.65"/>
-      <path d="M -40 58 Q 720 -22 1480 58" fill="none" stroke="url(#curveNeonRed)" stroke-width="1.8"/>
-    </svg>
-  </div>
+  <div class="netflix-footer-arc-wrap" aria-hidden="true"><div class="curve-container"><div class="netflix-footer-arc-inner"></div></div></div>
   <div class="netflix-footer-content">
     <div class="netflix-footer-logo-wrap">
       <img src="../Attachments/Chithruka%20Signature.svg" alt="Netflix" class="netflix-footer-logo" loading="lazy">
@@ -5197,11 +5176,14 @@ function updateAuthUIState() {
 /* EXACT INDEX.HTML RESPONSIVE NAVBAR SCRIPT + FOOTER YEAR/LANG/COUNTRY */
 !function(){
   function d(e){return document.getElementById(e)}
-  var t=d("navbar");
-  window.addEventListener("scroll",function(){
-    var e=50<window.scrollY;
+  var t=d("navbar"),dnNav=d("desktop-navbar");
+  function syncBooksNavScroll(){
+    var e=12<window.scrollY;
     t&&t.classList.toggle("scrolled",e);
-  });
+    dnNav&&dnNav.classList.toggle("scrolled",e);
+  }
+  window.addEventListener("scroll",syncBooksNavScroll);
+  syncBooksNavScroll();
   var e,p=window.innerWidth;
   function n(){
     var e=window.innerWidth!==p;p=window.innerWidth;

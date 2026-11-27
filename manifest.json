@@ -3,7 +3,7 @@
     "short_name": "Netflix",
     "start_url": "/Chithruka/",
     "display": "standalone",
-    "background_color": "#000000",
+    "background_color": "#141414",
     "theme_color": "#e50914",
     "icons": [
       {
